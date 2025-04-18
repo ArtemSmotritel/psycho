@@ -3,9 +3,11 @@ import { type RouteConfig, index, route, layout, prefix } from "@react-router/de
 export default [
     index("routes/home.tsx"),
     route("login", "routes/login.tsx"),
-    route("login/psychologist", "routes/psychologist/login.tsx"),
-    route("login/client", "routes/client/login.tsx"),
+    ...prefix("client", [
+        route("login", "routes/client/login.tsx"),
+    ]),
     ...prefix("psychologist", [
+        route("login", "routes/psychologist/login.tsx"),
         ...prefix("dashboard", [ 
             layout("routes/psychologist/dashboard.tsx", [
                 index("routes/psychologist/dashboard.index.tsx"),

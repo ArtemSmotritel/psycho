@@ -2,6 +2,29 @@ import { Outlet } from "react-router";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from "../../components/ui/sidebar";
 import { HomeIcon, UsersIcon, CalendarIcon } from "lucide-react";
 
+const sidebarItems = [
+  {
+    title: "Home",
+    icon: HomeIcon,
+    href: "/",
+  },
+  {
+    title: "Overview",
+    icon: HomeIcon,
+    href: "/psychologist/dashboard",
+  },
+  {
+    title: "Clients",
+    icon: UsersIcon,
+    href: "/psychologist/dashboard/clients",
+  },
+  {
+    title: "Appointments",
+    icon: CalendarIcon,
+    href: "/psychologist/dashboard/appointments",
+  },
+];
+
 export default function DashboardLayout() {
   return (
     <SidebarProvider>
@@ -12,30 +35,16 @@ export default function DashboardLayout() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a href="/dashboard">
-                    <HomeIcon />
-                    <span>Overview</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a href="/dashboard/clients">
-                    <UsersIcon />
-                    <span>Clients</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a href="/dashboard/appointments">
-                    <CalendarIcon />
-                    <span>Appointments</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {sidebarItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.href}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>

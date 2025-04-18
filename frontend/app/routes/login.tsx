@@ -12,10 +12,10 @@ export default function LoginChoice() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Button asChild className="w-full" size="lg">
-            <Link to="/login/psychologist">Login as Psychologist</Link>
+            <Link to="/psychologist/login">Login as Psychologist</Link>
           </Button>
           <Button asChild className="w-full" size="lg" variant="outline">
-            <Link to="/login/client">Login as Client</Link>
+            <Link to="/client/login">Login as Client</Link>
           </Button>
         </CardContent>
       </Card>
