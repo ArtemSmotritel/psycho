@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from "../components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from "../../components/ui/sidebar";
 import { HomeIcon, UsersIcon, CalendarIcon } from "lucide-react";
 
 export default function DashboardLayout() {
