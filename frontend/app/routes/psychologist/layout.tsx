@@ -1,37 +1,37 @@
 import { Outlet } from "react-router";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarProvider, SidebarTrigger } from "../../components/ui/sidebar";
-import { HomeIcon, UsersIcon, CalendarIcon } from "lucide-react";
+import { HomeIcon, UsersIcon, CalendarIcon, ImageIcon } from "lucide-react";
 
 const sidebarItems = [
   {
-    title: "Home",
+    title: "Dashboard",
     icon: HomeIcon,
-    href: "/",
-  },
-  {
-    title: "Overview",
-    icon: HomeIcon,
-    href: "/psychologist/dashboard",
+    href: "/psychologist",
   },
   {
     title: "Clients",
     icon: UsersIcon,
-    href: "/psychologist/dashboard/clients",
+    href: "/psychologist/clients",
   },
   {
-    title: "Appointments",
+    title: "Sessions",
     icon: CalendarIcon,
-    href: "/psychologist/dashboard/appointments",
+    href: "/psychologist/sessions",
+  },
+  {
+    title: "Associative Images",
+    icon: ImageIcon,
+    href: "/psychologist/associative-images",
   },
 ];
 
-export default function DashboardLayout() {
+export default function PsychologistLayout() {
   return (
     <SidebarProvider>
       <div className="flex h-screen">
         <Sidebar>
           <SidebarHeader>
-            <h1 className="text-xl font-bold">Dashboard</h1>
+            <h1 className="text-xl font-bold">Psychologist Portal</h1>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -39,7 +39,7 @@ export default function DashboardLayout() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.href}>
-                      <item.icon />
+                      <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
