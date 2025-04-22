@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AppPageHeader } from "~/components/AppPageHeader";
 
 export default function Clients() {
   return (
     <div className="container mx-auto p-4">
+      <AppPageHeader text="Clients" />
+
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Clients</h1>
         <Button>Add Client</Button>
       </div>
 

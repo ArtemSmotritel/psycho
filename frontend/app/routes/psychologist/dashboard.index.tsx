@@ -1,9 +1,10 @@
+import { AppPageHeader } from "~/components/AppPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 
 export default function DashboardOverview() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard Overview</h1>
+    <div className="container mx-auto p-4">
+      <AppPageHeader text="Dashboard Overview" />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -40,4 +41,4 @@ export default function DashboardOverview() {
       </div>
     </div>
   );
-} 
+}

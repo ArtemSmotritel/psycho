@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppPageHeader } from "~/components/AppPageHeader";
 
 export default function AssociativeImages() {
   return (
     <div className="container mx-auto p-4">
+      <AppPageHeader text="Associative Images" />
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Associative Images</h1>
         <Button>Add Image</Button>
       </div>
 
