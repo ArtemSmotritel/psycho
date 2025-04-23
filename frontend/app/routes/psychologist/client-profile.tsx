@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, Phone, MessageSquare, Instagram, Mail, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { ClientForm } from "@/components/ClientForm";
+import { Link } from "react-router";
 
 type ClientProfileProps = {
   params: {
@@ -17,11 +18,34 @@ interface ContactItemProps {
   label: string;
   value?: string;
   onCopy: () => void;
+  type?: "telegram" | "instagram" | "email" | "phone";
 }
 
-function ContactItem({ icon, label, value, onCopy }: ContactItemProps) {
+function ContactItem({ icon, label, value, onCopy, type }: ContactItemProps) {
   const displayValue = value || "-";
   
+  // Helper function to get the appropriate link based on type
+  const getLink = () => {
+    if (!value) return null;
+    
+    switch (type) {
+      case "telegram":
+        const telegramUsername = value.startsWith('@') ? value.slice(1) : value;
+        return `https://t.me/${telegramUsername}`;
+      case "instagram":
+        const instagramUsername = value.startsWith('@') ? value.slice(1) : value;
+        return `https://instagram.com/${instagramUsername}`;
+      case "email":
+        return `mailto:${value}`;
+      case "phone":
+        return `tel:${value.replace(/\s+/g, '')}`;
+      default:
+        return null;
+    }
+  };
+
+  const link = getLink();
+
   return (
     <div className="flex items-center justify-between flex-wrap">
       <div className="flex items-center space-x-2">
@@ -29,7 +53,18 @@ function ContactItem({ icon, label, value, onCopy }: ContactItemProps) {
         <span className="font-medium">{label}:</span>
       </div>
       <div className="flex items-center space-x-1">
-        <span>{displayValue}</span>
+        {link ? (
+          <Link
+            to={link}
+            target={type === "email" || type === "phone" ? undefined : "_blank"}
+            rel={type === "email" || type === "phone" ? undefined : "noopener noreferrer"}
+            className="hover:underline"
+          >
+            {displayValue}
+          </Link>
+        ) : (
+          <span>{displayValue}</span>
+        )}
         {value && (
           <Button
             variant="ghost"
@@ -51,9 +86,9 @@ export default function ClientProfile({ params }: ClientProfileProps) {
     username: "john_doe",
     name: "John Doe",
     email: "john@example.com",
-    phone: "+1234567890",
-    telegram: "@johndoe",
-    instagram: "@johndoe",
+    phone: "+380731488420",
+    telegram: "@blinolad",
+    instagram: "@blinolad",
     registrationDate: new Date(2024, 0, 1),
     lastSession: new Date(2024, 3, 18, 15, 0),
     nextSession: new Date(2024, 3, 25, 15, 0),
@@ -125,6 +160,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               icon={<Phone className="h-4 w-4 text-muted-foreground" />}
               label="Phone"
               value={client.phone}
+              type="phone"
               onCopy={() => copyToClipboard(client.phone, "Phone number")}
             />
 
@@ -132,13 +168,15 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
               label="Telegram"
               value={client.telegram}
+              type="telegram"
               onCopy={() => copyToClipboard(client.telegram, "Telegram username")}
             />
 
             <ContactItem
               icon={<Instagram className="h-4 w-4 text-muted-foreground" />}
-              label="Instagram" 
+              label="Instagram"
               value={client.instagram}
+              type="instagram"
               onCopy={() => copyToClipboard(client.instagram, "Instagram username")}
             />
 
@@ -146,6 +184,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               icon={<Mail className="h-4 w-4 text-muted-foreground" />}
               label="Email"
               value={client.email}
+              type="email"
               onCopy={() => copyToClipboard(client.email, "Email address")}
             />
           </CardContent>

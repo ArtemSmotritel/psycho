@@ -21,6 +21,10 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+// Username validation regex
+const telegramRegex = /^[a-zA-Z0-9_]+$/;
+const instagramRegex = /(?:@)([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
+
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
@@ -28,8 +32,22 @@ const formSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
-  telegram: z.string().optional(),
-  instagram: z.string().optional(),
+  telegram: z.string()
+    .optional()
+    .refine((val) => !val || val.startsWith('@'), {
+      message: "Telegram username must start with @",
+    })
+    .refine((val) => !val || telegramRegex.test(val.slice(1)), {
+      message: "Telegram username can only contain letters, numbers, and underscores",
+    }),
+  instagram: z.string()
+    .optional()
+    .refine((val) => !val || val.startsWith('@'), {
+      message: "Instagram username must start with @",
+    })
+    .refine((val) => !val || instagramRegex.test(val), {
+      message: "Instagram username can only contain letters, numbers, dots and underscores",
+    }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
