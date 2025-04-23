@@ -7,12 +7,18 @@ export default [
         route("login", "routes/psychologist/login.tsx"),
         layout("routes/psychologist/layout.tsx", [
             index("routes/psychologist/dashboard.index.tsx"),
-            route("clients", "routes/psychologist/clients.tsx"),
-            route("sessions", "routes/psychologist/sessions.tsx"),
+            ...prefix("clients", [
+                index("routes/psychologist/clients.tsx"),
+                route(":clientId", "routes/psychologist/client-profile.tsx"),
+                route(":clientId/sessions", "routes/psychologist/client-sessions.tsx"), 
+            ]),
             route("associative-images", "routes/psychologist/associative-images.tsx"),
-            route("sessions/:sessionId", "routes/psychologist/session.tsx"),
-            route("sessions/:sessionId/attachment/:type/new", "routes/psychologist/session-attachment-form.tsx"),
-            route("sessions/:sessionId/attachment/:attachmentId", "routes/psychologist/session-attachment.tsx"),
+            ...prefix("sessions", [
+                index("routes/psychologist/sessions.tsx"),
+                route(":sessionId", "routes/psychologist/session.tsx"),
+                route(":sessionId/attachment/:type/new", "routes/psychologist/session-attachment-form.tsx"),
+                route(":sessionId/attachment/:attachmentId", "routes/psychologist/session-attachment.tsx"),
+            ]),
         ]),
     ]),
     ...prefix("client", [

@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router";
 
 type Client = {
   id: string;
@@ -95,6 +96,7 @@ const columns: ColumnDef<Client>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const client = row.original;
+      const navigate = useNavigate();
 
       return (
         <DropdownMenu>
@@ -107,8 +109,12 @@ const columns: ColumnDef<Client>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View client details</DropdownMenuItem>
-            <DropdownMenuItem>View sessions</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/psychologist/clients/${client.id}`)}>
+              View client profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/psychologist/clients/${client.id}/sessions`)}>
+              View session history
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
