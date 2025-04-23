@@ -14,6 +14,13 @@ export default [
                         index("routes/psychologist/client-profile.tsx"),
                         route("sessions", "routes/psychologist/client-sessions.tsx"), 
                         route("progress", "routes/psychologist/client-progress.tsx"),
+                        ...prefix("sessions", [
+                            ...prefix(":sessionId", [
+                                ...prefix("attachment", [
+                                    route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
+                                ]),
+                            ]),
+                        ]),
                     ]),
                 ]),
             ]),
