@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AppPageHeader } from "~/components/AppPageHeader";
 import type { ColumnDef, ColumnFiltersState, SortingState, FilterFn } from "@tanstack/react-table";
-import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { useState } from "react";
 import { format, isToday } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,15 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router";
 import { ClientForm } from "@/components/ClientForm";
-
-type Client = {
-  id: string;
-  username: string;
-  name: string;
-  upcomingSession: Date | null;
-  lastSession: Date | null;
-  sessionsCount: number;
-};
+import { DataTablePagination } from "@/components/DataTablePagination";
+import { fakeClients, type Client } from "@/test-data/fakeClients";
 
 const todayFilterFn: FilterFn<Client> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;
@@ -33,6 +26,13 @@ const todayFilterFn: FilterFn<Client> = (row, columnId) => {
 };
 
 const columns: ColumnDef<Client>[] = [
+  {
+    id: "index",
+    header: "#",
+    cell: ({ row }) => {
+      return row.index + 1;
+    },
+  },
   {
     accessorKey: "username",
     header: "Username",
@@ -123,42 +123,6 @@ const columns: ColumnDef<Client>[] = [
   },
 ];
 
-// Fake data
-const fakeClients: Client[] = [
-  {
-    id: "1",
-    username: "john_doe",
-    name: "John Doe",
-    upcomingSession: new Date(), // Today
-    lastSession: new Date(2024, 3, 18, 15, 0),
-    sessionsCount: 5,
-  },
-  {
-    id: "2",
-    username: "jane_smith",
-    name: "Jane Smith",
-    upcomingSession: new Date(2024, 3, 26, 10, 0),
-    lastSession: new Date(2024, 3, 19, 11, 0),
-    sessionsCount: 3,
-  },
-  {
-    id: "3",
-    username: "bob_wilson",
-    name: "Bob Wilson",
-    upcomingSession: null,
-    lastSession: new Date(2024, 3, 20, 16, 0),
-    sessionsCount: 2,
-  },
-  {
-    id: "4",
-    username: "alice_johnson",
-    name: "Alice Johnson",
-    upcomingSession: new Date(2024, 3, 23, 12, 0),
-    lastSession: new Date(2024, 3, 21, 14, 0),
-    sessionsCount: 4,
-  },
-];
-
 export default function Clients() {
   const [data] = useState<Client[]>(fakeClients);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -175,6 +139,7 @@ export default function Clients() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     state: {
@@ -265,6 +230,10 @@ export default function Clients() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="mt-4">
+        <DataTablePagination table={table} />
       </div>
     </div>
   );
