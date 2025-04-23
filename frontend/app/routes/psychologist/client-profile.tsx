@@ -1,8 +1,7 @@
-import { AppPageHeader } from "~/components/AppPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Copy, Phone, MessageSquare, Instagram, Mail, Edit } from "lucide-react";
+import { Copy, Phone, MessageSquare, Instagram, Mail, Edit, Calendar, History, TrendingUp, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { ClientForm } from "@/components/ClientForm";
 import { Link } from "react-router";
@@ -90,8 +89,8 @@ export default function ClientProfile({ params }: ClientProfileProps) {
     telegram: "@blinolad",
     instagram: "@blinolad",
     registrationDate: new Date(2024, 0, 1),
-    lastSession: new Date(2024, 3, 18, 15, 0),
-    nextSession: new Date(2024, 3, 25, 15, 0),
+    lastSession: { id: "session1", date: new Date(2024, 3, 18, 15, 0) },
+    nextSession: { id: "session2", date: new Date(2024, 3, 25, 15, 0) },
     sessionsCount: 5,
     impressionsCount: 12,
     recommendationsCount: 3,
@@ -108,28 +107,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <AppPageHeader text={`Client Profile: ${client.name}`} />
-        <ClientForm
-          mode="edit"
-          trigger={
-            <Button variant="outline">
-              <Edit className="h-4 w-4" /> Edit client
-            </Button>
-          }
-          initialData={{
-            username: client.username,
-            name: client.name,
-            email: client.email,
-            phone: client.phone,
-            telegram: client.telegram,
-            instagram: client.instagram,
-          }}
-          onSubmit={handleEditClient}
-        />
-      </div>
-      
+    <>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
@@ -202,11 +180,11 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               </div>
               <div>
                 <span className="font-medium">Last Session:</span>{" "}
-                {format(client.lastSession, "PPP p")}
+                {format(client.lastSession.date, "PPP p")}
               </div>
               <div>
                 <span className="font-medium">Next Session:</span>{" "}
-                {client.nextSession ? format(client.nextSession, "PPP p") : "-"}
+                {client.nextSession ? format(client.nextSession.date, "PPP p") : "-"}
               </div>
               <div>
                 <span className="font-medium">Total Impressions:</span>{" "}
@@ -220,6 +198,98 @@ export default function ClientProfile({ params }: ClientProfileProps) {
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Actions</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          <ClientForm
+            mode="edit"
+            trigger={
+                <Button
+                  variant="outline"
+                  className="h-24 w-full flex flex-col items-center justify-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>
+                    Edit client
+                  </span>
+                </Button>
+            }
+            initialData={{
+              username: client.username,
+              name: client.name,
+              email: client.email,
+              phone: client.phone,
+              telegram: client.telegram,
+              instagram: client.instagram,
+            }}
+            onSubmit={handleEditClient}
+          />
+
+          <Button
+            variant="outline"
+            className="h-24 flex flex-col items-center justify-center gap-2"
+            onClick={() => {
+              // TODO: Implement schedule session
+              console.log("Schedule session clicked");
+            }}
+          >
+            <Calendar className="h-6 w-6" />
+            <span>Schedule Session</span>
+          </Button>
+
+          <Link to={`/psychologist/clients/${client.id}/progress`}>
+            <Button
+              variant="outline"
+              className="h-24 w-full flex flex-col items-center justify-center gap-2"
+            >
+              <TrendingUp className="h-6 w-6" />
+              <span>View Progress</span>
+            </Button>
+          </Link>
+
+          {client.lastSession && (
+            <Link to={`/psychologist/sessions/${client.lastSession.id}`}>
+              <Button
+                variant="outline"
+                className="h-24 w-full flex flex-col items-center justify-center gap-2"
+              >
+                <ArrowLeft className="h-6 w-6" />
+                <span>View Last Session</span>
+                <span className="text-sm text-muted-foreground">
+                  {format(client.lastSession.date, "PPP p")}
+                </span>
+              </Button>
+            </Link>
+          )}
+
+
+          <Link to={`/psychologist/clients/${client.id}/sessions`}>
+            <Button
+              variant="outline"
+              className="h-24 w-full flex flex-col items-center justify-center gap-2"
+            >
+              <History className="h-6 w-6" />
+              <span>View Session History</span>
+            </Button>
+          </Link>
+
+          {client.nextSession && (
+            <Link to={`/psychologist/sessions/${client.nextSession.id}`}>
+              <Button
+                variant="outline"
+                className="h-24 w-full flex flex-col items-center justify-center gap-2"
+              >
+                <ArrowRight className="h-6 w-6" />
+                <span>View Next Session</span>
+                <span className="text-sm text-muted-foreground">
+                  {format(client.nextSession.date, "PPP p")}
+                </span>
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+    </>
   );
 } 

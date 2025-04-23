@@ -65,8 +65,8 @@ const columns: ColumnDef<Client>[] = [
       );
     },
     cell: ({ row }) => {
-      const date = row.getValue("upcomingSession") as Date | null;
-      return date ? format(date, "PPP p") : "-";
+      const session = row.getValue("upcomingSession") as { id: string; date: Date } | null;
+      return session ? format(session.date, "PPP p") : "-";
     },
     filterFn: todayFilterFn,
   },
@@ -84,8 +84,8 @@ const columns: ColumnDef<Client>[] = [
       );
     },
     cell: ({ row }) => {
-      const date = row.getValue("lastSession") as Date | null;
-      return date ? format(date, "PPP p") : "-";
+      const session = row.getValue("lastSession") as { id: string; date: Date } | null;
+      return session ? format(session.date, "PPP p") : "-";
     },
   },
   {

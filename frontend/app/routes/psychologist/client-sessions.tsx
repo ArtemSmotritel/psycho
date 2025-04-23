@@ -1,9 +1,5 @@
-import { AppPageHeader } from "~/components/AppPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router";
 
 type ClientSessionsProps = {
   params: {
@@ -11,9 +7,7 @@ type ClientSessionsProps = {
   };
 };
 
-export default function ClientSessions({ params }: ClientSessionsProps) {
-  const navigate = useNavigate();
-  
+export default function ClientSessions({ params }: ClientSessionsProps) {  
   // This would be replaced with actual data fetching
   const sessions = [
     {
@@ -37,18 +31,8 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
   ];
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <AppPageHeader text="Session History" />
-      </div>
+    <>
+      <h4 className="text-lg font-semibold mb-4">Session History</h4>
 
       <div className="space-y-4">
         {sessions.map((session) => (
@@ -67,6 +51,6 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
           </Card>
         ))}
       </div>
-    </div>
+    </>
   );
 } 

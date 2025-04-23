@@ -9,8 +9,13 @@ export default [
             index("routes/psychologist/dashboard.index.tsx"),
             ...prefix("clients", [
                 index("routes/psychologist/clients.tsx"),
-                route(":clientId", "routes/psychologist/client-profile.tsx"),
-                route(":clientId/sessions", "routes/psychologist/client-sessions.tsx"), 
+                ...prefix(":clientId", [
+                    layout("routes/psychologist/client-layout.tsx", [
+                        index("routes/psychologist/client-profile.tsx"),
+                        route("sessions", "routes/psychologist/client-sessions.tsx"), 
+                        route("progress", "routes/psychologist/client-progress.tsx"),
+                    ]),
+                ]),
             ]),
             route("associative-images", "routes/psychologist/associative-images.tsx"),
             ...prefix("sessions", [
