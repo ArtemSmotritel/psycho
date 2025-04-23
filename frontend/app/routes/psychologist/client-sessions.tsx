@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
 import { Link } from "react-router";
 import { MessageSquare, Image as ImageIcon, Clock, CheckCircle2, Circle, ChevronLeft, ChevronRight } from "lucide-react";
 import { fakeSessions } from "@/test-data/fakeSessions";
@@ -11,6 +10,7 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
+import { getSessionName } from "~/utils";
 
 type ClientSessionsProps = {
   params: {
@@ -47,7 +47,7 @@ function SessionCard({ session, clientId }: SessionCardProps) {
                 <Circle className="h-5 w-5 text-yellow-500" />
               )}
               <CardTitle className="text-lg">
-                {format(session.date, "PPP p")}
+                {getSessionName(session)}
               </CardTitle>
             </div>
             {session.duration && (

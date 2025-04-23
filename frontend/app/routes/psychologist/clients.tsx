@@ -4,7 +4,7 @@ import { AppPageHeader } from "~/components/AppPageHeader";
 import type { ColumnDef, ColumnFiltersState, SortingState, FilterFn } from "@tanstack/react-table";
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import { useState } from "react";
-import { format, isToday } from "date-fns";
+import { isToday } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import {
@@ -19,6 +19,7 @@ import { useNavigate } from "react-router";
 import { ClientForm } from "@/components/ClientForm";
 import { DataTablePagination } from "@/components/DataTablePagination";
 import { fakeClients, type Client } from "@/test-data/fakeClients";
+import { getSessionName } from "~/utils";
 
 const todayFilterFn: FilterFn<Client> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;
@@ -66,7 +67,7 @@ const columns: ColumnDef<Client>[] = [
     },
     cell: ({ row }) => {
       const session = row.getValue("upcomingSession") as { id: string; date: Date } | null;
-      return session ? format(session.date, "PPP p") : "-";
+      return session ? getSessionName(session) : "-";
     },
     filterFn: todayFilterFn,
   },
@@ -85,7 +86,7 @@ const columns: ColumnDef<Client>[] = [
     },
     cell: ({ row }) => {
       const session = row.getValue("lastSession") as { id: string; date: Date } | null;
-      return session ? format(session.date, "PPP p") : "-";
+      return session ? getSessionName(session) : "-";
     },
   },
   {

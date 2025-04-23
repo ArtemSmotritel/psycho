@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function SessionAttachmentForm() {
   return (
-    <div className="container mx-auto p-4">
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Create Attachment</CardTitle>
@@ -51,6 +51,6 @@ export default function SessionAttachmentForm() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 } 

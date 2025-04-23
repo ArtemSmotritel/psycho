@@ -4,12 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Session() {
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold">Session Details</h1>
-        <p className="text-gray-500">Client Name - Start Time</p>
-      </div>
-
+    <>
       <Tabs defaultValue="notes" className="w-full">
         <TabsList>
           <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -59,6 +54,6 @@ export default function Session() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 } 

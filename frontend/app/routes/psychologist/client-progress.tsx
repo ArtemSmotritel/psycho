@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Calendar, MessageSquare, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router";
 import { useState } from "react";
@@ -11,6 +10,7 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
+import { getSessionName } from "~/utils";
 
 type ClientProgressProps = {
   params: {
@@ -57,7 +57,7 @@ function SessionInTimeline({ session, index, startIndex, clientId, isLastSession
               Session {startIndex + index + 1}
             </Link>
             <div className="text-sm text-muted-foreground">
-              {format(session.date, "PPP")}
+              {getSessionName(session)}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">

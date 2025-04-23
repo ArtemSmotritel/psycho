@@ -16,10 +16,12 @@ export default [
                         ...prefix("sessions", [
                             index("routes/psychologist/client-sessions.tsx"),
                             ...prefix(":sessionId", [
-                                index("routes/psychologist/session.tsx"),
-                                ...prefix("attachment", [
-                                    route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
-                                    route(":type/new", "routes/psychologist/session-attachment-form.tsx"),
+                                layout("routes/psychologist/session-layout.tsx", [
+                                    index("routes/psychologist/session.tsx"),
+                                    ...prefix("attachment", [
+                                        route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
+                                        route(":type/new", "routes/psychologist/session-attachment-form.tsx"),
+                                    ]),
                                 ]),
                             ]),
                         ]),

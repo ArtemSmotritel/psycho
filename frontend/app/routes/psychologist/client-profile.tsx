@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Copy, Phone, MessageSquare, Instagram, Mail, Edit, Calendar, History, TrendingUp, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { ClientForm } from "@/components/ClientForm";
 import { Link } from "react-router";
+import { formatAppDate } from "~/utils";
 
 type ClientProfileProps = {
   params: {
@@ -123,7 +123,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               </div>
               <div>
                 <span className="font-medium">Registration Date:</span>{" "}
-                {format(client.registrationDate, "PPP")}
+                {formatAppDate(client.registrationDate)}
               </div>
             </div>
           </CardContent>
@@ -180,11 +180,11 @@ export default function ClientProfile({ params }: ClientProfileProps) {
               </div>
               <div>
                 <span className="font-medium">Last Session:</span>{" "}
-                {format(client.lastSession.date, "PPP p")}
+                {formatAppDate(client.lastSession.date)}
               </div>
               <div>
                 <span className="font-medium">Next Session:</span>{" "}
-                {client.nextSession ? format(client.nextSession.date, "PPP p") : "-"}
+                {client.nextSession ? formatAppDate(client.nextSession.date) : "-"}
               </div>
               <div>
                 <span className="font-medium">Total Impressions:</span>{" "}
@@ -257,7 +257,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ArrowLeft className="h-6 w-6" />
                 <span>View Last Session</span>
                 <span className="text-sm text-muted-foreground">
-                  {format(client.lastSession.date, "PPP p")}
+                  {formatAppDate(client.lastSession.date)}
                 </span>
               </Button>
             </Link>
@@ -283,7 +283,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ArrowRight className="h-6 w-6" />
                 <span>View Next Session</span>
                 <span className="text-sm text-muted-foreground">
-                  {format(client.nextSession.date, "PPP p")}
+                  {formatAppDate(client.nextSession.date)}
                 </span>
               </Button>
             </Link>

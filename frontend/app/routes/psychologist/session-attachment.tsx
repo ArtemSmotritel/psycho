@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SessionAttachment() {
   return (
-    <div className="container mx-auto p-4">
+    <>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -39,6 +39,6 @@ export default function SessionAttachment() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 } 
