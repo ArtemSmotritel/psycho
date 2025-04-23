@@ -20,19 +20,21 @@ type ClientSessionsProps = {
 
 type SessionCardProps = {
   session: typeof fakeSessions[0];
+  clientId: string;
 };
 
 type SessionsListProps = {
   title: string;
   sessions: typeof fakeSessions;
+  clientId: string;
 };
 
 const ITEMS_PER_PAGE = 4;
 
-function SessionCard({ session }: SessionCardProps) {
+function SessionCard({ session, clientId }: SessionCardProps) {
   return (
     <Link 
-      to={`/psychologist/sessions/${session.id}`}
+      to={`/psychologist/clients/${clientId}/sessions/${session.id}`}
       className="block"
     >
       <Card className="hover:bg-accent/50 transition-colors max-w-lg">
@@ -84,7 +86,7 @@ function SessionCard({ session }: SessionCardProps) {
   );
 }
 
-function SessionsList({ title, sessions }: SessionsListProps) {
+function SessionsList({ title, sessions, clientId }: SessionsListProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = Math.ceil(sessions.length / ITEMS_PER_PAGE);
   const startIndex = currentPage * ITEMS_PER_PAGE;
@@ -127,7 +129,7 @@ function SessionsList({ title, sessions }: SessionsListProps) {
       </div>
       <div className="space-y-4 min-h-[300px]">
         {currentSessions.map((session) => (
-          <SessionCard key={session.id} session={session} />
+          <SessionCard key={session.id} session={session} clientId={clientId} />
         ))}
       </div>
     </div>
@@ -142,8 +144,8 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
   return (
     <div className="container mx-auto p-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SessionsList title="Finished Sessions" sessions={finishedSessions} />
-        <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} />
+        <SessionsList title="Finished Sessions" sessions={finishedSessions} clientId={params.clientId} />
+        <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} clientId={params.clientId} />
       </div>
     </div>
   );

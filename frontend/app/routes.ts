@@ -12,12 +12,14 @@ export default [
                 ...prefix(":clientId", [
                     layout("routes/psychologist/client-layout.tsx", [
                         index("routes/psychologist/client-profile.tsx"),
-                        route("sessions", "routes/psychologist/client-sessions.tsx"), 
                         route("progress", "routes/psychologist/client-progress.tsx"),
                         ...prefix("sessions", [
+                            index("routes/psychologist/client-sessions.tsx"),
                             ...prefix(":sessionId", [
+                                index("routes/psychologist/session.tsx"),
                                 ...prefix("attachment", [
                                     route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
+                                    route(":type/new", "routes/psychologist/session-attachment-form.tsx"),
                                 ]),
                             ]),
                         ]),
@@ -27,9 +29,6 @@ export default [
             route("associative-images", "routes/psychologist/associative-images.tsx"),
             ...prefix("sessions", [
                 index("routes/psychologist/sessions.tsx"),
-                route(":sessionId", "routes/psychologist/session.tsx"),
-                route(":sessionId/attachment/:type/new", "routes/psychologist/session-attachment-form.tsx"),
-                route(":sessionId/attachment/:attachmentId", "routes/psychologist/session-attachment.tsx"),
             ]),
         ]),
     ]),
