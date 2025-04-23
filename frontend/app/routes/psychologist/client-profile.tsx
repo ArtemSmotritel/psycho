@@ -2,8 +2,9 @@ import { AppPageHeader } from "~/components/AppPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Copy, Phone, MessageSquare, Instagram, Mail } from "lucide-react";
+import { Copy, Phone, MessageSquare, Instagram, Mail, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { ClientForm } from "@/components/ClientForm";
 
 type ClientProfileProps = {
   params: {
@@ -66,9 +67,33 @@ export default function ClientProfile({ params }: ClientProfileProps) {
     toast.success(`${label} has been copied to your clipboard.`);
   };
 
+  const handleEditClient = (values: any) => {
+    console.log("Editing client:", values);
+    // TODO: Implement actual client update
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <AppPageHeader text={`Client Profile: ${client.name}`} />
+      <div className="flex justify-between items-center mb-4">
+        <AppPageHeader text={`Client Profile: ${client.name}`} />
+        <ClientForm
+          mode="edit"
+          trigger={
+            <Button variant="outline">
+              <Edit className="h-4 w-4" /> Edit client
+            </Button>
+          }
+          initialData={{
+            username: client.username,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            telegram: client.telegram,
+            instagram: client.instagram,
+          }}
+          onSubmit={handleEditClient}
+        />
+      </div>
       
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
