@@ -6,6 +6,7 @@ import { ClientForm } from "@/components/ClientForm";
 import { Link } from "react-router";
 import { formatAppDate } from "~/utils";
 import { SessionForm } from "@/components/SessionForm";
+import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 
 type ClientProfileProps = {
   params: {
@@ -200,102 +201,70 @@ export default function ClientProfile({ params }: ClientProfileProps) {
         </Card>
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Actions</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <ClientForm
-            mode="edit"
-            trigger={
-                <Button
-                  variant="outline"
-                  className="h-24 w-full flex flex-col items-center justify-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>
-                    Edit client
-                  </span>
-                </Button>
-            }
-            initialData={{
-              username: client.username,
-              name: client.name,
-              email: client.email,
-              phone: client.phone,
-              telegram: client.telegram,
-              instagram: client.instagram,
-            }}
-            onSubmit={handleEditClient}
+      <ActionsSection title="Actions">
+        <ClientForm
+          mode="edit"
+          trigger={
+            <ActionItem
+              icon={<Edit className="h-6 w-6" />}
+              label="Edit client"
+            />
+          }
+          initialData={{
+            username: client.username,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            telegram: client.telegram,
+            instagram: client.instagram,
+          }}
+          onSubmit={handleEditClient}
+        />
+
+        <SessionForm
+          mode="add"
+          trigger={
+            <ActionItem
+              icon={<Calendar className="h-6 w-6" />}
+              label="Schedule Session"
+            />
+          }
+          onSubmit={(values) => {
+            console.log("Scheduling session:", values);
+            // TODO: Implement actual session scheduling
+          }}
+        />
+
+        <ActionItem
+          icon={<TrendingUp className="h-6 w-6" />}
+          label="View Progress"
+          to={`/psychologist/clients/${client.id}/progress`}
+        />
+
+        {client.lastSession && (
+          <ActionItem
+            icon={<ArrowLeft className="h-6 w-6" />}
+            label="View Last Session"
+            to={`/psychologist/clients/${client.id}/sessions/${client.lastSession.id}`}
+            subtext={formatAppDate(client.lastSession.date)}
           />
+        )}
 
-          <SessionForm
-            mode="add"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <Calendar className="h-6 w-6" />
-                <span>Schedule Session</span>
-              </Button>
-            }
-            onSubmit={(values) => {
-              console.log("Scheduling session:", values);
-              // TODO: Implement actual session scheduling
-            }}
+        <ActionItem
+          icon={<History className="h-6 w-6" />}
+          label="View Session History"
+          to={`/psychologist/clients/${client.id}/sessions`}
+        />
+
+        {client.nextSession && (
+          <ActionItem
+            icon={<ArrowRight className="h-6 w-6" />}
+            label="View Next Session"
+            to={`/psychologist/clients/${client.id}/sessions/${client.nextSession.id}`}
+            subtext={formatAppDate(client.nextSession.date)}
           />
-
-          <Link to={`/psychologist/clients/${client.id}/progress`}>
-            <Button
-              variant="outline"
-              className="h-24 w-full flex flex-col items-center justify-center gap-2"
-            >
-              <TrendingUp className="h-6 w-6" />
-              <span>View Progress</span>
-            </Button>
-          </Link>
-
-          {client.lastSession && (
-            <Link to={`/psychologist/clients/${client.id}/sessions/${client.lastSession.id}`}>
-              <Button
-                variant="outline"
-                className="h-24 w-full flex flex-col items-center justify-center gap-2"
-              >
-                <ArrowLeft className="h-6 w-6" />
-                <span>View Last Session</span>
-                <span className="text-sm text-muted-foreground">
-                  {formatAppDate(client.lastSession.date)}
-                </span>
-              </Button>
-            </Link>
-          )}
-
-
-          <Link to={`/psychologist/clients/${client.id}/sessions`}>
-            <Button
-              variant="outline"
-              className="h-24 w-full flex flex-col items-center justify-center gap-2"
-            >
-              <History className="h-6 w-6" />
-              <span>View Session History</span>
-            </Button>
-          </Link>
-
-          {client.nextSession && (
-            <Link to={`/psychologist/clients/${client.id}/sessions/${client.nextSession.id}`}>
-              <Button
-                variant="outline"
-                className="h-24 w-full flex flex-col items-center justify-center gap-2"
-              >
-                <ArrowRight className="h-6 w-6" />
-                <span>View Next Session</span>
-                <span className="text-sm text-muted-foreground">
-                  {formatAppDate(client.nextSession.date)}
-                </span>
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
+        )}
+      </ActionsSection>
     </>
   );
 } 

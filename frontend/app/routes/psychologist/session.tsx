@@ -1,13 +1,65 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Edit, FileText, ThumbsUp, User, Trash2, LogIn } from "lucide-react";
 import { SessionForm } from "@/components/SessionForm";
 import { AttachmentForm } from "@/components/AttachmentForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
+import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
+import type { Attachment } from "~/hooks/useCurrentSession";
+
+interface AttachmentProps {
+  attachment: Attachment;
+  sessionId: string;
+  clientId: string;
+}
+
+function Attachment({ attachment, sessionId, clientId }: AttachmentProps) {
+  return (
+    <Link
+      to={`/psychologist/clients/${clientId}/sessions/${sessionId}/attachment/${attachment.id}`}
+      className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+    >
+      <h3 className="font-medium">{attachment.name}</h3>
+      {attachment.text && (
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+          {attachment.text}
+        </p>
+      )}
+    </Link>
+  );
+}
+
+interface SessionTabContentProps {
+  title: string;
+  attachments: Attachment[];
+  sessionId: string;
+  clientId: string;
+}
+
+function SessionTabContent({ title, attachments, sessionId, clientId }: SessionTabContentProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {attachments.map((attachment) => (
+            <Attachment
+              key={attachment.id}
+              attachment={attachment}
+              sessionId={sessionId}
+              clientId={clientId}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Session() {
   const session = useCurrentSession();
@@ -26,6 +78,8 @@ export default function Session() {
     console.log("Deleting session:", session?.id);
     // TODO: Implement session deletion
   };
+
+  if (!session) return null;
 
   return (
     <>
@@ -66,128 +120,102 @@ export default function Session() {
         </Card>
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Actions</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <AttachmentForm
-            type="note"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <FileText className="h-6 w-6" />
-                <span>Create Note</span>
-              </Button>
-            }
-            onSubmit={(values) => {
-              console.log("Creating note:", values);
-              // TODO: Implement note creation
-            }}
-          />
-
-          <AttachmentForm
-            type="recommendation"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <ThumbsUp className="h-6 w-6" />
-                <span>Create Recommendation</span>
-              </Button>
-            }
-            onSubmit={(values) => {
-              console.log("Creating recommendation:", values);
-              // TODO: Implement recommendation creation
-            }}
-          />
-
-          <AttachmentForm
-            type="impression"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <User className="h-6 w-6" />
-                <span>Create Impression</span>
-              </Button>
-            }
-            onSubmit={(values) => {
-              console.log("Creating impression:", values);
-              // TODO: Implement impression creation
-            }}
-          />
-
-          {isFutureSession && (
-            <SessionForm
-              mode="edit"
-              trigger={
-                <Button
-                  variant="outline"
-                  className="h-24 flex flex-col items-center justify-center gap-2"
-                >
-                  <Edit className="h-6 w-6" />
-                  <span>Edit Session</span>
-                </Button>
-              }
-              initialData={{
-                startTime: session?.date ? new Date(session.date) : undefined,
-                clientId: session?.clientId,
-              }}
-              onSubmit={(values) => {
-                console.log("Updating session:", values);
-                // TODO: Implement session update
-              }}
+      <ActionsSection title="Actions">
+        <AttachmentForm
+          type="note"
+          trigger={
+            <ActionItem
+              icon={<FileText className="h-6 w-6" />}
+              label="Create Note"
             />
-          )}
+          }
+          onSubmit={(values) => {
+            console.log("Creating note:", values);
+            // TODO: Implement note creation
+          }}
+        />
 
-          {session?.googleMeetLink && (
-            <Button
-              disabled={!areJoinComponentsHighlighted}
-              variant={isSessionActive ? "default" : "outline"}
-              className={cn(
-                "h-24 flex flex-col items-center justify-center gap-2",
-                areJoinComponentsHighlighted && "bg-green-600 hover:bg-green-700 text-white"
-              )}
-              onClick={() => window.open(session.googleMeetLink, "_blank")}
-            >
-              <LogIn className="h-6 w-6" />
-              <span>Join Session</span>
-              {isSessionActive && (
-                <span className="text-xs text-green-100">Session is active</span>
-              )}
-            </Button>
-          )}
+        <AttachmentForm
+          type="recommendation"
+          trigger={
+            <ActionItem
+              icon={<ThumbsUp className="h-6 w-6" />}
+              label="Create Recommendation"
+            />
+          }
+          onSubmit={(values) => {
+            console.log("Creating recommendation:", values);
+            // TODO: Implement recommendation creation
+          }}
+        />
 
-          <Link to={`/psychologist/clients/${session?.clientId}`}>
-            <Button
-              variant="outline"
-              className="h-24 w-full flex flex-col items-center justify-center gap-2"
-            >
-              <User className="h-6 w-6" />
-              <span>Visit Client Profile</span>
-            </Button>
-          </Link>
+        <AttachmentForm
+          type="impression"
+          trigger={
+            <ActionItem
+              icon={<User className="h-6 w-6" />}
+              label="Create Impression"
+            />
+          }
+          onSubmit={(values) => {
+            console.log("Creating impression:", values);
+            // TODO: Implement impression creation
+          }}
+        />
 
-          <ConfirmAction
+        {isFutureSession && (
+          <SessionForm
+            mode="edit"
             trigger={
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-6 w-6" />
-                <span>Delete Session</span>
-              </Button>
+              <ActionItem
+                icon={<Edit className="h-6 w-6" />}
+                label="Edit Session"
+              />
             }
-            title="Delete Session"
-            description="Are you sure you want to delete this session? This action cannot be undone."
-            confirmText="Delete"
-            onConfirm={handleDeleteSession}
+            initialData={{
+              startTime: session?.date ? new Date(session.date) : undefined,
+              clientId: session?.clientId,
+            }}
+            onSubmit={(values) => {
+              console.log("Updating session:", values);
+              // TODO: Implement session update
+            }}
           />
-        </div>
-      </div>
+        )}
+
+        {session?.googleMeetLink && (
+          <ActionItem
+            icon={<LogIn className="h-6 w-6" />}
+            label="Join Session"
+            variant={isSessionActive ? "default" : "outline"}
+            className={areJoinComponentsHighlighted ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+            href={session.googleMeetLink}
+            disabled={!areJoinComponentsHighlighted}
+            subtext={isSessionActive ? "Session is active" : undefined}
+          />
+        )}
+
+        <ActionItem
+          icon={<User className="h-6 w-6" />}
+          label="Visit Client Profile"
+          to={`/psychologist/clients/${session?.clientId}`}
+        />
+
+        <ConfirmAction
+          trigger={
+            <ActionItem
+              icon={<Trash2 className="h-6 w-6" />}
+              label="Delete Session"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+            />
+          }
+          title="Delete Session"
+          description="Are you sure you want to delete this session? This action cannot be undone."
+          confirmText="Delete"
+          onConfirm={handleDeleteSession}
+        />
+      </ActionsSection>
 
       <Tabs defaultValue="notes" className="w-full">
         <TabsList>
@@ -197,81 +225,30 @@ export default function Session() {
         </TabsList>
 
         <TabsContent value="notes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {session?.notes?.map((note) => (
-                  <Link
-                    key={note.id}
-                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${note.id}`}
-                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <h3 className="font-medium">{note.name}</h3>
-                    {note.text && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {note.text}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <SessionTabContent
+            title="Notes"
+            attachments={session.notes}
+            sessionId={session.id}
+            clientId={session.clientId}
+          />
         </TabsContent>
 
         <TabsContent value="recommendations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recommendations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {session?.recommendations?.map((recommendation) => (
-                  <Link
-                    key={recommendation.id}
-                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${recommendation.id}`}
-                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <h3 className="font-medium">{recommendation.name}</h3>
-                    {recommendation.text && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {recommendation.text}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <SessionTabContent
+            title="Recommendations"
+            attachments={session.recommendations}
+            sessionId={session.id}
+            clientId={session.clientId}
+          />
         </TabsContent>
 
         <TabsContent value="impressions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Impressions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {session?.impressions?.map((impression) => (
-                  <Link
-                    key={impression.id}
-                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${impression.id}`}
-                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <h3 className="font-medium">{impression.name}</h3>
-                    {impression.text && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {impression.text}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <SessionTabContent
+            title="Client Impressions"
+            attachments={session.impressions}
+            sessionId={session.id}
+            clientId={session.clientId}
+          />
         </TabsContent>
       </Tabs>
     </>

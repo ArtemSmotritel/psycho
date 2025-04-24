@@ -3,7 +3,7 @@ import { fakeSessions } from "~/test-data/fakeSessions";
 
 export type AttachmentType = "note" | "recommendation" | "impression";
 
-interface Attachment {
+export interface Attachment {
   id: string;
   name: string;
   type: AttachmentType;
