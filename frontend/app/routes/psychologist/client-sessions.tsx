@@ -4,6 +4,7 @@ import { MessageSquare, Image as ImageIcon, Clock, CheckCircle2, Circle, Chevron
 import { fakeSessions } from "@/test-data/fakeSessions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Pagination,
   PaginationContent,
@@ -27,6 +28,7 @@ type SessionsListProps = {
   title: string;
   sessions: typeof fakeSessions;
   clientId: string;
+  oldestFirst: boolean;
 };
 
 const ITEMS_PER_PAGE = 4;
@@ -86,17 +88,42 @@ function SessionCard({ session, clientId }: SessionCardProps) {
   );
 }
 
-function SessionsList({ title, sessions, clientId }: SessionsListProps) {
+function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListProps) {
   const [currentPage, setCurrentPage] = useState(0);
+  const [isAscending, setIsAscending] = useState(oldestFirst);
   const totalPages = Math.ceil(sessions.length / ITEMS_PER_PAGE);
   const startIndex = currentPage * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentSessions = sessions.slice(startIndex, endIndex);
+  
+  const sortedSessions = [...sessions].sort((a, b) => {
+    return isAscending 
+      ? a.date.getTime() - b.date.getTime()
+      : b.date.getTime() - a.date.getTime();
+  });
+  
+  const currentSessions = sortedSessions.slice(startIndex, endIndex);
+
+  const handleOrderChange = (checked: boolean) => {
+    setIsAscending(checked);
+    setCurrentPage(0); // Reset to first page when changing order
+  };
 
   return (
     <div className="w-[450px]">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-semibold">{title}</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-lg font-semibold">{title}</h4>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="session-order"
+              checked={isAscending}
+              onCheckedChange={handleOrderChange}
+            />
+            <label htmlFor="session-order" className="text-sm text-muted-foreground">
+              {isAscending ? "Oldest First" : "Newest First"}
+            </label>
+          </div>
+        </div>
         <Pagination className="justify-end">
           <PaginationContent>
             <PaginationItem>
@@ -144,8 +171,8 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
   return (
     <div className="container mx-auto p-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SessionsList title="Finished Sessions" sessions={finishedSessions} clientId={params.clientId} />
-        <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} clientId={params.clientId} />
+        <SessionsList title="Finished Sessions" sessions={finishedSessions} clientId={params.clientId} oldestFirst={false} />
+        <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} clientId={params.clientId} oldestFirst={true} />
       </div>
     </div>
   );
