@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Edit, FileText, ThumbsUp, User, Trash2, LogIn } from "lucide-react";
 import { SessionForm } from "@/components/SessionForm";
+import { AttachmentForm } from "@/components/AttachmentForm";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
@@ -62,29 +63,56 @@ export default function Session() {
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-4">Actions</h2>
         <div className="grid gap-4 md:grid-cols-3">
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2"
-          >
-            <FileText className="h-6 w-6" />
-            <span>Create Note</span>
-          </Button>
+          <AttachmentForm
+            type="note"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2"
+              >
+                <FileText className="h-6 w-6" />
+                <span>Create Note</span>
+              </Button>
+            }
+            onSubmit={(values) => {
+              console.log("Creating note:", values);
+              // TODO: Implement note creation
+            }}
+          />
 
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2"
-          >
-            <ThumbsUp className="h-6 w-6" />
-            <span>Create Recommendation</span>
-          </Button>
+          <AttachmentForm
+            type="recommendation"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2"
+              >
+                <ThumbsUp className="h-6 w-6" />
+                <span>Create Recommendation</span>
+              </Button>
+            }
+            onSubmit={(values) => {
+              console.log("Creating recommendation:", values);
+              // TODO: Implement recommendation creation
+            }}
+          />
 
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2"
-          >
-            <User className="h-6 w-6" />
-            <span>Create Impression</span>
-          </Button>
+          <AttachmentForm
+            type="impression"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2"
+              >
+                <User className="h-6 w-6" />
+                <span>Create Impression</span>
+              </Button>
+            }
+            onSubmit={(values) => {
+              console.log("Creating impression:", values);
+              // TODO: Implement impression creation
+            }}
+          />
 
           {isFutureSession && (
             <SessionForm
