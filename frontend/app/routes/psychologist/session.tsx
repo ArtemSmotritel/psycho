@@ -8,8 +8,8 @@ import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
-import { type Attachment } from "~/models/session";
-import { isSessionActive } from "~/utils";
+import { type Attachment, type Session } from "~/models/session";
+import { isSessionActive, isSessionMoreThanDayOld } from "~/utils";
 
 interface AttachmentProps {
   attachment: Attachment;
@@ -62,13 +62,52 @@ function SessionTabContent({ title, attachments, sessionId, clientId }: SessionT
   );
 }
 
+interface GoogleMeetLinkProps {
+  session: Session;
+  isMoreThanDayOld: boolean;
+}
+
+function GoogleMeetLink({ session, isMoreThanDayOld }: GoogleMeetLinkProps) {
+  if (!session) {
+    return null;
+  }
+
+  if (isMoreThanDayOld) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Session is more than 1 day old
+      </p>
+    );
+  }
+
+  if (!session.googleMeetLink) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Google Meet link is absent
+      </p>
+    );
+  }
+  
+  return (
+    <Link
+      to={session.googleMeetLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm text-primary underline"
+    >
+      {session?.googleMeetLink}
+    </Link>
+  );
+}
+
 export default function Session() {
   const session = useCurrentSession();
   const isFutureSession = session?.date ? new Date(session.date) > new Date() : false;
   
   // Check if session is currently active (within 1 hour of start time)
-  const isCurrentlyActive = session?.date ? isSessionActive(session) : false;
-  const areJoinComponentsHighlighted = isCurrentlyActive && !!session?.googleMeetLink;
+  const isCurrentlyActive = session ? isSessionActive(session) : false;
+  const isMoreThanDayOld = session?.date ? isSessionMoreThanDayOld(session.date) : false;
+  const areJoinComponentsHighlighted = isCurrentlyActive && !!session?.googleMeetLink && !isMoreThanDayOld;
 
   const handleDeleteSession = () => {
     console.log("Deleting session:", session?.id);
@@ -95,20 +134,10 @@ export default function Session() {
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-medium">Google Meet</h3>
-                  {session?.googleMeetLink ? (
-                    <a
-                      href={session.googleMeetLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary underline"
-                    >
-                      {session.googleMeetLink}
-                    </a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Google Meet link is absent
-                    </p>
-                  )}
+                  <GoogleMeetLink 
+                    session={session} 
+                    isMoreThanDayOld={isMoreThanDayOld} 
+                  />
                 </div>
               </div>
             </div>
@@ -187,7 +216,7 @@ export default function Session() {
             className={areJoinComponentsHighlighted ? "bg-green-600 hover:bg-green-700 text-white" : ""}
             href={session.googleMeetLink}
             disabled={!areJoinComponentsHighlighted}
-            subtext={isCurrentlyActive ? "Session is active" : undefined}
+            subtext={isCurrentlyActive ? "Session is active" : isMoreThanDayOld ? "Session is more than 1 day old" : undefined}
           />
         )}
 

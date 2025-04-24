@@ -17,3 +17,12 @@ export function isSessionActive(session: Session): boolean {
   const now = new Date();
   return now >= sessionStart && now <= sessionEnd;
 }
+
+export function isSessionMoreThanDayOld(sessionDate: Date | undefined): boolean {
+  if (!sessionDate) return false;
+  
+  const sessionDateObj = new Date(sessionDate);
+  const now = new Date();
+  const oneDayInMs = 24 * 60 * 60 * 1000;
+  return now.getTime() - sessionDateObj.getTime() > oneDayInMs;
+}
