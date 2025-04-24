@@ -1,14 +1,5 @@
 import { useParams } from "react-router";
-import type { AttachmentType } from "./useCurrentSession";
-
-interface Attachment {
-  id: string;
-  name: string;
-  type: AttachmentType;
-  text?: string;
-  voiceFiles?: File[];
-  imageFiles?: File[];
-}
+import type { Attachment } from "~/models/session";
 
 export function useCurrentAttachment(): Attachment | null {
   const { attachmentId } = useParams();

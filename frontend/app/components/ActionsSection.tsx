@@ -2,16 +2,23 @@ import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
-interface ActionItemProps {
+export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+
+export interface ActionItemProps {
   icon: ReactNode;
   label: string;
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  variant?: ButtonVariant;
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
   to?: string; // For internal navigation
   href?: string; // For external links
   subtext?: string;
+}
+
+export interface ActionsSectionProps {
+  title: string;
+  children: ReactNode;
 }
 
 export function ActionItem({
@@ -32,11 +39,11 @@ export function ActionItem({
       onClick={onClick}
       disabled={disabled}
     >
-        <div className="flex flex-col items-center justify-center gap-2">
-            {icon}
-            <span>{label}</span>
-            {subtext && <span className="text-xs text-muted-foreground">{subtext}</span>}
-        </div>
+      <div className="flex flex-col items-center justify-center gap-2">
+        {icon}
+        <span>{label}</span>
+        {subtext && <span className="text-xs text-muted-foreground">{subtext}</span>}
+      </div>
     </Button>
   );
 
@@ -57,11 +64,6 @@ export function ActionItem({
   }
 
   return button;
-}
-
-interface ActionsSectionProps {
-  title: string;
-  children: ReactNode;
 }
 
 export function ActionsSection({ title, children }: ActionsSectionProps) {

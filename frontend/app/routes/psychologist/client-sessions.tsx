@@ -12,6 +12,7 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { getSessionName } from "~/utils";
+import type { Session } from "~/models/session";
 
 type ClientSessionsProps = {
   params: {
@@ -20,13 +21,13 @@ type ClientSessionsProps = {
 };
 
 type SessionCardProps = {
-  session: typeof fakeSessions[0];
+  session: Session;
   clientId: string;
 };
 
 type SessionsListProps = {
   title: string;
-  sessions: typeof fakeSessions;
+  sessions: Session[];
   clientId: string;
   oldestFirst: boolean;
 };

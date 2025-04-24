@@ -11,19 +11,12 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { getSessionName } from "~/utils";
+import type { Session, AttachmentType } from "~/models/session";
 
 type ClientProgressProps = {
   params: {
     clientId: string;
   };
-};
-
-type Session = {
-  id: string;
-  date: Date;
-  notes: Array<{ id: string; text: string }>;
-  impressions: Array<{ id: string; text: string }>;
-  recommendations: Array<{ id: string; text: string }>;
 };
 
 type SessionInTimelineProps = {
@@ -102,87 +95,112 @@ function SessionInTimeline({ session, index, startIndex, clientId, isLastSession
 }
 
 // Fake data for testing
-const fakeProgressData = {
+const fakeProgressData: { sessions: Session[] } = {
   sessions: [
     {
       id: "1",
       date: new Date(2024, 3, 1),
+      clientId: "1",
+      googleMeetLink: "https://meet.google.com/abc-def-ghi",
       notes: [
-        { id: "1", text: "Initial assessment completed" },
-        { id: "2", text: "Client shows interest in cognitive therapy" },
+        { id: "1", name: "Initial Assessment", type: "note" as AttachmentType, text: "Initial assessment completed" },
+        { id: "2", name: "Therapy Interest", type: "note" as AttachmentType, text: "Client shows interest in cognitive therapy" },
       ],
       impressions: [
-        { id: "1", text: "Felt comfortable discussing personal issues" },
-        { id: "2", text: "Expressed interest in continuing therapy" },
+        { id: "1", name: "First Impression", type: "impression" as AttachmentType, text: "Felt comfortable discussing personal issues" },
+        { id: "2", name: "Therapy Interest", type: "impression" as AttachmentType, text: "Expressed interest in continuing therapy" },
       ],
       recommendations: [
-        { id: "1", text: "Practice mindfulness exercises daily" },
-        { id: "2", text: "Keep a mood journal" },
+        { id: "1", name: "Mindfulness Practice", type: "recommendation" as AttachmentType, text: "Practice mindfulness exercises daily" },
+        { id: "2", name: "Mood Journal", type: "recommendation" as AttachmentType, text: "Keep a mood journal" },
       ],
+      notesCount: 2,
+      recommendationsCount: 2,
+      impressionsCount: 2,
     },
     {
       id: "2",
       date: new Date(2024, 3, 8),
+      clientId: "1",
+      googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
       notes: [
-        { id: "3", text: "Discussed childhood experiences" },
-        { id: "4", text: "Identified patterns in behavior" },
+        { id: "3", name: "Childhood Discussion", type: "note" as AttachmentType, text: "Discussed childhood experiences" },
+        { id: "4", name: "Behavior Patterns", type: "note" as AttachmentType, text: "Identified patterns in behavior" },
       ],
       impressions: [
-        { id: "3", text: "Showed improvement in self-awareness" },
-        { id: "4", text: "More open to discussing difficult topics" },
+        { id: "3", name: "Self-Awareness", type: "impression" as AttachmentType, text: "Showed improvement in self-awareness" },
+        { id: "4", name: "Openness", type: "impression" as AttachmentType, text: "More open to discussing difficult topics" },
       ],
       recommendations: [
-        { id: "3", text: "Try progressive muscle relaxation" },
-        { id: "4", text: "Read recommended book on cognitive therapy" },
+        { id: "3", name: "Muscle Relaxation", type: "recommendation" as AttachmentType, text: "Try progressive muscle relaxation" },
+        { id: "4", name: "Reading Assignment", type: "recommendation" as AttachmentType, text: "Read recommended book on cognitive therapy" },
       ],
+      notesCount: 2,
+      recommendationsCount: 2,
+      impressionsCount: 2,
     },
     {
       id: "3",
       date: new Date(2024, 3, 15),
+      clientId: "1",
+      googleMeetLink: "https://meet.google.com/stu-vwx-yz",
       notes: [
-        { id: "5", text: "Reviewed progress on recommendations" },
-        { id: "6", text: "Introduced new coping strategies" },
+        { id: "5", name: "Progress Review", type: "note" as AttachmentType, text: "Reviewed progress on recommendations" },
+        { id: "6", name: "New Strategies", type: "note" as AttachmentType, text: "Introduced new coping strategies" },
       ],
       impressions: [
-        { id: "5", text: "Implementing recommendations effectively" },
-        { id: "6", text: "Showing signs of reduced anxiety" },
+        { id: "5", name: "Implementation", type: "impression" as AttachmentType, text: "Implementing recommendations effectively" },
+        { id: "6", name: "Anxiety Reduction", type: "impression" as AttachmentType, text: "Showing signs of reduced anxiety" },
       ],
       recommendations: [
-        { id: "5", text: "Continue with current exercises" },
-        { id: "6", text: "Start exposure therapy exercises" },
+        { id: "5", name: "Continue Exercises", type: "recommendation" as AttachmentType, text: "Continue with current exercises" },
+        { id: "6", name: "Exposure Therapy", type: "recommendation" as AttachmentType, text: "Start exposure therapy exercises" },
       ],
+      notesCount: 2,
+      recommendationsCount: 2,
+      impressionsCount: 2,
     },
     {
       id: "4",
       date: new Date(2024, 3, 22),
+      clientId: "1",
+      googleMeetLink: "https://meet.google.com/123-456-789",
       notes: [
-        { id: "7", text: "Discussed progress and future goals" },
-        { id: "8", text: "Set up a follow-up appointment" },
+        { id: "7", name: "Progress Discussion", type: "note" as AttachmentType, text: "Discussed progress and future goals" },
+        { id: "8", name: "Follow-up Setup", type: "note" as AttachmentType, text: "Set up a follow-up appointment" },
       ],
       impressions: [
-        { id: "7", text: "Feeling optimistic about progress" },
-        { id: "8", text: "Ready to continue therapy" },
+        { id: "7", name: "Optimism", type: "impression" as AttachmentType, text: "Feeling optimistic about progress" },
+        { id: "8", name: "Continuation", type: "impression" as AttachmentType, text: "Ready to continue therapy" },
       ],
       recommendations: [
-        { id: "7", text: "Schedule a follow-up session" },
-        { id: "8", text: "Review progress and adjust goals" },
+        { id: "7", name: "Follow-up Session", type: "recommendation" as AttachmentType, text: "Schedule a follow-up session" },
+        { id: "8", name: "Progress Review", type: "recommendation" as AttachmentType, text: "Review progress and adjust goals" },
       ],
+      notesCount: 2,
+      recommendationsCount: 2,
+      impressionsCount: 2,
     },
     {
       id: "5",
       date: new Date(2024, 3, 29),
+      clientId: "1",
+      googleMeetLink: "https://meet.google.com/987-654-321",
       notes: [
-        { id: "9", text: "Discussed progress and future goals" },
-        { id: "10", text: "Set up a follow-up appointment" },
+        { id: "9", name: "Progress Discussion", type: "note" as AttachmentType, text: "Discussed progress and future goals" },
+        { id: "10", name: "Follow-up Setup", type: "note" as AttachmentType, text: "Set up a follow-up appointment" },
       ],
       impressions: [
-        { id: "9", text: "Feeling optimistic about progress" },
-        { id: "10", text: "Ready to continue therapy" },
+        { id: "9", name: "Optimism", type: "impression" as AttachmentType, text: "Feeling optimistic about progress" },
+        { id: "10", name: "Continuation", type: "impression" as AttachmentType, text: "Ready to continue therapy" },
       ],
       recommendations: [
-        { id: "9", text: "Schedule a follow-up session" },
-        { id: "10", text: "Review progress and adjust goals" },
+        { id: "9", name: "Follow-up Session", type: "recommendation" as AttachmentType, text: "Schedule a follow-up session" },
+        { id: "10", name: "Progress Review", type: "recommendation" as AttachmentType, text: "Review progress and adjust goals" },
       ],
+      notesCount: 2,
+      recommendationsCount: 2,
+      impressionsCount: 2,
     },
   ],
 };

@@ -1,5 +1,5 @@
 import { addDays, subDays } from "date-fns";
-import type { Session } from "~/hooks/useCurrentSession";
+import type { Session } from "~/models/session";
 
 export const fakeSessions: Session[] = [
   {
@@ -51,7 +51,7 @@ export const fakeSessions: Session[] = [
   ...Array.from({ length: 10 }, (_, i) => ({
     id: `7-${i}`, 
     date: subDays(new Date(), 28 - i),
-    duration: 60,
+    duration: "60",
     description: "Initial consultation and assessment",
     isFinished: true,
     notes: [],

@@ -8,7 +8,8 @@ import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
-import type { Attachment } from "~/hooks/useCurrentSession";
+import { type Attachment } from "~/models/session";
+import { isSessionActive } from "~/utils";
 
 interface AttachmentProps {
   attachment: Attachment;
@@ -66,13 +67,8 @@ export default function Session() {
   const isFutureSession = session?.date ? new Date(session.date) > new Date() : false;
   
   // Check if session is currently active (within 1 hour of start time)
-  const isSessionActive = session?.date ? (() => {
-    const sessionStart = new Date(session.date);
-    const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000); // 1 hour after start
-    const now = new Date();
-    return now >= sessionStart && now <= sessionEnd;
-  })() : false;
-  const areJoinComponentsHighlighted = isSessionActive && !!session?.googleMeetLink;
+  const isCurrentlyActive = session?.date ? isSessionActive(session) : false;
+  const areJoinComponentsHighlighted = isCurrentlyActive && !!session?.googleMeetLink;
 
   const handleDeleteSession = () => {
     console.log("Deleting session:", session?.id);
@@ -187,11 +183,11 @@ export default function Session() {
           <ActionItem
             icon={<LogIn className="h-6 w-6" />}
             label="Join Session"
-            variant={isSessionActive ? "default" : "outline"}
+            variant={isCurrentlyActive ? "default" : "outline"}
             className={areJoinComponentsHighlighted ? "bg-green-600 hover:bg-green-700 text-white" : ""}
             href={session.googleMeetLink}
             disabled={!areJoinComponentsHighlighted}
-            subtext={isSessionActive ? "Session is active" : undefined}
+            subtext={isCurrentlyActive ? "Session is active" : undefined}
           />
         )}
 
