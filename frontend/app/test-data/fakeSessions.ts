@@ -1,111 +1,66 @@
 import { addDays, subDays } from "date-fns";
-
-export type Session = {
-  id: string;
-  date: Date;
-  duration: number | null;
-  description: string | null;
-  isFinished: boolean;
-  notesCount: number;
-  impressionsCount: number;
-  recommendationsCount: number;
-  googleMeetLink?: string;
-  clientId: string;
-};
+import type { Session } from "~/hooks/useCurrentSession";
 
 export const fakeSessions: Session[] = [
   {
     id: "1",
-    date: new Date(),
-    duration: null,
-    description: "Ongoing session",
-    isFinished: false,
-    notesCount: 3,
-    impressionsCount: 2,
-    recommendationsCount: 1,
-    googleMeetLink: "https://meet.google.com/abc-def-ghi",
     clientId: "1",
-  },
-  {
-    id: "session1",
-    date: subDays(new Date(), 7),
-    duration: 60,
-    description: "Initial consultation and assessment",
-    isFinished: true,
-    notesCount: 3,
-    impressionsCount: 2,
-    recommendationsCount: 1,
+    date: new Date("2024-04-20T10:00:00"),
     googleMeetLink: "https://meet.google.com/abc-def-ghi",
-    clientId: "1",
-  },
-  {
-    id: "session1",
-    date: subDays(new Date(), 14),
-    duration: 45,
-    description: "Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem",
-    isFinished: true,
+    notes: [],
+    recommendations: [],
+    impressions: [],
     notesCount: 2,
+    recommendationsCount: 1,
     impressionsCount: 1,
+  },
+  {
+    id: "2",
+    clientId: "1",
+    date: new Date("2024-04-27T10:00:00"),
+    notes: [],
+    recommendations: [],
+    impressions: [],
+    notesCount: 0,
     recommendationsCount: 0,
-    googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
-    clientId: "2",
+    impressionsCount: 0,
   },
   {
     id: "3",
-    date: subDays(new Date(), 21),
-    duration: 60,
-    description: "Progress review and new coping strategies",
-    isFinished: true,
-    notesCount: 4,
-    impressionsCount: 3,
-    recommendationsCount: 2,
-    googleMeetLink: "https://meet.google.com/stu-vwx-yz",
-    clientId: "3",
+    clientId: "2",
+    date: new Date("2024-04-21T14:00:00"),
+    googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
+    notes: [],
+    recommendations: [],
+    impressions: [],
+    notesCount: 1,
+    recommendationsCount: 0,
+    impressionsCount: 1,
   },
   {
     id: "4",
-    date: addDays(new Date(), 7),
-    duration: null,
-    description: "Upcoming session",
-    isFinished: false,
+    clientId: "2",
+    date: addDays(new Date(), 4),
+    notes: [],
+    recommendations: [],
+    impressions: [],
     notesCount: 0,
-    impressionsCount: 0,
     recommendationsCount: 0,
-    clientId: "4",
-  },
-  {
-    id: "5",
-    date: addDays(new Date(), 14),
-    duration: null,
-    description: "Upcoming session",
-    isFinished: false,
-    notesCount: 0,
     impressionsCount: 0,
-    recommendationsCount: 0,
-    clientId: "5",
   },
-  {
-    id: "6",
-    date: addDays(new Date(), 21),
-    duration: null,
-    description: "Upcoming session",
-    isFinished: false,
-    notesCount: 0,
-    impressionsCount: 0,
-    recommendationsCount: 0,
-    clientId: "6",
-  },
-  // add 10 more finished sessions with a loop
   ...Array.from({ length: 10 }, (_, i) => ({
-    id: `7-${i}`,
+    id: `7-${i}`, 
     date: subDays(new Date(), 28 - i),
     duration: 60,
     description: "Initial consultation and assessment",
     isFinished: true,
+    notes: [],
+    recommendations: [],
+    impressions: [],
     notesCount: 3,
     impressionsCount: 2,
     recommendationsCount: 1,
     googleMeetLink: `https://meet.google.com/xyz-${i}`,
     clientId: (i + 7).toString(),
   })),
-]; 
+];

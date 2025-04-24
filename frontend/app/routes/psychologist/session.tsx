@@ -202,7 +202,22 @@ export default function Session() {
               <CardTitle>Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Notes list will go here */}
+              <div className="space-y-4">
+                {session?.notes?.map((note) => (
+                  <Link
+                    key={note.id}
+                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${note.id}`}
+                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                  >
+                    <h3 className="font-medium">{note.name}</h3>
+                    {note.text && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {note.text}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -213,7 +228,22 @@ export default function Session() {
               <CardTitle>Recommendations</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Recommendations list will go here */}
+              <div className="space-y-4">
+                {session?.recommendations?.map((recommendation) => (
+                  <Link
+                    key={recommendation.id}
+                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${recommendation.id}`}
+                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                  >
+                    <h3 className="font-medium">{recommendation.name}</h3>
+                    {recommendation.text && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {recommendation.text}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -224,7 +254,22 @@ export default function Session() {
               <CardTitle>Client Impressions</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Impressions list will go here */}
+              <div className="space-y-4">
+                {session?.impressions?.map((impression) => (
+                  <Link
+                    key={impression.id}
+                    to={`/psychologist/clients/${session.clientId}/sessions/${session.id}/attachment/${impression.id}`}
+                    className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                  >
+                    <h3 className="font-medium">{impression.name}</h3>
+                    {impression.text && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {impression.text}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
