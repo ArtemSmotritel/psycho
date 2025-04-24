@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Edit, FileText, ThumbsUp, User, Trash2, LogIn } from "lucide-react";
 import { SessionForm } from "@/components/SessionForm";
 import { AttachmentForm } from "@/components/AttachmentForm";
+import { ConfirmAction } from "@/components/ConfirmAction";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,11 @@ export default function Session() {
     return now >= sessionStart && now <= sessionEnd;
   })() : false;
   const areJoinComponentsHighlighted = isSessionActive && !!session?.googleMeetLink;
+
+  const handleDeleteSession = () => {
+    console.log("Deleting session:", session?.id);
+    // TODO: Implement session deletion
+  };
 
   return (
     <>
@@ -165,13 +171,21 @@ export default function Session() {
             </Button>
           </Link>
 
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2 text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-6 w-6" />
-            <span>Delete Session</span>
-          </Button>
+          <ConfirmAction
+            trigger={
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-6 w-6" />
+                <span>Delete Session</span>
+              </Button>
+            }
+            title="Delete Session"
+            description="Are you sure you want to delete this session? This action cannot be undone."
+            confirmText="Delete"
+            onConfirm={handleDeleteSession}
+          />
         </div>
       </div>
 
