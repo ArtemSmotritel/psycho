@@ -16,6 +16,18 @@ export type Session = {
 export const fakeSessions: Session[] = [
   {
     id: "1",
+    date: new Date(),
+    duration: null,
+    description: "Ongoing session",
+    isFinished: false,
+    notesCount: 3,
+    impressionsCount: 2,
+    recommendationsCount: 1,
+    googleMeetLink: "https://meet.google.com/abc-def-ghi",
+    clientId: "1",
+  },
+  {
+    id: "session1",
     date: subDays(new Date(), 7),
     duration: 60,
     description: "Initial consultation and assessment",
@@ -27,7 +39,7 @@ export const fakeSessions: Session[] = [
     clientId: "1",
   },
   {
-    id: "2",
+    id: "session1",
     date: subDays(new Date(), 14),
     duration: 45,
     description: "Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem Follow-up session focusing on anxiety management lorem ipsum dolor sit amet lorem lorem lorem",

@@ -255,7 +255,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
           </Link>
 
           {client.lastSession && (
-            <Link to={`/psychologist/sessions/${client.lastSession.id}`}>
+            <Link to={`/psychologist/clients/${client.id}/sessions/${client.lastSession.id}`}>
               <Button
                 variant="outline"
                 className="h-24 w-full flex flex-col items-center justify-center gap-2"
@@ -281,7 +281,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
           </Link>
 
           {client.nextSession && (
-            <Link to={`/psychologist/sessions/${client.nextSession.id}`}>
+            <Link to={`/psychologist/clients/${client.id}/sessions/${client.nextSession.id}`}>
               <Button
                 variant="outline"
                 className="h-24 w-full flex flex-col items-center justify-center gap-2"
