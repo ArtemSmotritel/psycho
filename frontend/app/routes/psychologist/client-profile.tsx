@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ClientForm } from "@/components/ClientForm";
 import { Link } from "react-router";
 import { formatAppDate } from "~/utils";
+import { SessionForm } from "@/components/SessionForm";
 
 type ClientProfileProps = {
   params: {
@@ -226,17 +227,22 @@ export default function ClientProfile({ params }: ClientProfileProps) {
             onSubmit={handleEditClient}
           />
 
-          <Button
-            variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2"
-            onClick={() => {
-              // TODO: Implement schedule session
-              console.log("Schedule session clicked");
+          <SessionForm
+            mode="add"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2"
+              >
+                <Calendar className="h-6 w-6" />
+                <span>Schedule Session</span>
+              </Button>
+            }
+            onSubmit={(values) => {
+              console.log("Scheduling session:", values);
+              // TODO: Implement actual session scheduling
             }}
-          >
-            <Calendar className="h-6 w-6" />
-            <span>Schedule Session</span>
-          </Button>
+          />
 
           <Link to={`/psychologist/clients/${client.id}/progress`}>
             <Button

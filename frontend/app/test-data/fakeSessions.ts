@@ -9,6 +9,8 @@ export type Session = {
   notesCount: number;
   impressionsCount: number;
   recommendationsCount: number;
+  googleMeetLink?: string;
+  clientId: string;
 };
 
 export const fakeSessions: Session[] = [
@@ -21,6 +23,8 @@ export const fakeSessions: Session[] = [
     notesCount: 3,
     impressionsCount: 2,
     recommendationsCount: 1,
+    googleMeetLink: "https://meet.google.com/abc-def-ghi",
+    clientId: "1",
   },
   {
     id: "2",
@@ -31,6 +35,8 @@ export const fakeSessions: Session[] = [
     notesCount: 2,
     impressionsCount: 1,
     recommendationsCount: 0,
+    googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
+    clientId: "2",
   },
   {
     id: "3",
@@ -41,6 +47,8 @@ export const fakeSessions: Session[] = [
     notesCount: 4,
     impressionsCount: 3,
     recommendationsCount: 2,
+    googleMeetLink: "https://meet.google.com/stu-vwx-yz",
+    clientId: "3",
   },
   {
     id: "4",
@@ -51,6 +59,7 @@ export const fakeSessions: Session[] = [
     notesCount: 0,
     impressionsCount: 0,
     recommendationsCount: 0,
+    clientId: "4",
   },
   {
     id: "5",
@@ -61,6 +70,7 @@ export const fakeSessions: Session[] = [
     notesCount: 0,
     impressionsCount: 0,
     recommendationsCount: 0,
+    clientId: "5",
   },
   {
     id: "6",
@@ -71,6 +81,7 @@ export const fakeSessions: Session[] = [
     notesCount: 0,
     impressionsCount: 0,
     recommendationsCount: 0,
+    clientId: "6",
   },
   // add 10 more finished sessions with a loop
   ...Array.from({ length: 10 }, (_, i) => ({
@@ -82,5 +93,7 @@ export const fakeSessions: Session[] = [
     notesCount: 3,
     impressionsCount: 2,
     recommendationsCount: 1,
+    googleMeetLink: `https://meet.google.com/xyz-${i}`,
+    clientId: (i + 7).toString(),
   })),
 ]; 
