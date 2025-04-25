@@ -4,19 +4,7 @@ import { Edit, Mic, Image as ImageIcon, Trash2, FileText, ThumbsUp, User } from 
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { Link } from "react-router";
 import { useCurrentAttachment } from "~/hooks/useCurrentAttachment";
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case "note":
-      return <FileText className="h-4 w-4" />;
-    case "recommendation":
-      return <ThumbsUp className="h-4 w-4" />;
-    case "impression":
-      return <User className="h-4 w-4" />;
-    default:
-      return null;
-  }
-};
+import { AttachmentIcon } from "~/utils/componentUtils";
 
 const getTypeLabel = (type: string) => {
   switch (type) {
@@ -48,7 +36,7 @@ export default function SessionAttachment() {
               <CardTitle>{attachment?.name}</CardTitle>
               {attachment?.type && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {getTypeIcon(attachment.type)}
+                  <AttachmentIcon type={attachment.type} size="h-4 w-4" />
                   <span>{getTypeLabel(attachment.type)}</span>
                 </div>
               )}

@@ -35,7 +35,7 @@ export function ActionItem({
   const button = (
     <Button
       variant={variant}
-      className={`h-24 w-full ${className}`}
+      className={`h-24 w-[200px] ${className}`}
       onClick={onClick}
       disabled={disabled}
     >
@@ -70,7 +70,7 @@ export function ActionsSection({ title, children }: ActionsSectionProps) {
   return (
     <div className="my-8">
       <h2 className="text-lg font-semibold mb-4">{title}</h2>
-      <div className="grid gap-4 md:grid-cols-3">{children}</div>
+      <div className="flex flex-wrap gap-4">{children}</div>
     </div>
   );
 } 

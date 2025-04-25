@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, Edit, FileText, ThumbsUp, User, Trash2, LogIn } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Video, Edit, User, Trash2, LogIn, ArrowRight } from "lucide-react";
 import { SessionForm } from "@/components/SessionForm";
 import { AttachmentForm } from "@/components/AttachmentForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
@@ -10,6 +10,10 @@ import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { type Attachment, type Session } from "~/models/session";
 import { isSessionActive, isSessionMoreThanDayOld } from "~/utils";
+import { Separator } from "@/components/ui/separator";
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { AttachmentIcon } from "~/utils/componentUtils";
 
 interface AttachmentProps {
   attachment: Attachment;
@@ -17,21 +21,31 @@ interface AttachmentProps {
   clientId: string;
 }
 
-function Attachment({ attachment, sessionId, clientId }: AttachmentProps) {
+const Attachment = ({ attachment, sessionId, clientId }: AttachmentProps) => {
   return (
-    <Link
-      to={`/psychologist/clients/${clientId}/sessions/${sessionId}/attachment/${attachment.id}`}
-      className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-    >
-      <h3 className="font-medium">{attachment.name}</h3>
-      {attachment.text && (
-        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-          {attachment.text}
-        </p>
-      )}
-    </Link>
+    <div className="flex items-center justify-between gap-4 px-4 py-5 w-full">
+      <div className="flex items-center gap-2 min-w-[200px]">
+        <span className="flex h-14 w-16 shrink-0 items-center justify-center rounded-md bg-muted">
+          <AttachmentIcon type={attachment.type} />
+        </span>
+        <div className="flex flex-col gap-1">
+          <h3 className="font-semibold">{attachment.name}</h3>
+          <p className="text-sm text-muted-foreground capitalize">
+            {attachment.type}
+          </p>
+        </div>
+      </div>
+      <Button variant="outline" asChild className="w-[200px]">
+        <Link
+          to={`/psychologist/clients/${clientId}/sessions/${sessionId}/attachment/${attachment.id}`}
+        >
+          <span>View {attachment.type}</span>
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </div>
   );
-}
+};
 
 interface SessionTabContentProps {
   title: string;
@@ -42,23 +56,21 @@ interface SessionTabContentProps {
 
 function SessionTabContent({ title, attachments, sessionId, clientId }: SessionTabContentProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {attachments.map((attachment) => (
+    <div className="w-full">
+      <div className="flex flex-col">
+        <Separator />
+        {attachments.map((attachment) => (
+          <React.Fragment key={attachment.id}>
             <Attachment
-              key={attachment.id}
               attachment={attachment}
               sessionId={sessionId}
               clientId={clientId}
             />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            <Separator />
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -150,7 +162,7 @@ export default function Session() {
           type="note"
           trigger={
             <ActionItem
-              icon={<FileText className="h-6 w-6" />}
+              icon={<AttachmentIcon type="note" />}
               label="Create Note"
             />
           }
@@ -164,7 +176,7 @@ export default function Session() {
           type="recommendation"
           trigger={
             <ActionItem
-              icon={<ThumbsUp className="h-6 w-6" />}
+              icon={<AttachmentIcon type="recommendation" />}
               label="Create Recommendation"
             />
           }
@@ -178,7 +190,7 @@ export default function Session() {
           type="impression"
           trigger={
             <ActionItem
-              icon={<User className="h-6 w-6" />}
+              icon={<AttachmentIcon type="impression" />}
               label="Create Impression"
             />
           }
@@ -193,7 +205,7 @@ export default function Session() {
             mode="edit"
             trigger={
               <ActionItem
-                icon={<Edit className="h-6 w-6" />}
+                icon={<Edit className="h-6" />}
                 label="Edit Session"
               />
             }
@@ -210,7 +222,7 @@ export default function Session() {
 
         {session?.googleMeetLink && (
           <ActionItem
-            icon={<LogIn className="h-6 w-6" />}
+            icon={<LogIn className="h-6" />}
             label="Join Session"
             variant={isCurrentlyActive ? "default" : "outline"}
             className={areJoinComponentsHighlighted ? "bg-green-600 hover:bg-green-700 text-white" : ""}
@@ -221,7 +233,7 @@ export default function Session() {
         )}
 
         <ActionItem
-          icon={<User className="h-6 w-6" />}
+          icon={<User className="h-6" />}
           label="Visit Client Profile"
           to={`/psychologist/clients/${session?.clientId}`}
         />
@@ -229,7 +241,7 @@ export default function Session() {
         <ConfirmAction
           trigger={
             <ActionItem
-              icon={<Trash2 className="h-6 w-6" />}
+              icon={<Trash2 className="h-6" />}
               label="Delete Session"
               variant="outline"
               className="text-destructive hover:text-destructive"
@@ -242,14 +254,16 @@ export default function Session() {
         />
       </ActionsSection>
 
+      <h2 className="text-lg font-semibold mb-4">Attachments</h2>
+
       <Tabs defaultValue="notes" className="w-full">
-        <TabsList>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-          <TabsTrigger value="impressions">Client Impressions</TabsTrigger>
+        <TabsList className="w-full">
+          <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
+          <TabsTrigger value="recommendations" className="flex-1">Recommendations</TabsTrigger>
+          <TabsTrigger value="impressions" className="flex-1">Client Impressions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notes">
+        <TabsContent value="notes" className="w-full">
           <SessionTabContent
             title="Notes"
             attachments={session.notes}
@@ -258,7 +272,7 @@ export default function Session() {
           />
         </TabsContent>
 
-        <TabsContent value="recommendations">
+        <TabsContent value="recommendations" className="w-full">
           <SessionTabContent
             title="Recommendations"
             attachments={session.recommendations}
@@ -267,7 +281,7 @@ export default function Session() {
           />
         </TabsContent>
 
-        <TabsContent value="impressions">
+        <TabsContent value="impressions" className="w-full">
           <SessionTabContent
             title="Client Impressions"
             attachments={session.impressions}

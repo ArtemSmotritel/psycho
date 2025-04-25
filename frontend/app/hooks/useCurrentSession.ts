@@ -24,6 +24,54 @@ export function useCurrentSession(): Session | null {
         type: "note",
         text: "Client presented with symptoms of anxiety and stress. Discussed coping mechanisms and relaxation techniques."
       },
+      {
+        id: "4", 
+        name: "Progress Update",
+        type: "note",
+        text: "Client reports improved sleep patterns and reduced anxiety after implementing recommended relaxation techniques."
+      },
+      {
+        id: "5",
+        name: "Goal Setting Session",
+        type: "note", 
+        text: "Worked with client to establish clear therapeutic goals and develop an action plan for the next month."
+      },
+      {
+        id: "6",
+        name: "Family Dynamics",
+        type: "note",
+        text: "Explored family relationships and their impact on current stress levels. Identified key patterns and triggers."
+      },
+      {
+        id: "7",
+        name: "Coping Strategies Review",
+        type: "note",
+        text: "Reviewed effectiveness of current coping strategies. Client showing good progress with mindfulness techniques."
+      },
+      {
+        id: "8",
+        name: "Work-Life Balance",
+        type: "note",
+        text: "Discussed challenges with work-life balance. Developed strategies for setting boundaries and managing workplace stress."
+      },
+      {
+        id: "9",
+        name: "Relationship Issues",
+        type: "note",
+        text: "Addressed ongoing relationship concerns. Focused on communication skills and assertiveness training."
+      },
+      {
+        id: "10",
+        name: "Self-Care Planning",
+        type: "note",
+        text: "Created comprehensive self-care plan including exercise, meditation, and social support activities."
+      },
+      {
+        id: "11",
+        name: "Progress Review",
+        type: "note",
+        text: "Quarterly progress review shows significant improvement in anxiety management and overall emotional regulation."
+      },
     ],
     recommendations: [
       {

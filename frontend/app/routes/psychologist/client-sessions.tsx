@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/pagination";
 import { getSessionName } from "~/utils";
 import type { Session } from "~/models/session";
+import { AttachmentIcon } from "~/utils/componentUtils";
 
 type ClientSessionsProps = {
   params: {
@@ -70,15 +71,15 @@ function SessionCard({ session, clientId }: SessionCardProps) {
             )}
             <div className="flex gap-4 text-sm text-muted-foreground sm:flex-row flex-col">
               <div className="flex items-center gap-1">
-                <MessageSquare className="h-4 w-4" />
+                <AttachmentIcon size="h-4 w-4" type="note" />
                 <span>{session.notesCount} notes</span>
               </div>
               <div className="flex items-center gap-1">
-                <ImageIcon className="h-4 w-4" />
+              <AttachmentIcon size="h-4 w-4" type="impression" />
                 <span>{session.impressionsCount} impressions</span>
               </div>
               <div className="flex items-center gap-1">
-                <MessageSquare className="h-4 w-4" />
+              <AttachmentIcon size="h-4 w-4" type="recommendation" />
                 <span>{session.recommendationsCount} recommendations</span>
               </div>
             </div>
