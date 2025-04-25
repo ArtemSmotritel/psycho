@@ -42,7 +42,7 @@ export default function SessionAttachment() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <>
       <div className="flex items-center gap-4">
         <AttachmentIcon type={attachment.type} size="h-8 w-8" />
         <div>
@@ -135,44 +135,46 @@ export default function SessionAttachment() {
         )}
 
         {attachment.imageFiles && attachment.imageFiles.length > 0 && (
-          <div className="space-y-4 px-10">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
               <h3 className="text-lg font-medium">Images</h3>
             </div>
-            <Carousel className="w-full md:max-w-3xl lg:max-w-5xl max-w-xs" opts={{
-                align: "start",
-                loop: true,
-              }}
-            >
-              <CarouselContent className="-ml-1">
-                {attachment.imageFiles.map((file, index) => (
-                  <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
-                    <div className="relative group aspect-square p-2">
-                      <img
-                        src={getFileUrl(file)}
-                        alt={`Attachment image ${index + 1}`}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-white hover:text-white hover:bg-white/20"
-                          onClick={() => {
-                            window.open(getFileUrl(file), "_blank");
-                          }}
-                        >
-                          View Full Size
-                        </Button>
+            <div className="px-10">
+              <Carousel className="w-full md:max-w-3xl lg:max-w-5xl max-w-xs" opts={{
+                  align: "start",
+                  loop: true,
+                }}
+              >
+                <CarouselContent className="-ml-1">
+                  {attachment.imageFiles.map((file, index) => (
+                    <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
+                      <div className="relative group aspect-square p-2">
+                        <img
+                          src={getFileUrl(file)}
+                          alt={`Attachment image ${index + 1}`}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-white hover:text-white hover:bg-white/20"
+                            onClick={() => {
+                              window.open(getFileUrl(file), "_blank");
+                            }}
+                          >
+                            View Full Size
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            </div>
           </div>
         )}
       </div>
@@ -182,6 +184,6 @@ export default function SessionAttachment() {
         onClose={() => setIsCompleteDialogOpen(false)}
         onSubmit={handleComplete}
       />
-    </div>
+    </>
   );
 } 
