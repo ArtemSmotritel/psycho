@@ -11,7 +11,7 @@ interface AppPageHeaderProps {
 
 export function AppPageHeader({ text, className, linkTo }: AppPageHeaderProps) {
   return (
-    <div className={cn("flex items-center mb-4", className)}>
+    <div className={cn("flex items-center mb-8", className)}>
       <SidebarTrigger />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <h1 className="text-lg font-semibold sm:text-xl md:text-2xl ">

@@ -124,7 +124,7 @@ export default function SessionAttachment() {
               <Mic className="h-5 w-5" />
               <h3 className="text-lg font-medium">Voice Recordings</h3>
             </div>
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1">
               {attachment.voiceFiles.map((file, index) => (
                 <div key={index} className="w-full max-w-md p-4 rounded-lg border">
                   <audio controls className="w-full">

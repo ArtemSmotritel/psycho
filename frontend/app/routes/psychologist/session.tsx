@@ -130,7 +130,7 @@ export default function Session() {
 
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-4">
         <Card>
           <CardContent className="px-3">
             <div className="flex items-center justify-between gap-6">
@@ -254,7 +254,7 @@ export default function Session() {
         />
       </ActionsSection>
 
-      <h2 className="text-lg font-semibold mb-4">Attachments</h2>
+      <h2 className="text-lg font-semibold mb-2">Attachments</h2>
 
       <Tabs defaultValue="notes" className="w-full">
         <TabsList className="w-full">

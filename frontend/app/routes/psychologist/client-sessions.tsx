@@ -171,11 +171,9 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
   const upcomingSessions = sessions.filter(s => !s.isFinished);
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <SessionsList title="Finished Sessions" sessions={finishedSessions} clientId={params.clientId} oldestFirst={false} />
-        <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} clientId={params.clientId} oldestFirst={true} />
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <SessionsList title="Finished Sessions" sessions={finishedSessions} clientId={params.clientId} oldestFirst={false} />
+      <SessionsList title="Upcoming Sessions" sessions={upcomingSessions} clientId={params.clientId} oldestFirst={true} />
     </div>
   );
 } 
