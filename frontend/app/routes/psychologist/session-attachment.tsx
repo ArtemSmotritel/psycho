@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight, CheckCircle, MessageSquare } from "lucide-react";
+import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight, CheckCircle } from "lucide-react";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { Link, useParams } from "react-router";
 import { useCurrentAttachment } from "~/hooks/useCurrentAttachment";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
+import { CompleteImpressionForm } from "@/components/CompleteImpressionForm";
+import { useState } from "react";
 import {
   Carousel,
   CarouselContent,
@@ -29,6 +31,7 @@ const getTypeLabel = (type: string) => {
 export default function SessionAttachment() {
   const attachment = useCurrentAttachment();
   const { clientId, sessionId } = useParams();
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   if (!attachment) {
     return <div>Attachment not found</div>;
@@ -39,13 +42,8 @@ export default function SessionAttachment() {
     // TODO: Implement attachment deletion
   };
 
-  const handleRespond = () => {
-    console.log("Responding to impression:", attachment.id);
-    // TODO: Implement response functionality
-  };
-
-  const handleComplete = () => {
-    console.log("Completing impression:", attachment.id);
+  const handleComplete = (values: { response: string }) => {
+    console.log("Completing impression:", attachment.id, "with response:", values.response);
     // TODO: Implement completion functionality
   };
 
@@ -89,18 +87,11 @@ export default function SessionAttachment() {
         </Link>
 
         {attachment.type === "impression" && (
-          <>
-            <ActionItem
-              icon={<MessageSquare className="h-6" />}
-              label="Respond"
-              onClick={handleRespond}
-            />
-            <ActionItem
-              icon={<CheckCircle className="h-6" />}
-              label="Complete"
-              onClick={handleComplete}
-            />
-          </>
+          <ActionItem
+            icon={<CheckCircle className="h-6" />}
+            label="Complete"
+            onClick={() => setIsCompleteDialogOpen(true)}
+          />
         )}
 
         <ConfirmAction
@@ -133,10 +124,10 @@ export default function SessionAttachment() {
               <Mic className="h-5 w-5" />
               <h3 className="text-lg font-medium">Voice Recordings</h3>
             </div>
-            <div className="space-y-2">
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {attachment.voiceFiles.map((file, index) => (
-                <div key={index} className="flex items-center gap-4 p-3 rounded-lg border">
-                  <audio controls className="flex-1">
+                <div key={index} className="w-full max-w-md p-4 rounded-lg border">
+                  <audio controls className="w-full">
                     <source src={getFileUrl(file)} type="audio/wav" />
                     Your browser does not support the audio element.
                   </audio>
@@ -188,6 +179,12 @@ export default function SessionAttachment() {
           </div>
         )}
       </div>
+
+      <CompleteImpressionForm
+        isOpen={isCompleteDialogOpen}
+        onClose={() => setIsCompleteDialogOpen(false)}
+        onSubmit={handleComplete}
+      />
     </div>
   );
 } 

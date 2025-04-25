@@ -35,7 +35,7 @@ export function ActionItem({
   const button = (
     <Button
       variant={variant}
-      className={`h-24 w-[200px] ${className}`}
+      className={`h-24 w-full md:w-[200px] ${className}`}
       onClick={onClick}
       disabled={disabled}
     >
@@ -49,7 +49,7 @@ export function ActionItem({
 
   if (to && !disabled) {
     return (
-      <Link to={to} className="block">
+      <Link to={to} className="block w-full">
         {button}
       </Link>
     );
@@ -57,7 +57,7 @@ export function ActionItem({
 
   if (href && !disabled) {
     return (
-      <Link to={href} target="_blank" rel="noopener noreferrer" className="block">
+      <Link to={href} target="_blank" rel="noopener noreferrer" className="block w-full">
         {button}
       </Link>
     );
@@ -70,7 +70,7 @@ export function ActionsSection({ title, children }: ActionsSectionProps) {
   return (
     <div className="my-8">
       <h2 className="text-lg font-semibold mb-4">{title}</h2>
-      <div className="flex flex-wrap gap-4">{children}</div>
+      <div className="flex flex-col md:flex-row gap-4 flex-wrap">{children}</div>
     </div>
   );
 } 

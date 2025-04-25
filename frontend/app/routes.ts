@@ -20,7 +20,6 @@ export default [
                                     index("routes/psychologist/session.tsx"),
                                     ...prefix("attachment", [
                                         route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
-                                        route(":type/new", "routes/psychologist/session-attachment-form.tsx"),
                                     ]),
                                 ]),
                             ]),
