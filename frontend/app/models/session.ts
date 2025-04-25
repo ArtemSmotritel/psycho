@@ -5,8 +5,8 @@ export interface Attachment {
   name: string;
   type: AttachmentType;
   text?: string;
-  voiceFiles?: File[];
-  imageFiles?: File[];
+  voiceFiles?: (File | string)[];
+  imageFiles?: (File | string)[];
 }
 
 export interface Session {
