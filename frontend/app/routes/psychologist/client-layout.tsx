@@ -2,7 +2,7 @@ import { Outlet, Link } from "react-router";
 import { AppPageHeader } from "~/components/AppPageHeader";
 import { useCurrentClient } from "~/hooks/useCurrentClient";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
-import { getSessionName } from "~/utils";
+import { getSessionName } from "~/utils/utils";
 
 export default function ClientLayout() {
   const client = useCurrentClient();

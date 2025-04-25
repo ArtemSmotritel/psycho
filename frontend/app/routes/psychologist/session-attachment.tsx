@@ -15,7 +15,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { getAttachmentTypeLabel, getFileUrl } from "~/utils";
+import { getAttachmentTypeLabel, getFileUrl } from "~/utils/utils";
 
 export default function SessionAttachment() {
   const attachment = useCurrentAttachment();

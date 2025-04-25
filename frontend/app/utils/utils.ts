@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { Session } from "./models/session";
+import type { Session } from "~/models/session";
 
 export function getSessionName(session: { date: Date }) {
   return `Session ${formatAppDate(session.date)}`;

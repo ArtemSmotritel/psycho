@@ -7,12 +7,12 @@ import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
 import { type Attachment, type Session } from "~/models/session";
-import { isSessionActive, isSessionMoreThanDayOld } from "~/utils";
 import { Separator } from "@/components/ui/separator";
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { isSessionActive, isSessionMoreThanDayOld } from "~/utils/utils";
 
 interface AttachmentProps {
   attachment: Attachment;

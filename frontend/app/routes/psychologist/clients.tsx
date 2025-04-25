@@ -19,7 +19,7 @@ import { useNavigate } from "react-router";
 import { ClientForm } from "@/components/ClientForm";
 import { DataTablePagination } from "@/components/DataTablePagination";
 import { fakeClients, type Client } from "@/test-data/fakeClients";
-import { getSessionName } from "~/utils";
+import { getSessionName } from "~/utils/utils";
 
 const todayFilterFn: FilterFn<Client> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;

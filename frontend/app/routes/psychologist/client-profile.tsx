@@ -4,9 +4,9 @@ import { Copy, Phone, MessageSquare, Instagram, Mail, Edit, Calendar, History, T
 import { toast } from "sonner";
 import { ClientForm } from "@/components/ClientForm";
 import { Link } from "react-router";
-import { formatAppDate } from "~/utils";
 import { SessionForm } from "@/components/SessionForm";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
+import { formatAppDate } from "~/utils/utils";
 
 type ClientProfileProps = {
   params: {

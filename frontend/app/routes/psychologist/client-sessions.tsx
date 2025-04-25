@@ -11,9 +11,9 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { getSessionName } from "~/utils";
 import type { Session } from "~/models/session";
 import { AttachmentIcon } from "~/utils/componentUtils";
+import { getSessionName } from "~/utils/utils";
 
 type ClientSessionsProps = {
   params: {

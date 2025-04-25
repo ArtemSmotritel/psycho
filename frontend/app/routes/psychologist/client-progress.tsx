@@ -10,8 +10,8 @@ import {
   PaginationItem,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { getSessionName } from "~/utils";
 import type { Session, AttachmentType } from "~/models/session";
+import { getSessionName } from "~/utils/utils";
 
 type ClientProgressProps = {
   params: {

@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Mic, Image as ImageIcon, Square } from "lucide-react";
 import { useReactMediaRecorder } from "react-media-recorder";
-import { getAttachmentTypeLabel, getFileUrl } from "~/utils";
+import { getAttachmentTypeLabel, getFileUrl } from "../utils/utils";
 
 const MAX_VOICE_FILES = 3;
 const MAX_IMAGE_FILES = 9;
