@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router";
-import { MessageSquare, Image as ImageIcon, Clock, CheckCircle2, Circle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Clock, CheckCircle2, Circle, ChevronLeft, ChevronRight } from "lucide-react";
 import { fakeSessions } from "@/test-data/fakeSessions";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import type { Session } from "~/models/session";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { getSessionName } from "~/utils/utils";
+import { EmptyMessage } from "~/components/EmptyMessage";
 
 type ClientSessionsProps = {
   params: {
@@ -160,6 +161,12 @@ function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListPr
         {currentSessions.map((session) => (
           <SessionCard key={session.id} session={session} clientId={clientId} />
         ))}
+        {sessions.length === 0 && (
+          <EmptyMessage
+            title="No Sessions"
+            description={title === "Finished Sessions" ? "Participate in a sesion to see it here" : "Schedule a session to see it here"}
+          />
+        )}
       </div>
     </div>
   );

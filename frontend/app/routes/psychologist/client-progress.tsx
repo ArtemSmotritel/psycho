@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/pagination";
 import type { Session, AttachmentType } from "~/models/session";
 import { getSessionName } from "~/utils/utils";
+import { EmptyMessage } from "~/components/EmptyMessage";
 
 type ClientProgressProps = {
   params: {
@@ -287,6 +288,12 @@ export default function ClientProgress({ params }: ClientProgressProps) {
             />
           );
         })}
+        {sortedSessions.length === 0 && (
+          <EmptyMessage
+            title="No Sessions"
+            description="Participate in a session and leave an impression to see progress"
+          />
+        )}
       </div>
     </div>
   );
