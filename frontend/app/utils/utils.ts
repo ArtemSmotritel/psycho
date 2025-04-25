@@ -5,7 +5,11 @@ export function getSessionName(session: { date: Date }) {
   return `Session ${formatAppDate(session.date)}`;
 }
 
-export function formatAppDate(date: Date) {
+export function formatAppDate(date: Date | string) {
+  if (typeof date === 'string') {
+    return format(new Date(date), "PPP HH:mm");
+  }
+
   return format(date, "PPP HH:mm");
 }
 

@@ -1,41 +1,69 @@
-import { addDays, subDays } from "date-fns";
+import { addDays, subDays, format } from "date-fns";
 import type { Session } from "~/models/session";
 
 export const fakeSessions: Session[] = [
   {
     id: "1",
     clientId: "1",
-    date: new Date("2024-04-20T10:00:00"),
-    googleMeetLink: "https://meet.google.com/abc-def-ghi",
-    notes: [],
-    recommendations: [],
-    impressions: [],
-    notesCount: 2,
+    date: new Date(2024, 2, 15, 10, 0),
+    notes: [
+      {
+        id: "1",
+        name: "Note 1",
+        type: "note",
+        text: "Initial assessment completed"
+      }
+    ],
+    recommendations: [
+      {
+        id: "1",
+        name: "Recommendation 1",
+        type: "recommendation",
+        text: "Practice mindfulness daily"
+      }
+    ],
+    impressions: [
+      {
+        id: "1",
+        name: "Impression 1",
+        type: "impression",
+        text: "Client showed good engagement"
+      }
+    ],
+    notesCount: 1,
     recommendationsCount: 1,
     impressionsCount: 1,
+    isFinished: true,
+    duration: "60",
+    description: "Initial consultation"
   },
   {
     id: "2",
-    clientId: "1",
-    date: new Date("2024-04-27T10:00:00"),
+    clientId: "2",
+    date: new Date(2024, 2, 15, 14, 30),
     notes: [],
     recommendations: [],
     impressions: [],
     notesCount: 0,
     recommendationsCount: 0,
     impressionsCount: 0,
+    isFinished: false,
+    duration: "60",
+    description: "Follow-up session"
   },
   {
     id: "3",
-    clientId: "2",
+    clientId: "3",
     date: new Date(),
-    googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
     notes: [],
     recommendations: [],
     impressions: [],
-    notesCount: 1,
+    notesCount: 0,
     recommendationsCount: 0,
-    impressionsCount: 1,
+    impressionsCount: 0,
+    isFinished: false,
+    duration: "60",
+    description: "New client intake"
   },
   {
     id: "4",
