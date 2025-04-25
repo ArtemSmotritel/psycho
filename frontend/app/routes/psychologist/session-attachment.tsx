@@ -7,6 +7,7 @@ import { AttachmentIcon } from "~/utils/componentUtils";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { CompleteImpressionForm } from "@/components/CompleteImpressionForm";
 import { AttachmentForm } from "@/components/AttachmentForm";
+import { EmptyMessage } from "@/components/EmptyMessage";
 import { useState } from "react";
 import {
   Carousel,
@@ -16,6 +17,81 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { getAttachmentTypeLabel, getFileUrl } from "~/utils/utils";
+
+interface ImageAttachmentsProps {
+  files: (File | string)[] | undefined;
+}
+
+function ImageAttachments({ files }: ImageAttachmentsProps) {
+  if (!files || files.length === 0) {
+    return (
+      <EmptyMessage
+        title="No Images"
+        description="This attachment doesn't have any images yet."
+      />
+    );
+  }
+
+  return (
+    <Carousel className="w-full md:max-w-3xl lg:max-w-5xl max-w-xs" opts={{ loop: true, align: 'start' }}>
+      <CarouselContent>
+        {files.map((file, index) => (
+          <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
+            <div className="relative group aspect-square p-2">
+              <img
+                src={getFileUrl(file)}
+                alt={`Attachment image ${index + 1}`}
+                className="w-full h-full object-cover rounded-lg"
+              />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:text-white hover:bg-white/20"
+                  onClick={() => {
+                    window.open(getFileUrl(file), "_blank");
+                  }}
+                >
+                  View Full Size
+                </Button>
+              </div>
+            </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious />
+      <CarouselNext />
+    </Carousel>
+  );
+}
+
+interface VoiceAttachmentsProps {
+  files: (File | string)[] | undefined;
+}
+
+function VoiceAttachments({ files }: VoiceAttachmentsProps) {
+  if (!files || files.length === 0) {
+    return (
+      <EmptyMessage
+        title="No Voice Recordings"
+        description="This attachment doesn't have any voice recordings yet."
+      />
+    );
+  }
+
+  return (
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {files.map((file, index) => (
+        <div key={index} className="w-full max-w-md p-4 rounded-lg border">
+          <audio controls className="w-full">
+            <source src={getFileUrl(file)} type="audio/wav" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function SessionAttachment() {
   const attachment = useCurrentAttachment();
@@ -115,68 +191,23 @@ export default function SessionAttachment() {
           </div>
         )}
 
-        {attachment.voiceFiles && attachment.voiceFiles.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Mic className="h-5 w-5" />
-              <h3 className="text-lg font-medium">Voice Recordings</h3>
-            </div>
-            <div className="grid gap-4 grid-cols-1">
-              {attachment.voiceFiles.map((file, index) => (
-                <div key={index} className="w-full max-w-md p-4 rounded-lg border">
-                  <audio controls className="w-full">
-                    <source src={getFileUrl(file)} type="audio/wav" />
-                    Your browser does not support the audio element.
-                  </audio>
-                </div>
-              ))}
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Mic className="h-5 w-5" />
+            <h3 className="text-lg font-medium">Voice Recordings</h3>
           </div>
-        )}
+          <VoiceAttachments files={attachment.voiceFiles} />
+        </div>
 
-        {attachment.imageFiles && attachment.imageFiles.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              <h3 className="text-lg font-medium">Images</h3>
-            </div>
-            <div className="px-10">
-              <Carousel className="w-full md:max-w-3xl lg:max-w-5xl max-w-xs" opts={{
-                  align: "start",
-                  loop: true,
-                }}
-              >
-                <CarouselContent className="-ml-1">
-                  {attachment.imageFiles.map((file, index) => (
-                    <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
-                      <div className="relative group aspect-square p-2">
-                        <img
-                          src={getFileUrl(file)}
-                          alt={`Attachment image ${index + 1}`}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-white hover:text-white hover:bg-white/20"
-                            onClick={() => {
-                              window.open(getFileUrl(file), "_blank");
-                            }}
-                          >
-                            View Full Size
-                          </Button>
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-              </Carousel>
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            <h3 className="text-lg font-medium">Images</h3>
           </div>
-        )}
+          <div className="px-10">
+            <ImageAttachments files={attachment.imageFiles} />
+          </div>
+        </div>
       </div>
 
       <CompleteImpressionForm

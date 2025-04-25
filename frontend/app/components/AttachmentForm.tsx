@@ -24,6 +24,8 @@ import { useState, useEffect } from "react";
 import { Mic, Image as ImageIcon, Square } from "lucide-react";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { getAttachmentTypeLabel, getFileUrl } from "../utils/utils";
+import { EmptyMessage } from "./EmptyMessage";
+import { Separator } from "./ui/separator";
 
 const MAX_VOICE_FILES = 3;
 const MAX_IMAGE_FILES = 9;
@@ -181,6 +183,7 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                 </FormItem>
               )}
             />
+            <Separator />
 
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -221,6 +224,37 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                 </p>
               )}
 
+              {voiceFiles.length > 0 ? (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Voice Recordings</h4>
+                  <div className="space-y-2">
+                    {voiceFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <audio controls src={getFileUrl(file)} />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setVoiceFiles(voiceFiles.filter((_, i) => i !== index));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <EmptyMessage
+                  title="No Voice Recordings"
+                  description="Start recording or upload voice files to add them here."
+                  className="py-4"
+                />
+              )}
+
+              <Separator />
+
               <div className="flex items-center gap-4">
                 <Button
                   type="button"
@@ -249,58 +283,41 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                   {form.formState.errors.imageFiles.message}
                 </p>
               )}
-            </div>
 
-            {voiceFiles.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Voice Recordings</h4>
+              {imageFiles.length > 0 ? (
                 <div className="space-y-2">
-                  {voiceFiles.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <audio controls src={getFileUrl(file)} />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setVoiceFiles(voiceFiles.filter((_, i) => i !== index));
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
+                  <h4 className="text-sm font-medium">Images</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {imageFiles.map((file, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={getFileUrl(file)}
+                          alt={`Uploaded image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
+                          onClick={() => {
+                            setImageFiles(imageFiles.filter((_, i) => i !== index));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {imageFiles.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Images</h4>
-                <div className="grid grid-cols-3 gap-2">
-                  {imageFiles.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={getFileUrl(file)}
-                        alt={`Uploaded image ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                        onClick={() => {
-                          setImageFiles(imageFiles.filter((_, i) => i !== index));
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ) : (
+                <EmptyMessage
+                  title="No Images"
+                  description="Upload images to add them here."
+                  className="py-4"
+                />
+              )}
+            </div>
 
             <div className="flex justify-end space-x-2 pt-4 border-t">
               <Button
