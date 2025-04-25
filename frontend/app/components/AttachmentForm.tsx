@@ -20,9 +20,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mic, Image as ImageIcon, Square } from "lucide-react";
 import { useReactMediaRecorder } from "react-media-recorder";
+import { getAttachmentTypeLabel, getFileUrl } from "~/utils";
 
 const MAX_VOICE_FILES = 3;
 const MAX_IMAGE_FILES = 9;
@@ -53,8 +54,34 @@ interface AttachmentFormProps {
 
 export function AttachmentForm({ type, trigger, initialData, onSubmit }: AttachmentFormProps) {
   const [open, setOpen] = useState(false);
-  const [voiceFiles, setVoiceFiles] = useState<File[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [voiceFiles, setVoiceFiles] = useState<(File | string)[]>([]);
+  const [imageFiles, setImageFiles] = useState<(File | string)[]>([]);
+
+  useEffect(() => {
+    if (open && initialData) {
+      if (initialData.voiceFiles) {
+        setVoiceFiles(initialData.voiceFiles);
+      }
+      if (initialData.imageFiles) {
+        setImageFiles(initialData.imageFiles);
+      }
+    }
+  }, [open, initialData]);
+
+  useEffect(() => {
+    return () => {
+      voiceFiles.forEach(file => {
+        if (file instanceof File) {
+          URL.revokeObjectURL(URL.createObjectURL(file));
+        }
+      });
+      imageFiles.forEach(file => {
+        if (file instanceof File) {
+          URL.revokeObjectURL(URL.createObjectURL(file));
+        }
+      });
+    };
+  }, [voiceFiles, imageFiles]);
 
   const {
     status,
@@ -111,23 +138,12 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
     startRecording();
   };
 
-  const getTypeTitle = (type: AttachmentType) => {
-    switch (type) {
-      case "note":
-        return "Note";
-      case "recommendation":
-        return "Recommendation";
-      case "impression":
-        return "Client Impression";
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Create {getTypeTitle(type)}</DialogTitle>
+          <DialogTitle>Create {getAttachmentTypeLabel(type)}</DialogTitle>
           <DialogDescription>
             Add a new {type.toLowerCase()} with optional text, voice recordings, and images.
           </DialogDescription>
@@ -241,7 +257,7 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                 <div className="space-y-2">
                   {voiceFiles.map((file, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <audio controls src={URL.createObjectURL(file)} />
+                      <audio controls src={getFileUrl(file)} />
                       <Button
                         type="button"
                         variant="ghost"
@@ -265,7 +281,7 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                   {imageFiles.map((file, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={URL.createObjectURL(file)}
+                        src={getFileUrl(file)}
                         alt={`Uploaded image ${index + 1}`}
                         className="w-full h-24 object-cover rounded-md"
                       />
@@ -294,7 +310,7 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
               >
                 Cancel
               </Button>
-              <Button type="submit">Create {getTypeTitle(type)}</Button>
+              <Button type="submit">Create {getAttachmentTypeLabel(type)}</Button>
             </div>
           </form>
         </Form>

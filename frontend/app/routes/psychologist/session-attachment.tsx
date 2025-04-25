@@ -6,6 +6,7 @@ import { useCurrentAttachment } from "~/hooks/useCurrentAttachment";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { CompleteImpressionForm } from "@/components/CompleteImpressionForm";
+import { AttachmentForm } from "@/components/AttachmentForm";
 import { useState } from "react";
 import {
   Carousel,
@@ -14,19 +15,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-const getTypeLabel = (type: string) => {
-  switch (type) {
-    case "note":
-      return "Note";
-    case "recommendation":
-      return "Recommendation";
-    case "impression":
-      return "Client Impression";
-    default:
-      return type;
-  }
-};
+import { getAttachmentTypeLabel, getFileUrl } from "~/utils";
 
 export default function SessionAttachment() {
   const attachment = useCurrentAttachment();
@@ -47,11 +36,9 @@ export default function SessionAttachment() {
     // TODO: Implement completion functionality
   };
 
-  const getFileUrl = (file: File | string) => {
-    if (typeof file === 'string') {
-      return file;
-    }
-    return URL.createObjectURL(file);
+  const handleEdit = (values: any) => {
+    console.log("Editing attachment:", attachment.id, "with values:", values);
+    // TODO: Implement edit functionality
   };
 
   return (
@@ -60,17 +47,27 @@ export default function SessionAttachment() {
         <AttachmentIcon type={attachment.type} size="h-8 w-8" />
         <div>
           <h1 className="text-2xl font-bold">{attachment.name}</h1>
-          <p className="text-sm text-muted-foreground">{getTypeLabel(attachment.type)}</p>
+          <p className="text-sm text-muted-foreground">{getAttachmentTypeLabel(attachment.type)}</p>
         </div>
       </div>
 
       <ActionsSection title="Actions">
-        <Link to="edit">
-          <ActionItem
-            icon={<Edit className="h-6" />}
-            label="Edit Attachment"
-          />
-        </Link>
+        <AttachmentForm
+          type={attachment.type as "note" | "recommendation" | "impression"}
+          trigger={
+            <ActionItem
+              icon={<Edit className="h-6" />}
+              label="Edit Attachment"
+            />
+          }
+          initialData={{
+            name: attachment.name,
+            text: attachment.text,
+            voiceFiles: attachment.voiceFiles,
+            imageFiles: attachment.imageFiles,
+          }}
+          onSubmit={handleEdit}
+        />
 
         <Link to={`/psychologist/clients/${clientId}`}>
           <ActionItem

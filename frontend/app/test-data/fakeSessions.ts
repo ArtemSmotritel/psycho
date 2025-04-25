@@ -28,7 +28,7 @@ export const fakeSessions: Session[] = [
   {
     id: "3",
     clientId: "2",
-    date: new Date("2024-04-21T14:00:00"),
+    date: new Date(),
     googleMeetLink: "https://meet.google.com/jkl-mno-pqr",
     notes: [],
     recommendations: [],

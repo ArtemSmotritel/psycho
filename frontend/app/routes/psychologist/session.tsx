@@ -1,5 +1,4 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { Video, Edit, User, Trash2, LogIn, ArrowRight } from "lucide-react";
 import { SessionForm } from "@/components/SessionForm";
 import { AttachmentForm } from "@/components/AttachmentForm";
@@ -7,13 +6,13 @@ import { ConfirmAction } from "@/components/ConfirmAction";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { useCurrentSession } from "~/hooks/useCurrentSession";
 import { Link } from "react-router";
-import { cn } from "@/lib/utils";
 import { type Attachment, type Session } from "~/models/session";
 import { isSessionActive, isSessionMoreThanDayOld } from "~/utils";
 import { Separator } from "@/components/ui/separator";
 import React from "react";
 import { Button } from "~/components/ui/button";
 import { AttachmentIcon } from "~/utils/componentUtils";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 
 interface AttachmentProps {
   attachment: Attachment;
@@ -130,32 +129,16 @@ export default function Session() {
 
   return (
     <>
-      <div className="mb-4">
-        <Card>
-          <CardContent className="px-3">
-            <div className="flex items-center justify-between gap-6">
-              <div className="flex items-center space-x-4">
-                <div className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-full",
-                  areJoinComponentsHighlighted ? "bg-green-100" : "bg-primary/10"
-                )}>
-                  <Video className={cn(
-                    "h-6 w-6",
-                    areJoinComponentsHighlighted ? "text-green-600" : "text-primary"
-                  )} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-medium">Google Meet</h3>
-                  <GoogleMeetLink 
-                    session={session} 
-                    isMoreThanDayOld={isMoreThanDayOld} 
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Alert className="mb-4">
+        <Video className={areJoinComponentsHighlighted ? "text-green-600" : "text-primary"} />
+        <AlertTitle>Google Meet</AlertTitle>
+        <AlertDescription>
+          <GoogleMeetLink 
+              session={session} 
+              isMoreThanDayOld={isMoreThanDayOld} 
+            />
+        </AlertDescription>
+      </Alert>
 
       <ActionsSection title="Actions">
         <AttachmentForm
