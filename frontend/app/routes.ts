@@ -3,8 +3,9 @@ import { type RouteConfig, index, route, layout, prefix } from "@react-router/de
 export default [
     index("routes/home.tsx"),
     route("login", "routes/login.tsx"),
-    ...prefix("psychologist", [
-        route("login", "routes/psychologist/login.tsx"),
+    route("client/login", "routes/psychologist/login.tsx"),
+    route("psychologist/login", "routes/psychologist/login.tsx"),
+    ...prefix(":role", [
         layout("routes/psychologist/layout.tsx", [
             index("routes/psychologist/dashboard.index.tsx"),
             ...prefix("clients", [
@@ -29,12 +30,6 @@ export default [
             ...prefix("sessions", [
                 index("routes/psychologist/sessions.tsx"),
             ]),
-        ]),
-    ]),
-    ...prefix("client", [
-        route("login", "routes/client/login.tsx"),
-        layout("routes/client/layout.tsx", [
-            index("routes/client/dashboard.tsx"),
         ]),
     ]),
 ] satisfies RouteConfig;
