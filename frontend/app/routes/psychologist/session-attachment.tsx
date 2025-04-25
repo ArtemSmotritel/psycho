@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight, CheckCircle } from "lucide-react";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { Link, useParams } from "react-router";
@@ -17,6 +16,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { getAttachmentTypeLabel, getFileUrl } from "~/utils/utils";
+import { ImagePreview } from "~/components/ImagePreview";
 
 interface ImageAttachmentsProps {
   files: (File | string)[] | undefined;
@@ -37,25 +37,10 @@ function ImageAttachments({ files }: ImageAttachmentsProps) {
       <CarouselContent>
         {files.map((file, index) => (
           <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
-            <div className="relative group aspect-square p-2">
-              <img
-                src={getFileUrl(file)}
-                alt={`Attachment image ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg"
-              />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:text-white hover:bg-white/20"
-                  onClick={() => {
-                    window.open(getFileUrl(file), "_blank");
-                  }}
-                >
-                  View Full Size
-                </Button>
-              </div>
-            </div>
+            <ImagePreview
+              src={file}
+              alt={`Attachment image ${index + 1}`}
+            />
           </CarouselItem>
         ))}
       </CarouselContent>
