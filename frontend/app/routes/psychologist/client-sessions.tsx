@@ -15,6 +15,7 @@ import type { Session } from "~/models/session";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { getSessionName } from "~/utils/utils";
 import { EmptyMessage } from "~/components/EmptyMessage";
+import { useRoleGuard } from "~/hooks/useRoleGuard";
 
 type ClientSessionsProps = {
   params: {
@@ -37,6 +38,8 @@ type SessionsListProps = {
 const ITEMS_PER_PAGE = 4;
 
 function SessionCard({ session, clientId }: SessionCardProps) {
+  const { userRole } = useRoleGuard(['psychologist', 'client']);
+  
   return (
     <Link 
       to={`/psychologist/clients/${clientId}/sessions/${session.id}`}
@@ -71,16 +74,18 @@ function SessionCard({ session, clientId }: SessionCardProps) {
               </p>
             )}
             <div className="flex gap-4 text-sm text-muted-foreground sm:flex-row flex-col">
+              {userRole === 'psychologist' && (
+                <div className="flex items-center gap-1">
+                  <AttachmentIcon size="h-4 w-4" type="note" />
+                  <span>{session.notesCount} notes</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
-                <AttachmentIcon size="h-4 w-4" type="note" />
-                <span>{session.notesCount} notes</span>
-              </div>
-              <div className="flex items-center gap-1">
-              <AttachmentIcon size="h-4 w-4" type="impression" />
+                <AttachmentIcon size="h-4 w-4" type="impression" />
                 <span>{session.impressionsCount} impressions</span>
               </div>
               <div className="flex items-center gap-1">
-              <AttachmentIcon size="h-4 w-4" type="recommendation" />
+                <AttachmentIcon size="h-4 w-4" type="recommendation" />
                 <span>{session.recommendationsCount} recommendations</span>
               </div>
             </div>

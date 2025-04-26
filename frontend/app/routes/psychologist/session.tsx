@@ -13,6 +13,7 @@ import { Button } from "~/components/ui/button";
 import { AttachmentIcon } from "~/utils/componentUtils";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { isSessionActive, isSessionMoreThanDayOld } from "~/utils/utils";
+import { useRoleGuard } from "~/hooks/useRoleGuard";
 
 interface AttachmentProps {
   attachment: Attachment;
@@ -113,6 +114,7 @@ function GoogleMeetLink({ session, isMoreThanDayOld }: GoogleMeetLinkProps) {
 
 export default function Session() {
   const session = useCurrentSession();
+  const { userRole } = useRoleGuard(['psychologist', 'client']);
   const isFutureSession = session?.date ? new Date(session.date) > new Date() : false;
   
   // Check if session is currently active (within 1 hour of start time)
@@ -141,35 +143,38 @@ export default function Session() {
       </Alert>
 
       <ActionsSection title="Actions">
-        <AttachmentForm
-          type="note"
-          trigger={
-            <ActionItem
-              icon={<AttachmentIcon type="note" />}
-              label="Create Note"
-            />
-          }
-          onSubmit={(values) => {
-            console.log("Creating note:", values);
-            // TODO: Implement note creation
-          }}
-        />
+      {userRole === 'psychologist' && (
+        <>
+          <AttachmentForm
+            type="note"
+            trigger={
+              <ActionItem
+                icon={<AttachmentIcon type="note" />}
+                label="Create Note"
+              />
+            }
+            onSubmit={(values) => {
+              console.log("Creating note:", values);
+              // TODO: Implement note creation
+            }}
+          />
 
-        <AttachmentForm
-          type="recommendation"
-          trigger={
-            <ActionItem
-              icon={<AttachmentIcon type="recommendation" />}
-              label="Create Recommendation"
-            />
-          }
-          onSubmit={(values) => {
-            console.log("Creating recommendation:", values);
-            // TODO: Implement recommendation creation
-          }}
-        />
+          <AttachmentForm
+            type="recommendation"
+            trigger={
+              <ActionItem
+                icon={<AttachmentIcon type="recommendation" />}
+                label="Create Recommendation"
+              />
+            }
+            onSubmit={(values) => {
+              console.log("Creating recommendation:", values);
+              // TODO: Implement recommendation creation
+            }}
+          />
+        </>)}
 
-        <AttachmentForm
+        {userRole === 'client' && (<AttachmentForm
           type="impression"
           trigger={
             <ActionItem
@@ -181,9 +186,9 @@ export default function Session() {
             console.log("Creating impression:", values);
             // TODO: Implement impression creation
           }}
-        />
+        />)}
 
-        {isFutureSession && (
+        {isFutureSession && userRole == 'psychologist' && (
           <SessionForm
             mode="edit"
             trigger={
@@ -217,43 +222,49 @@ export default function Session() {
 
         <ActionItem
           icon={<User className="h-6" />}
-          label="Visit Client Profile"
+          label={userRole === 'psychologist' ? "Visit Client Profile" : "Visit my profile"}
           to={`/psychologist/clients/${session?.clientId}`}
         />
 
-        <ConfirmAction
-          trigger={
-            <ActionItem
-              icon={<Trash2 className="h-6" />}
-              label="Delete Session"
-              variant="outline"
-              className="text-destructive hover:text-destructive"
-            />
-          }
-          title="Delete Session"
-          description="Are you sure you want to delete this session? This action cannot be undone."
-          confirmText="Delete"
-          onConfirm={handleDeleteSession}
-        />
+        {userRole === 'psychologist' && (
+          <ConfirmAction
+            trigger={
+              <ActionItem
+                icon={<Trash2 className="h-6" />}
+                label="Delete Session"
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+              />
+            }
+            title="Delete Session"
+            description="Are you sure you want to delete this session? This action cannot be undone."
+            confirmText="Delete"
+            onConfirm={handleDeleteSession}
+          />
+        )}
       </ActionsSection>
 
       <h2 className="text-lg font-semibold mb-2">Attachments</h2>
 
-      <Tabs defaultValue="notes" className="w-full">
+      <Tabs defaultValue={userRole === 'psychologist' ? 'notes' : 'recommendations'} className="w-full">
         <TabsList className="w-full">
-          <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
+          {userRole === 'psychologist' && (
+            <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
+          )}
           <TabsTrigger value="recommendations" className="flex-1">Recommendations</TabsTrigger>
           <TabsTrigger value="impressions" className="flex-1">Client Impressions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notes" className="w-full">
-          <SessionTabContent
-            title="Notes"
-            attachments={session.notes}
-            sessionId={session.id}
-            clientId={session.clientId}
-          />
-        </TabsContent>
+        {userRole === 'psychologist' && (
+          <TabsContent value="notes" className="w-full">
+            <SessionTabContent
+              title="Notes"
+              attachments={session.notes}
+              sessionId={session.id}
+              clientId={session.clientId}
+            />
+          </TabsContent>
+        )}
 
         <TabsContent value="recommendations" className="w-full">
           <SessionTabContent

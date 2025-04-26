@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/carousel";
 import { getAttachmentTypeLabel, getFileUrl } from "~/utils/utils";
 import { ImagePreview } from "~/components/ImagePreview";
+import { useRoleGuard } from "~/hooks/useRoleGuard";
 
 interface ImageAttachmentsProps {
   files: (File | string)[] | undefined;
@@ -77,15 +78,19 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
     </div>
   );
 }
-
+// TODO add client response if present.
 export default function SessionAttachment() {
   const attachment = useCurrentAttachment();
   const { clientId, sessionId } = useParams();
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const { userRole } = useRoleGuard(['psychologist', 'client']);
 
   if (!attachment) {
     return <div>Attachment not found</div>;
   }
+
+  const canEditAttachment = userRole === 'psychologist' && attachment.type !== 'impression';
+  const canDeleteAttachment = userRole === 'psychologist' && attachment.type !== 'impression';
 
   const handleDeleteAttachment = () => {
     console.log("Deleting attachment:", attachment.id);
@@ -113,8 +118,8 @@ export default function SessionAttachment() {
       </div>
 
       <ActionsSection title="Actions">
-        <AttachmentForm
-          type={attachment.type as "note" | "recommendation" | "impression"}
+        {canEditAttachment && (<AttachmentForm
+          type={attachment.type}
           trigger={
             <ActionItem
               icon={<Edit className="h-6" />}
@@ -128,12 +133,12 @@ export default function SessionAttachment() {
             imageFiles: attachment.imageFiles,
           }}
           onSubmit={handleEdit}
-        />
+        />)}
 
         <Link to={`/psychologist/clients/${clientId}`}>
           <ActionItem
             icon={<User className="h-6" />}
-            label="Open Client Profile"
+            label={`Open ${userRole === 'client' ? 'My' : 'Client'} Profile`}
           />
         </Link>
 
@@ -144,7 +149,7 @@ export default function SessionAttachment() {
           />
         </Link>
 
-        {attachment.type === "impression" && (
+        {attachment.type === "impression" && userRole === 'client' && (
           <ActionItem
             icon={<CheckCircle className="h-6" />}
             label="Complete"
@@ -152,7 +157,7 @@ export default function SessionAttachment() {
           />
         )}
 
-        <ConfirmAction
+        {canDeleteAttachment && (<ConfirmAction
           trigger={
             <ActionItem
               icon={<Trash2 className="h-6" />}
@@ -165,7 +170,7 @@ export default function SessionAttachment() {
           description="Are you sure you want to delete this attachment? This action cannot be undone."
           confirmText="Delete"
           onConfirm={handleDeleteAttachment}
-        />
+        />)}
       </ActionsSection>
 
       <div className="space-y-8">

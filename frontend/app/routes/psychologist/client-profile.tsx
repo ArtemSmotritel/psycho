@@ -7,6 +7,7 @@ import { Link } from "react-router";
 import { SessionForm } from "@/components/SessionForm";
 import { ActionsSection, ActionItem } from "@/components/ActionsSection";
 import { formatAppDate } from "~/utils/utils";
+import { ProtectedComponent } from "~/components/ProtectedComponent";
 
 type ClientProfileProps = {
   params: {
@@ -221,19 +222,21 @@ export default function ClientProfile({ params }: ClientProfileProps) {
           onSubmit={handleEditClient}
         />
 
-        <SessionForm
-          mode="add"
-          trigger={
-            <ActionItem
-              icon={<Calendar className="h-6 w-6" />}
-              label="Schedule Session"
-            />
-          }
-          onSubmit={(values) => {
-            console.log("Scheduling session:", values);
-            // TODO: Implement actual session scheduling
-          }}
-        />
+        <ProtectedComponent allowedRoles={['psychologist']}>
+          <SessionForm
+            mode="add"
+            trigger={
+              <ActionItem
+                icon={<Calendar className="h-6 w-6" />}
+                label="Schedule Session"
+              />
+            }
+            onSubmit={(values) => {
+              console.log("Scheduling session:", values);
+              // TODO: Implement actual session scheduling
+            }}
+          />
+        </ProtectedComponent>
 
         <ActionItem
           icon={<TrendingUp className="h-6 w-6" />}
