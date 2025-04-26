@@ -1,12 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-
-interface User {
-  id: string;
-  email: string;
-  role: 'psychologist' | 'client';
-  name: string;
-}
+import type { User } from '~/models/user';
 
 interface AuthContextType {
   user: User | null;
