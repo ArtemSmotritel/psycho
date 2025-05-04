@@ -21,6 +21,7 @@ import { DataTablePagination } from "@/components/DataTablePagination";
 import { fakeSessions } from "@/test-data/fakeSessions";
 import { getSessionName } from "~/utils/utils";
 import type { Session } from "~/models/session";
+import { ProtectedRoute } from "~/components/ProtectedRoute";
 
 const todayFilterFn: FilterFn<Session> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;
@@ -147,7 +148,8 @@ export default function Sessions() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <ProtectedRoute allowedRoles={['psychologist']}>
+      <div className="container mx-auto p-4">
       <AppPageHeader text="Sessions" />
 
       <div className="flex justify-between items-center mb-4">
@@ -226,5 +228,6 @@ export default function Sessions() {
         <DataTablePagination table={table} />
       </div>
     </div>
+    </ProtectedRoute>
   );
 } 

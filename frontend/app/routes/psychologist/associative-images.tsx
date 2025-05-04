@@ -8,6 +8,7 @@ import { EmptyMessage } from "~/components/EmptyMessage";
 import { AddImageDialog } from "~/components/AddImageDialog";
 import { ConfirmAction } from "~/components/ConfirmAction";
 import { ImagePreview } from "~/components/ImagePreview";
+import { ProtectedRoute } from "~/components/ProtectedRoute";
 
 interface ImageCard {
   id: string;
@@ -123,7 +124,8 @@ export default function AssociativeImages() {
   );
 
   return (
-    <div className="container mx-auto p-4">
+    <ProtectedRoute allowedRoles={['psychologist']}>
+      <div className="container mx-auto p-4">
       <AppPageHeader text="Associative Images" />
       
       <div className="flex flex-col sm:flex-row items-center gap-8 mb-6">
@@ -157,5 +159,6 @@ export default function AssociativeImages() {
         <EmptyMessage title="No matches" description="No images found matching your search"/>
       )}
     </div>
+    </ProtectedRoute>
   );
 } 

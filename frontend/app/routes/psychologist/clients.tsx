@@ -20,6 +20,7 @@ import { ClientForm } from "@/components/ClientForm";
 import { DataTablePagination } from "@/components/DataTablePagination";
 import { fakeClients, type Client } from "@/test-data/fakeClients";
 import { getSessionName } from "~/utils/utils";
+import { ProtectedRoute } from "~/components/ProtectedRoute";
 
 const todayFilterFn: FilterFn<Client> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;
@@ -158,84 +159,86 @@ export default function Clients() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <AppPageHeader text="Clients" />
+    <ProtectedRoute allowedRoles={['psychologist']}>
+      <div className="container mx-auto p-4">
+        <AppPageHeader text="Clients" />
 
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="showOnlyToday"
-              checked={columnFilters.some(filter => filter.id === "upcomingSession")}
-              onCheckedChange={handleShowOnlyToday}
-            />
-            <label
-              htmlFor="showOnlyToday"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Show only clients with a session today
-            </label>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="showOnlyToday"
+                checked={columnFilters.some(filter => filter.id === "upcomingSession")}
+                onCheckedChange={handleShowOnlyToday}
+              />
+              <label
+                htmlFor="showOnlyToday"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Show only clients with a session today
+              </label>
+            </div>
           </div>
+          <ClientForm
+            mode="add"
+            trigger={<Button>Add Client</Button>}
+            onSubmit={handleAddClient}
+          />
         </div>
-        <ClientForm
-          mode="add"
-          trigger={<Button>Add Client</Button>}
-          onSubmit={handleAddClient}
-        />
-      </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No clients found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No clients found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-      <div className="mt-4">
-        <DataTablePagination table={table} />
+        <div className="mt-4">
+          <DataTablePagination table={table} />
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 } 
