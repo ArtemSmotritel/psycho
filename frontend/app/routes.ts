@@ -21,6 +21,7 @@ export default [
                                     ...prefix("attachment", [
                                         route(":attachmentId", "routes/psychologist/session-attachment.tsx"),
                                     ]),
+                                    route("live", "routes/psychologist/live-session.tsx"),
                             ]),
                         ]),
                     ]),

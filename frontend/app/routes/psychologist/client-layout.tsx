@@ -9,7 +9,7 @@ export default function ClientLayout() {
   const session = useCurrentSession();
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 w-full h-full">
       <AppPageHeader text={`Profile: ${client?.name}`} linkTo={`/psychologist/clients/${client?.id}`} className={session ? 'mb-0' : ''} />
       {session && (
         <h6 className="text-lg font-semibold sm:text-l md:text-xl mb-4 text-gray-500 dark:text-gray-400 mb-8">
