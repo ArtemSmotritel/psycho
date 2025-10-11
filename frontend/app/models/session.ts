@@ -23,4 +23,14 @@ export interface Session {
   isFinished?: boolean;
   duration?: string;
   description?: string;
+}
+
+export interface SessionListItemDTO {
+  id: string;
+  clientId: string;
+  date: Date;
+  status: string;
+  notes: { id: string }[];
+  recommendations: { id: string }[];
+  impressions: { id: string }[];
 } 

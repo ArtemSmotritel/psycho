@@ -18,17 +18,17 @@ import {
 import { useNavigate } from "react-router";
 import { SessionForm } from "@/components/SessionForm";
 import { DataTablePagination } from "@/components/DataTablePagination";
-import { fakeSessions } from "@/test-data/fakeSessions";
+import { fakeSessionsList } from "@/test-data/fakeSessions";
 import { getSessionName } from "~/utils/utils";
-import type { Session } from "~/models/session";
+import type { SessionListItemDTO } from "~/models/session";
 import { ProtectedRoute } from "~/components/ProtectedRoute";
 
-const todayFilterFn: FilterFn<Session> = (row, columnId) => {
+const todayFilterFn: FilterFn<SessionListItemDTO> = (row, columnId) => {
   const date = row.getValue(columnId) as Date | null;
   return date ? isToday(date) : false;
 };
 
-const columns: ColumnDef<Session>[] = [
+const columns: ColumnDef<SessionListItemDTO>[] = [
   {
     id: "index",
     header: "#",
@@ -115,7 +115,7 @@ const columns: ColumnDef<Session>[] = [
 ];
 
 export default function Sessions() {
-  const [data] = useState<Session[]>(fakeSessions);
+  const [data] = useState<SessionListItemDTO[]>(fakeSessionsList);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 

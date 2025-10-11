@@ -1,5 +1,5 @@
 import { addDays, subDays, format } from "date-fns";
-import type { Session } from "~/models/session";
+import type { Session, SessionListItemDTO } from "~/models/session";
 
 export const fakeSessions: Session[] = [
   {
@@ -92,3 +92,5 @@ export const fakeSessions: Session[] = [
     clientId: (i + 7).toString(),
   })),
 ];
+
+export const fakeSessionsList: SessionListItemDTO[] = fakeSessions.map(session => ({ ...session, status: "finished" }));
