@@ -1,0 +1,138 @@
+# API Calls Documentation
+
+## Session Management
+### SessionForm.tsx
+- POST /api/sessions - Create new session
+  - Required data: startTime, clientId, generateGoogleMeet
+  - Called when: Submitting the session form
+  - Response should include: complete session object with sessionId, googleMeetLink (if requested)
+
+- PUT /api/sessions/{sessionId} - Update existing session
+  - Required data: startTime, clientId
+  - Called when: Editing an existing session
+  - Note: generateGoogleMeet cannot be changed after creation
+  - Response should include: complete updated session object
+
+### Sessions Page (sessions.tsx)
+- GET /api/sessions - Fetch sessions for table
+  - Called when: Loading the sessions page
+  - Response should include:
+    - list of sessions with:
+      - date, status, notes count, recommendations count, impressions count
+      - basic client info for each session
+
+### Session Details Page (session.tsx)
+- GET /api/sessions/{sessionId} - Fetch session details
+  - Called when: Loading a specific session's page
+  - Response should include:
+    - complete session details
+    - client info
+    - all attachments (notes, recommendations, impressions)
+
+### Session Attachment Page (session-attachment.tsx)
+- GET /api/sessions/{sessionId}/attachments - Fetch session attachments
+  - Called when: Loading session attachments
+  - Response should include:
+    - list of attachments
+  - Query parameters:
+    - type: filter by attachment type (note/recommendation/impression)
+
+## Client Management
+### ClientForm.tsx
+- POST /api/clients - Create new client
+  - Required data: username
+  - Optional data: name, email, phone, telegram, instagram
+  - Called when: Submitting the client form
+  - Response should include: complete client object with clientId
+
+- PUT /api/clients/{clientId} - Update client
+  - Required data: username
+  - Optional data: name, email, phone, telegram, instagram
+  - Called when: Editing an existing client
+  - Response should include: complete updated client object
+
+### Clients Page (clients.tsx)
+- GET /api/clients - Fetch clients for table
+  - Called when: Loading the clients page
+  - Response should include:
+    - list of clients with:
+      - username, name, upcoming session, last session, session count
+  - Query parameters:
+    - sortBy: field to sort by
+    - sortOrder: asc/desc
+    - filterToday: boolean to filter clients with sessions today
+
+### Client Profile Page (client-profile.tsx)
+- GET /api/clients/{clientId} - Fetch client profile
+  - Called when: Loading a specific client's profile
+  - Response should include:
+    - complete client information
+    - session statistics
+    - recent sessions (last 5)
+    - recent attachments (last 5)
+
+### Client Sessions Page (client-sessions.tsx)
+- GET /api/clients/{clientId}/sessions - Fetch client's sessions
+  - Called when: Loading client's session history
+  - Response should include:
+    - list of sessions
+  - Query parameters:
+    - sortBy: field to sort by
+    - sortOrder: asc/desc
+
+### Client Progress Page (client-progress.tsx)
+- GET /api/clients/{clientId}/progress - Fetch client's progress
+  - Called when: Loading client's progress page
+  - Response should include:
+    - progress metrics
+    - session attendance history
+    - attachment trends over time
+
+## Attachment Management
+### AttachmentForm.tsx
+- POST /api/attachments - Create new attachment
+  - Required data: name, type (note/recommendation/impression)
+  - Optional data: text, voiceFiles[], imageFiles[]
+  - Called when: Submitting the attachment form
+  - Note: Files should be uploaded using multipart/form-data
+  - Response should include: complete attachment object with attachmentId, fileUrls[]
+
+- PUT /api/attachments/{attachmentId} - Update attachment
+  - Required data: name
+  - Optional data: text, voiceFiles[], imageFiles[]
+  - Called when: Editing an existing attachment
+  - Response should include: complete updated attachment object
+
+## Authentication
+### Login Page
+- POST /api/auth/login - User authentication
+  - Required data: username, password
+  - Called when: Submitting the login form
+  - Response should include: auth token, user details
+
+- GET /api/auth/me - Get current user
+  - Called when: Loading protected routes
+  - Response should include: user details, permissions
+
+## File Management
+### AddImageDialog.tsx
+- POST /api/files/upload - Upload image files
+  - Required data: file (multipart/form-data)
+  - Called when: Adding new images
+  - Response should include: fileUrl
+
+- DELETE /api/files/{fileId} - Delete file
+  - Called when: Removing an image
+  - Response should include: success status
+
+## Dashboard
+### Dashboard Page (dashboard.index.tsx)
+- GET /api/dashboard/statistics - Fetch dashboard statistics
+  - Called when: Loading the dashboard
+  - Response should include:
+    - total clients count
+    - total sessions count
+    - upcoming sessions (next 5)
+    - recent clients (last 5)
+    - session distribution by type
+    - client activity trends

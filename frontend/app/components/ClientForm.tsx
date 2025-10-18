@@ -99,7 +99,7 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Username *</FormLabel>
                   <FormControl>
                     <Input placeholder="johndoe" {...field} />
                   </FormControl>

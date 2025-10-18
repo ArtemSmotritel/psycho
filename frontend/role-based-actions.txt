@@ -1,0 +1,77 @@
+---
+
+### ✅ **Actions available only to psychologists**
+
+- Register their own account in the system.
+- Register clients in the system.
+- Create and view upcoming sessions.
+- Schedule sessions with Google Meet link generation.
+- Create notes for sessions.
+- Create recommendations for clients.
+- View the list of registered clients.
+- View the session history for each client.
+- View notes, recommendations, and impressions associated with clients.
+
+---
+
+### ✅ **Actions available only to clients**
+
+- Authenticate in the system after being registered by a psychologist.
+- View information about upcoming sessions and join them. The sessions must be associated with them.
+- Respond to reccomendations.
+- Submit impressions after sessions.
+- View the history of their own sessions.
+
+---
+
+Clients can respond by submitting a simple text response (e.g., "Done", "In progress", "Need help", etc.).
+
+There is no complex structured status tracking like "completed" or "in progress" with automatic status changes — it’s manual and free-text at this stage.
+
+Clients can submit impressions without a strict time limit after the session.
+
+Impression Editing is not allowed.
+
+Deletion of impressions is not supported — once submitted, impressions remain in the system.
+
+Can psychologists edit/cancel scheduled sessions?
+
+Yes, psychologists can edit (change time) or cancel sessions.
+
+If the session is edited (rescheduled), the Google Meet link remains the same unless explicitly regenerated.
+
+If the session is canceled, it simply disappears from the future sessions lists; the Meet link is no longer displayed or used.
+
+Can clients cancel/reschedule sessions?
+
+No, only psychologists can manage sessions.
+
+Clients can only view their scheduled sessions and join at the assigned time.
+
+Can psychologists edit/delete their notes and recommendations after creation?
+
+Yes, psychologists can edit and delete their own notes and recommendations after creation.
+
+Can clients see all notes created by psychologists?
+
+No, notes are private/internal and only visible to the psychologist.
+
+Clients do not have access to psychologist notes at all.
+
+For recommendations - is there a status system?
+
+No formal status system is implemented (like "pending", "completed", "in progress").
+
+Progress is indicated manually through client responses (free-text).
+
+For session history - do clients see the same information as psychologists?
+
+No, clients see a filtered view:
+
+Clients see their session dates, impressions, and received recommendations.
+
+Psychologists see full session details including notes (which are not visible to clients).
+
+Can either role export/download their session history?
+
+No export/download functionality is planned at this stage for session history.

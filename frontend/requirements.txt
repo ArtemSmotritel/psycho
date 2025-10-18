@@ -1,0 +1,140 @@
+Here is a **cleanly structured, LLM-friendly list of frontend requirements** for your system. The requirements are grouped by UI sections and include all functionality and display logic discussed.
+
+---
+
+## 🔐 **Authentication and Access**
+- Support login with email and password.
+- Enforce role-based UI rendering:
+  - Psychologists can access full dashboard, client/session management, and content creation.
+  - Clients can only access their own dashboard, session history, and impressions.
+- Persist user session across reloads (token-based).
+- Redirect unauthorized users from restricted pages.
+
+---
+
+## 🧭 **Layout and Navigation**
+- Sidebar layout for psychologists with the following routes:
+  - Home (Dashboard)
+  - Clients
+  - Sessions
+  - Associative Images
+
+---
+
+## 📊 **Psychologist Dashboard**
+- Displays aggregated statistics:
+  - Number of sessions scheduled for today.
+  - Basic info of the next scheduled session.
+  - Other helpful stats as needed.
+- List 1: All upcoming sessions scheduled for today.
+- List 2: All completed sessions from today.
+- Each list should support:
+  - Displaying client name/username and time.
+  - Graceful empty state when no data is available.
+
+---
+
+## 👥 **Clients Page**
+- Table listing psychologist's clients with the following columns:
+  - Username (always present)
+  - Name
+  - Upcoming session datetime (can be empty)
+  - Date of last session (can be empty; links to session page)
+  - Sessions count (can be empty; links to session history)
+- Sortable by:
+  - Name
+  - Upcoming session datetime
+- Filter options:
+  - Toggle to show only clients with a session today
+- "Add client" button:
+  - Opens a "Create Client" form
+
+---
+
+## 📅 **Sessions Page**
+- Table listing all sessions with the following columns:
+  - Start datetime
+  - Client name or username (links to client page)
+  - Notes count
+  - Recommendations count
+  - Impressions count
+- Table is sorted by date (descending).
+- Filter options:
+  - Date range
+  - Client name or username
+- Row click opens full session page.
+- "Schedule session" button:
+  - Opens a "Create Session" form.
+
+---
+
+## 🖼️ **Associative Images Page**
+- Displays a large set of images in a scrollable or paginated gallery/grid layout or smth.
+- Each image has:
+  - Editable name field
+  - Delete button
+- "Add associative image" button:
+  - Opens a form to upload image and set name.
+
+---
+
+## 🗂️ **Session Page**
+- Displays session information:
+  - Client name or username
+  - Start datetime
+- Contains three tabs:
+  - Notes
+  - Recommendations
+  - Client Impressions
+- Each tab includes:
+  - Tab name
+  - List of entities related to the tab
+- Each tab has a button to create an entity:
+  - Redirects to the SessionAttachment Form Page.
+
+---
+
+## 📝 **SessionAttachment Form Page**
+- Used to create or edit a note, recommendation, or impression.
+- Includes:
+  - Header indicating the entity type
+  - Required name input (prepopulated)
+  - Optional textarea
+  - Voice recorder component (max 3 voice files)
+  - Image upload (max 9 image files)
+  - Carousel preview of uploaded images
+  - Playable list of recorded voice files
+
+---
+
+## 📄 **SessionAttachment Page**
+- Read-only view of a single attachment.
+- Displays the same content as the form page but non-editable.
+- Includes:
+  - Edit button (redirects to SessionAttachment Form Page)
+
+---
+
+## 🧑‍🎓 **Client Dashboard**
+- Displays:
+  - Next upcoming session (with time and Google Meet link)
+  - List of completed sessions with links
+  - List of received recommendations
+  - Interface to submit and edit impressions
+  - Progress timeline or tree:
+    - Sessions as nodes
+    - Impressions as leaves
+
+---
+
+## 📋 **Forms & Validations**
+- All content creation/edit forms must support:
+  - Text input
+  - Voice message recording (max 3)
+  - Image uploads (max 9)
+- Implement pre-submission validation:
+  - Required fields
+  - Attachment limits
+  - File size/type restrictions
+
+---

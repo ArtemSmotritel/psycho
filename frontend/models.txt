@@ -1,0 +1,90 @@
+// User
+export interface User {
+  id: string
+  username: string
+  fullName?: string
+  email?: string
+  role: "psychologist" | "client"
+  remindersEnabled?: boolean
+}
+
+// Client
+export interface Client {
+  id: string
+  userId: string
+  username: string
+  fullName?: string
+  upcomingSessionDate?: string
+  lastSessionDate?: string
+  sessionCount?: number
+}
+
+// Session
+export interface Session {
+  id: string
+  clientId: string
+  clientUsername?: string
+  clientFullName?: string
+  startDatetime: string
+  meetLink: string
+  notesCount: number
+  recommendationsCount: number
+  impressionsCount: number
+  reminded: boolean
+}
+
+// Associative Image
+export interface AssociativeImage {
+  id: string
+  name: string
+  fileUrl: string
+  uploadedAt: string
+}
+
+// SessionAttachment (Note, Recommendation, Impression)
+export interface SessionAttachment {
+  id: string
+  sessionId: string
+  authorId: string
+  type: "note" | "recommendation" | "impression"
+  name: string
+  description?: string
+  images: string[]          // URLs to image files
+  voiceMessages: string[]   // URLs to audio files
+  createdAt: string
+  editable?: boolean        // for frontend use
+}
+
+// CreateSessionAttachmentDTO
+export interface CreateSessionAttachmentDTO {
+  sessionId: string
+  type: "note" | "recommendation" | "impression"
+  name: string
+  description?: string
+  imageFiles: File[]       // max 9
+  voiceFiles: File[]       // max 3
+}
+
+// EditSessionAttachmentDTO
+export interface EditSessionAttachmentDTO {
+  id: string
+  name: string
+  description?: string
+  newImageFiles?: File[]
+  newVoiceFiles?: File[]
+  removeImageIds?: string[]
+  removeVoiceIds?: string[]
+}
+
+// ScheduleSessionDTO
+export interface ScheduleSessionDTO {
+  clientId: string
+  startDatetime: string
+}
+
+// CreateClientDTO
+export interface CreateClientDTO {
+  username: string
+  fullName?: string
+  email?: string
+}

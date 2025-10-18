@@ -24,14 +24,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include', // Important for cookies
-      });
+      // const response = await fetch('/api/auth/me', {
+      //   credentials: 'include', // Important for cookies
+      // });
       
-      if (response.ok) {
-        const user = await response.json();
-        setUser(user);
-      }
+      // if (response.ok) {
+      //   const user = await response.json();
+      //   setUser(user);
+      // }
+      setUser({
+        id: "1",
+        email: 'abobus@example.com',
+        role: 'psychologist',
+        name: 'myname',
+      });
     } catch (error) {
       setUser(null);
     } finally {
