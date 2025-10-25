@@ -1,13 +1,16 @@
 import { Elysia } from "elysia";
-import { db } from "./config/db";
+import { createUser } from "models/user";
+import { handleErrors } from "errors/handleErrors";
+import { app } from "config/app";
 
-const app = new Elysia()
+const appServer = app
   .get("/", async () => {
-    const a = await db``;
+    const a = await createUser({ email: "abobus", password: "1324" });
     return a;
   })
+  .onError(handleErrors)
   .listen(3000);
 
 console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+  `🦊 Elysia is running at ${appServer.server?.hostname}:${appServer.server?.port}`,
 );

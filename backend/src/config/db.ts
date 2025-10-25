@@ -1,15 +1,10 @@
 import { SQL } from "bun";
+import { log } from "utils/logger";
+import { DB_URL } from ".";
 
 export const db = new SQL({
   // Connection details (adapter is auto-detected as PostgreSQL)
-  // url: "postgres://user:pass@localhost:5432/dbname",
-
-  // Alternative connection parameters
-  hostname: process.env.PGHOST,
-  port: process.env.PGPORT,
-  database: process.env.PGDATABASE,
-  username: process.env.PGUSERNAME,
-  password: process.env.PGPASSWORD,
+  url: DB_URL,
 
   // Connection pool settings
   max: 20, // Maximum connections in pool
@@ -31,9 +26,9 @@ export const db = new SQL({
   // },
 
   onconnect: (client) => {
-    console.log("Connected to PostgreSQL");
+    log.info("Connected to PostgreSQL");
   },
   onclose: (client) => {
-    console.log("PostgreSQL connection closed");
+    log.info("PostgreSQL connection closed");
   },
 });

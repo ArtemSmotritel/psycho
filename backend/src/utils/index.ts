@@ -1,0 +1,8 @@
+export enum HTTP_STATUS {
+  OK = 200,
+  NOT_FOUND = 404,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  CONFLICT = 409,
+  INTERNAL = 500,
+}
