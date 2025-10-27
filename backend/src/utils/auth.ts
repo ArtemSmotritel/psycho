@@ -17,6 +17,13 @@ export const auth = betterAuth({
       redirectUri: process.env.GOOGLE_REDIRECT_URI as string,
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {},
+      },
+    },
+  },
 });
 
 log.info(process.env.GOOGLE_REDIRECT_URI as string);
