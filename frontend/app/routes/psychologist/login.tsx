@@ -1,45 +1,14 @@
-import { Link } from "react-router";
 import { Button } from "../../components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../components/ui/form";
-import { Input } from "../../components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { auth } from "~/services/auth.service";
 
-const formSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
 export default function PsychologistLogin() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Form submitted with values:", values);
-  }
-
   function google() {
     auth.signIn.social({
       provider: "google",
@@ -53,56 +22,22 @@ export default function PsychologistLogin() {
         <CardHeader>
           <CardTitle>Psychologist Login</CardTitle>
           <CardDescription>
-            Enter your credentials to access your account
+            Sign in with your Google account to access the portal.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter your password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </form>
-          </Form>
+          <Button
+            onClick={google}
+            className="w-full flex items-center justify-center space-x-2 text-base font-medium rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 py-2.5 h-auto"
+          >
+            <img
+              src="/public/images/google_logo.png"
+              alt="Google Logo"
+              className="mr-2 h-5 w-5"
+            />
+            Continue with Google
+          </Button>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button onClick={google} className="w-full">
-            Login with Google
-          </Button>
-          <Button asChild variant="link" className="w-full">
-            <Link to="/register/psychologist">Create an account</Link>
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
