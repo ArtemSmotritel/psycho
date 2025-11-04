@@ -40,10 +40,6 @@ export async function createSession(input: SessionCreateInput): Promise<SessionE
     google_meet_link: input.googleMeetLink ?? null,
     description: input.description ?? null,
     duration_min: input.duration ?? null,
-    is_finished: false,
-    notes_count: 0,
-    recommendations_count: 0,
-    impressions_count: 0,
   };
 
   const [row] = await db`
@@ -61,5 +57,6 @@ export async function createSession(input: SessionCreateInput): Promise<SessionE
       impressions_count
   ` as unknown as DbRow[];
 
+  if (!row) throw new Error("Failed to create session: no row returned");
   return mapRowToEntity(row);
 }

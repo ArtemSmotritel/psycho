@@ -42,7 +42,7 @@ export const SessionEntitySchema = t.Object({
   notesCount: t.Integer({ minimum: 0 }),
   recommendationsCount: t.Integer({ minimum: 0 }),
   impressionsCount: t.Integer({ minimum: 0 }),
-  isFinished: t.Optional(t.Boolean()),
+  isFinished: t.Boolean(),
   duration: t.Optional(t.String()),
   description: t.Optional(t.String()),
 });
