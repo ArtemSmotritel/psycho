@@ -43,7 +43,7 @@ export async function createSession(input: SessionCreateInput): Promise<SessionE
   };
 
   const [row] = await db`
-    INSERT INTO "client-sessions" ${sql(dto)}
+    INSERT INTO client_sessions ${sql(dto)}
     RETURNING 
       id,
       client_id,
