@@ -1,6 +1,7 @@
 -- Enable UUID generation if not already available
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Create table for client sessions
 CREATE TABLE IF NOT EXISTS client_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id UUID NOT NULL,
