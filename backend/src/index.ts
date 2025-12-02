@@ -2,8 +2,10 @@ import { Elysia } from "elysia";
 import { createUser } from "models/user";
 import { handleErrors } from "errors/handleErrors";
 import { app } from "config/app";
+import { sessionsRoutes } from "routes/sessions";
 
 const appServer = app
+  .use(sessionsRoutes)
   .get("/", async () => {
     const a = await createUser({ email: "abobus", password: "1324" });
     return a;
