@@ -1,18 +1,9 @@
-import { Elysia } from "elysia";
-import { createUser } from "models/user";
-import { handleErrors } from "errors/handleErrors";
+import { Hono } from "hono";
 import { app } from "config/app";
-import { sessionsRoutes } from "routes/sessions";
 
-const appServer = app
-  .use(sessionsRoutes)
-  .get("/", async () => {
-    const a = await createUser({ email: "abobus", password: "1324" });
-    return a;
-  })
-  .onError(handleErrors)
-  .listen(3000);
+Bun.serve({
+  fetch: app.fetch,
+  port: 3000,
+});
 
-console.log(
-  `🦊 Elysia is running at ${appServer.server?.hostname}:${appServer.server?.port}`,
-);
+console.log(`🚀 Hono is running on http://localhost:3000`);

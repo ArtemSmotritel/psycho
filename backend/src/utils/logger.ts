@@ -9,7 +9,7 @@ let envLevel: string;
 
 export function log(level: LogLevel, message: string, data?: any) {
   if (!envLevel) {
-    envLevel = process.env.LOG_LEVEL;
+    envLevel = process.env.LOG_LEVEL as string;
   }
 
   if (level === LogLevel.DEBUG && envLevel !== LogLevel.DEBUG) {
