@@ -1,11 +1,11 @@
 // psycho/backend/scripts/run-migrations.ts
 import { db } from "config/db";
-import { readdir, stat } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const PROJECT_ROOT = join(import.meta.dir, "../..");
 
-const MIGRATIONS_DIR = join(PROJECT_ROOT, "backend/src/migrations");
+const MIGRATIONS_DIR = join(PROJECT_ROOT, "backend", "src", "migrations");
 const SCHEMA_MIGRATIONS_TABLE = "schema_migrations";
 
 async function runMigrations() {
@@ -31,7 +31,7 @@ async function runMigrations() {
     console.log("Applied migrations:", Array.from(appliedMigrations));
 
     // 3. Read migration files from the directory using Bun's native API
-    let migrationFiles: string[] = [];
+    const migrationFiles: string[] = [];
     try {
       const files = await readdir(MIGRATIONS_DIR, { withFileTypes: true });
       for (const entry of files) {
@@ -71,7 +71,7 @@ async function runMigrations() {
         console.log(`Applying migration: ${file}`);
         const filePath = join(MIGRATIONS_DIR, file);
 
-        await db.begin(async (tx) => {
+        await db.begin(async () => {
           try {
             await db.file(filePath);
 
