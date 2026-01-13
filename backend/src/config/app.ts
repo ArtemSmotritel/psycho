@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { log } from "utils/logger";
 import { auth } from "utils/auth";
+import { setUserRole } from "../middlewares/auth";
 
 export const app = new Hono<{
   Variables: {
@@ -73,3 +74,5 @@ app.use("*", async (c, next) => {
   c.set("session", session.session);
   await next();
 });
+
+app.use(setUserRole);
