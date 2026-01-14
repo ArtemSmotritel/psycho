@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "../../components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "../../components/ui/sidebar";
 import { AppSidebar } from "../../components/AppSidebar";
 
 export default function PsychologistLayout() {
@@ -13,4 +13,4 @@ export default function PsychologistLayout() {
       </div>
     </SidebarProvider>
   );
-} 
+}
