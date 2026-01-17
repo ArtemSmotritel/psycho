@@ -1,0 +1,4 @@
+CREATE TABLE psychologist_clients (
+    client_id TEXT REFERENCES "user"(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    psycho_id TEXT REFERENCES "user"(id) ON DELETE CASCADE ON UPDATE CASCADE
+);

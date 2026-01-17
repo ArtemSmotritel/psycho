@@ -1,6 +1,6 @@
-import { SQL } from "bun";
-import { log } from "utils/logger";
-import { DB_URL } from ".";
+import { SQL } from 'bun'
+import { log } from 'utils/logger'
+import { DB_URL } from '.'
 
 export const db = new SQL({
     // Connection details (adapter is auto-detected as PostgreSQL)
@@ -26,9 +26,9 @@ export const db = new SQL({
     // },
 
     onconnect: (client) => {
-        log.debug("Connected to PostgreSQL");
+        log.debug('Connected to PostgreSQL')
     },
     onclose: (client) => {
-        log.debug("PostgreSQL connection closed");
+        log.debug('PostgreSQL connection closed')
     },
-});
+})

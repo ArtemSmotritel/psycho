@@ -1,66 +1,66 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { HTTPException } from "hono/http-exception";
-import { logger } from "hono/logger";
-import { auth } from "utils/auth";
-import { log } from "utils/logger";
-import { setSession, setUserRole } from "../middlewares/auth";
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { HTTPException } from 'hono/http-exception'
+import { logger } from 'hono/logger'
+import { auth } from 'utils/auth'
+import { log } from 'utils/logger'
+import { setSession, setUserRole } from '../middlewares/auth'
 
 export const app = new Hono<{
     Variables: {
-        user: typeof auth.$Infer.Session.user | null;
-        session: typeof auth.$Infer.Session.session | null;
-    };
-}>();
+        user: typeof auth.$Infer.Session.user | null
+        session: typeof auth.$Infer.Session.session | null
+    }
+}>()
 
 app.use(
     cors({
         origin: process.env.FRONTEND_URL as string,
-        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         credentials: true,
-        allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["Content-Length"],
+        allowHeaders: ['Content-Type', 'Authorization'],
+        exposeHeaders: ['Content-Length'],
         maxAge: 600,
     }),
-);
+)
 
-app.use(logger());
+app.use(logger())
 
 app.onError((err, c) => {
-    log.error(`[Error] ${c.req.method} ${c.req.url}:`, err);
+    log.error(`[Error] ${c.req.method} ${c.req.url}:`, err)
 
     if (err instanceof HTTPException) {
-        return err.getResponse();
+        return err.getResponse()
     }
 
-    if (err.name === "ZodError") {
+    if (err.name === 'ZodError') {
         return c.json(
             {
                 success: false,
-                message: "Validation Failed",
+                message: 'Validation Failed',
                 errors: err,
             },
             400,
-        );
+        )
     }
 
     return c.json(
         {
             success: false,
-            message: err.message || "Internal Server Error",
+            message: err.message || 'Internal Server Error',
             // Hide stack traces in production
-            stack: process.env.ENV === "production" ? undefined : err.stack,
+            stack: process.env.ENV === 'production' ? undefined : err.stack,
         },
         500,
-    );
-});
+    )
+})
 
 app.notFound((c) => {
-    return c.json({ message: "Route not found", success: false }, 404);
-});
+    return c.json({ message: 'Route not found', success: false }, 404)
+})
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
-app.use("*", setSession);
+app.use('*', setSession)
 
-app.use(setUserRole);
+app.use(setUserRole)
