@@ -12,6 +12,19 @@ All section numbers below refer to the **requirements document's** expected stru
 
 ---
 
+## Pre-writing (do before touching any section)
+
+- [ ] **Global terminology replacement: "сесія" → "прийом"**
+  - Currently: `paper.md` uses "сесія" / "сеанс" for the product concept of a scheduled
+    appointment. The codebase uses "appointment" everywhere (Decision 3) to avoid collision
+    with the `better-auth` `session` object.
+  - Action: Replace all occurrences of "сесія" / "сеанс" used as the product concept with
+    **"прийом"** (lit. appointment / consultation). Alternative: "зустріч" — pick one and
+    apply globally across ВСТУП, РОЗДІЛ 1, РОЗДІЛ 2, РОЗДІЛ 3, ВИСНОВКИ.
+  - Do NOT replace "сесія" when it refers to auth/HTTP sessions (e.g. "сесія користувача").
+
+---
+
 ## РОЗДІЛ 1
 
 - [~] **1.4 — Add subsection "Аналіз підґрунтя для розробки"**
@@ -20,6 +33,11 @@ All section numbers below refer to the **requirements document's** expected stru
     what it implies for the design choices. Justify the web-app form factor and the
     decision to build a custom tool rather than extending an existing one.
   - Rename current 1.4 → 1.5 to match required numbering
+  - **Also fix registration model in the resulting 1.5 (Постановка задачі)**: current text
+    implies the psychologist registers clients. Update to describe the actual flow:
+    both roles self-register via Google OAuth; a client gains access only after the
+    psychologist adds them by email (registered users only — immediate link, no email).
+    Remove any language implying the psychologist creates accounts for clients.
 
 ---
 
@@ -33,6 +51,10 @@ All section numbers below refer to the **requirements document's** expected stru
     revealed, (3) what decision was made as a result
   - The activity diagram for Session Service (rис. 2.2) and sequence diagram (Appendix E)
     can be repurposed here — just add the INVEST framing around them in the text
+  - **Whiteboard INVEST note**: the whiteboard FR bundles drawing + cursor sharing + image
+    upload into one requirement, violating INVEST's "Small" criterion. Add a sentence in
+    the analysis justifying the bundling: all three capabilities share the same WebSocket
+    event stream and cannot be delivered or tested independently.
 
 - [ ] **2.4 — Functional requirements table (in body, not only appendix)**
   - Currently: product backlog is in Appendix C only
@@ -41,6 +63,22 @@ All section numbers below refer to the **requirements document's** expected stru
   - Rank requirements by descending importance (critical → high → medium → low)
   - After the table, add the non-functional requirements list (already written in 2.2 —
     move or reference them here)
+  - **Stay within 25-FR ceiling**: 27 required tickets map to ~25+ FRs — apply these
+    merges to reach ~23 FRs in the table:
+    - EDG-18 + "Email: appointment rescheduled" → one FR: "Psychologist can reschedule
+      appointments; client is notified by email"
+    - EDG-19 + "Email: appointment deleted" → one FR: "Psychologist can delete upcoming
+      appointments; client is notified by email"
+    - NEW "Psycho can add client" + NEW "Added client receives access" → one FR:
+      "Psychologist can add registered clients to their workspace"
+  - **Add 3 missing NFRs** to the NFR list (currently 6, need to add these):
+    - Data isolation (security): each psychologist-client pair's data is isolated;
+      no cross-pair access. (Decision 6)
+    - Notes privacy (privacy): psychologist notes are visible only to the authoring
+      psychologist, even after the client-psychologist relationship ends. (Decision 16)
+    - Single active appointment constraint (integrity): the system must enforce that no
+      more than one appointment per psychologist can be in "active" state simultaneously.
+      (Decision 5)
 
 - [ ] **2.5 — Preliminary architecture: UML PACKAGE diagram**
   - Currently: paper has a component diagram (Appendix G) and labels it "preliminary"
@@ -116,6 +154,11 @@ All section numbers below refer to the **requirements document's** expected stru
     - **Auth**: better-auth with Google OAuth — avoids building auth from scratch
     - **Real-time**: WebSockets (state the library/mechanism used)
     - **IDE**: VS Code or whichever you use
+  - **Justify Google Calendar OAuth scope**: Decision 13 requests `calendar.events` scope
+    from all psychologist accounts at sign-up, even though Meet link generation is optional.
+    Add: "The scope is requested upfront to avoid interrupting the appointment-creation
+    workflow with an additional OAuth redirect when the psychologist first opts in to
+    Meet link generation."
 
 - [ ] **3.2 — Structural scheme of the software (PSM)**
   - Currently: placeholder
@@ -310,3 +353,9 @@ Realtime ..> Sessions
   separate sections 2.2 (user stories), 2.3 (requirements analysis), and 2.4
   (requirements table). Confirm if supervisor accepts the merged structure or if
   you need to split it.
+- [ ] **Architectural pattern for section 2.5**: section 2.5 must open with the choice and
+  justification of an architectural pattern (MVC, SOA, client-server layered, etc.) before
+  presenting the package diagram. Candidate: **client-server with layered architecture**
+  (backend: routes → services → DB; frontend: pages → components → API client).
+  Alternative: **SOA**, emphasizing the domain-per-feature structure of `src/features/`.
+  Use the candidate as placeholder until supervisor confirms.
