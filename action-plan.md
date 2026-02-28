@@ -43,7 +43,7 @@ All section numbers below refer to the **requirements document's** expected stru
 
 ## РОЗДІЛ 2
 
-- [ ] **2.3 — Requirements analysis using UML diagrams (INVEST)**
+- [ ] **2.3 — Requirements analysis using UML diagrams (INVEST)** *(content goes into existing section 2.2 — merged structure approved by supervisor)*
   - Currently: use-case diagrams are in appendices A, B, D — but no analysis is written
     in the body that ties them to INVEST properties
   - What to write: for each non-obvious diagram (sequences, activity), add a sentence
@@ -56,7 +56,7 @@ All section numbers below refer to the **requirements document's** expected stru
     the analysis justifying the bundling: all three capabilities share the same WebSocket
     event stream and cannot be delivered or tested independently.
 
-- [ ] **2.4 — Functional requirements table (in body, not only appendix)**
+- [ ] **2.4 — Functional requirements table (in body, not only appendix)** *(content goes into existing section 2.2 — merged structure approved by supervisor)*
   - Currently: product backlog is in Appendix C only
   - What to write: a formal table in the body with columns:
     `№ | Назва вимоги | Важливість | Як продемонструвати | Примітки`
@@ -83,6 +83,12 @@ All section numbers below refer to the **requirements document's** expected stru
 - [ ] **2.5 — Preliminary architecture: UML PACKAGE diagram**
   - Currently: paper has a component diagram (Appendix G) and labels it "preliminary"
     architecture — this is wrong. A package diagram ≠ component diagram.
+  - **Open with architectural pattern justification** (1 paragraph before the diagram):
+    declare **"клієнт-серверна архітектура з багаторівневим сервером"**. Explain:
+    the browser SPA acts as the client; the Hono backend is the server, organized in
+    three layers — Presentation (routes + middleware), Business logic (feature services),
+    Data (raw SQL + PostgreSQL). The package diagram that follows is derived from this
+    pattern by grouping functional requirements into named packages.
   - What to write: a **UML package diagram** showing high-level functional groupings
     with dependencies between packages. See the diagram spec below.
   - The component diagram in Appendix G can be repurposed as the **refined** architecture
@@ -345,17 +351,15 @@ Realtime ..> Sessions
 
 ## Open Questions (resolve with supervisor)
 
-- [ ] **Package vs component diagram**: confirm whether preliminary architecture (2.5)
-  must be a package diagram or if a component diagram is acceptable. If the component
-  diagram is acceptable, you still need a second one for the refined architecture (2.7)
-  showing what changed after detailed design.
-- [ ] **Section numbering**: the paper's current 2.2 merges what requirements expect in
-  separate sections 2.2 (user stories), 2.3 (requirements analysis), and 2.4
-  (requirements table). Confirm if supervisor accepts the merged structure or if
-  you need to split it.
-- [ ] **Architectural pattern for section 2.5**: section 2.5 must open with the choice and
-  justification of an architectural pattern (MVC, SOA, client-server layered, etc.) before
-  presenting the package diagram. Candidate: **client-server with layered architecture**
-  (backend: routes → services → DB; frontend: pages → components → API client).
-  Alternative: **SOA**, emphasizing the domain-per-feature structure of `src/features/`.
-  Use the candidate as placeholder until supervisor confirms.
+- [x] **Package vs component diagram**: confirmed — section 2.5 must use a UML **package
+  diagram**. The existing Appendix G component diagram is repurposed for section 2.7
+  (refined architecture). No further action needed.
+- [x] **Section numbering**: supervisor confirmed the merged structure is acceptable.
+  Current 2.2 keeps user stories, INVEST analysis, and FR table together. Items in this
+  plan labelled "2.3" and "2.4" refer to **content** that goes into the existing 2.2 —
+  no renumbering required.
+- [x] **Architectural pattern for section 2.5**: confirmed — **client-server architecture
+  with a layered backend** ("клієнт-серверна архітектура з багаторівневим сервером").
+  Browser SPA = client. Hono backend = server with 3 layers: Presentation (routes /
+  middleware) → Business logic (services) → Data (raw SQL + PostgreSQL). See updated
+  section 2.5 item below.
