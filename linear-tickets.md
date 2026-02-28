@@ -202,7 +202,7 @@ Status: Backlog
 
 | ID | Title | Linear | Paper priority | Status | Notes |
 |----|-------|--------|----------------|--------|-------|
-| NEW | Interactive whiteboard — real-time drawing and cursor sharing | High | required | To create | WebSockets; both psychologist and client can draw; cursor sharing for both; accessible during active appointment only (Decision 5) |
+| NEW | Interactive whiteboard — real-time drawing, cursor sharing, and image support | High | required | To create | WebSockets; both psychologist and client can draw; cursor sharing for both; basic image upload/paste onto the board; accessible during active appointment only (Decision 5) |
 | NEW | Whiteboard saved as snapshot on appointment end | High | required | To create | Static image saved when psychologist ends appointment; displayed in past appointment detail for both parties (Decision 29) |
 | NEW | Psychologist can insert associative images onto whiteboard | Medium | good to have | To create | Images from the associative library placed onto the board during active appointment |
 | NEW | Associative images library management | Low | good to have | To create | Psychologist uploads and manages image library between appointments |
@@ -222,7 +222,7 @@ Status: Backlog
 |----|-------|--------|----------------|--------|-------|
 | NEW | Client progress timeline | High | required | To create | Chronological view of all client impressions across all appointments within a psychologist-client pair; all timestamped entries shown |
 | NEW | Client dashboard | High | required | To create | Aggregated view: upcoming appointments, pending recommendations, progress from all connected psychologists; global appointment list (Decision 26) |
-| NEW | Psychologist dashboard | Medium | good to have | To create | Aggregated home view across all clients: upcoming appointments, active appointment indicator, pending reschedule and cancellation requests, quick access to recent clients |
+| NEW | Psychologist dashboard | Medium | required | To create | Aggregated home view across all clients: upcoming appointments, active appointment indicator, pending reschedule and cancellation requests, quick access to recent clients |
 
 ### Email reminders
 
@@ -230,8 +230,8 @@ Status: Backlog
 |----|-------|--------|----------------|--------|-------|
 | NEW | Email: appointment reminders (24h and 1h before start) | High | required | To create | Two emails per appointment; only for clients with email set (Decision 31) |
 | NEW | Email: new recommendation notification to client | High | required | To create | Sent when psychologist creates a recommendation |
-| NEW | Email: appointment deleted notification to client | Medium | good to have | To create | Sent when psychologist deletes an upcoming appointment (Decision 12) |
-| NEW | Email: appointment rescheduled notification to client | Medium | good to have | To create | Sent when psychologist edits appointment date/time (Decision 12) |
+| NEW | Email: appointment deleted notification to client | Medium | required | To create | Sent when psychologist deletes an upcoming appointment (Decision 12); required because EDG-19 promises this email |
+| NEW | Email: appointment rescheduled notification to client | Medium | required | To create | Sent when psychologist edits appointment date/time (Decision 12); required because EDG-18 promises this email |
 | NEW | Email: psychologist acts on reschedule/cancellation request | Low | good to have | To create | Sent to client on approve or reject |
 | NEW | Email: existing user notified of new invitation | Low | good to have | To create | Sent when psychologist invites an already-registered user (Decision 19) |
 | NEW | Email: psychologist starts appointment (notify client) | Medium | good to have | To create | "Your session has started. Join now." (Decision 28) |
@@ -260,13 +260,13 @@ Status: Backlog
 | Session Scheduling | 8 (EDG-17–22, NEW active ×2) | 5 (EDG-26–29, NEW cancel) | 13 |
 | Core Session Features — whiteboard | 2 | 2 | 4 |
 | Core Session Features — notes/impressions/recommendations | 4 | — | 4 |
-| Core Session Features — progress/dashboards | 2 | 1 | 3 |
-| Core Session Features — email | 2 | 5 | 7 |
+| Core Session Features — progress/dashboards | 3 | — | 3 |
+| Core Session Features — email | 4 | 3 | 7 |
 | No project | — | 4 (EDG-1–4) | 5 (EDG-5 to cancel) |
-| **Total** | **23** | **33** | **57** |
+| **Total** | **26** | **30** | **57** |
 
 **Required tickets that existed before this review:** 12
-**Required tickets added by this review (Core Session Features + simple client path):** 11
+**Required tickets added by this review (Core Session Features + simple client path):** 14
 
 ---
 
@@ -277,7 +277,7 @@ All previously untracked features have been converted to tickets in the Core Ses
 | Feature | Paper priority | Ticketed as |
 |---------|----------------|-------------|
 | Appointment page (live) | required | NEW "Psycho can conduct active appointment" + NEW "Client can participate in active appointment" |
-| Interactive whiteboard (drawing, cursors) | required | NEW in Core Session Features — Whiteboard |
+| Interactive whiteboard (drawing, cursors, images) | required | NEW in Core Session Features — Whiteboard (basic image support included in main ticket) |
 | Whiteboard snapshot on end | required | NEW in Core Session Features — Whiteboard |
 | Associative images on whiteboard | good to have | NEW in Core Session Features — Whiteboard |
 | Associative images library | good to have | NEW in Core Session Features — Whiteboard |
@@ -287,11 +287,11 @@ All previously untracked features have been converted to tickets in the Core Ses
 | Recommendation reactions | required | NEW in Core Session Features — Notes/Impressions/Recommendations |
 | Client progress timeline | required | NEW in Core Session Features — Progress/Dashboards |
 | Client dashboard | required | NEW in Core Session Features — Progress/Dashboards |
-| Psychologist dashboard | good to have | NEW in Core Session Features — Progress/Dashboards |
+| Psychologist dashboard | required | NEW in Core Session Features — Progress/Dashboards |
 | Email: appointment reminders | required | NEW in Core Session Features — Email |
 | Email: new recommendation | required | NEW in Core Session Features — Email |
-| Email: appointment deleted | good to have | NEW in Core Session Features — Email |
-| Email: appointment rescheduled | good to have | NEW in Core Session Features — Email |
+| Email: appointment deleted | required | NEW in Core Session Features — Email |
+| Email: appointment rescheduled | required | NEW in Core Session Features — Email |
 | Email: request decision | good to have | NEW in Core Session Features — Email |
 | Email: invitation to existing user | good to have | NEW in Core Session Features — Email |
 | Email: psychologist starts appointment | good to have | NEW in Core Session Features — Email |
