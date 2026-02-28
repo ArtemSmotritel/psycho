@@ -105,10 +105,12 @@ Status: Backlog
 
 These two tickets cover the minimum needed for the paper: a psychologist adds a client, the client gains access. The full invitation flow below is additive on top of this.
 
+**Scope constraint (design decision):** The required simple path covers **registered users only**. The psychologist enters a client's email → if a registered user with that email exists, they are linked immediately (no email sent, no acceptance step). If the user is not registered, the psychologist sees an error: "No account found for this email. Ask your client to register first." Linking unregistered users requires the full invitation flow (good to have tickets).
+
 | ID | Title | Linear | Paper priority | Status |
 |----|-------|--------|----------------|--------|
-| NEW | Psycho can add a client by entering their email | High | required | To create |
-| NEW | Added client receives access and is linked to the psychologist | High | required | To create |
+| NEW | Psycho can add a registered client by entering their email | High | required | To create |
+| NEW | Added client receives access and is linked to the psychologist immediately | High | required | To create |
 
 ### Top-level issues
 
@@ -119,10 +121,12 @@ These two tickets cover the minimum needed for the paper: a psychologist adds a 
 | EDG-11 | Registered clients can accept psycho invitations | Medium | good to have | Todo |
 | EDG-12 | Users can join portal via email invitation and immediately become clients of the psycho who invited them | Medium | good to have | Todo |
 | EDG-15 | Psycho clients management | Medium | required | Todo |
+| NEW | Psycho can remove a client from their list | High | required | To create |
 | EDG-16 | Client psychos management | Medium | good to have | Todo |
 
 **EDG-15** — Psychologist's view of their client list (all accepted clients).
 **EDG-16** — Client's view of all psychologists they are connected to.
+**NEW (remove client)** — Psychologist can remove a client from their list. Per Decision 16: historical data (appointments, impressions, recommendations) preserved and readable by both parties; psychologist notes remain private; no new appointments can be created after removal. Client cannot remove unilaterally.
 
 ### Sub-group: EDG-13 — Psycho invitations management (parent)
 
@@ -256,17 +260,17 @@ Status: Backlog
 |---------|-----------------|---------------------|-------|
 | User Management | 2 (EDG-6, EDG-7 core) | 1 (EDG-8) + EDG-7 extras | 3 |
 | Client Invitations — simple path | 2 (NEW×2) | — | 2 |
-| Client Invitations — full flow | 1 (EDG-15) | 15 (all others) | 16 |
+| Client Invitations — full flow | 2 (EDG-15, NEW remove) | 14 (all others) | 16 |
 | Session Scheduling | 8 (EDG-17–22, NEW active ×2) | 5 (EDG-26–29, NEW cancel) | 13 |
 | Core Session Features — whiteboard | 2 | 2 | 4 |
 | Core Session Features — notes/impressions/recommendations | 4 | — | 4 |
 | Core Session Features — progress/dashboards | 3 | — | 3 |
 | Core Session Features — email | 4 | 3 | 7 |
 | No project | — | 4 (EDG-1–4) | 5 (EDG-5 to cancel) |
-| **Total** | **26** | **30** | **57** |
+| **Total** | **27** | **30** | **58** |
 
 **Required tickets that existed before this review:** 12
-**Required tickets added by this review (Core Session Features + simple client path):** 14
+**Required tickets added by this review (Core Session Features + simple client path + remove client):** 15
 
 ---
 

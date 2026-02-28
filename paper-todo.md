@@ -38,3 +38,68 @@ after the psychologist adds them (by email) and the link is established.
 Remove any language implying the psychologist creates accounts for clients.
 
 ---
+
+## 3. Add 3 missing NFRs in section 2.4
+
+**Problem**: Three constraints from the design decisions log are not in the paper's NFR list
+but qualify as formal non-functional requirements.
+
+**Action**: When writing section 2.4 (NFR list), add:
+- **Data isolation (security)**: Each psychologist-client pair's data is isolated. A
+  psychologist cannot access another psychologist's clients' data. A client cannot access
+  another client's records. (Decision 6)
+- **Notes privacy (privacy)**: Psychologist notes are visible only to the psychologist who
+  wrote them, including after the client-psychologist relationship ends. (Decision 16)
+- **Single active appointment constraint (integrity)**: The system must enforce that no
+  more than one appointment per psychologist can be in "active" state simultaneously.
+  (Decision 5)
+
+---
+
+## 4. FR mapping — stay within 25-FR ceiling
+
+**Problem**: 27 required tickets map to ~25+ distinct FRs, exceeding the 12–25 limit.
+
+**Action**: When writing the FR table in section 2.4, apply these merges:
+- EDG-18 + "Email: appointment rescheduled" → one FR: "Psychologist can reschedule
+  appointments; client is notified by email"
+- EDG-19 + "Email: appointment deleted" → one FR: "Psychologist can delete upcoming
+  appointments; client is notified by email"
+- NEW "Psycho can add client" + NEW "Added client receives access" → one FR:
+  "Psychologist can add registered clients to their workspace"
+
+Target: **~23 FRs** in the table.
+
+---
+
+## 5. Justify Google Calendar OAuth scope in section 3.1
+
+**Problem**: Decision 13 requires all psychologists to grant `calendar.events` scope at
+sign-up, even though Google Meet link generation is optional (EDG-17).
+
+**Action**: In section 3.1, under auth/Google OAuth, add: "The `calendar.events` scope is
+requested upfront for all psychologist accounts to avoid an additional OAuth redirect
+mid-session when the psychologist first tries to generate a Meet link."
+
+---
+
+## 6. Architectural pattern — open question for supervisor
+
+**Problem**: Section 2.5 must open with the choice and justification of an architectural
+pattern before presenting the package diagram.
+
+**Action**: Confirm with supervisor. Candidate: **client-server with layered architecture**
+(backend: routes → services → DB; frontend: pages → components → API client). Alternative:
+**SOA**, emphasizing the domain-per-feature structure of `src/features/`. Use "client-server
+with layered architecture" as placeholder until confirmed.
+
+---
+
+## 7. Section 2.3 — justify whiteboard as compound requirement (INVEST "Small")
+
+**Problem**: Section 2.3 requires INVEST analysis. The whiteboard FR bundles drawing +
+cursor sharing + image upload, violating INVEST's "Small" criterion.
+
+**Action**: In section 2.3, note: "The whiteboard requirement is kept as a single compound
+requirement because all three capabilities share the same WebSocket event stream and cannot
+be delivered or tested independently."

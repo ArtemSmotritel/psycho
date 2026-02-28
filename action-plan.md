@@ -53,6 +53,17 @@ All section numbers below refer to the **requirements document's** expected stru
   - After the diagram: describe what business processes each package covers, analyze
     that all functional requirements are covered by at least one package.
 
+- [ ] **2.4.x — Appointment lifecycle: UML state diagram** *(new deliverable)*
+  - Currently: missing entirely
+  - What to write: a UML state diagram for the appointment entity showing:
+    - States: `upcoming`, `active`, `past`
+    - Transitions: `Start` (psychologist action, guard: no other active appointment),
+      `End` (psychologist action)
+    - Guard on Start: if another appointment is active → show warning (Decision 22)
+    - Terminal state: `past` is permanent; appointment cannot be deleted from past state
+    - Note: no auto-transitions; all state changes are manual (Decision 25, 35)
+  - Place in section 2.6 under the appointment management package subsection
+
 - [ ] **2.4.1 — Interactive Board: detailed design content**
   - Currently: heading exists, zero content
   - What to write: an activity or state diagram showing the real-time board interaction
