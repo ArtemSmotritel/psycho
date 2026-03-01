@@ -57,11 +57,11 @@ Decisions made during project review. Use these as the source of truth when writ
 
 Status: Planned
 
-| ID | Title | Linear | Paper priority | Status |
-|----|-------|--------|----------------|--------|
-| EDG-6 | User sign-up flow | Medium | required | Todo |
-| EDG-7 | User own role management | Medium | required* | Todo |
-| EDG-8 | User own profile management | Low | good to have | Backlog |
+| ID | Title | Linear | Paper priority | Status | Processed |
+|----|-------|--------|----------------|--------|-----------|
+| EDG-6 | User sign-up flow | Medium | required | Todo | Yes |
+| EDG-7 | User own role management | Medium | required* | Todo | Yes |
+| EDG-8 | User own profile management | Low | good to have | Backlog | Yes |
 
 *EDG-7 is **required** for the basic role-selection flow (psychologist → dashboard, client → access after being added). The following parts of EDG-7 are **good to have**: dual-role support (role switcher in sidebar, session storage of active role, disabled switcher during active appointment); client roleless empty-state UX ("Your psychologist will send you an invitation…").
 
@@ -107,22 +107,22 @@ These two tickets cover the minimum needed for the paper: a psychologist adds a 
 
 **Scope constraint (design decision):** The required simple path covers **registered users only**. The psychologist enters a client's email → if a registered user with that email exists, they are linked immediately (no email sent, no acceptance step). If the user is not registered, the psychologist sees an error: "No account found for this email. Ask your client to register first." Linking unregistered users requires the full invitation flow (good to have tickets).
 
-| ID | Title | Linear | Paper priority | Status |
-|----|-------|--------|----------------|--------|
-| NEW | Psycho can add a registered client by entering their email | High | required | To create |
-| NEW | Added client receives access and is linked to the psychologist immediately | High | required | To create |
+| ID | Title | Linear | Paper priority | Status | Processed |
+|----|-------|--------|----------------|--------|-----------|
+| EDG-41 | Psycho can add a registered client by entering their email | High | required | To create | Yes |
+| EDG-42 | Added client receives access and is linked to the psychologist immediately | High | required | To create | Yes |
 
 ### Top-level issues
 
-| ID | Title | Linear | Paper priority | Status |
-|----|-------|--------|----------------|--------|
-| EDG-9 | Psycho can invite existing users to become their clients | Medium | good to have | Todo |
-| EDG-10 | Psycho can invite people by email to join as their clients | Medium | good to have | Todo |
-| EDG-11 | Registered clients can accept psycho invitations | Medium | good to have | Todo |
-| EDG-12 | Users can join portal via email invitation and immediately become clients of the psycho who invited them | Medium | good to have | Todo |
-| EDG-15 | Psycho clients management | Medium | required | Todo |
-| NEW | Psycho can remove a client from their list | High | required | To create |
-| EDG-16 | Client psychos management | Medium | good to have | Todo |
+| ID | Title | Linear | Paper priority | Status | Processed |
+|----|-------|--------|----------------|--------|-----------|
+| EDG-9 | Psycho can invite existing users to become their clients | Medium | good to have | Todo | — |
+| EDG-10 | Psycho can invite people by email to join as their clients | Medium | good to have | Todo | — |
+| EDG-11 | Registered clients can accept psycho invitations | Medium | good to have | Todo | — |
+| EDG-12 | Users can join portal via email invitation and immediately become clients of the psycho who invited them | Medium | good to have | Todo | — |
+| EDG-15 | Psycho clients management | Medium | required | Todo | Yes |
+| EDG-43 | Psycho can remove a client from their list | High | required | To create | Yes |
+| EDG-16 | Client psychos management | Medium | good to have | Todo | — |
 
 **EDG-15** — Psychologist's view of their client list (all accepted clients).
 **EDG-16** — Client's view of all psychologists they are connected to.
@@ -130,25 +130,25 @@ These two tickets cover the minimum needed for the paper: a psychologist adds a 
 
 ### Sub-group: EDG-13 — Psycho invitations management (parent)
 
-| ID | Title | Linear | Paper priority | Status |
-|----|-------|--------|----------------|--------|
-| EDG-13 | Psycho invitations management | Medium | good to have | Todo |
-| EDG-30 | Psycho sees sent invitations with their statuses | Medium | good to have | Todo |
-| EDG-31 | Psycho can create an invitation | Medium | good to have | Todo |
-| EDG-32 | Psycho can resend an invitation | Medium | good to have | Todo |
-| NEW | Psycho can cancel a pending invitation | Medium | good to have | To create |
+| ID | Title | Linear | Paper priority | Status | Processed |
+|----|-------|--------|----------------|--------|-----------|
+| EDG-13 | Psycho invitations management | Medium | good to have | Todo | — |
+| EDG-30 | Psycho sees sent invitations with their statuses | Medium | good to have | Todo | — |
+| EDG-31 | Psycho can create an invitation | Medium | good to have | Todo | — |
+| EDG-32 | Psycho can resend an invitation | Medium | good to have | Todo | — |
+| NEW | Psycho can cancel a pending invitation | Medium | good to have | To create | — |
 
 **EDG-32** — Resend is only valid for **pending** or **expired** invitations.
 **NEW (cancel)** — Cancel is only valid for **pending** invitations. Token is invalidated; no email is sent. (Decision 32)
 
 ### Sub-group: EDG-14 — Client invitation management (parent)
 
-| ID | Title | Linear | Paper priority | Status |
-|----|-------|--------|----------------|--------|
-| EDG-14 | Client invitation management | Medium | good to have | Todo |
-| EDG-33 | Client can see received invitations | Medium | good to have | Todo |
-| EDG-34 | Client can accept an invitation | Medium | good to have | Todo |
-| EDG-35 | Client can decline an invitation | Medium | good to have | Todo |
+| ID | Title | Linear | Paper priority | Status | Processed |
+|----|-------|--------|----------------|--------|-----------|
+| EDG-14 | Client invitation management | Medium | good to have | Todo | — |
+| EDG-33 | Client can see received invitations | Medium | good to have | Todo | — |
+| EDG-34 | Client can accept an invitation | Medium | good to have | Todo | — |
+| EDG-35 | Client can decline an invitation | Medium | good to have | Todo | — |
 
 All issues in this project have **no description or ACs yet**.
 
@@ -171,30 +171,30 @@ Status: Backlog
 
 ### Psychologist-side
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| EDG-17 | Psycho can schedule appointments | Medium | required | Todo | Create appointment; optional Google Meet link generation |
-| EDG-18 | Psycho can change an appointment | Medium | required | Todo | Edit date/time/link; client receives email on change |
-| EDG-19 | Psycho can delete an appointment | Medium | required | Todo | Upcoming appointments only; client receives email on deletion |
-| EDG-20 | Psycho can see appointments | Medium | required | Todo | List of all appointments (past + upcoming + active) for a given client |
-| EDG-21 | Psycho can review a past appointment | Medium | required | Todo | Detail view; shows notes, client impressions (visible to psycho), recommendations, whiteboard snapshot |
-| EDG-22 | Psycho can review an upcoming appointment | Medium | required | Todo | Detail view; shows Meet link if present; Start button (no time constraint) |
-| EDG-28 | Psycho can review reschedule requests | Low | good to have | Todo | Approve or reject; client emailed on decision |
-| EDG-29 | Psycho can review new appointment requests | Low | good to have | Todo | See and act on client requests for new appointments |
-| NEW | Psycho can conduct an active appointment | High | required | To create | Active state: whiteboard, Join call button, End appointment button; warning + inline "End previous" if another is active (Decision 22); appointment remains active on disconnect (Decision 35) |
-| NEW | Psycho can review cancellation requests | Low | good to have | To create | Approve or reject client cancellation requests; client emailed on decision |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-17 | Psycho can schedule appointments | Medium | required | Todo | Create appointment; optional Google Meet link generation | Yes |
+| EDG-18 | Psycho can change an appointment | Medium | required | Todo | Edit date/time/link; client receives email on change | Yes |
+| EDG-19 | Psycho can delete an appointment | Medium | required | Todo | Upcoming appointments only; client receives email on deletion | Yes |
+| EDG-20 | Psycho can see appointments | Medium | required | Todo | List of all appointments (past + upcoming + active) for a given client | Yes |
+| EDG-21 | Psycho can review a past appointment | Medium | required | Todo | Detail view; shows notes, client impressions (visible to psycho), recommendations, whiteboard snapshot | Yes |
+| EDG-22 | Psycho can review an upcoming appointment | Medium | required | Todo | Detail view; shows Meet link if present; Start button (no time constraint) | Yes |
+| EDG-28 | Psycho can review reschedule requests | Low | good to have | Todo | Approve or reject; client emailed on decision | Yes |
+| EDG-29 | Psycho can review new appointment requests | Low | good to have | Todo | See and act on client requests for new appointments | Yes |
+| EDG-44 | Psycho can conduct an active appointment | High | required | To create | Active state: whiteboard, Join call button, End appointment button; warning + inline "End previous" if another is active (Decision 22); appointment remains active on disconnect (Decision 35) | Yes |
+| EDG-60 | Psycho can review cancellation requests | Low | good to have | To create | Approve or reject client cancellation requests; client emailed on decision | Yes |
 
 ### Client-side
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| EDG-23 | Client can see appointments | Medium | required | Todo | Global list across all psychologists (default) + per-psychologist list via EDG-16 context |
-| EDG-24 | Client can review a past appointment | Medium | required | Todo | Detail view; shows impressions they submitted, psychologist recommendations, whiteboard snapshot |
-| EDG-25 | Client can review an upcoming appointment | Medium | required | Todo | Detail view; shows "Join call" button if Meet link present |
-| EDG-26 | Client can request an appointment reschedule | Low | good to have | Todo | Submit a reschedule request; psychologist must approve |
-| EDG-27 | Client can request a new appointment | Low | good to have | Todo | Submit a request for a new appointment; psychologist must approve |
-| NEW | Client can participate in an active appointment | High | required | To create | Active state: whiteboard, Join call button; accessible when psychologist has started; "Session ended" modal on psychologist end (Decision 36) |
-| NEW | Client can request appointment cancellation | Low | good to have | To create | Submit a cancellation request; psychologist must approve; client emailed on decision |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-23 | Client can see appointments | Medium | required | Todo | Global list across all psychologists (default) + per-psychologist list via EDG-16 context | Yes |
+| EDG-24 | Client can review a past appointment | Medium | required | Todo | Detail view; shows impressions they submitted, psychologist recommendations, whiteboard snapshot | Yes |
+| EDG-25 | Client can review an upcoming appointment | Medium | required | Todo | Detail view; shows "Join call" button if Meet link present | Yes |
+| EDG-26 | Client can request an appointment reschedule | Low | good to have | Todo | Submit a reschedule request; psychologist must approve; only one active pending request (reschedule or cancellation) allowed per appointment — submitting a new one auto-invalidates the existing pending request (Decision 33) | Yes |
+| EDG-27 | Client can request a new appointment | Low | good to have | Todo | Submit a request for a new appointment; psychologist must approve | Yes |
+| EDG-45 | Client can participate in an active appointment | High | required | To create | Active state: whiteboard, Join call button; accessible when psychologist has started; "Session ended" modal on psychologist end (Decision 36) | Yes |
+| EDG-59 | Client can request appointment cancellation | Low | good to have | To create | Submit a cancellation request; psychologist must approve; client emailed on decision; only one active pending request (reschedule or cancellation) allowed per appointment — submitting a new one auto-invalidates the existing pending request (Decision 33) | Yes |
 
 ---
 
@@ -204,53 +204,53 @@ Status: Backlog
 
 ### Whiteboard
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| NEW | Interactive whiteboard — real-time drawing, cursor sharing, and image support | High | required | To create | WebSockets; both psychologist and client can draw; cursor sharing for both; basic image upload/paste onto the board; accessible during active appointment only (Decision 5) |
-| NEW | Whiteboard saved as snapshot on appointment end | High | required | To create | Static image saved when psychologist ends appointment; displayed in past appointment detail for both parties (Decision 29) |
-| NEW | Psychologist can insert associative images onto whiteboard | Medium | good to have | To create | Images from the associative library placed onto the board during active appointment |
-| NEW | Associative images library management | Low | good to have | To create | Psychologist uploads and manages image library between appointments |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-46 | Interactive whiteboard — real-time drawing, cursor sharing, and image support | High | required | To create | WebSockets; both psychologist and client can draw; cursor sharing for both; basic image upload/paste onto the board; accessible during active appointment only (Decision 5) | Yes |
+| EDG-47 | Whiteboard saved as snapshot on appointment end | High | required | To create | Static image saved when psychologist ends appointment; displayed in past appointment detail for both parties (Decision 29) | Yes |
+| NEW | Psychologist can insert associative images onto whiteboard | Medium | good to have | To create | Images from the associative library placed onto the board during active appointment | — |
+| NEW | Associative images library management | Low | good to have | To create | Psychologist uploads and manages image library between appointments | — |
 
 ### Notes, Impressions, Recommendations
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| NEW | Psychologist notes per appointment (text, image, audio) | High | required | To create | Private; visible to psychologist only; creatable/editable during active or any past appointment (Decision 16) |
-| NEW | Client impressions per appointment (text, image, audio) | High | required | To create | Multiple submissions allowed; each timestamped; no editing after submission; visible to both parties (Decisions 24, 27) |
-| NEW | Psychologist recommendations per appointment (text, image, audio) | High | required | To create | Scoped to an appointment; visible to client; client can react (Decision 10) |
-| NEW | Client can react to recommendations (done/not done + comment) | High | required | To create | Freely toggleable; client leaves one comment; psychologist can reply once (Decision 10) |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-48 | Psychologist notes per appointment (text, image, audio) | High | required | To create | Private; visible to psychologist only; creatable/editable during active or any past appointment (Decision 16) | Yes |
+| EDG-49 | Client impressions per appointment (text, image, audio) | High | required | To create | Multiple submissions allowed; each timestamped; no editing after submission; visible to both parties (Decisions 24, 27) | Yes |
+| EDG-50 | Psychologist recommendations per appointment (text, image, audio) | High | required | To create | Scoped to an appointment; visible to client; client can react (Decision 10) | Yes |
+| EDG-51 | Client can react to recommendations (done/not done + comment) | High | required | To create | Freely toggleable; client leaves one comment; psychologist can reply once (Decision 10) | Yes |
 
 ### Progress and dashboards
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| NEW | Client progress timeline | High | required | To create | Chronological view of all client impressions across all appointments within a psychologist-client pair; all timestamped entries shown |
-| NEW | Client dashboard | High | required | To create | Aggregated view: upcoming appointments, pending recommendations, progress from all connected psychologists; global appointment list (Decision 26) |
-| NEW | Psychologist dashboard | Medium | required | To create | Aggregated home view across all clients: upcoming appointments, active appointment indicator, pending reschedule and cancellation requests, quick access to recent clients |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-52 | Client progress timeline | High | required | To create | Chronological view of all client impressions across all appointments within a psychologist-client pair; all timestamped entries shown | Yes |
+| EDG-53 | Client dashboard | High | required | To create | Aggregated view: upcoming appointments, pending recommendations, progress from all connected psychologists; global appointment list (Decision 26) | Yes |
+| EDG-54 | Psychologist dashboard | Medium | required | To create | Aggregated home view across all clients: upcoming appointments, active appointment indicator, pending reschedule and cancellation requests, quick access to recent clients | Yes |
 
 ### Email reminders
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| NEW | Email: appointment reminders (24h and 1h before start) | High | required | To create | Two emails per appointment; only for clients with email set (Decision 31) |
-| NEW | Email: new recommendation notification to client | High | required | To create | Sent when psychologist creates a recommendation |
-| NEW | Email: appointment deleted notification to client | Medium | required | To create | Sent when psychologist deletes an upcoming appointment (Decision 12); required because EDG-19 promises this email |
-| NEW | Email: appointment rescheduled notification to client | Medium | required | To create | Sent when psychologist edits appointment date/time (Decision 12); required because EDG-18 promises this email |
-| NEW | Email: psychologist acts on reschedule/cancellation request | Low | good to have | To create | Sent to client on approve or reject |
-| NEW | Email: existing user notified of new invitation | Low | good to have | To create | Sent when psychologist invites an already-registered user (Decision 19) |
-| NEW | Email: psychologist starts appointment (notify client) | Medium | good to have | To create | "Your session has started. Join now." (Decision 28) |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-55 | Email: appointment reminders (24h and 1h before start) | High | required | To create | Two emails per appointment; only for clients with email set (Decision 31) | Yes |
+| EDG-56 | Email: new recommendation notification to client | High | required | To create | Sent when psychologist creates a recommendation | Yes |
+| EDG-57 | Email: appointment deleted notification to client | Medium | required | To create | Sent when psychologist deletes an upcoming appointment (Decision 12); required because EDG-19 promises this email | Yes |
+| EDG-58 | Email: appointment rescheduled notification to client | Medium | required | To create | Sent when psychologist edits appointment date/time (Decision 12); required because EDG-18 promises this email | Yes |
+| NEW | Email: psychologist acts on reschedule/cancellation request | Low | good to have | To create | Sent to client on approve or reject | — |
+| NEW | Email: existing user notified of new invitation | Low | good to have | To create | Sent when psychologist invites an already-registered user (Decision 19) | — |
+| NEW | Email: psychologist starts appointment (notify client) | Medium | good to have | To create | "Your session has started. Join now." (Decision 28) | — |
 
 ---
 
 ## No Project (Team-level)
 
-| ID | Title | Linear | Paper priority | Status | Notes |
-|----|-------|--------|----------------|--------|-------|
-| EDG-1 | Get familiar with Linear (1) | — | good to have | Todo | Linear onboarding — not a product ticket |
-| EDG-2 | Set up your teams (2) | — | good to have | Todo | Linear onboarding — not a product ticket |
-| EDG-3 | Connect your tools (3) | — | good to have | Todo | Linear onboarding — not a product ticket |
-| EDG-4 | Import your data (4) | — | good to have | Todo | Linear onboarding — not a product ticket |
-| EDG-5 | Implement a backend endpoint "POST /sessions" | — | — | **To cancel** | Stale Elysia.js ticket, superseded by EDG-17. Must be cancelled in Linear. |
+| ID | Title | Linear | Paper priority | Status | Notes | Processed |
+|----|-------|--------|----------------|--------|-------|-----------|
+| EDG-1 | Get familiar with Linear (1) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
+| EDG-2 | Set up your teams (2) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
+| EDG-3 | Connect your tools (3) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
+| EDG-4 | Import your data (4) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
+| EDG-5 | Implement a backend endpoint "POST /sessions" | — | — | **To cancel** | Stale Elysia.js ticket, superseded by EDG-17. Must be cancelled in Linear. | — |
 
 ---
 
