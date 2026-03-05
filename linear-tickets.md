@@ -116,13 +116,13 @@ These two tickets cover the minimum needed for the paper: a psychologist adds a 
 
 | ID | Title | Linear | Paper priority | Status | Processed |
 |----|-------|--------|----------------|--------|-----------|
-| EDG-9 | Psycho can invite existing users to become their clients | Medium | good to have | Todo | — |
-| EDG-10 | Psycho can invite people by email to join as their clients | Medium | good to have | Todo | — |
-| EDG-11 | Registered clients can accept psycho invitations | Medium | good to have | Todo | — |
-| EDG-12 | Users can join portal via email invitation and immediately become clients of the psycho who invited them | Medium | good to have | Todo | — |
+| EDG-9 | Psycho can invite existing users to become their clients | Medium | good to have | Todo | Yes |
+| EDG-10 | Psycho can invite people by email to join as their clients | Medium | good to have | Todo | Yes |
+| EDG-11 | Registered clients can accept psycho invitations | Medium | good to have | Todo | Yes |
+| EDG-12 | Users can join portal via email invitation and immediately become clients of the psycho who invited them | Medium | good to have | Todo | Yes |
 | EDG-15 | Psycho clients management | Medium | required | Todo | Yes |
 | EDG-43 | Psycho can remove a client from their list | High | required | To create | Yes |
-| EDG-16 | Client psychos management | Medium | good to have | Todo | — |
+| EDG-16 | Client psychos management | Medium | good to have | Todo | Yes |
 
 **EDG-15** — Psychologist's view of their client list (all accepted clients).
 **EDG-16** — Client's view of all psychologists they are connected to.
@@ -132,11 +132,11 @@ These two tickets cover the minimum needed for the paper: a psychologist adds a 
 
 | ID | Title | Linear | Paper priority | Status | Processed |
 |----|-------|--------|----------------|--------|-----------|
-| EDG-13 | Psycho invitations management | Medium | good to have | Todo | — |
-| EDG-30 | Psycho sees sent invitations with their statuses | Medium | good to have | Todo | — |
-| EDG-31 | Psycho can create an invitation | Medium | good to have | Todo | — |
-| EDG-32 | Psycho can resend an invitation | Medium | good to have | Todo | — |
-| NEW | Psycho can cancel a pending invitation | Medium | good to have | To create | — |
+| EDG-13 | Psycho invitations management | Medium | good to have | Todo | Yes |
+| EDG-30 | Psycho sees sent invitations with their statuses | Medium | good to have | Todo | Yes |
+| EDG-31 | Psycho can create an invitation | Medium | good to have | Todo | Yes |
+| EDG-32 | Psycho can resend an invitation | Medium | good to have | Todo | Yes |
+| EDG-61 | Psycho can cancel a pending invitation | Medium | good to have | To create | Yes |
 
 **EDG-32** — Resend is only valid for **pending** or **expired** invitations.
 **NEW (cancel)** — Cancel is only valid for **pending** invitations. Token is invalidated; no email is sent. (Decision 32)
@@ -246,11 +246,11 @@ Status: Backlog
 
 | ID | Title | Linear | Paper priority | Status | Notes | Processed |
 |----|-------|--------|----------------|--------|-------|-----------|
-| EDG-1 | Get familiar with Linear (1) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
-| EDG-2 | Set up your teams (2) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
-| EDG-3 | Connect your tools (3) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
-| EDG-4 | Import your data (4) | — | good to have | Todo | Linear onboarding — not a product ticket | — |
-| EDG-5 | Implement a backend endpoint "POST /sessions" | — | — | **To cancel** | Stale Elysia.js ticket, superseded by EDG-17. Must be cancelled in Linear. | — |
+| EDG-1 | Get familiar with Linear (1) | — | good to have | Canceled | Linear onboarding — not a product ticket | Yes |
+| EDG-2 | Set up your teams (2) | — | good to have | Canceled | Linear onboarding — not a product ticket | Yes |
+| EDG-3 | Connect your tools (3) | — | good to have | Canceled | Linear onboarding — not a product ticket | Yes |
+| EDG-4 | Import your data (4) | — | good to have | Canceled | Linear onboarding — not a product ticket | Yes |
+| EDG-5 | Implement a backend endpoint "POST /sessions" | — | — | Canceled | Stale Elysia.js ticket, superseded by EDG-17. | Yes |
 
 ---
 
