@@ -17,15 +17,15 @@ bun run migration:create -- --name <name>  # Create a new migration file
 
 ### Frontend (`frontend/`)
 ```bash
-npm run dev         # Start dev server with HMR (port 5173)
-npm run build       # Production build
-npm run typecheck   # Type generation + tsc check
+bun run dev         # Start dev server with HMR (port 5173)
+bun run build       # Production build
+bun run typecheck   # Type generation + tsc check
 ```
 
 ## Architecture
 
 ### Overview
-Monorepo with two independent apps: a Bun/Hono REST API (`backend/`) and a React Router v7 SPA (`frontend/`). No shared packages between them.
+Monorepo with two independent apps: a Bun/Hono REST API (`backend/`) and a Bun/React Router v7 SPA (`frontend/`). No shared packages between them.
 
 ### Backend (`backend/src/`)
 - **Runtime**: Bun. **Framework**: Hono. **Database**: PostgreSQL via Bun's native `SQL` template literal client (no ORM).
@@ -52,5 +52,5 @@ ENV                   # Set to "production" to hide stack traces
 ```
 
 ## Code Style
-- Backend uses Prettier (config in root `.prettierrc.json`): 4-space indent, semicolons, trailing commas.
-- Frontend uses the default prettier config from the React Router template.
+- Backend & Frontend uses Prettier (config in root `.prettierrc.json`): 4-space indent, semicolons, trailing commas.
+  - run `bunx prettier -w ./backend` & `bunx prettier -w ./frontend` from the repo root to apply the prettier format

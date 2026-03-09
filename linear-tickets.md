@@ -208,8 +208,8 @@ Status: Backlog
 |----|-------|--------|----------------|--------|-------|-----------|
 | EDG-46 | Interactive whiteboard — real-time drawing, cursor sharing, and image support | High | required | To create | WebSockets; both psychologist and client can draw; cursor sharing for both; basic image upload/paste onto the board; accessible during active appointment only (Decision 5) | Yes |
 | EDG-47 | Whiteboard saved as snapshot on appointment end | High | required | To create | Static image saved when psychologist ends appointment; displayed in past appointment detail for both parties (Decision 29) | Yes |
-| NEW | Psychologist can insert associative images onto whiteboard | Medium | good to have | To create | Images from the associative library placed onto the board during active appointment | — |
-| NEW | Associative images library management | Low | good to have | To create | Psychologist uploads and manages image library between appointments | — |
+| EDG-62 | Psychologist can insert associative images onto whiteboard | Medium | good to have | To create | Images from the associative library placed onto the board during active appointment | — |
+| EDG-63 | Associative images library management | Low | good to have | To create | Psychologist uploads and manages image library between appointments | — |
 
 ### Notes, Impressions, Recommendations
 
@@ -236,9 +236,9 @@ Status: Backlog
 | EDG-56 | Email: new recommendation notification to client | High | required | To create | Sent when psychologist creates a recommendation | Yes |
 | EDG-57 | Email: appointment deleted notification to client | Medium | required | To create | Sent when psychologist deletes an upcoming appointment (Decision 12); required because EDG-19 promises this email | Yes |
 | EDG-58 | Email: appointment rescheduled notification to client | Medium | required | To create | Sent when psychologist edits appointment date/time (Decision 12); required because EDG-18 promises this email | Yes |
-| NEW | Email: psychologist acts on reschedule/cancellation request | Low | good to have | To create | Sent to client on approve or reject | — |
-| NEW | Email: existing user notified of new invitation | Low | good to have | To create | Sent when psychologist invites an already-registered user (Decision 19) | — |
-| NEW | Email: psychologist starts appointment (notify client) | Medium | good to have | To create | "Your session has started. Join now." (Decision 28) | — |
+| EDG-64 | Email: psychologist acts on reschedule/cancellation request | Low | good to have | To create | Sent to client on approve or reject | — |
+| EDG-65 | Email: existing user notified of new invitation | Low | good to have | To create | Sent when psychologist invites an already-registered user (Decision 19) | — |
+| EDG-66 | Email: psychologist starts appointment (notify client) | Medium | good to have | To create | "Your session has started. Join now." (Decision 28) | — |
 
 ---
 
