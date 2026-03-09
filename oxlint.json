@@ -1,0 +1,32 @@
+{
+    "plugins": ["react"],
+    "env": {
+        "node": true,
+        "es2022": true
+    },
+    "rules": {
+        "no-unused-vars": "warn",
+        "eqeqeq": "warn",
+        "no-var": "error",
+        "prefer-const": "warn"
+    },
+    "ignorePatterns": [
+        "**/node_modules/**",
+        "**/build/**",
+        "**/.react-router/**"
+    ],
+    "overrides": [
+        {
+            "files": ["frontend/**/*.{ts,tsx,js,jsx}"],
+            "env": {
+                "browser": true,
+                "node": false
+            },
+            "rules": {
+                "react/jsx-no-target-blank": "error",
+                "react/no-danger": "warn",
+                "react/no-direct-mutation-state": "error"
+            }
+        }
+    ]
+}

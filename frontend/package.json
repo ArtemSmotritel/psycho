@@ -6,7 +6,8 @@
         "build": "react-router build",
         "dev": "react-router dev",
         "start": "react-router-serve ./build/server/index.js",
-        "typecheck": "react-router typegen && tsc"
+        "typecheck": "react-router typegen && tsc",
+        "lint": "oxlint ."
     },
     "dependencies": {
         "@excalidraw/excalidraw": "^0.18.0",
@@ -56,6 +57,7 @@
         "@types/node": "^25",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
+        "oxlint": "^1.51.0",
         "react-router-devtools": "^6.0.1",
         "tailwindcss": "^4.1.18",
         "typescript": "^5.9.3",
