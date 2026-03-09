@@ -7,7 +7,7 @@
         "dev": "react-router dev",
         "start": "react-router-serve ./build/server/index.js",
         "typecheck": "react-router typegen && tsc",
-        "lint": "oxlint ."
+        "lint": "oxlint . -c ../oxlintrc.json"
     },
     "dependencies": {
         "@excalidraw/excalidraw": "^0.18.0",
