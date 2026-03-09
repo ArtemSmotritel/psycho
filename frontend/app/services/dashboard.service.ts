@@ -1,7 +1,6 @@
-import { api } from './api';
-import type { DashboardStatistics } from '~/models/dashboard';
+import { api } from './api'
+import type { DashboardStatistics } from '~/models/dashboard'
 
 export const dashboardService = {
-  getStatistics: () => 
-    api.get<DashboardStatistics>('/dashboard/statistics'),
-}; 
+    getStatistics: () => api.get<DashboardStatistics>('/dashboard/statistics'),
+}
