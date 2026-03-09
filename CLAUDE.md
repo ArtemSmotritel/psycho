@@ -52,5 +52,5 @@ ENV                   # Set to "production" to hide stack traces
 ```
 
 ## Code Style
-- Backend uses Biome (config in root `biome.json`): 4-space indent, semicolons, trailing commas.
+- Backend uses Prettier (config in root `.prettierrc.json`): 4-space indent, semicolons, trailing commas.
 - Frontend uses the default prettier config from the React Router template.
