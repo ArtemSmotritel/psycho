@@ -52,7 +52,7 @@ interface SessionTabContentProps {
     clientId: string
 }
 
-function SessionTabContent({ title, attachments, sessionId, clientId }: SessionTabContentProps) {
+function SessionTabContent({ title: _title, attachments, sessionId, clientId }: SessionTabContentProps) {
     return (
         <div className="w-full">
             <div className="flex flex-col">
@@ -181,7 +181,7 @@ export default function Session() {
                     />
                 )}
 
-                {isFutureSession && userRole == 'psychologist' && (
+                {isFutureSession && userRole === 'psychologist' && (
                     <SessionForm
                         mode="edit"
                         trigger={

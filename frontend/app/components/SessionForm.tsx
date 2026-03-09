@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import * as z from 'zod'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, Check, ChevronsUpDown, Video } from 'lucide-react'
+import { Calendar as CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -210,7 +210,7 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
                                                             <CommandItem
                                                                 key={client.id}
                                                                 value={client.name}
-                                                                onSelect={(currentValue) => {
+                                                                onSelect={(_currentValue) => {
                                                                     form.setValue(
                                                                         'clientId',
                                                                         client.id,

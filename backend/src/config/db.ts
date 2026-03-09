@@ -25,10 +25,10 @@ export const db = new SQL({
     //   },
     // },
 
-    onconnect: (client) => {
+    onconnect: (_client) => {
         log.debug('Connected to PostgreSQL')
     },
-    onclose: (client) => {
+    onclose: (_client) => {
         log.debug('PostgreSQL connection closed')
     },
 })

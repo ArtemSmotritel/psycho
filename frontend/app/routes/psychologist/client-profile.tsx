@@ -12,7 +12,6 @@ import {
     TrendingUp,
     ArrowRight,
     ArrowLeft,
-    ArrowLeftRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ClientForm } from '@/components/ClientForm'

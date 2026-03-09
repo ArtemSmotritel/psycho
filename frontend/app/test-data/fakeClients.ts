@@ -1,4 +1,4 @@
-import { format, addDays, subDays } from 'date-fns'
+import { addDays, subDays } from 'date-fns'
 
 export type Client = {
     id: string

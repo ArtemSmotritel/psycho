@@ -1,4 +1,4 @@
-import { addDays, subDays, format } from 'date-fns'
+import { addDays, subDays } from 'date-fns'
 import type { Session, SessionListItemDTO } from '~/models/session'
 
 export const fakeSessions: Session[] = [

@@ -1,4 +1,4 @@
-import { FileText, Smile, ThumbsUp, User } from 'lucide-react'
+import { FileText, Smile, ThumbsUp } from 'lucide-react'
 import type { AttachmentType } from '~/models/session'
 
 // Icon mapping utilities

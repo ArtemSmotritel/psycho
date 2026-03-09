@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 role: 'psychologist',
                 name: 'myname',
             })
-        } catch (error) {
+        } catch  {
             setUser(null)
         } finally {
             setIsLoading(false)
@@ -46,31 +46,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const login = async (email: string, password: string) => {
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            })
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        })
 
-            if (!response.ok) {
-                throw new Error('Login failed')
-            }
+        if (!response.ok) {
+            throw new Error('Login failed')
+        }
 
-            const user = await response.json()
-            setUser(user)
+        const user = await response.json()
+        setUser(user)
 
-            // Redirect based on role
-            if (user.role === 'psychologist') {
-                navigate('/psychologist/dashboard')
-            } else {
-                navigate('/client/dashboard')
-            }
-        } catch (error) {
-            throw error
+        // Redirect based on role
+        if (user.role === 'psychologist') {
+            navigate('/psychologist/dashboard')
+        } else {
+            navigate('/client/dashboard')
         }
     }
 

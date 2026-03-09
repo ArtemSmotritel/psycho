@@ -41,7 +41,7 @@ export default function LiveSession() {
                         theme="light"
                         zenModeEnabled={true}
                         gridModeEnabled={true}
-                        onChange={(elements: readonly any[], appState: any, files: any) => {
+                        onChange={(_elements: readonly any[], _appState: any, _files: any) => {
                             // TODO: Implement sync logic here
                             // console.log('Drawing changed:', elements, appState);
                         }}

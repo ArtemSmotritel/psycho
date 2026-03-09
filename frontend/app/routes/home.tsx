@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 import type { Route } from './+types/home'
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
     return [
         { title: 'Psycho - Professional Mental Health Platform' },
         {

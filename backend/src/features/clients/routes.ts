@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { createUserClient, findClientByEmail, findClients, linkClientToPsycho } from './services'
+import { findClientByEmail, findClients, linkClientToPsycho } from './services'
 
 export const clientRoutes = new Hono()
 
