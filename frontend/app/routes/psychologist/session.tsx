@@ -52,7 +52,12 @@ interface SessionTabContentProps {
     clientId: string
 }
 
-function SessionTabContent({ title: _title, attachments, sessionId, clientId }: SessionTabContentProps) {
+function SessionTabContent({
+    title: _title,
+    attachments,
+    sessionId,
+    clientId,
+}: SessionTabContentProps) {
     return (
         <div className="w-full">
             <div className="flex flex-col">

@@ -15,25 +15,25 @@ export function useSidebarItems(): SidebarItem[] {
         {
             title: 'Dashboard',
             icon: HomeIcon,
-            href: '/psychologist',
+            href: '/psycho/clients',
             availableTo: 'psychologist',
         },
         {
             title: 'Clients',
             icon: UsersIcon,
-            href: '/psychologist/clients',
+            href: '/psycho/clients',
             availableTo: 'psychologist',
         },
         {
             title: 'Sessions',
             icon: CalendarIcon,
-            href: '/psychologist/sessions',
+            href: '/psycho/sessions',
             availableTo: 'psychologist',
         },
         {
             title: 'Associative Images',
             icon: ImageIcon,
-            href: '/psychologist/associative-images',
+            href: '/psycho/associative-images',
             availableTo: 'psychologist',
         },
         {

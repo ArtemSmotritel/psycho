@@ -121,7 +121,9 @@ export function AddImageDialog({ onAddImage }: AddImageDialogProps) {
                         <FormField
                             control={form.control}
                             name="file"
-                            render={({ field: { onChange: _onChange, value: _value, ...field } }) => (
+                            render={({
+                                field: { onChange: _onChange, value: _value, ...field },
+                            }) => (
                                 <FormItem>
                                     <FormLabel>Image File</FormLabel>
                                     <FormControl>

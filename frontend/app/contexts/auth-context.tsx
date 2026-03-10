@@ -1,92 +1,83 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { User } from '~/models/user'
+import { auth } from '~/services/auth.service'
+import { userService } from '~/services/user.service'
 
 interface AuthContextType {
     user: User | null
     isLoading: boolean
-    login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     isAuthenticated: boolean
+    activeRole: 'psycho' | 'client' | null
+    setActiveRole: (role: 'psycho' | 'client') => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const { data: session, isPending } = auth.useSession()
     const [user, setUser] = useState<User | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const navigate = useNavigate()
+    const [isFetchingUser, setIsFetchingUser] = useState(false)
 
-    // Check auth status on mount
     useEffect(() => {
-        checkAuth()
-    }, [])
+        if (isPending) return
 
-    const checkAuth = async () => {
-        try {
-            // const response = await fetch('/api/auth/me', {
-            //   credentials: 'include', // Important for cookies
-            // });
-
-            // if (response.ok) {
-            //   const user = await response.json();
-            //   setUser(user);
-            // }
-            setUser({
-                id: '1',
-                email: 'abobus@example.com',
-                role: 'psychologist',
-                name: 'myname',
-            })
-        } catch  {
+        if (!session) {
             setUser(null)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const login = async (email: string, password: string) => {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        })
-
-        if (!response.ok) {
-            throw new Error('Login failed')
+            return
         }
 
-        const user = await response.json()
-        setUser(user)
-
-        // Redirect based on role
-        if (user.role === 'psychologist') {
-            navigate('/psychologist/dashboard')
-        } else {
-            navigate('/client/dashboard')
-        }
-    }
+        setIsFetchingUser(true)
+        userService
+            .getMe()
+            .then((res) => {
+                const data = res.data
+                setUser({
+                    id: data.id,
+                    email: data.email,
+                    name: data.name,
+                    image: session.user.image ?? null,
+                    activeRole: data.active_role,
+                })
+            })
+            .catch(() => {
+                setUser(null)
+            })
+            .finally(() => {
+                setIsFetchingUser(false)
+            })
+    }, [isPending, session])
 
     const logout = async () => {
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-        })
+        await auth.signOut()
         setUser(null)
-        navigate('/login')
     }
+
+    const setActiveRole = async (role: 'psycho' | 'client') => {
+        const res = await userService.setActiveRole(role)
+        const data = res.data
+        setUser((prev) =>
+            prev
+                ? {
+                      ...prev,
+                      activeRole: data.active_role,
+                  }
+                : null,
+        )
+    }
+
+    const isLoading = isPending || isFetchingUser
+    const activeRole = user?.activeRole ?? null
 
     return (
         <AuthContext.Provider
             value={{
                 user,
                 isLoading,
-                login,
                 logout,
-                isAuthenticated: !!user,
+                isAuthenticated: !!session,
+                activeRole,
+                setActiveRole,
             }}
         >
             {children}

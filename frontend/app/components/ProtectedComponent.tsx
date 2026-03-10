@@ -11,7 +11,10 @@ export function ProtectedComponent({ children, allowedRoles }: ProtectedComponen
     if (
         isLoading ||
         !isAuthenticated ||
-        (allowedRoles && user && !allowedRoles.includes(user.role))
+        (allowedRoles &&
+            user &&
+            !!user.role &&
+            !allowedRoles.includes(user.role as 'psychologist' | 'client'))
     ) {
         return null
     }

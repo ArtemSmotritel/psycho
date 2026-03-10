@@ -63,15 +63,17 @@ export default function Home() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-gray-600">
-                                    All sessions are conducted in a secure, confidential environment
-                                    with end-to-end encryption to protect your privacy.
+                                    All appointments are conducted in a secure, confidential
+                                    environment with end-to-end encryption to protect your privacy.
                                 </p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Flexible Scheduling</CardTitle>
-                                <CardDescription>Book sessions at your convenience</CardDescription>
+                                <CardDescription>
+                                    Book appointments at your convenience
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-gray-600">

@@ -5,6 +5,8 @@ import { logger } from 'hono/logger'
 import { auth } from 'utils/auth'
 import { log } from 'utils/logger'
 import { setSession, setUserRole } from '../middlewares/auth'
+import { clientRoutes } from '../features/clients/routes'
+import { userRoutes } from '../features/users/routes'
 
 export const app = new Hono<{
     Variables: {
@@ -18,7 +20,7 @@ app.use(
         origin: process.env.FRONTEND_URL as string,
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         credentials: true,
-        allowHeaders: ['Content-Type', 'Authorization'],
+        allowHeaders: ['Content-Type', 'Authorization', 'Helpsycho-User-Role'],
         exposeHeaders: ['Content-Length'],
         maxAge: 600,
     }),
@@ -64,3 +66,6 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 app.use('*', setSession)
 
 app.use(setUserRole)
+
+app.route('/api/clients', clientRoutes)
+app.route('/api/users', userRoutes)
