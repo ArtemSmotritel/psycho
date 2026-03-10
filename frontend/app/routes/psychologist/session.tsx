@@ -1,136 +1,83 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Video, Edit, User, Trash2, LogIn, ArrowRight } from 'lucide-react'
+import { Video, Edit, User, Trash2, LogIn, Play } from 'lucide-react'
 import { SessionForm } from '@/components/SessionForm'
-import { AttachmentForm } from '@/components/AttachmentForm'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
-import { useCurrentSession } from '~/hooks/useCurrentSession'
+import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { Link, useNavigate, useParams } from 'react-router'
-import { type Attachment, type Session } from '~/models/session'
-import { Separator } from '@/components/ui/separator'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Button } from '~/components/ui/button'
-import { AttachmentIcon } from '~/utils/componentUtils'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { isSessionActive, isSessionMoreThanDayOld } from '~/utils/utils'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { toast } from 'sonner'
-
-interface AttachmentProps {
-    attachment: Attachment
-    sessionId: string
-    clientId: string
-}
-
-const Attachment = ({ attachment, sessionId, clientId }: AttachmentProps) => {
-    return (
-        <div className="flex items-center justify-between gap-4 px-4 py-5 w-full">
-            <div className="flex items-center gap-2 min-w-[200px]">
-                <span className="flex h-14 w-16 shrink-0 items-center justify-center rounded-md bg-muted">
-                    <AttachmentIcon type={attachment.type} />
-                </span>
-                <div className="flex flex-col gap-1">
-                    <h3 className="font-semibold">{attachment.name}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">{attachment.type}</p>
-                </div>
-            </div>
-            <Button variant="outline" asChild className="w-[200px]">
-                <Link
-                    to={`/psychologist/clients/${clientId}/appointments/${sessionId}/attachment/${attachment.id}`}
-                >
-                    <span>View {attachment.type}</span>
-                    <ArrowRight className="h-4 w-4" />
-                </Link>
-            </Button>
-        </div>
-    )
-}
-
-interface SessionTabContentProps {
-    title: string
-    attachments: Attachment[]
-    sessionId: string
-    clientId: string
-}
-
-function SessionTabContent({
-    title: _title,
-    attachments,
-    sessionId,
-    clientId,
-}: SessionTabContentProps) {
-    return (
-        <div className="w-full">
-            <div className="flex flex-col">
-                <Separator />
-                {attachments.map((attachment) => (
-                    <React.Fragment key={attachment.id}>
-                        <Attachment
-                            attachment={attachment}
-                            sessionId={sessionId}
-                            clientId={clientId}
-                        />
-                        <Separator />
-                    </React.Fragment>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-interface GoogleMeetLinkProps {
-    session: Session
-    isMoreThanDayOld: boolean
-}
-
-function GoogleMeetLink({ session, isMoreThanDayOld }: GoogleMeetLinkProps) {
-    if (!session) {
-        return null
-    }
-
-    if (isMoreThanDayOld) {
-        return <p className="text-sm text-muted-foreground">Session is more than 1 day old</p>
-    }
-
-    if (!session.googleMeetLink) {
-        return <p className="text-sm text-muted-foreground">Google Meet link is absent</p>
-    }
-
-    return (
-        <Link
-            to={session.googleMeetLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary underline"
-        >
-            {session?.googleMeetLink}
-        </Link>
-    )
-}
+import { format } from 'date-fns'
 
 export default function Session() {
-    const session = useCurrentSession()
+    const { appointment, isLoading } = useCurrentAppointment()
     const { userRole } = useRoleGuard(['psychologist', 'client'])
     const navigate = useNavigate()
-    const { role } = useParams()
-    const isFutureSession = session?.date ? new Date(session.date) > new Date() : false
-    const [isUpdating, setIsUpdating] = useState(false)
+    const { role, clientId } = useParams<{ role: string; clientId: string }>()
+
+    const [isStarting, setIsStarting] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [startError, setStartError] = useState<{
+        message: string
+        activeAppointmentId: string
+    } | null>(null)
 
-    // Check if session is currently active (within 1 hour of start time)
-    const isCurrentlyActive = session ? isSessionActive(session) : false
-    const isMoreThanDayOld = session?.date ? isSessionMoreThanDayOld(session.date) : false
-    const areJoinComponentsHighlighted =
-        isCurrentlyActive && !!session?.googleMeetLink && !isMoreThanDayOld
+    if (isLoading) {
+        return <p>Loading appointment...</p>
+    }
 
-    const handleDeleteSession = async () => {
-        if (!session) return
+    if (!appointment) {
+        return <p>Appointment not found.</p>
+    }
+
+    if (appointment.status === 'past') {
+        return <p>This is a past appointment. Detail view coming in EDG-21.</p>
+    }
+
+    if (appointment.status === 'active') {
+        return (
+            <Link
+                to={`/${role}/clients/${appointment.clientId}/appointments/${appointment.id}/live`}
+            >
+                <Button>Go to Active Appointment</Button>
+            </Link>
+        )
+    }
+
+    // upcoming
+    const handleStartAppointment = async () => {
+        if (!appointment) return
+        setIsStarting(true)
+        setStartError(null)
+        try {
+            await appointmentService.start(appointment.clientId, appointment.id)
+            navigate(`/${role}/clients/${appointment.clientId}/appointments/${appointment.id}/live`)
+        } catch (err: any) {
+            const errorCode = err?.response?.data?.error
+            if (errorCode === 'AnotherAppointmentActive') {
+                setStartError({
+                    message: err.response.data.message,
+                    activeAppointmentId: err.response.data.activeAppointmentId,
+                })
+            } else {
+                toast.error('Failed to start appointment. Please try again.')
+            }
+        } finally {
+            setIsStarting(false)
+        }
+    }
+
+    const handleDeleteAppointment = async () => {
+        if (!appointment) return
         setIsDeleting(true)
         try {
-            await appointmentService.delete(session.clientId, session.id)
+            await appointmentService.delete(appointment.clientId, appointment.id)
             toast.success('Appointment deleted.')
-            navigate(`/${role}/clients/${session.clientId}/appointments`)
+            navigate(`/${role}/clients/${appointment.clientId}/appointments`)
         } catch {
             toast.error('Failed to delete appointment. Please try again.')
         } finally {
@@ -138,78 +85,77 @@ export default function Session() {
         }
     }
 
-    if (!session) return null
+    const formattedDate = format(new Date(appointment.startTime), 'PPP')
+    const formattedStart = format(new Date(appointment.startTime), 'HH:mm')
+    const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
         <>
+            <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
+            <p className="text-muted-foreground mb-4">
+                {formattedStart} – {formattedEnd}
+            </p>
+
             <Alert className="mb-4">
-                <Video
-                    className={areJoinComponentsHighlighted ? 'text-green-600' : 'text-primary'}
-                />
+                <Video className="text-primary" />
                 <AlertTitle>Google Meet</AlertTitle>
                 <AlertDescription>
-                    <GoogleMeetLink session={session} isMoreThanDayOld={isMoreThanDayOld} />
+                    {appointment.googleMeetLink ? (
+                        <Link
+                            to={appointment.googleMeetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary underline"
+                        >
+                            {appointment.googleMeetLink}
+                        </Link>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No Google Meet link</p>
+                    )}
                 </AlertDescription>
             </Alert>
 
+            {startError && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertTitle>Cannot Start Appointment</AlertTitle>
+                    <AlertDescription>
+                        <p className="mb-2">{startError.message}</p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                navigate(
+                                    `/${role}/clients/${clientId}/appointments/${startError.activeAppointmentId}`,
+                                )
+                            }
+                        >
+                            Go to active appointment
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <ActionsSection title="Actions">
                 {userRole === 'psychologist' && (
-                    <>
-                        <AttachmentForm
-                            type="note"
-                            trigger={
-                                <ActionItem
-                                    icon={<AttachmentIcon type="note" />}
-                                    label="Create Note"
-                                />
-                            }
-                            onSubmit={(values) => {
-                                console.log('Creating note:', values)
-                                // TODO: Implement note creation
-                            }}
-                        />
-
-                        <AttachmentForm
-                            type="recommendation"
-                            trigger={
-                                <ActionItem
-                                    icon={<AttachmentIcon type="recommendation" />}
-                                    label="Create Recommendation"
-                                />
-                            }
-                            onSubmit={(values) => {
-                                console.log('Creating recommendation:', values)
-                                // TODO: Implement recommendation creation
-                            }}
-                        />
-                    </>
-                )}
-
-                {userRole === 'client' && (
-                    <AttachmentForm
-                        type="impression"
-                        trigger={
-                            <ActionItem
-                                icon={<AttachmentIcon type="impression" />}
-                                label="Create Impression"
-                            />
-                        }
-                        onSubmit={(values) => {
-                            console.log('Creating impression:', values)
-                            // TODO: Implement impression creation
-                        }}
+                    <ActionItem
+                        icon={<Play className="h-6" />}
+                        label="Start Appointment"
+                        variant="default"
+                        onClick={handleStartAppointment}
+                        disabled={isStarting}
                     />
                 )}
 
-                {isFutureSession && userRole === 'psychologist' && (
+                {userRole === 'psychologist' && (
                     <SessionForm
                         mode="edit"
                         trigger={
-                            <ActionItem icon={<Edit className="h-6" />} label="Edit Session" />
+                            <ActionItem icon={<Edit className="h-6" />} label="Edit Appointment" />
                         }
                         initialData={{
-                            startTime: session?.date ? new Date(session.date) : undefined,
-                            clientId: session?.clientId,
+                            startTime: new Date(appointment.startTime),
+                            clientId: appointment.clientId,
+                            googleMeetLink: appointment.googleMeetLink ?? undefined,
                         }}
                         isLoading={isUpdating}
                         onSubmit={async (values) => {
@@ -220,7 +166,11 @@ export default function Session() {
                                     endTime: values.endTime.toISOString(),
                                     googleMeetLink: values.googleMeetLink || null,
                                 }
-                                await appointmentService.update(session.clientId, session.id, dto)
+                                await appointmentService.update(
+                                    appointment.clientId,
+                                    appointment.id,
+                                    dto,
+                                )
                                 toast.success('Appointment updated.')
                             } catch {
                                 toast.error('Failed to update appointment. Please try again.')
@@ -231,34 +181,18 @@ export default function Session() {
                     />
                 )}
 
-                {session?.googleMeetLink && (
+                {appointment.googleMeetLink && (
                     <ActionItem
                         icon={<LogIn className="h-6" />}
-                        label="Join Session"
-                        variant={isCurrentlyActive ? 'default' : 'outline'}
-                        className={
-                            areJoinComponentsHighlighted
-                                ? 'bg-green-600 hover:bg-green-700 text-white'
-                                : ''
-                        }
-                        href={session.googleMeetLink}
-                        disabled={!areJoinComponentsHighlighted}
-                        subtext={
-                            isCurrentlyActive
-                                ? 'Session is active'
-                                : isMoreThanDayOld
-                                  ? 'Session is more than 1 day old'
-                                  : undefined
-                        }
+                        label="Join Call"
+                        href={appointment.googleMeetLink}
                     />
                 )}
 
                 <ActionItem
                     icon={<User className="h-6" />}
-                    label={
-                        userRole === 'psychologist' ? 'Visit Client Profile' : 'Visit my profile'
-                    }
-                    to={`/psychologist/clients/${session?.clientId}`}
+                    label="Visit Client Profile"
+                    to={`/${role}/clients/${appointment.clientId}`}
                 />
 
                 {userRole === 'psychologist' && (
@@ -275,60 +209,10 @@ export default function Session() {
                         title="Delete Appointment"
                         description="Are you sure you want to delete this appointment? This action cannot be undone."
                         confirmText="Delete"
-                        onConfirm={handleDeleteSession}
+                        onConfirm={handleDeleteAppointment}
                     />
                 )}
             </ActionsSection>
-
-            <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-
-            <Tabs
-                defaultValue={userRole === 'psychologist' ? 'notes' : 'recommendations'}
-                className="w-full"
-            >
-                <TabsList className="w-full">
-                    {userRole === 'psychologist' && (
-                        <TabsTrigger value="notes" className="flex-1">
-                            Notes
-                        </TabsTrigger>
-                    )}
-                    <TabsTrigger value="recommendations" className="flex-1">
-                        Recommendations
-                    </TabsTrigger>
-                    <TabsTrigger value="impressions" className="flex-1">
-                        Client Impressions
-                    </TabsTrigger>
-                </TabsList>
-
-                {userRole === 'psychologist' && (
-                    <TabsContent value="notes" className="w-full">
-                        <SessionTabContent
-                            title="Notes"
-                            attachments={session.notes}
-                            sessionId={session.id}
-                            clientId={session.clientId}
-                        />
-                    </TabsContent>
-                )}
-
-                <TabsContent value="recommendations" className="w-full">
-                    <SessionTabContent
-                        title="Recommendations"
-                        attachments={session.recommendations}
-                        sessionId={session.id}
-                        clientId={session.clientId}
-                    />
-                </TabsContent>
-
-                <TabsContent value="impressions" className="w-full">
-                    <SessionTabContent
-                        title="Client Impressions"
-                        attachments={session.impressions}
-                        sessionId={session.id}
-                        clientId={session.clientId}
-                    />
-                </TabsContent>
-            </Tabs>
         </>
     )
 }

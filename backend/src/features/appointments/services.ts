@@ -84,6 +84,30 @@ export const isClientLinkedAndActive = async (
     return row !== undefined
 }
 
+export async function startAppointment(appointmentId: string): Promise<Appointment> {
+    const [row] = await db`
+        UPDATE appointments
+        SET status = 'active'
+        WHERE id = ${appointmentId}
+        RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
+                  start_time AS "startTime", end_time AS "endTime",
+                  status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+    `
+    return row as Appointment
+}
+
+export async function findActiveAppointmentByPsycho(psychoId: string): Promise<Appointment | null> {
+    const [row] = await db`
+        SELECT id, psycho_id AS "psychoId", client_id AS "clientId",
+               start_time AS "startTime", end_time AS "endTime",
+               status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+        FROM appointments
+        WHERE psycho_id = ${psychoId} AND status = 'active'
+        LIMIT 1
+    `
+    return (row as Appointment) ?? null
+}
+
 export const listAppointments = async (
     psychoId: string,
     clientId: string,

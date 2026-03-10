@@ -16,7 +16,7 @@ export default [
                         route('progress', 'routes/psychologist/client-progress.tsx'),
                         ...prefix('appointments', [
                             index('routes/psychologist/client-sessions.tsx'),
-                            ...prefix(':sessionId', [
+                            ...prefix(':appointmentId', [
                                 index('routes/psychologist/session.tsx'),
                                 ...prefix('attachment', [
                                     route(

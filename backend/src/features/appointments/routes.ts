@@ -3,9 +3,11 @@ import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     createAppointment,
     deleteAppointment,
+    findActiveAppointmentByPsycho,
     findAppointmentById,
     isClientLinkedAndActive,
     listAppointments,
+    startAppointment,
     updateAppointment,
 } from './services'
 
@@ -25,6 +27,55 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).get('/', async (c) => {
 
     const appointments = await listAppointments(user.id, clientId)
     return c.json({ appointments }, 200)
+})
+
+appointmentRoutes.use(authorized, onlyPsychoRequest).get('/:appointmentId', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+    const appointmentId = c.req.param('appointmentId')
+
+    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
+    if (!appointment) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    return c.json({ appointment }, 200)
+})
+
+appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/start', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+    const appointmentId = c.req.param('appointmentId')
+
+    const existing = await findAppointmentById(appointmentId, user.id, clientId)
+    if (!existing) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    if (existing.status !== 'upcoming') {
+        return c.json(
+            {
+                error: 'AppointmentNotStartable',
+                message: 'Only upcoming appointments can be started.',
+            },
+            400,
+        )
+    }
+
+    const active = await findActiveAppointmentByPsycho(user.id)
+    if (active) {
+        return c.json(
+            {
+                error: 'AnotherAppointmentActive',
+                message: 'End your active appointment before starting a new one.',
+                activeAppointmentId: active.id,
+            },
+            400,
+        )
+    }
+
+    const appointment = await startAppointment(appointmentId)
+    return c.json({ appointment }, 200)
 })
 
 appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {

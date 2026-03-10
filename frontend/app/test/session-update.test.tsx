@@ -6,7 +6,9 @@ const mockUpdate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
+        start: vi.fn(),
         update: (...args: any[]) => mockUpdate(...args),
+        delete: vi.fn(),
     },
 }))
 
@@ -40,10 +42,6 @@ vi.mock('~/components/SessionForm', () => ({
     },
 }))
 
-vi.mock('~/components/AttachmentForm', () => ({
-    AttachmentForm: ({ trigger }: any) => <div>{trigger}</div>,
-}))
-
 vi.mock('~/components/ConfirmAction', () => ({
     ConfirmAction: ({ trigger }: any) => <div>{trigger}</div>,
 }))
@@ -53,21 +51,21 @@ vi.mock('~/components/ActionsSection', () => ({
     ActionItem: ({ label }: any) => <button>{label}</button>,
 }))
 
-// Fake session with a future date so isFutureSession = true
-const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days from now
+const mockUpcomingAppointment = {
+    id: 'apt-001',
+    clientId: 'client-456',
+    psychoId: 'psycho-123',
+    startTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+    endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7 + 3600000).toISOString(),
+    status: 'upcoming' as const,
+    googleMeetLink: null,
+    createdAt: '2026-03-10T15:00:00.000Z',
+}
 
-vi.mock('~/hooks/useCurrentSession', () => ({
-    useCurrentSession: () => ({
-        id: 'apt-001',
-        clientId: 'client-456',
-        date: futureDate,
-        googleMeetLink: null,
-        notes: [],
-        recommendations: [],
-        impressions: [],
-        notesCount: 0,
-        recommendationsCount: 0,
-        impressionsCount: 0,
+vi.mock('~/hooks/useCurrentAppointment', () => ({
+    useCurrentAppointment: () => ({
+        appointment: mockUpcomingAppointment,
+        isLoading: false,
     }),
 }))
 
@@ -79,7 +77,7 @@ function renderSession() {
         <MemoryRouter initialEntries={['/psycho/clients/client-456/appointments/apt-001']}>
             <Routes>
                 <Route
-                    path="/:role/clients/:clientId/appointments/:sessionId"
+                    path="/:role/clients/:clientId/appointments/:appointmentId"
                     element={<Session />}
                 />
             </Routes>

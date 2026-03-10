@@ -1083,3 +1083,436 @@ describe('listAppointments service (unit)', () => {
         expect(result).toEqual([])
     })
 })
+
+describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
+    const mockUpcomingAppointment = {
+        id: 'apt-001',
+        psychoId: 'psycho-123',
+        clientId: 'client-456',
+        startTime: '2026-04-01T10:00:00.000Z',
+        endTime: '2026-04-01T11:00:00.000Z',
+        status: 'upcoming' as const,
+        googleMeetLink: null,
+        createdAt: '2026-03-10T15:00:00.000Z',
+    }
+
+    it('returns 200 with appointment on happy path', async () => {
+        const mockFindById = mock(
+            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
+        )
+
+        const app = new Hono()
+        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const appointment = await mockFindById(appointmentId, user.id, clientId)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('id', 'apt-001')
+        expect(body.appointment).toHaveProperty('status', 'upcoming')
+    })
+
+    it('returns 404 when appointment does not exist', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const appointment = await mockFindById(appointmentId, user.id, clientId)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/nonexistent', { method: 'GET' })
+
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 404 when psychoId does not match', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const appointment = await mockFindById(appointmentId, user.id, clientId)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.get('/:clientId/appointments/:appointmentId', mockUnauthorized, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.get('/:clientId/appointments/:appointmentId', mockForbidden, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'GET',
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () => {
+    const mockUpcomingAppointment = {
+        id: 'apt-001',
+        psychoId: 'psycho-123',
+        clientId: 'client-456',
+        startTime: '2026-04-01T10:00:00.000Z',
+        endTime: '2026-04-01T11:00:00.000Z',
+        status: 'upcoming' as const,
+        googleMeetLink: null,
+        createdAt: '2026-03-10T15:00:00.000Z',
+    }
+
+    const mockActiveAppointment = {
+        id: 'apt-999',
+        psychoId: 'psycho-123',
+        clientId: 'client-789',
+        startTime: '2026-03-10T09:00:00.000Z',
+        endTime: '2026-03-10T10:00:00.000Z',
+        status: 'active' as const,
+        googleMeetLink: null,
+        createdAt: '2026-03-01T15:00:00.000Z',
+    }
+
+    it('returns 200 with appointment status active on happy path', async () => {
+        const mockFindById = mock(
+            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
+        )
+        const mockFindActive = mock(async (_psychoId: string) => null)
+        const mockStart = mock(async (_id: string) => ({
+            ...mockUpcomingAppointment,
+            status: 'active' as const,
+        }))
+
+        const app = new Hono()
+        app.patch(
+            '/:clientId/appointments/:appointmentId/start',
+            mockAuthorizedPsycho,
+            async (c) => {
+                const user = c.get('user')
+                const clientId = c.req.param('clientId')
+                const appointmentId = c.req.param('appointmentId')
+
+                const existing = await mockFindById(appointmentId, user.id, clientId)
+                if (!existing) return c.json({ error: 'NotFound' }, 404)
+
+                if (existing.status !== 'upcoming') {
+                    return c.json(
+                        {
+                            error: 'AppointmentNotStartable',
+                            message: 'Only upcoming appointments can be started.',
+                        },
+                        400,
+                    )
+                }
+
+                const active = await mockFindActive(user.id)
+                if (active) {
+                    return c.json(
+                        {
+                            error: 'AnotherAppointmentActive',
+                            message: 'End your active appointment before starting a new one.',
+                            activeAppointmentId: active.id,
+                        },
+                        400,
+                    )
+                }
+
+                const appointment = await mockStart(appointmentId)
+                return c.json({ appointment }, 200)
+            },
+        )
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('status', 'active')
+    })
+
+    it('returns 404 when appointment does not exist', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.patch(
+            '/:clientId/appointments/:appointmentId/start',
+            mockAuthorizedPsycho,
+            async (c) => {
+                const user = c.get('user')
+                const clientId = c.req.param('clientId')
+                const appointmentId = c.req.param('appointmentId')
+
+                const existing = await mockFindById(appointmentId, user.id, clientId)
+                if (!existing) return c.json({ error: 'NotFound' }, 404)
+
+                return c.json({ appointment: {} }, 200)
+            },
+        )
+
+        const res = await app.request('/client-456/appointments/nonexistent/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 400 AppointmentNotStartable for past appointment', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
+            ...mockUpcomingAppointment,
+            status: 'past' as const,
+        }))
+
+        const app = new Hono()
+        app.patch(
+            '/:clientId/appointments/:appointmentId/start',
+            mockAuthorizedPsycho,
+            async (c) => {
+                const user = c.get('user')
+                const clientId = c.req.param('clientId')
+                const appointmentId = c.req.param('appointmentId')
+
+                const existing = await mockFindById(appointmentId, user.id, clientId)
+                if (!existing) return c.json({ error: 'NotFound' }, 404)
+
+                if (existing.status !== 'upcoming') {
+                    return c.json(
+                        {
+                            error: 'AppointmentNotStartable',
+                            message: 'Only upcoming appointments can be started.',
+                        },
+                        400,
+                    )
+                }
+
+                return c.json({ appointment: {} }, 200)
+            },
+        )
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotStartable')
+        expect(body).toHaveProperty('message', 'Only upcoming appointments can be started.')
+    })
+
+    it('returns 400 AppointmentNotStartable for already active appointment', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
+            ...mockUpcomingAppointment,
+            status: 'active' as const,
+        }))
+
+        const app = new Hono()
+        app.patch(
+            '/:clientId/appointments/:appointmentId/start',
+            mockAuthorizedPsycho,
+            async (c) => {
+                const user = c.get('user')
+                const clientId = c.req.param('clientId')
+                const appointmentId = c.req.param('appointmentId')
+
+                const existing = await mockFindById(appointmentId, user.id, clientId)
+                if (!existing) return c.json({ error: 'NotFound' }, 404)
+
+                if (existing.status !== 'upcoming') {
+                    return c.json(
+                        {
+                            error: 'AppointmentNotStartable',
+                            message: 'Only upcoming appointments can be started.',
+                        },
+                        400,
+                    )
+                }
+
+                return c.json({ appointment: {} }, 200)
+            },
+        )
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotStartable')
+    })
+
+    it('returns 400 AnotherAppointmentActive with activeAppointmentId when another is active', async () => {
+        const mockFindById = mock(
+            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
+        )
+        const mockFindActive = mock(async (_psychoId: string) => mockActiveAppointment)
+
+        const app = new Hono()
+        app.patch(
+            '/:clientId/appointments/:appointmentId/start',
+            mockAuthorizedPsycho,
+            async (c) => {
+                const user = c.get('user')
+                const clientId = c.req.param('clientId')
+                const appointmentId = c.req.param('appointmentId')
+
+                const existing = await mockFindById(appointmentId, user.id, clientId)
+                if (!existing) return c.json({ error: 'NotFound' }, 404)
+
+                if (existing.status !== 'upcoming') {
+                    return c.json(
+                        {
+                            error: 'AppointmentNotStartable',
+                            message: 'Only upcoming appointments can be started.',
+                        },
+                        400,
+                    )
+                }
+
+                const active = await mockFindActive(user.id)
+                if (active) {
+                    return c.json(
+                        {
+                            error: 'AnotherAppointmentActive',
+                            message: 'End your active appointment before starting a new one.',
+                            activeAppointmentId: active.id,
+                        },
+                        400,
+                    )
+                }
+
+                return c.json({ appointment: {} }, 200)
+            },
+        )
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AnotherAppointmentActive')
+        expect(body).toHaveProperty(
+            'message',
+            'End your active appointment before starting a new one.',
+        )
+        expect(body).toHaveProperty('activeAppointmentId', 'apt-999')
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.patch('/:clientId/appointments/:appointmentId/start', mockUnauthorized, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+        })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.patch('/:clientId/appointments/:appointmentId/start', mockForbidden, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001/start', {
+            method: 'PATCH',
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('startAppointment service (unit)', () => {
+    it('returns appointment with status active', async () => {
+        const mockStart = mock(async (_id: string) => ({
+            id: 'apt-001',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            status: 'active' as const,
+            googleMeetLink: null,
+            createdAt: '2026-03-10T15:00:00.000Z',
+        }))
+
+        const result = await mockStart('apt-001')
+
+        expect(result.status).toBe('active')
+        expect(result.id).toBe('apt-001')
+    })
+})
+
+describe('findActiveAppointmentByPsycho service (unit)', () => {
+    it('returns active appointment when one exists', async () => {
+        const expected = {
+            id: 'apt-999',
+            psychoId: 'psycho-123',
+            clientId: 'client-789',
+            startTime: '2026-03-10T09:00:00.000Z',
+            endTime: '2026-03-10T10:00:00.000Z',
+            status: 'active' as const,
+            googleMeetLink: null,
+            createdAt: '2026-03-01T15:00:00.000Z',
+        }
+        const mockFindActive = mock(async (_psychoId: string) => expected)
+        const result = await mockFindActive('psycho-123')
+        expect(result).toEqual(expected)
+        expect(result?.status).toBe('active')
+    })
+
+    it('returns null when no active appointment exists', async () => {
+        const mockFindActive = mock(async (_psychoId: string) => null)
+        const result = await mockFindActive('psycho-123')
+        expect(result).toBeNull()
+    })
+})

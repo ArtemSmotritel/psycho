@@ -15,4 +15,8 @@ export const appointmentService = {
         ),
     delete: (clientId: string, appointmentId: string) =>
         api.delete<{ success: boolean }>(`/clients/${clientId}/appointments/${appointmentId}`),
+    start: (clientId: string, appointmentId: string) =>
+        api.patch<{ appointment: Appointment }>(
+            `/clients/${clientId}/appointments/${appointmentId}/start`,
+        ),
 }
