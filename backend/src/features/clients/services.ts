@@ -7,8 +7,9 @@ export const findClientById = async (id: any): Promise<object> => {
 }
 
 export const findClients = async (params: any): Promise<Client[]> => {
-    return await db`SELECT c.*, u.* from clients c
-          INNER JOIN psychologist_clients pc ON pc.psycho_id = ${params.psychoId} AND pc.client_id = c.id
+    return await db`SELECT u.id, u.name, u.email, u.image
+          FROM clients c
+          INNER JOIN psychologist_clients pc ON pc.psycho_id = ${params.psychoId} AND pc.client_id = c.user_id
           INNER JOIN "user" u ON u.id = c.user_id`
 }
 
@@ -26,8 +27,10 @@ export const createClientForPsycho = async (psychoId: string) => {
     return res
 }
 
-export const findClientByEmail = async (email: string): Promise<Client> => {
-    const [client] =
-        await db`SELECT c.* FROM clients c INNER JOIN "user" u on u.id = c.user_id WHERE u.email = ${email}`
-    return client
+export const findClientByEmail = async (email: string): Promise<Client | null> => {
+    const [client] = await db`SELECT c.user_id AS id, u.email, u.name, u.image
+          FROM clients c
+          INNER JOIN "user" u ON u.id = c.user_id
+          WHERE u.email = ${email}`
+    return client ?? null
 }

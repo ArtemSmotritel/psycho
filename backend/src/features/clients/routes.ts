@@ -16,27 +16,38 @@ clientRoutes
     .get(':clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))
     .post('/', async (c) => {
         const user = c.get('user')
-        const { email } = await c.req.json()
+        const body = await c.req.json()
+        const { email } = body
 
-        const client = await findClientByEmail(email)
-
-        if (client) {
-            await linkClientToPsycho(client.id, user.id)
+        if (!email) {
+            return c.json({ error: 'BadRequest', message: 'email is required' }, 400)
         }
 
-        return c.json({
-            client,
-        })
-    })
-    .post('/findByEmail', async (c) => {
-        const { email } = await c.req.json()
-
         const client = await findClientByEmail(email)
 
-        return c.json({
-            exists: !!client,
-            client,
-        })
+        if (!client) {
+            return c.json(
+                {
+                    error: 'ClientNotFound',
+                    message: 'No account found for this email. Ask your client to register first.',
+                },
+                400,
+            )
+        }
+
+        try {
+            await linkClientToPsycho(client.id, user.id)
+        } catch (err: any) {
+            if (err.code === '23505') {
+                return c.json(
+                    { error: 'AlreadyLinked', message: 'This client is already in your list.' },
+                    400,
+                )
+            }
+            throw err
+        }
+
+        return c.json({ client }, 201)
     })
     .put('/:clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))
     .delete('/:clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))

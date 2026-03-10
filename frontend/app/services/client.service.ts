@@ -2,12 +2,21 @@ import { api } from './api'
 import type { Client } from '~/models/client'
 
 export const clientService = {
-    create: (data: Omit<Client, 'id'>) => api.post<Client>('/clients', data),
+    addByEmail: (email: string) =>
+        api.post<{ client: Client }>(
+            '/clients',
+            { email },
+            {
+                headers: { 'Helpsycho-User-Role': 'psycho' },
+            },
+        ),
+
+    getList: () =>
+        api.get<{ clients: Client[] }>('/clients', {
+            headers: { 'Helpsycho-User-Role': 'psycho' },
+        }),
 
     update: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
-
-    getList: (params?: { sortBy?: string; sortOrder?: 'asc' | 'desc'; filterToday?: boolean }) =>
-        api.get<Client[]>('/clients', { params }),
 
     getById: (id: string) => api.get<Client>(`/clients/${id}`),
 

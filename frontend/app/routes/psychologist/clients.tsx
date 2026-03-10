@@ -8,7 +8,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { AppPageHeader } from '~/components/AppPageHeader'
-import type { ColumnDef, ColumnFiltersState, SortingState, FilterFn } from '@tanstack/react-table'
+import type { ColumnDef, ColumnFiltersState, SortingState } from '@tanstack/react-table'
 import {
     flexRender,
     getCoreRowModel,
@@ -17,9 +17,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table'
-import { useState } from 'react'
-import { isToday } from 'date-fns'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useState, useEffect, useCallback } from 'react'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import {
     DropdownMenu,
@@ -30,16 +28,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router'
-import { ClientForm } from '@/components/ClientForm'
 import { DataTablePagination } from '@/components/DataTablePagination'
-import { fakeClients, type Client } from '@/test-data/fakeClients'
-import { getSessionName } from '~/utils/utils'
+import { AddClientByEmailDialog } from '@/components/AddClientByEmailDialog'
+import { clientService } from '~/services/client.service'
+import type { Client } from '~/models/client'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
-
-const todayFilterFn: FilterFn<Client> = (row, columnId) => {
-    const date = row.getValue(columnId) as Date | null
-    return date ? isToday(date) : false
-}
 
 const columns: ColumnDef<Client>[] = [
     {
@@ -48,10 +41,6 @@ const columns: ColumnDef<Client>[] = [
         cell: ({ row }) => {
             return row.index + 1
         },
-    },
-    {
-        accessorKey: 'username',
-        header: 'Username',
     },
     {
         accessorKey: 'name',
@@ -68,45 +57,42 @@ const columns: ColumnDef<Client>[] = [
         },
     },
     {
-        accessorKey: 'upcomingSession',
+        accessorKey: 'email',
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                 >
-                    Upcoming Session
+                    Email
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
+    },
+    {
+        accessorKey: 'nextSession',
+        header: 'Upcoming Appointment',
         cell: ({ row }) => {
-            const session = row.getValue('upcomingSession') as { id: string; date: Date } | null
-            return session ? getSessionName(session) : '-'
+            const val = row.getValue('nextSession') as string | null | undefined
+            return val ?? '-'
         },
-        filterFn: todayFilterFn,
     },
     {
         accessorKey: 'lastSession',
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                >
-                    Last Session
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
+        header: 'Last Appointment',
         cell: ({ row }) => {
-            const session = row.getValue('lastSession') as { id: string; date: Date } | null
-            return session ? getSessionName(session) : '-'
+            const val = row.getValue('lastSession') as string | null | undefined
+            return val ?? '-'
         },
     },
     {
         accessorKey: 'sessionsCount',
-        header: 'Sessions Count',
+        header: 'Appointments Count',
+        cell: ({ row }) => {
+            const val = row.getValue('sessionsCount') as number | undefined
+            return val ?? '-'
+        },
     },
     {
         id: 'actions',
@@ -132,9 +118,11 @@ const columns: ColumnDef<Client>[] = [
                             View client profile
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => navigate(`/psychologist/clients/${client.id}/sessions`)}
+                            onClick={() =>
+                                navigate(`/psychologist/clients/${client.id}/appointments`)
+                            }
                         >
-                            View session history
+                            View appointment history
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -144,14 +132,28 @@ const columns: ColumnDef<Client>[] = [
 ]
 
 export default function Clients() {
-    const [data] = useState<Client[]>(fakeClients)
+    const [data, setData] = useState<Client[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-    const handleAddClient = (values: any) => {
-        console.log('Adding client:', values)
-        // TODO: Implement actual client addition
-    }
+    const fetchClients = useCallback(async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await clientService.getList()
+            setData(res.data.clients)
+        } catch {
+            setError('Failed to load clients. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchClients()
+    }, [fetchClients])
 
     const table = useReactTable({
         data,
@@ -168,96 +170,85 @@ export default function Clients() {
         },
     })
 
-    const handleShowOnlyToday = (checked: boolean) => {
-        if (checked) {
-            setColumnFilters([{ id: 'upcomingSession', value: true }])
-        } else {
-            setColumnFilters([])
-        }
-    }
-
     return (
         <ProtectedRoute allowedRoles={['psychologist']}>
             <div className="container mx-auto p-4">
                 <AppPageHeader text="Clients" />
 
                 <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="showOnlyToday"
-                                checked={columnFilters.some(
-                                    (filter) => filter.id === 'upcomingSession',
-                                )}
-                                onCheckedChange={handleShowOnlyToday}
-                            />
-                            <label
-                                htmlFor="showOnlyToday"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                Show only clients with a session today
-                            </label>
-                        </div>
-                    </div>
-                    <ClientForm
-                        mode="add"
+                    <div />
+                    <AddClientByEmailDialog
+                        onSuccess={fetchClients}
                         trigger={<Button>Add Client</Button>}
-                        onSubmit={handleAddClient}
                     />
                 </div>
 
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef.header,
-                                                      header.getContext(),
-                                                  )}
-                                        </TableHead>
-                                    ))}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && 'selected'}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="h-24 text-center"
-                                    >
-                                        No clients found.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                {error && (
+                    <div className="mb-4 rounded-md border border-destructive p-3 text-sm text-destructive">
+                        {error}
+                    </div>
+                )}
 
-                <div className="mt-4">
-                    <DataTablePagination table={table} />
-                </div>
+                {loading ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                        Loading clients...
+                    </div>
+                ) : (
+                    <>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow key={headerGroup.id}>
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead key={header.id}>
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                              header.column.columnDef.header,
+                                                              header.getContext(),
+                                                          )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {table.getRowModel().rows?.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <TableRow
+                                                key={row.id}
+                                                data-state={row.getIsSelected() && 'selected'}
+                                            >
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <TableCell key={cell.id}>
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-24 text-center"
+                                            >
+                                                No clients found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <div className="mt-4">
+                            <DataTablePagination table={table} />
+                        </div>
+                    </>
+                )}
             </div>
         </ProtectedRoute>
     )

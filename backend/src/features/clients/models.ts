@@ -1,3 +1,6 @@
-import type { User } from 'utils/types'
-
-export interface Client extends User {}
+export interface Client {
+    id: string // = user_id
+    email: string
+    name: string
+    image: string | null
+}
