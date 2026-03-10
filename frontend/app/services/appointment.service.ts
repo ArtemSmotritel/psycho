@@ -13,4 +13,6 @@ export const appointmentService = {
             `/clients/${clientId}/appointments/${appointmentId}`,
             data,
         ),
+    delete: (clientId: string, appointmentId: string) =>
+        api.delete<{ success: boolean }>(`/clients/${clientId}/appointments/${appointmentId}`),
 }

@@ -5,7 +5,7 @@ import { AttachmentForm } from '@/components/AttachmentForm'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { useCurrentSession } from '~/hooks/useCurrentSession'
-import { Link } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { type Attachment, type Session } from '~/models/session'
 import { Separator } from '@/components/ui/separator'
 import React, { useState } from 'react'
@@ -112,8 +112,11 @@ function GoogleMeetLink({ session, isMoreThanDayOld }: GoogleMeetLinkProps) {
 export default function Session() {
     const session = useCurrentSession()
     const { userRole } = useRoleGuard(['psychologist', 'client'])
+    const navigate = useNavigate()
+    const { role } = useParams()
     const isFutureSession = session?.date ? new Date(session.date) > new Date() : false
     const [isUpdating, setIsUpdating] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     // Check if session is currently active (within 1 hour of start time)
     const isCurrentlyActive = session ? isSessionActive(session) : false
@@ -121,9 +124,18 @@ export default function Session() {
     const areJoinComponentsHighlighted =
         isCurrentlyActive && !!session?.googleMeetLink && !isMoreThanDayOld
 
-    const handleDeleteSession = () => {
-        console.log('Deleting session:', session?.id)
-        // TODO: Implement session deletion
+    const handleDeleteSession = async () => {
+        if (!session) return
+        setIsDeleting(true)
+        try {
+            await appointmentService.delete(session.clientId, session.id)
+            toast.success('Appointment deleted.')
+            navigate(`/${role}/clients/${session.clientId}/appointments`)
+        } catch {
+            toast.error('Failed to delete appointment. Please try again.')
+        } finally {
+            setIsDeleting(false)
+        }
     }
 
     if (!session) return null
@@ -254,13 +266,14 @@ export default function Session() {
                         trigger={
                             <ActionItem
                                 icon={<Trash2 className="h-6" />}
-                                label="Delete Session"
+                                label="Delete Appointment"
                                 variant="outline"
                                 className="text-destructive hover:text-destructive"
+                                disabled={isDeleting}
                             />
                         }
-                        title="Delete Session"
-                        description="Are you sure you want to delete this session? This action cannot be undone."
+                        title="Delete Appointment"
+                        description="Are you sure you want to delete this appointment? This action cannot be undone."
                         confirmText="Delete"
                         onConfirm={handleDeleteSession}
                     />

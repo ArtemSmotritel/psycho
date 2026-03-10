@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     createAppointment,
+    deleteAppointment,
     findAppointmentById,
     isClientLinkedAndActive,
     updateAppointment,
@@ -83,4 +84,28 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId', as
     // TODO: EDG-58 — send rescheduled email to client if startTime or endTime changed
 
     return c.json({ appointment }, 200)
+})
+
+appointmentRoutes.use(authorized, onlyPsychoRequest).delete('/:appointmentId', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+    const appointmentId = c.req.param('appointmentId')
+
+    const existing = await findAppointmentById(appointmentId, user.id, clientId)
+    if (!existing) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    if (existing.status !== 'upcoming') {
+        return c.json(
+            { error: 'AppointmentNotDeletable', message: 'Only upcoming appointments can be deleted.' },
+            400,
+        )
+    }
+
+    await deleteAppointment(appointmentId)
+
+    // TODO: EDG-57 — send appointment deleted email to client
+
+    return c.json({ success: true }, 200)
 })

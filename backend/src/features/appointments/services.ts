@@ -71,6 +71,10 @@ export const updateAppointment = async (
     return row as Appointment
 }
 
+export async function deleteAppointment(appointmentId: string): Promise<void> {
+    await db`DELETE FROM appointments WHERE id = ${appointmentId}`
+}
+
 export const isClientLinkedAndActive = async (
     clientId: string,
     psychoId: string,

@@ -57,6 +57,10 @@ Fix any failures. Do not move on while tests are red or the build has type error
 
 If a test cannot pass because it depends on infrastructure not yet set up (e.g. a real DB), mock the dependency or skip with a clear `// TODO:` comment and a note in your completion summary.
 
+### Step 5 - Commit
+
+1. Create a single commit message describing the changes made. Rebasing, squashing, pulling, fetching and pushing are forbiden.
+
 ## Hard rules
 
 - **Tests before implementation.** Write the test file for a unit before writing the unit itself. Never write implementation first and tests as an afterthought.

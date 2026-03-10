@@ -642,6 +642,198 @@ describe('findAppointmentById service (unit)', () => {
     })
 })
 
+describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
+    const mockUpcomingAppointment = {
+        id: 'apt-001',
+        psychoId: 'psycho-123',
+        clientId: 'client-456',
+        startTime: '2026-04-01T10:00:00.000Z',
+        endTime: '2026-04-01T11:00:00.000Z',
+        status: 'upcoming' as const,
+        googleMeetLink: null,
+        createdAt: '2026-03-10T15:00:00.000Z',
+    }
+
+    it('returns 200 { success: true } on happy path', async () => {
+        const mockFindById = mock(
+            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
+        )
+        const mockDelete = mock(async (_id: string) => undefined)
+
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const existing = await mockFindById(appointmentId, user.id, clientId)
+            if (!existing) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            if (existing.status !== 'upcoming') {
+                return c.json(
+                    {
+                        error: 'AppointmentNotDeletable',
+                        message: 'Only upcoming appointments can be deleted.',
+                    },
+                    400,
+                )
+            }
+
+            await mockDelete(appointmentId)
+
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'DELETE',
+        })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('success', true)
+        expect(mockDelete).toHaveBeenCalledWith('apt-001')
+    })
+
+    it('returns 404 NotFound when appointment does not exist', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const existing = await mockFindById(appointmentId, user.id, clientId)
+            if (!existing) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/nonexistent', {
+            method: 'DELETE',
+        })
+
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 400 AppointmentNotDeletable for past appointment', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
+            ...mockUpcomingAppointment,
+            status: 'past' as const,
+        }))
+
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const existing = await mockFindById(appointmentId, user.id, clientId)
+            if (!existing) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            if (existing.status !== 'upcoming') {
+                return c.json(
+                    {
+                        error: 'AppointmentNotDeletable',
+                        message: 'Only upcoming appointments can be deleted.',
+                    },
+                    400,
+                )
+            }
+
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'DELETE',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotDeletable')
+        expect(body).toHaveProperty('message', 'Only upcoming appointments can be deleted.')
+    })
+
+    it('returns 400 AppointmentNotDeletable for active appointment', async () => {
+        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
+            ...mockUpcomingAppointment,
+            status: 'active' as const,
+        }))
+
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const appointmentId = c.req.param('appointmentId')
+
+            const existing = await mockFindById(appointmentId, user.id, clientId)
+            if (!existing) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            if (existing.status !== 'upcoming') {
+                return c.json(
+                    {
+                        error: 'AppointmentNotDeletable',
+                        message: 'Only upcoming appointments can be deleted.',
+                    },
+                    400,
+                )
+            }
+
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'DELETE',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotDeletable')
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockUnauthorized, async (c) => {
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'DELETE',
+        })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.delete('/:clientId/appointments/:appointmentId', mockForbidden, async (c) => {
+            return c.json({ success: true }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments/apt-001', {
+            method: 'DELETE',
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('deleteAppointment service (unit)', () => {
+    it('resolves without error', async () => {
+        const mockDelete = mock(async (_id: string) => undefined)
+        await expect(mockDelete('apt-001')).resolves.toBeUndefined()
+        expect(mockDelete).toHaveBeenCalledWith('apt-001')
+    })
+})
+
 describe('updateAppointment service (unit)', () => {
     it('returns updated appointment with new times and googleMeetLink', async () => {
         const mockUpdate = mock(
