@@ -7,3 +7,11 @@ export const api = axios.create({
     },
     withCredentials: true,
 })
+
+export function setApiRole(role: 'psycho' | 'client' | null) {
+    if (role) {
+        api.defaults.headers.common['Helpsycho-User-Role'] = role
+    } else {
+        delete api.defaults.headers.common['Helpsycho-User-Role']
+    }
+}

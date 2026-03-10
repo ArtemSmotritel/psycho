@@ -34,3 +34,12 @@ export const findClientByEmail = async (email: string): Promise<Client | null> =
           WHERE u.email = ${email}`
     return client ?? null
 }
+
+export const isClientLinkedToPsycho = async (
+    clientId: string,
+    psychoId: string,
+): Promise<boolean> => {
+    const [row] =
+        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId}`
+    return row !== undefined
+}

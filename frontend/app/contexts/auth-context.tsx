@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User } from '~/models/user'
 import { auth } from '~/services/auth.service'
+import { setApiRole } from '~/services/api'
 import { userService } from '~/services/user.service'
 
 interface AuthContextType {
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!session) {
             setUser(null)
+            setApiRole(null)
             return
         }
 
@@ -32,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .getMe()
             .then((res) => {
                 const data = res.data
+                const resolvedRole = data.active_role as 'psycho' | 'client' | null
+                setApiRole(resolvedRole)
                 setUser({
                     id: data.id,
                     email: data.email,
@@ -42,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
             .catch(() => {
                 setUser(null)
+                setApiRole(null)
             })
             .finally(() => {
                 setIsFetchingUser(false)
@@ -51,11 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = async () => {
         await auth.signOut()
         setUser(null)
+        setApiRole(null)
     }
 
     const setActiveRole = async (role: 'psycho' | 'client') => {
         const res = await userService.setActiveRole(role)
         const data = res.data
+        setApiRole(data.active_role as 'psycho' | 'client' | null)
         setUser((prev) =>
             prev
                 ? {

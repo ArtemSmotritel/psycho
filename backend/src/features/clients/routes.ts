@@ -1,6 +1,11 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { findClientByEmail, findClients, linkClientToPsycho } from './services'
+import {
+    findClientByEmail,
+    findClients,
+    isClientLinkedToPsycho,
+    linkClientToPsycho,
+} from './services'
 
 export const clientRoutes = new Hono()
 
@@ -35,17 +40,15 @@ clientRoutes
             )
         }
 
-        try {
-            await linkClientToPsycho(client.id, user.id)
-        } catch (err: any) {
-            if (err.code === '23505') {
-                return c.json(
-                    { error: 'AlreadyLinked', message: 'This client is already in your list.' },
-                    400,
-                )
-            }
-            throw err
+        const alreadyLinked = await isClientLinkedToPsycho(client.id, user.id)
+        if (alreadyLinked) {
+            return c.json(
+                { error: 'AlreadyLinked', message: 'This client is already in your list.' },
+                400,
+            )
         }
+
+        await linkClientToPsycho(client.id, user.id)
 
         return c.json({ client }, 201)
     })

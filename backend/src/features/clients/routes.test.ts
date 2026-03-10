@@ -90,63 +90,9 @@ describe('POST /api/clients', () => {
             image: null,
         }
         const mockFindClientByEmail = mock(async (_email: string) => mockClient)
-        const mockLinkClientToPsycho = mock(async (_clientId: string, _psychoId: string) => {
-            const error: any = new Error('duplicate key value violates unique constraint')
-            error.code = '23505'
-            throw error
-        })
-
-        const app = new Hono()
-        app.post('/', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const body = await c.req.json()
-            if (!body.email) {
-                return c.json({ error: 'BadRequest', message: 'email is required' }, 400)
-            }
-            const client = await mockFindClientByEmail(body.email)
-            if (!client) {
-                return c.json(
-                    {
-                        error: 'ClientNotFound',
-                        message:
-                            'No account found for this email. Ask your client to register first.',
-                    },
-                    400,
-                )
-            }
-            try {
-                await mockLinkClientToPsycho(client.id, user.id)
-            } catch (err: any) {
-                if (err.code === '23505') {
-                    return c.json(
-                        { error: 'AlreadyLinked', message: 'This client is already in your list.' },
-                        400,
-                    )
-                }
-                throw err
-            }
-            return c.json({ client }, 201)
-        })
-
-        const res = await app.request('/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: 'client@example.com' }),
-        })
-        expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'AlreadyLinked')
-        expect(body).toHaveProperty('message', 'This client is already in your list.')
-    })
-
-    it('returns 201 with client on success', async () => {
-        const mockClient = {
-            id: 'client-456',
-            email: 'client@example.com',
-            name: 'Jane Doe',
-            image: null,
-        }
-        const mockFindClientByEmail = mock(async (_email: string) => mockClient)
+        const mockIsClientLinkedToPsycho = mock(
+            async (_clientId: string, _psychoId: string) => true,
+        )
         const mockLinkClientToPsycho = mock(
             async (_clientId: string, _psychoId: string) => undefined,
         )
@@ -169,17 +115,69 @@ describe('POST /api/clients', () => {
                     400,
                 )
             }
-            try {
-                await mockLinkClientToPsycho(client.id, user.id)
-            } catch (err: any) {
-                if (err.code === '23505') {
-                    return c.json(
-                        { error: 'AlreadyLinked', message: 'This client is already in your list.' },
-                        400,
-                    )
-                }
-                throw err
+            const alreadyLinked = await mockIsClientLinkedToPsycho(client.id, user.id)
+            if (alreadyLinked) {
+                return c.json(
+                    { error: 'AlreadyLinked', message: 'This client is already in your list.' },
+                    400,
+                )
             }
+            await mockLinkClientToPsycho(client.id, user.id)
+            return c.json({ client }, 201)
+        })
+
+        const res = await app.request('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'client@example.com' }),
+        })
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AlreadyLinked')
+        expect(body).toHaveProperty('message', 'This client is already in your list.')
+    })
+
+    it('returns 201 with client on success', async () => {
+        const mockClient = {
+            id: 'client-456',
+            email: 'client@example.com',
+            name: 'Jane Doe',
+            image: null,
+        }
+        const mockFindClientByEmail = mock(async (_email: string) => mockClient)
+        const mockIsClientLinkedToPsycho = mock(
+            async (_clientId: string, _psychoId: string) => false,
+        )
+        const mockLinkClientToPsycho = mock(
+            async (_clientId: string, _psychoId: string) => undefined,
+        )
+
+        const app = new Hono()
+        app.post('/', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const body = await c.req.json()
+            if (!body.email) {
+                return c.json({ error: 'BadRequest', message: 'email is required' }, 400)
+            }
+            const client = await mockFindClientByEmail(body.email)
+            if (!client) {
+                return c.json(
+                    {
+                        error: 'ClientNotFound',
+                        message:
+                            'No account found for this email. Ask your client to register first.',
+                    },
+                    400,
+                )
+            }
+            const alreadyLinked = await mockIsClientLinkedToPsycho(client.id, user.id)
+            if (alreadyLinked) {
+                return c.json(
+                    { error: 'AlreadyLinked', message: 'This client is already in your list.' },
+                    400,
+                )
+            }
+            await mockLinkClientToPsycho(client.id, user.id)
             return c.json({ client }, 201)
         })
 
@@ -260,5 +258,19 @@ describe('GET /api/clients', () => {
 
         const res = await app.request('/')
         expect(res.status).toBe(401)
+    })
+})
+
+describe('isClientLinkedToPsycho', () => {
+    it('returns true when an active link exists', async () => {
+        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
+        const result = await mockIsLinked('client-456', 'psycho-123')
+        expect(result).toBe(true)
+    })
+
+    it('returns false when no link exists', async () => {
+        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
+        const result = await mockIsLinked('client-456', 'psycho-123')
+        expect(result).toBe(false)
     })
 })
