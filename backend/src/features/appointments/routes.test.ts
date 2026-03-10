@@ -889,3 +889,197 @@ describe('updateAppointment service (unit)', () => {
         expect(result.googleMeetLink).toBeNull()
     })
 })
+
+describe('GET /api/clients/:clientId/appointments', () => {
+    const mockAppointments = [
+        {
+            id: 'apt-001',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            status: 'upcoming' as const,
+            googleMeetLink: null,
+            createdAt: '2026-03-10T15:00:00.000Z',
+        },
+        {
+            id: 'apt-002',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-03-01T10:00:00.000Z',
+            endTime: '2026-03-01T11:00:00.000Z',
+            status: 'past' as const,
+            googleMeetLink: 'https://meet.google.com/abc',
+            createdAt: '2026-02-01T15:00:00.000Z',
+        },
+        {
+            id: 'apt-003',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-03-10T09:00:00.000Z',
+            endTime: '2026-03-10T10:00:00.000Z',
+            status: 'active' as const,
+            googleMeetLink: null,
+            createdAt: '2026-02-15T15:00:00.000Z',
+        },
+    ]
+
+    it('returns 200 with appointments array when client is linked and appointments exist', async () => {
+        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
+        const mockList = mock(async (_psychoId: string, _clientId: string) => mockAppointments)
+
+        const app = new Hono()
+        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+
+            const linked = await mockIsLinked(clientId, user.id)
+            if (!linked) {
+                return c.json(
+                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
+                    400,
+                )
+            }
+
+            const appointments = await mockList(user.id, clientId)
+            return c.json({ appointments }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments', {
+            method: 'GET',
+        })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toHaveLength(3)
+        const statuses = body.appointments.map((a: any) => a.status)
+        expect(statuses).toContain('upcoming')
+        expect(statuses).toContain('past')
+        expect(statuses).toContain('active')
+    })
+
+    it('returns 200 with empty appointments array when client is linked but has no appointments', async () => {
+        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
+        const mockList = mock(async (_psychoId: string, _clientId: string) => [])
+
+        const app = new Hono()
+        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+
+            const linked = await mockIsLinked(clientId, user.id)
+            if (!linked) {
+                return c.json(
+                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
+                    400,
+                )
+            }
+
+            const appointments = await mockList(user.id, clientId)
+            return c.json({ appointments }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments', {
+            method: 'GET',
+        })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toEqual([])
+    })
+
+    it('returns 400 ClientNotLinked when client is not linked to psychologist', async () => {
+        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
+
+        const app = new Hono()
+        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+
+            const linked = await mockIsLinked(clientId, user.id)
+            if (!linked) {
+                return c.json(
+                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
+                    400,
+                )
+            }
+
+            return c.json({ appointments: [] }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments', {
+            method: 'GET',
+        })
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'ClientNotLinked')
+        expect(body).toHaveProperty('message', 'This client is not in your list.')
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.get('/:clientId/appointments', mockUnauthorized, async (c) => {
+            return c.json({ appointments: [] }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments', {
+            method: 'GET',
+        })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.get('/:clientId/appointments', mockForbidden, async (c) => {
+            return c.json({ appointments: [] }, 200)
+        })
+
+        const res = await app.request('/client-456/appointments', {
+            method: 'GET',
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('listAppointments service (unit)', () => {
+    it('returns array of appointments for matching psychoId and clientId', async () => {
+        const expected = [
+            {
+                id: 'apt-001',
+                psychoId: 'psycho-123',
+                clientId: 'client-456',
+                startTime: '2026-04-01T10:00:00.000Z',
+                endTime: '2026-04-01T11:00:00.000Z',
+                status: 'upcoming' as const,
+                googleMeetLink: null,
+                createdAt: '2026-03-10T15:00:00.000Z',
+            },
+            {
+                id: 'apt-002',
+                psychoId: 'psycho-123',
+                clientId: 'client-456',
+                startTime: '2026-03-01T10:00:00.000Z',
+                endTime: '2026-03-01T11:00:00.000Z',
+                status: 'past' as const,
+                googleMeetLink: null,
+                createdAt: '2026-02-01T15:00:00.000Z',
+            },
+        ]
+        const mockList = mock(async (_psychoId: string, _clientId: string) => expected)
+        const result = await mockList('psycho-123', 'client-456')
+        expect(result).toEqual(expected)
+        expect(result).toHaveLength(2)
+    })
+
+    it('returns empty array when no appointments exist for psychoId + clientId', async () => {
+        const mockList = mock(async (_psychoId: string, _clientId: string) => [])
+        const result = await mockList('psycho-123', 'client-999')
+        expect(result).toEqual([])
+    })
+})

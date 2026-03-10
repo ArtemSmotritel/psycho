@@ -83,3 +83,25 @@ export const isClientLinkedAndActive = async (
         await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL`
     return row !== undefined
 }
+
+export const listAppointments = async (
+    psychoId: string,
+    clientId: string,
+): Promise<Appointment[]> => {
+    const rows = await db`
+        SELECT
+            id,
+            psycho_id AS "psychoId",
+            client_id AS "clientId",
+            start_time AS "startTime",
+            end_time AS "endTime",
+            status,
+            google_meet_link AS "googleMeetLink",
+            created_at AS "createdAt"
+        FROM appointments
+        WHERE psycho_id = ${psychoId}
+          AND client_id = ${clientId}
+        ORDER BY start_time DESC
+    `
+    return rows as Appointment[]
+}

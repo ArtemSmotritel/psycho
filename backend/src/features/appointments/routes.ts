@@ -5,10 +5,27 @@ import {
     deleteAppointment,
     findAppointmentById,
     isClientLinkedAndActive,
+    listAppointments,
     updateAppointment,
 } from './services'
 
 export const appointmentRoutes = new Hono()
+
+appointmentRoutes.use(authorized, onlyPsychoRequest).get('/', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+
+    const linked = await isClientLinkedAndActive(clientId, user.id)
+    if (!linked) {
+        return c.json(
+            { error: 'ClientNotLinked', message: 'This client is not in your list.' },
+            400,
+        )
+    }
+
+    const appointments = await listAppointments(user.id, clientId)
+    return c.json({ appointments }, 200)
+})
 
 appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
     const user = c.get('user')
@@ -98,7 +115,10 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).delete('/:appointmentId', a
 
     if (existing.status !== 'upcoming') {
         return c.json(
-            { error: 'AppointmentNotDeletable', message: 'Only upcoming appointments can be deleted.' },
+            {
+                error: 'AppointmentNotDeletable',
+                message: 'Only upcoming appointments can be deleted.',
+            },
             400,
         )
     }
