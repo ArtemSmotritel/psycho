@@ -12,14 +12,17 @@ import {
     TrendingUp,
     ArrowRight,
     ArrowLeft,
+    UserMinus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ClientForm } from '@/components/ClientForm'
-import { Link } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
+import { ConfirmAction } from '~/components/ConfirmAction'
 import { formatAppDate } from '~/utils/utils'
 import { ProtectedComponent } from '~/components/ProtectedComponent'
+import { clientService } from '~/services/client.service'
 
 type ClientProfileProps = {
     params: {
@@ -92,6 +95,9 @@ function ContactItem({ icon, label, value, onCopy, type }: ContactItemProps) {
 }
 
 export default function ClientProfile({ params }: ClientProfileProps) {
+    const navigate = useNavigate()
+    const { role } = useParams<{ role: string }>()
+
     // This would be replaced with actual data fetching
     const client = {
         id: params.clientId,
@@ -117,6 +123,15 @@ export default function ClientProfile({ params }: ClientProfileProps) {
     const handleEditClient = (values: any) => {
         console.log('Editing client:', values)
         // TODO: Implement actual client update
+    }
+
+    const handleRemoveClient = async () => {
+        try {
+            await clientService.remove(client.id)
+            navigate(`/${role}/clients`)
+        } catch {
+            toast.error('Failed to remove client. Please try again.')
+        }
     }
 
     return (
@@ -272,6 +287,20 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                         subtext={formatAppDate(client.nextSession.date)}
                     />
                 )}
+
+                <ConfirmAction
+                    trigger={
+                        <ActionItem
+                            icon={<UserMinus className="h-6 w-6" />}
+                            label="Remove client"
+                            variant="destructive"
+                        />
+                    }
+                    title="Remove client"
+                    description="This will remove the client from your list. All historical appointments, impressions, and recommendations will be preserved and remain accessible. No new appointments can be created after removal."
+                    confirmText="Remove"
+                    onConfirm={handleRemoveClient}
+                />
             </ActionsSection>
         </>
     )

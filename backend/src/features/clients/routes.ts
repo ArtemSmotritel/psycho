@@ -3,9 +3,11 @@ import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     findClientByEmail,
     findClientById,
+    findClientPsychoRelationship,
     findClients,
     isClientLinkedToPsycho,
     linkClientToPsycho,
+    unlinkClientFromPsycho,
 } from './services'
 
 export const clientRoutes = new Hono()
@@ -60,4 +62,13 @@ clientRoutes
         return c.json({ client }, 201)
     })
     .put('/:clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))
-    .delete('/:clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))
+    .delete('/:clientId', async (c) => {
+        const user = c.get('user')
+        const clientId = c.req.param('clientId')
+        const relationship = await findClientPsychoRelationship(clientId, user.id)
+        if (!relationship) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
+        await unlinkClientFromPsycho(clientId, user.id)
+        return c.json({ success: true })
+    })

@@ -10,6 +10,8 @@ export const clientService = {
 
     update: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
 
+    remove: (id: string) => api.delete(`/clients/${id}`),
+
     getSessions: (clientId: string, params?: { sortBy?: string; sortOrder?: 'asc' | 'desc' }) =>
         api.get(`/clients/${clientId}/sessions`, { params }),
 

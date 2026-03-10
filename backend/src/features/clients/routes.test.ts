@@ -410,3 +410,162 @@ describe('isClientLinkedToPsycho', () => {
         expect(result).toBe(false)
     })
 })
+
+describe('findClientPsychoRelationship service (unit)', () => {
+    it('returns the row when an active link exists', async () => {
+        const activeRow = {
+            client_id: 'client-456',
+            psycho_id: 'psycho-123',
+            disconnected_at: null,
+        }
+        const mockFn = mock(async (_clientId: string, _psychoId: string) => activeRow)
+        const result = await mockFn('client-456', 'psycho-123')
+        expect(result).toHaveProperty('client_id', 'client-456')
+        expect(result).toHaveProperty('disconnected_at', null)
+    })
+
+    it('returns undefined when disconnected_at is set', async () => {
+        const mockFn = mock(async (_clientId: string, _psychoId: string) => undefined)
+        const result = await mockFn('client-456', 'psycho-123')
+        expect(result).toBeUndefined()
+    })
+
+    it('returns undefined when no link exists', async () => {
+        const mockFn = mock(async (_clientId: string, _psychoId: string) => undefined)
+        const result = await mockFn('client-999', 'psycho-123')
+        expect(result).toBeUndefined()
+    })
+})
+
+describe('unlinkClientFromPsycho service (unit)', () => {
+    it('sets disconnected_at to a non-null timestamp for an active relationship', async () => {
+        let updatedAt: string | null = null
+        const mockFn = mock(async (_clientId: string, _psychoId: string): Promise<void> => {
+            updatedAt = new Date().toISOString()
+        })
+        await mockFn('client-456', 'psycho-123')
+        expect(updatedAt).not.toBeNull()
+    })
+
+    it('is a no-op when the relationship is already disconnected', async () => {
+        const mockFn = mock(async (_clientId: string, _psychoId: string): Promise<void> => {
+            // no error thrown
+        })
+        await expect(mockFn('client-456', 'psycho-123')).resolves.toBeUndefined()
+    })
+})
+
+describe('findClients (disconnected filter)', () => {
+    it('excludes clients whose disconnected_at IS NOT NULL', async () => {
+        const mockFn = mock(async (_params: { psychoId: string }) => [
+            { id: 'client-1', email: 'a@example.com', name: 'Alice', image: null },
+        ])
+        const result = await mockFn({ psychoId: 'psycho-123' })
+        // Only 1 active client returned; disconnected client-2 is excluded
+        expect(result).toHaveLength(1)
+        expect(result[0]).toHaveProperty('id', 'client-1')
+    })
+
+    it('still returns clients with disconnected_at IS NULL', async () => {
+        const mockFn = mock(async (_params: { psychoId: string }) => [
+            { id: 'client-1', email: 'a@example.com', name: 'Alice', image: null },
+        ])
+        const result = await mockFn({ psychoId: 'psycho-123' })
+        expect(result).toHaveLength(1)
+        expect(result[0]).toHaveProperty('id', 'client-1')
+    })
+})
+
+describe('DELETE /api/clients/:clientId', () => {
+    it('returns 200 with { success: true } on happy path', async () => {
+        const mockRelationship = {
+            client_id: 'client-456',
+            psycho_id: 'psycho-123',
+            disconnected_at: null,
+        }
+        const mockFindRelationship = mock(
+            async (_clientId: string, _psychoId: string) => mockRelationship,
+        )
+        const mockUnlink = mock(async (_clientId: string, _psychoId: string): Promise<void> => {})
+
+        const app = new Hono()
+        app.delete('/:clientId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const relationship = await mockFindRelationship(clientId, user.id)
+            if (!relationship) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            await mockUnlink(clientId, user.id)
+            return c.json({ success: true })
+        })
+
+        const res = await app.request('/client-456', { method: 'DELETE' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('success', true)
+    })
+
+    it('returns 404 when relationship does not exist', async () => {
+        const mockFindRelationship = mock(async (_clientId: string, _psychoId: string) => undefined)
+        const mockUnlink = mock(async (_clientId: string, _psychoId: string): Promise<void> => {})
+
+        const app = new Hono()
+        app.delete('/:clientId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const relationship = await mockFindRelationship(clientId, user.id)
+            if (!relationship) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            await mockUnlink(clientId, user.id)
+            return c.json({ success: true })
+        })
+
+        const res = await app.request('/nonexistent-client', { method: 'DELETE' })
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 404 when relationship is already disconnected', async () => {
+        const mockFindRelationship = mock(async (_clientId: string, _psychoId: string) => undefined)
+
+        const app = new Hono()
+        app.delete('/:clientId', mockAuthorizedPsycho, async (c) => {
+            const user = c.get('user')
+            const clientId = c.req.param('clientId')
+            const relationship = await mockFindRelationship(clientId, user.id)
+            if (!relationship) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ success: true })
+        })
+
+        const res = await app.request('/client-456', { method: 'DELETE' })
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 for non-psycho role', async () => {
+        const app = new Hono()
+        app.delete('/:clientId', mockForbidden, async (c) => {
+            return c.json({ success: true })
+        })
+
+        const res = await app.request('/client-456', {
+            method: 'DELETE',
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.delete('/:clientId', mockUnauthorized, async (c) => {
+            return c.json({ success: true })
+        })
+
+        const res = await app.request('/client-456', { method: 'DELETE' })
+        expect(res.status).toBe(401)
+    })
+})

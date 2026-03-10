@@ -12,7 +12,7 @@ export const findClientById = async (id: string): Promise<Client | null> => {
 export const findClients = async (params: any): Promise<Client[]> => {
     return await db`SELECT u.id, u.name, u.email, u.image
           FROM clients c
-          INNER JOIN psychologist_clients pc ON pc.psycho_id = ${params.psychoId} AND pc.client_id = c.user_id
+          INNER JOIN psychologist_clients pc ON pc.psycho_id = ${params.psychoId} AND pc.client_id = c.user_id AND pc.disconnected_at IS NULL
           INNER JOIN "user" u ON u.id = c.user_id`
 }
 
@@ -45,4 +45,17 @@ export const isClientLinkedToPsycho = async (
     const [row] =
         await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId}`
     return row !== undefined
+}
+
+export const findClientPsychoRelationship = async (
+    clientId: string,
+    psychoId: string,
+): Promise<Record<string, unknown> | undefined> => {
+    const [row] =
+        await db`SELECT * FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL LIMIT 1`
+    return row
+}
+
+export const unlinkClientFromPsycho = async (clientId: string, psychoId: string): Promise<void> => {
+    await db`UPDATE psychologist_clients SET disconnected_at = NOW() WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL`
 }
