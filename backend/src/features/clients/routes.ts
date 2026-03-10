@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     findClientByEmail,
+    findClientById,
     findClients,
     isClientLinkedToPsycho,
     linkClientToPsycho,
@@ -18,7 +19,13 @@ clientRoutes
 
         return c.json({ clients })
     })
-    .get(':clientId', (c) => c.text(`Hello ${c.req.param('clientId')}!`))
+    .get(':clientId', async (c) => {
+        const client = await findClientById(c.req.param('clientId'))
+        if (!client) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
+        return c.json({ client })
+    })
     .post('/', async (c) => {
         const user = c.get('user')
         const body = await c.req.json()

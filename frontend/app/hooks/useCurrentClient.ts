@@ -1,28 +1,27 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router'
-import { fakeClients } from '~/test-data/fakeClients'
+import type { Client } from '~/models/client'
+import { clientService } from '~/services/client.service'
 
-type MinimalClientInfo = {
-    id: string
-    name: string
-    username: string
-}
-
-export function useCurrentClient(): MinimalClientInfo | null {
+export function useCurrentClient(): Client | null {
     const { clientId } = useParams<{ clientId: string }>()
+    const [client, setClient] = useState<Client | null>(null)
 
-    if (!clientId) {
-        return null
-    }
+    useEffect(() => {
+        if (!clientId) {
+            setClient(null)
+            return
+        }
 
-    const client = fakeClients.find((c) => c.id === clientId)
+        clientService
+            .getById(clientId)
+            .then((res) => {
+                setClient(res.data.client)
+            })
+            .catch(() => {
+                setClient(null)
+            })
+    }, [clientId])
 
-    if (!client) {
-        return null
-    }
-
-    return {
-        id: client.id,
-        name: client.name,
-        username: client.username,
-    }
+    return client
 }

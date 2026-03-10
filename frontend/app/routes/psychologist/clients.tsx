@@ -71,26 +71,26 @@ const columns: ColumnDef<Client>[] = [
         },
     },
     {
-        accessorKey: 'nextSession',
+        accessorKey: 'upcomingAppointment',
         header: 'Upcoming Appointment',
         cell: ({ row }) => {
-            const val = row.getValue('nextSession') as string | null | undefined
+            const val = row.getValue('upcomingAppointment') as string | null | undefined
             return val ?? '-'
         },
     },
     {
-        accessorKey: 'lastSession',
+        accessorKey: 'lastAppointment',
         header: 'Last Appointment',
         cell: ({ row }) => {
-            const val = row.getValue('lastSession') as string | null | undefined
+            const val = row.getValue('lastAppointment') as string | null | undefined
             return val ?? '-'
         },
     },
     {
-        accessorKey: 'sessionsCount',
+        accessorKey: 'appointmentsCount',
         header: 'Appointments Count',
         cell: ({ row }) => {
-            const val = row.getValue('sessionsCount') as number | undefined
+            const val = row.getValue('appointmentsCount') as number | undefined
             return val ?? '-'
         },
     },

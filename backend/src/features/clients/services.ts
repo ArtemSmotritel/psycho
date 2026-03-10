@@ -1,9 +1,12 @@
 import { db } from 'config/db'
 import type { Client } from './models'
 
-export const findClientById = async (id: any): Promise<object> => {
-    const [client] = await db`SELECT * FROM clients WHERE id = ${id}`
-    return client
+export const findClientById = async (id: string): Promise<Client | null> => {
+    const [client] = await db`SELECT c.user_id AS id, u.name, u.email, u.image
+          FROM clients c
+          INNER JOIN "user" u ON u.id = c.user_id
+          WHERE c.user_id = ${id}`
+    return client ?? null
 }
 
 export const findClients = async (params: any): Promise<Client[]> => {

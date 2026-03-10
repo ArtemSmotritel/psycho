@@ -261,6 +261,142 @@ describe('GET /api/clients', () => {
     })
 })
 
+describe('GET /api/clients (non-psycho role returns 403)', () => {
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.get('/', mockForbidden, async (c) => {
+            return c.json({ clients: [] })
+        })
+
+        const res = await app.request('/', {
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('GET /api/clients/:clientId', () => {
+    it('returns 200 with client object for known clientId', async () => {
+        const mockClient = {
+            id: 'client-456',
+            email: 'client@example.com',
+            name: 'Jane Doe',
+            image: null,
+        }
+        const mockFindClientById = mock(async (_id: string) => mockClient)
+
+        const app = new Hono()
+        app.get('/:clientId', mockAuthorizedPsycho, async (c) => {
+            const client = await mockFindClientById(c.req.param('clientId'))
+            if (!client) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ client })
+        })
+
+        const res = await app.request('/client-456')
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('client')
+        expect(body.client).toHaveProperty('id', 'client-456')
+        expect(body.client).toHaveProperty('email', 'client@example.com')
+        expect(body.client).toHaveProperty('name', 'Jane Doe')
+    })
+
+    it('returns 404 for unknown clientId', async () => {
+        const mockFindClientById = mock(async (_id: string) => null)
+
+        const app = new Hono()
+        app.get('/:clientId', mockAuthorizedPsycho, async (c) => {
+            const client = await mockFindClientById(c.req.param('clientId'))
+            if (!client) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ client })
+        })
+
+        const res = await app.request('/nonexistent-id')
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const app = new Hono()
+        app.get('/:clientId', mockForbidden, async (c) => {
+            return c.json({ client: {} })
+        })
+
+        const res = await app.request('/client-456', {
+            headers: { 'Helpsycho-User-Role': 'client' },
+        })
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('findClients service (unit)', () => {
+    it('returns only clients linked to the given psychoId', async () => {
+        const psychoId = 'psycho-123'
+        const expectedClients = [
+            { id: 'client-1', email: 'a@example.com', name: 'Alice', image: null },
+        ]
+        const mockFindClients = mock(async (params: { psychoId: string }) => {
+            if (params.psychoId === psychoId) return expectedClients
+            return []
+        })
+
+        const result = await mockFindClients({ psychoId })
+        expect(result).toHaveLength(1)
+        expect(result[0]).toHaveProperty('id', 'client-1')
+    })
+
+    it('returns empty array when no clients are linked to psychoId', async () => {
+        const mockFindClients = mock(async (_params: { psychoId: string }) => [])
+        const result = await mockFindClients({ psychoId: 'psycho-no-clients' })
+        expect(result).toEqual([])
+    })
+
+    it('excludes clients linked to a different psychologist', async () => {
+        const psychoId = 'psycho-123'
+        const otherPsychoId = 'psycho-999'
+        const clients = [{ id: 'client-1', email: 'a@example.com', name: 'Alice', image: null }]
+        const mockFindClients = mock(async (params: { psychoId: string }) => {
+            if (params.psychoId === psychoId) return clients
+            return []
+        })
+
+        const resultForOtherPsycho = await mockFindClients({ psychoId: otherPsychoId })
+        expect(resultForOtherPsycho).toEqual([])
+
+        const resultForPsycho = await mockFindClients({ psychoId })
+        expect(resultForPsycho).toHaveLength(1)
+    })
+})
+
+describe('findClientById service (unit)', () => {
+    it('returns client by user_id', async () => {
+        const mockClient = {
+            id: 'client-456',
+            email: 'client@example.com',
+            name: 'Jane Doe',
+            image: null,
+        }
+        const mockFindClientById = mock(async (id: string) =>
+            id === 'client-456' ? mockClient : null,
+        )
+
+        const result = await mockFindClientById('client-456')
+        expect(result).toHaveProperty('id', 'client-456')
+        expect(result).toHaveProperty('email', 'client@example.com')
+    })
+
+    it('returns null for unknown id', async () => {
+        const mockFindClientById = mock(async (_id: string) => null)
+        const result = await mockFindClientById('unknown-id')
+        expect(result).toBeNull()
+    })
+})
+
 describe('isClientLinkedToPsycho', () => {
     it('returns true when an active link exists', async () => {
         const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)

@@ -2,9 +2,10 @@ export interface Client {
     id: string
     name: string
     email: string
-    image?: string | null
-    // Future fields (populated by later tickets):
-    lastSession?: string | null
-    nextSession?: string | null
-    sessionsCount?: number
+    image: string | null
+    createdAt?: string
+    // Future fields (populated by EDG-17/EDG-20):
+    upcomingAppointment?: string | null
+    lastAppointment?: string | null
+    appointmentsCount?: number
 }
