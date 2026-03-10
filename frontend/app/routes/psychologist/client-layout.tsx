@@ -18,7 +18,7 @@ export default function ClientLayout() {
             {session && (
                 <h6 className="text-lg font-semibold sm:text-l md:text-xl mb-4 text-gray-500 dark:text-gray-400 mb-8">
                     <Link
-                        to={`/psychologist/clients/${client?.id}/sessions/${session.id}`}
+                        to={`/psychologist/clients/${client?.id}/appointments/${session.id}`}
                         className="hover:underline"
                     >
                         {getSessionName(session)}

@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Link } from 'react-router'
 import { Clock, CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react'
-import { fakeSessions } from '@/test-data/fakeSessions'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {
@@ -11,11 +10,11 @@ import {
     PaginationItem,
     PaginationLink,
 } from '@/components/ui/pagination'
-import type { Session } from '~/models/session'
-import { AttachmentIcon } from '~/utils/componentUtils'
-import { getSessionName } from '~/utils/utils'
+import type { Appointment } from '~/models/appointment'
+import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { format } from 'date-fns'
 
 type ClientSessionsProps = {
     params: {
@@ -23,67 +22,53 @@ type ClientSessionsProps = {
     }
 }
 
-type SessionCardProps = {
-    session: Session
+type AppointmentCardProps = {
+    appointment: Appointment
     clientId: string
 }
 
-type SessionsListProps = {
+type AppointmentsListProps = {
     title: string
-    sessions: Session[]
+    appointments: Appointment[]
     clientId: string
     oldestFirst: boolean
 }
 
 const ITEMS_PER_PAGE = 4
 
-function SessionCard({ session, clientId }: SessionCardProps) {
-    const { userRole } = useRoleGuard(['psychologist', 'client'])
+function AppointmentCard({ appointment, clientId }: AppointmentCardProps) {
+    useRoleGuard(['psychologist', 'client'])
 
     return (
-        <Link to={`/psychologist/clients/${clientId}/sessions/${session.id}`} className="block">
+        <Link
+            to={`/psychologist/clients/${clientId}/appointments/${appointment.id}`}
+            className="block"
+        >
             <Card className="hover:bg-accent/50 transition-colors max-w-lg">
                 <CardHeader className="max-w-lg">
                     <div className="flex sm:items-center sm:flex-row flex-col sm:justify-between items-start">
                         <div className="flex items-center gap-2">
-                            {session.isFinished ? (
+                            {appointment.status === 'past' ? (
                                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
                                 <Circle className="h-5 w-5 text-yellow-500" />
                             )}
-                            <CardTitle className="text-lg">{getSessionName(session)}</CardTitle>
+                            <CardTitle className="text-lg">
+                                {format(new Date(appointment.startTime), 'PPP HH:mm')}
+                            </CardTitle>
                         </div>
-                        {session.duration && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Clock className="h-4 w-4" />
-                                <span>{session.duration} minutes</span>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                                {format(new Date(appointment.startTime), 'HH:mm')} –{' '}
+                                {format(new Date(appointment.endTime), 'HH:mm')}
+                            </span>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
-                        {session.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                                {session.description}
-                            </p>
-                        )}
-                        <div className="flex gap-4 text-sm text-muted-foreground sm:flex-row flex-col">
-                            {userRole === 'psychologist' && (
-                                <div className="flex items-center gap-1">
-                                    <AttachmentIcon size="h-4 w-4" type="note" />
-                                    <span>{session.notesCount} notes</span>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1">
-                                <AttachmentIcon size="h-4 w-4" type="impression" />
-                                <span>{session.impressionsCount} impressions</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <AttachmentIcon size="h-4 w-4" type="recommendation" />
-                                <span>{session.recommendationsCount} recommendations</span>
-                            </div>
-                        </div>
+                    <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span className="capitalize">{appointment.status}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -91,24 +76,24 @@ function SessionCard({ session, clientId }: SessionCardProps) {
     )
 }
 
-function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListProps) {
+function AppointmentsList({ title, appointments, clientId, oldestFirst }: AppointmentsListProps) {
     const [currentPage, setCurrentPage] = useState(0)
     const [isAscending, setIsAscending] = useState(oldestFirst)
-    const totalPages = Math.ceil(sessions.length / ITEMS_PER_PAGE)
+    const totalPages = Math.max(1, Math.ceil(appointments.length / ITEMS_PER_PAGE))
     const startIndex = currentPage * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
 
-    const sortedSessions = [...sessions].sort((a, b) => {
-        return isAscending
-            ? a.date.getTime() - b.date.getTime()
-            : b.date.getTime() - a.date.getTime()
+    const sortedAppointments = [...appointments].sort((a, b) => {
+        const aTime = new Date(a.startTime).getTime()
+        const bTime = new Date(b.startTime).getTime()
+        return isAscending ? aTime - bTime : bTime - aTime
     })
 
-    const currentSessions = sortedSessions.slice(startIndex, endIndex)
+    const currentAppointments = sortedAppointments.slice(startIndex, endIndex)
 
     const handleOrderChange = (checked: boolean) => {
         setIsAscending(checked)
-        setCurrentPage(0) // Reset to first page when changing order
+        setCurrentPage(0)
     }
 
     return (
@@ -118,11 +103,14 @@ function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListPr
                     <h4 className="text-lg font-semibold">{title}</h4>
                     <div className="flex items-center gap-2">
                         <Switch
-                            id="session-order"
+                            id={`appointment-order-${title}`}
                             checked={isAscending}
                             onCheckedChange={handleOrderChange}
                         />
-                        <label htmlFor="session-order" className="text-sm text-muted-foreground">
+                        <label
+                            htmlFor={`appointment-order-${title}`}
+                            className="text-sm text-muted-foreground"
+                        >
                             {isAscending ? 'Oldest First' : 'Newest First'}
                         </label>
                     </div>
@@ -160,16 +148,20 @@ function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListPr
                 </Pagination>
             </div>
             <div className="space-y-4 min-h-[300px]">
-                {currentSessions.map((session) => (
-                    <SessionCard key={session.id} session={session} clientId={clientId} />
+                {currentAppointments.map((appointment) => (
+                    <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        clientId={clientId}
+                    />
                 ))}
-                {sessions.length === 0 && (
+                {appointments.length === 0 && (
                     <EmptyMessage
-                        title="No Sessions"
+                        title="No Appointments"
                         description={
-                            title === 'Finished Sessions'
-                                ? 'Participate in a sesion to see it here'
-                                : 'Schedule a session to see it here'
+                            title === 'Past Appointments'
+                                ? 'Completed appointments will appear here'
+                                : 'Schedule an appointment to see it here'
                         }
                     />
                 )}
@@ -179,21 +171,48 @@ function SessionsList({ title, sessions, clientId, oldestFirst }: SessionsListPr
 }
 
 export default function ClientSessions({ params }: ClientSessionsProps) {
-    const sessions = fakeSessions
-    const finishedSessions = sessions.filter((s) => s.isFinished)
-    const upcomingSessions = sessions.filter((s) => !s.isFinished)
+    const [appointments, setAppointments] = useState<Appointment[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        setIsLoading(true)
+        setError(null)
+        appointmentService
+            .getList(params.clientId)
+            .then((res) => {
+                setAppointments(res.data.appointments)
+            })
+            .catch(() => {
+                setError('Failed to load appointments.')
+            })
+            .finally(() => {
+                setIsLoading(false)
+            })
+    }, [params.clientId])
+
+    if (isLoading) {
+        return <p className="text-muted-foreground">Loading appointments...</p>
+    }
+
+    if (error) {
+        return <p className="text-destructive">{error}</p>
+    }
+
+    const pastAppointments = appointments.filter((a) => a.status === 'past')
+    const upcomingAppointments = appointments.filter((a) => a.status !== 'past')
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            <SessionsList
-                title="Finished Sessions"
-                sessions={finishedSessions}
+            <AppointmentsList
+                title="Past Appointments"
+                appointments={pastAppointments}
                 clientId={params.clientId}
                 oldestFirst={false}
             />
-            <SessionsList
-                title="Upcoming Sessions"
-                sessions={upcomingSessions}
+            <AppointmentsList
+                title="Upcoming Appointments"
+                appointments={upcomingAppointments}
                 clientId={params.clientId}
                 oldestFirst={true}
             />

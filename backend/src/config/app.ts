@@ -7,6 +7,7 @@ import { log } from 'utils/logger'
 import { setSession, setUserRole } from '../middlewares/auth'
 import { clientRoutes } from '../features/clients/routes'
 import { userRoutes } from '../features/users/routes'
+import { appointmentRoutes } from '../features/appointments/routes'
 
 export const app = new Hono<{
     Variables: {
@@ -69,3 +70,4 @@ app.use(setUserRole)
 
 app.route('/api/clients', clientRoutes)
 app.route('/api/users', userRoutes)
+app.route('/api/clients/:clientId/appointments', appointmentRoutes)

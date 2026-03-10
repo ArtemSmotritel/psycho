@@ -14,7 +14,7 @@ export default [
                     layout('routes/psychologist/client-layout.tsx', [
                         index('routes/psychologist/client-profile.tsx'),
                         route('progress', 'routes/psychologist/client-progress.tsx'),
-                        ...prefix('sessions', [
+                        ...prefix('appointments', [
                             index('routes/psychologist/client-sessions.tsx'),
                             ...prefix(':sessionId', [
                                 index('routes/psychologist/session.tsx'),
@@ -31,7 +31,7 @@ export default [
                 ]),
             ]),
             route('associative-images', 'routes/psychologist/associative-images.tsx'),
-            ...prefix('sessions', [index('routes/psychologist/sessions.tsx')]),
+            ...prefix('appointments', [index('routes/psychologist/sessions.tsx')]),
         ]),
     ]),
     layout('routes/client/layout.tsx', [

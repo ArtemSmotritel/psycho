@@ -8,12 +8,14 @@ import { useCurrentSession } from '~/hooks/useCurrentSession'
 import { Link } from 'react-router'
 import { type Attachment, type Session } from '~/models/session'
 import { Separator } from '@/components/ui/separator'
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '~/components/ui/button'
 import { AttachmentIcon } from '~/utils/componentUtils'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { isSessionActive, isSessionMoreThanDayOld } from '~/utils/utils'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { appointmentService } from '~/services/appointment.service'
+import { toast } from 'sonner'
 
 interface AttachmentProps {
     attachment: Attachment
@@ -35,7 +37,7 @@ const Attachment = ({ attachment, sessionId, clientId }: AttachmentProps) => {
             </div>
             <Button variant="outline" asChild className="w-[200px]">
                 <Link
-                    to={`/psychologist/clients/${clientId}/sessions/${sessionId}/attachment/${attachment.id}`}
+                    to={`/psychologist/clients/${clientId}/appointments/${sessionId}/attachment/${attachment.id}`}
                 >
                     <span>View {attachment.type}</span>
                     <ArrowRight className="h-4 w-4" />
@@ -111,6 +113,7 @@ export default function Session() {
     const session = useCurrentSession()
     const { userRole } = useRoleGuard(['psychologist', 'client'])
     const isFutureSession = session?.date ? new Date(session.date) > new Date() : false
+    const [isUpdating, setIsUpdating] = useState(false)
 
     // Check if session is currently active (within 1 hour of start time)
     const isCurrentlyActive = session ? isSessionActive(session) : false
@@ -196,9 +199,22 @@ export default function Session() {
                             startTime: session?.date ? new Date(session.date) : undefined,
                             clientId: session?.clientId,
                         }}
-                        onSubmit={(values) => {
-                            console.log('Updating session:', values)
-                            // TODO: Implement session update
+                        isLoading={isUpdating}
+                        onSubmit={async (values) => {
+                            setIsUpdating(true)
+                            try {
+                                const dto = {
+                                    startTime: values.startTime.toISOString(),
+                                    endTime: values.endTime.toISOString(),
+                                    googleMeetLink: values.googleMeetLink || null,
+                                }
+                                await appointmentService.update(session.clientId, session.id, dto)
+                                toast.success('Appointment updated.')
+                            } catch {
+                                toast.error('Failed to update appointment. Please try again.')
+                            } finally {
+                                setIsUpdating(false)
+                            }
                         }}
                     />
                 )}

@@ -18,7 +18,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table'
 import { useState } from 'react'
-import { isToday } from 'date-fns'
+import { isToday, formatISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import {
@@ -36,6 +36,7 @@ import { fakeSessionsList } from '@/test-data/fakeSessions'
 import { getSessionName } from '~/utils/utils'
 import type { SessionListItemDTO } from '~/models/session'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
+import { appointmentService } from '~/services/appointment.service'
 
 const todayFilterFn: FilterFn<SessionListItemDTO> = (row, columnId) => {
     const date = row.getValue(columnId) as Date | null
@@ -118,11 +119,11 @@ const columns: ColumnDef<SessionListItemDTO>[] = [
                         <DropdownMenuItem
                             onClick={() =>
                                 navigate(
-                                    `/psychologist/clients/${session.clientId}/sessions/${session.id}`,
+                                    `/psychologist/clients/${session.clientId}/appointments/${session.id}`,
                                 )
                             }
                         >
-                            View session details
+                            View appointment details
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => navigate(`/psychologist/clients/${session.clientId}`)}
@@ -141,9 +142,24 @@ export default function Sessions() {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-    const handleAddSession = (values: any) => {
-        console.log('Adding session:', values)
-        // TODO: Implement actual session addition
+    const [isCreating, setIsCreating] = useState(false)
+    const [createError, setCreateError] = useState<string | null>(null)
+
+    const handleAddSession = async (values: any) => {
+        if (!values.clientId) return
+        setIsCreating(true)
+        setCreateError(null)
+        try {
+            await appointmentService.create(values.clientId, {
+                startTime: formatISO(values.startTime),
+                endTime: formatISO(values.endTime),
+                generateGoogleMeet: values.generateGoogleMeet ?? false,
+            })
+        } catch {
+            setCreateError('Failed to schedule appointment. Please try again.')
+        } finally {
+            setIsCreating(false)
+        }
     }
 
     const table = useReactTable({
@@ -172,7 +188,9 @@ export default function Sessions() {
     return (
         <ProtectedRoute allowedRoles={['psychologist']}>
             <div className="container mx-auto p-4">
-                <AppPageHeader text="Sessions" />
+                <AppPageHeader text="Appointments" />
+
+                {createError && <p className="text-sm text-destructive mb-2">{createError}</p>}
 
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-4">
@@ -186,13 +204,17 @@ export default function Sessions() {
                                 htmlFor="showOnlyToday"
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
-                                Show only sessions today
+                                Show only appointments today
                             </label>
                         </div>
                     </div>
                     <SessionForm
                         mode="add"
-                        trigger={<Button>Schedule Session</Button>}
+                        trigger={
+                            <Button disabled={isCreating}>
+                                {isCreating ? 'Scheduling...' : 'Schedule Appointment'}
+                            </Button>
+                        }
                         onSubmit={handleAddSession}
                     />
                 </div>
@@ -238,7 +260,7 @@ export default function Sessions() {
                                         colSpan={columns.length}
                                         className="h-24 text-center"
                                     >
-                                        No sessions found.
+                                        No appointments found.
                                     </TableCell>
                                 </TableRow>
                             )}

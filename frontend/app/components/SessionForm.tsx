@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import * as z from 'zod'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import {
     Dialog,
     DialogContent,
@@ -35,21 +36,23 @@ import {
     CommandList,
 } from '@/components/ui/command'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
-import { fakeClients } from '@/test-data/fakeClients'
+import { clientService } from '~/services/client.service'
+import type { Client } from '~/models/client'
 
-const formSchema = z.object({
-    startTime: z
-        .date({
-            required_error: 'Please select a date and time',
-        })
-        .refine((date) => {
+const formSchema = z
+    .object({
+        startTime: z.date().refine((date) => {
             return date > new Date()
         }, 'Please select a future date and time'),
-    clientId: z.string({
-        required_error: 'Please select a client',
-    }),
-    generateGoogleMeet: z.boolean().default(true).optional(),
-})
+        endTime: z.date(),
+        clientId: z.string().min(1, 'Please select a client'),
+        generateGoogleMeet: z.boolean().default(true).optional(),
+        googleMeetLink: z.string().optional(),
+    })
+    .refine((data) => data.endTime > data.startTime, {
+        message: 'End time must be after start time',
+        path: ['endTime'],
+    })
 
 type FormValues = z.infer<typeof formSchema>
 
@@ -58,18 +61,32 @@ interface SessionFormProps {
     trigger: React.ReactNode
     initialData?: Partial<FormValues>
     onSubmit: SubmitHandler<FormValues>
+    isLoading?: boolean
 }
 
-export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFormProps) {
+export function SessionForm({ mode, trigger, initialData, onSubmit, isLoading }: SessionFormProps) {
     const [open, setOpen] = useState(false)
     const [clientOpen, setClientOpen] = useState(false)
     const [searchValue, setSearchValue] = useState('')
+    const [clients, setClients] = useState<Client[]>([])
     const currentClient = useCurrentClient()
+
+    useEffect(() => {
+        clientService
+            .getList()
+            .then((res) => {
+                setClients(res.data.clients)
+            })
+            .catch(() => {
+                setClients([])
+            })
+    }, [])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             startTime: new Date(),
+            endTime: new Date(),
             clientId: currentClient?.id || '',
             generateGoogleMeet: true,
             ...initialData,
@@ -81,7 +98,7 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
         setOpen(false)
     }
 
-    const filteredClients = fakeClients.filter((client) =>
+    const filteredClients = clients.filter((client) =>
         client.name.toLowerCase().includes(searchValue.toLowerCase()),
     )
 
@@ -91,12 +108,12 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'add' ? 'Schedule New Session' : 'Edit Session'}
+                        {mode === 'add' ? 'Schedule New Appointment' : 'Edit Appointment'}
                     </DialogTitle>
                     <DialogDescription>
                         {mode === 'add'
-                            ? 'Schedule a new session with your client'
-                            : 'Update session details'}
+                            ? 'Schedule a new appointment with your client'
+                            : 'Update appointment details'}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -107,6 +124,74 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                     <FormLabel>Start Time</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                    variant={'outline'}
+                                                    className={cn(
+                                                        'w-full pl-3 text-left font-normal',
+                                                        !field.value && 'text-muted-foreground',
+                                                    )}
+                                                >
+                                                    {field.value ? (
+                                                        format(field.value, 'PPP HH:mm')
+                                                    ) : (
+                                                        <span>Pick a date and time</span>
+                                                    )}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <div className="flex flex-col space-y-4 p-4">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                />
+                                                <div className="flex items-center space-x-2">
+                                                    <input
+                                                        type="time"
+                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        value={
+                                                            field.value
+                                                                ? format(field.value, 'HH:mm')
+                                                                : ''
+                                                        }
+                                                        onChange={(e) => {
+                                                            const [hours, minutes] =
+                                                                e.target.value.split(':')
+                                                            if (hours && minutes) {
+                                                                const newDate = new Date(
+                                                                    field.value || new Date(),
+                                                                )
+                                                                newDate.setHours(
+                                                                    parseInt(hours, 10),
+                                                                )
+                                                                newDate.setMinutes(
+                                                                    parseInt(minutes, 10),
+                                                                )
+                                                                field.onChange(newDate)
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="endTime"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>End Time</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <FormControl>
@@ -188,7 +273,7 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
                                                     )}
                                                 >
                                                     {field.value
-                                                        ? fakeClients.find(
+                                                        ? clients.find(
                                                               (client) => client.id === field.value,
                                                           )?.name
                                                         : 'Select client...'}
@@ -264,12 +349,35 @@ export function SessionForm({ mode, trigger, initialData, onSubmit }: SessionFor
                             )}
                         />
 
+                        {mode === 'edit' && (
+                            <FormField
+                                control={form.control}
+                                name="googleMeetLink"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Google Meet Link (optional)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="https://meet.google.com/..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
                         <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">
-                                {mode === 'add' ? 'Schedule Session' : 'Save Changes'}
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading
+                                    ? 'Saving…'
+                                    : mode === 'add'
+                                      ? 'Schedule Appointment'
+                                      : 'Save Changes'}
                             </Button>
                         </div>
                     </form>
