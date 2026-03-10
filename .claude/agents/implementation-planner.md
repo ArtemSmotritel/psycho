@@ -31,6 +31,7 @@ Based on what the ticket requires, explore the relevant parts of the codebase us
 - Understand existing API routes and services that relate to the ticket (files in `backend/src/features/`).
 - Understand existing frontend routes, components, and service calls that relate to the ticket (files in `frontend/app/`).
 - Check if there are existing patterns or utilities the implementation should reuse.
+- Check whether test infrastructure exists: look for `*.test.ts`, `*.spec.ts`, `*.test.tsx` files outside `node_modules`, and for test scripts in `backend/package.json` and `frontend/package.json`.
 
 Do a thorough enough exploration that the plan you produce is concrete and specific — referencing real file paths, function names, and patterns from the actual codebase, not generic placeholders.
 
@@ -69,6 +70,7 @@ Number each step. Each step must:
 
 Group steps logically:
 1. Database / migrations (if any)
+2. Tests - both backend and frontend
 2. Backend — models, services, routes
 3. Frontend — types/models, API service calls, components/routes
 4. Any cross-cutting concerns (auth guards, error handling, etc.)
@@ -78,6 +80,19 @@ List every new file with its path and one-line description.
 
 ## Files to Modify
 List every existing file with its path and a brief description of what changes.
+
+## Tests
+
+### What to test
+List each area that needs tests and the categories of cases to cover. Focus on core business logic. Use this format:
+
+**Backend**
+- `<function or route>`: <case categories, e.g. happy path, not found, wrong role, duplicate, missing field>
+
+**Frontend**
+- `<component or hook>`: <case categories, e.g. renders correctly, shows error state, calls API on submit, disables button while loading>
+
+Do not list trivial things (e.g. "model interface compiles"). Focus on logic that can actually break.
 
 ## Out of Scope
 List anything explicitly excluded or that the ticket does NOT require.
@@ -95,3 +110,6 @@ List anything explicitly excluded or that the ticket does NOT require.
 - Reference real file paths and existing code — never use generic placeholders like `<YourComponent>`.
 - Issues and questions go at the TOP of the plan, not buried in the steps.
 - Do not write code. Produce a plan only.
+- Always include a `## Tests` section. Never omit it, even for small tickets.
+- Always write first, then the implementation.
+- Never change previous failing tests unless an explicit change in the requirements has occurred.
