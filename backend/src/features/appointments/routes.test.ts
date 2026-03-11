@@ -1600,6 +1600,128 @@ describe('GET /api/appointments (client)', () => {
     })
 })
 
+describe('GET /api/appointments/:appointmentId (client)', () => {
+    const mockClientUser = {
+        id: 'client-456',
+        email: 'client@example.com',
+        name: 'Jane Client',
+        image: null,
+    }
+
+    const mockAuthorizedClient = mock(async (c: any, next: any) => {
+        c.set('user', mockClientUser)
+        c.set('session', { id: 'session-456' })
+        await next()
+    })
+
+    const mockForbiddenForPsycho = mock(async (c: any, _next: any) => {
+        return c.json({ error: 'Unauthorized' }, 403)
+    })
+
+    const mockAppointmentWithPsycho = {
+        id: 'apt-001',
+        psychoId: 'psycho-123',
+        clientId: 'client-456',
+        startTime: '2026-04-01T10:00:00.000Z',
+        endTime: '2026-04-01T11:00:00.000Z',
+        status: 'upcoming' as const,
+        googleMeetLink: null,
+        createdAt: '2026-03-10T15:00:00.000Z',
+        psychoName: 'Dr. Smith',
+    }
+
+    it('returns 200 with appointment including psychoName on happy path', async () => {
+        const mockFindById = mock(
+            async (_appointmentId: string, _clientId: string) => mockAppointmentWithPsycho,
+        )
+
+        const app = new Hono()
+        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
+            const user = c.get('user')
+            const appointmentId = c.req.param('appointmentId')
+            const appointment = await mockFindById(appointmentId, user.id)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('id', 'apt-001')
+        expect(body.appointment).toHaveProperty('psychoName', 'Dr. Smith')
+        expect(mockFindById).toHaveBeenCalledWith('apt-001', 'client-456')
+    })
+
+    it('returns 404 when appointment is not found', async () => {
+        const mockFindById = mock(async (_appointmentId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
+            const user = c.get('user')
+            const appointmentId = c.req.param('appointmentId')
+            const appointment = await mockFindById(appointmentId, user.id)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/nonexistent', { method: 'GET' })
+
+        expect(res.status).toBe(404)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'NotFound')
+    })
+
+    it('returns 404 when appointment belongs to a different client', async () => {
+        const mockFindById = mock(async (_appointmentId: string, _clientId: string) => null)
+
+        const app = new Hono()
+        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
+            const user = c.get('user')
+            const appointmentId = c.req.param('appointmentId')
+            const appointment = await mockFindById(appointmentId, user.id)
+            if (!appointment) {
+                return c.json({ error: 'NotFound' }, 404)
+            }
+            return c.json({ appointment }, 200)
+        })
+
+        const res = await app.request('/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.get('/:appointmentId', mockUnauthorized, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/apt-001', { method: 'GET' })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for psycho-role request', async () => {
+        const app = new Hono()
+        app.get('/:appointmentId', mockForbiddenForPsycho, async (c) => {
+            return c.json({ appointment: {} }, 200)
+        })
+
+        const res = await app.request('/apt-001', {
+            method: 'GET',
+            headers: { 'Helpsycho-User-Role': 'psycho' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
 describe('findActiveAppointmentByPsycho service (unit)', () => {
     it('returns active appointment when one exists', async () => {
         const expected = {

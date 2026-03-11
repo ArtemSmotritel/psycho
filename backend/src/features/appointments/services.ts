@@ -108,7 +108,25 @@ export async function findActiveAppointmentByPsycho(psychoId: string): Promise<A
     return (row as Appointment) ?? null
 }
 
-export async function listAppointmentsForClient(clientId: string): Promise<AppointmentWithPsycho[]> {
+export async function findAppointmentByIdForClient(
+    appointmentId: string,
+    clientId: string,
+): Promise<AppointmentWithPsycho | null> {
+    const [row] = await db`
+        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
+               a.start_time AS "startTime", a.end_time AS "endTime",
+               a.status, a.google_meet_link AS "googleMeetLink", a.created_at AS "createdAt",
+               u.name AS "psychoName"
+        FROM appointments a
+        JOIN "user" u ON u.id = a.psycho_id
+        WHERE a.id = ${appointmentId} AND a.client_id = ${clientId}
+    `
+    return (row as AppointmentWithPsycho) ?? null
+}
+
+export async function listAppointmentsForClient(
+    clientId: string,
+): Promise<AppointmentWithPsycho[]> {
     const rows = await db`
         SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
                a.start_time AS "startTime", a.end_time AS "endTime",

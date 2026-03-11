@@ -24,6 +24,7 @@ export const appointmentService = {
         api.patch<{ appointment: Appointment }>(
             `/clients/${clientId}/appointments/${appointmentId}/start`,
         ),
-    getClientGlobalList: () =>
-        api.get<{ appointments: AppointmentWithPsycho[] }>('/appointments'),
+    getClientGlobalList: () => api.get<{ appointments: AppointmentWithPsycho[] }>('/appointments'),
+    getClientAppointmentById: (appointmentId: string) =>
+        api.get<{ appointment: AppointmentWithPsycho }>(`/appointments/${appointmentId}`),
 }

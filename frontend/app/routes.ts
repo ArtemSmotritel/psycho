@@ -38,5 +38,6 @@ export default [
         route('client', 'routes/client/dashboard.tsx'),
         route('client/no-psychologist', 'routes/client/no-psychologist.tsx'),
         route('client/appointments', 'routes/client/appointments.tsx'),
+        route('client/appointments/:appointmentId', 'routes/client/appointment-detail.tsx'),
     ]),
 ] satisfies RouteConfig
