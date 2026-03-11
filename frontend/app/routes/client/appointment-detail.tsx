@@ -1,5 +1,5 @@
 import { Video, LogIn } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, Navigate, useParams } from 'react-router'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 export default function ClientAppointmentDetail() {
     useRoleGuard(['client'])
 
+    const { appointmentId } = useParams<{ appointmentId: string }>()
     const { appointment, isLoading } = useCurrentClientAppointment()
 
     if (isLoading) {
@@ -24,20 +25,7 @@ export default function ClientAppointmentDetail() {
     }
 
     if (appointment.status === 'active') {
-        return (
-            <>
-                <p>Your appointment is currently active.</p>
-                {appointment.googleMeetLink && (
-                    <ActionsSection title="Actions">
-                        <ActionItem
-                            icon={<LogIn className="h-6" />}
-                            label="Join Call"
-                            href={appointment.googleMeetLink}
-                        />
-                    </ActionsSection>
-                )}
-            </>
-        )
+        return <Navigate to={`/client/appointments/${appointmentId}/live`} replace />
     }
 
     // upcoming

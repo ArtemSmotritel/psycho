@@ -67,6 +67,7 @@ function renderDetail(path = '/client/appointments/apt-001') {
                     path="/client/appointments/:appointmentId"
                     element={<ClientAppointmentDetail />}
                 />
+                <Route path="*" element={<div data-testid="redirected" />} />
             </Routes>
         </MemoryRouter>,
     )
@@ -92,31 +93,31 @@ describe('ClientAppointmentDetail route', () => {
         expect(screen.getByText(/EDG-24/)).toBeInTheDocument()
     })
 
-    it('shows active message for active appointment', () => {
+    it('redirects to live page when appointment is active', () => {
         mockUseCurrentClientAppointment = () => ({
             appointment: activeAppointment,
             isLoading: false,
         })
         renderDetail()
-        expect(screen.getByText(/appointment is currently active/i)).toBeInTheDocument()
+        expect(screen.getByTestId('redirected')).toBeInTheDocument()
     })
 
-    it('shows Join Call button when active appointment has a google meet link', () => {
+    it('redirects to live page when active appointment has a google meet link', () => {
         mockUseCurrentClientAppointment = () => ({
             appointment: activeAppointment,
             isLoading: false,
         })
         renderDetail()
-        expect(screen.getByText(/join call/i)).toBeInTheDocument()
+        expect(screen.getByTestId('redirected')).toBeInTheDocument()
     })
 
-    it('does not show Join Call button when active appointment has no google meet link', () => {
+    it('redirects to live page when active appointment has no google meet link', () => {
         mockUseCurrentClientAppointment = () => ({
             appointment: activeNoMeet,
             isLoading: false,
         })
         renderDetail()
-        expect(screen.queryByText(/join call/i)).not.toBeInTheDocument()
+        expect(screen.getByTestId('redirected')).toBeInTheDocument()
     })
 
     it('renders formatted date for upcoming appointment', () => {
