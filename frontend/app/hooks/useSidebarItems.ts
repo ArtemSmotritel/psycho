@@ -42,6 +42,12 @@ export function useSidebarItems(): SidebarItem[] {
             href: '/me',
             availableTo: 'client',
         },
+        {
+            title: 'Appointments',
+            icon: CalendarIcon,
+            href: '/client/appointments',
+            availableTo: 'client',
+        },
     ]
 
     return allItems.filter((item) => item.availableTo === userRole)

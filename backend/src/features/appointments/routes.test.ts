@@ -1492,6 +1492,114 @@ describe('startAppointment service (unit)', () => {
     })
 })
 
+describe('GET /api/appointments (client)', () => {
+    const mockClientUser = {
+        id: 'client-456',
+        email: 'client@example.com',
+        name: 'Jane Client',
+        image: null,
+    }
+
+    const mockAuthorizedClient = mock(async (c: any, next: any) => {
+        c.set('user', mockClientUser)
+        c.set('session', { id: 'session-456' })
+        await next()
+    })
+
+    const mockForbiddenForClient = mock(async (c: any, _next: any) => {
+        return c.json({ error: 'Unauthorized' }, 403)
+    })
+
+    const mockAppointmentsWithPsycho = [
+        {
+            id: 'apt-001',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            status: 'upcoming' as const,
+            googleMeetLink: null,
+            createdAt: '2026-03-10T15:00:00.000Z',
+            psychoName: 'Dr. Smith',
+        },
+        {
+            id: 'apt-002',
+            psychoId: 'psycho-123',
+            clientId: 'client-456',
+            startTime: '2026-03-01T10:00:00.000Z',
+            endTime: '2026-03-01T11:00:00.000Z',
+            status: 'past' as const,
+            googleMeetLink: null,
+            createdAt: '2026-02-01T15:00:00.000Z',
+            psychoName: 'Dr. Smith',
+        },
+    ]
+
+    it('returns 200 with appointments including psychoName on happy path', async () => {
+        const mockListForClient = mock(async (_clientId: string) => mockAppointmentsWithPsycho)
+
+        const app = new Hono()
+        app.get('/', mockAuthorizedClient, async (c) => {
+            const user = c.get('user')
+            const appointments = await mockListForClient(user.id)
+            return c.json({ appointments }, 200)
+        })
+
+        const res = await app.request('/', { method: 'GET' })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toHaveLength(2)
+        expect(body.appointments[0]).toHaveProperty('psychoName', 'Dr. Smith')
+        expect(body.appointments[1]).toHaveProperty('psychoName', 'Dr. Smith')
+        expect(mockListForClient).toHaveBeenCalledWith('client-456')
+    })
+
+    it('returns 200 with empty appointments array when client has no appointments', async () => {
+        const mockListForClient = mock(async (_clientId: string) => [])
+
+        const app = new Hono()
+        app.get('/', mockAuthorizedClient, async (c) => {
+            const user = c.get('user')
+            const appointments = await mockListForClient(user.id)
+            return c.json({ appointments }, 200)
+        })
+
+        const res = await app.request('/', { method: 'GET' })
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toEqual([])
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const app = new Hono()
+        app.get('/', mockUnauthorized, async (c) => {
+            return c.json({ appointments: [] }, 200)
+        })
+
+        const res = await app.request('/', { method: 'GET' })
+
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for psycho-role request', async () => {
+        const app = new Hono()
+        app.get('/', mockForbiddenForClient, async (c) => {
+            return c.json({ appointments: [] }, 200)
+        })
+
+        const res = await app.request('/', {
+            method: 'GET',
+            headers: { 'Helpsycho-User-Role': 'psycho' },
+        })
+
+        expect(res.status).toBe(403)
+    })
+})
+
 describe('findActiveAppointmentByPsycho service (unit)', () => {
     it('returns active appointment when one exists', async () => {
         const expected = {

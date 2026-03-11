@@ -1,5 +1,5 @@
 import { db } from 'config/db'
-import type { Appointment } from './models'
+import type { Appointment, AppointmentWithPsycho } from './models'
 
 export const createAppointment = async (params: {
     psychoId: string
@@ -106,6 +106,20 @@ export async function findActiveAppointmentByPsycho(psychoId: string): Promise<A
         LIMIT 1
     `
     return (row as Appointment) ?? null
+}
+
+export async function listAppointmentsForClient(clientId: string): Promise<AppointmentWithPsycho[]> {
+    const rows = await db`
+        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
+               a.start_time AS "startTime", a.end_time AS "endTime",
+               a.status, a.google_meet_link AS "googleMeetLink", a.created_at AS "createdAt",
+               u.name AS "psychoName"
+        FROM appointments a
+        JOIN "user" u ON u.id = a.psycho_id
+        WHERE a.client_id = ${clientId}
+        ORDER BY a.start_time DESC
+    `
+    return rows as AppointmentWithPsycho[]
 }
 
 export const listAppointments = async (

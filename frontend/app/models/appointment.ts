@@ -9,6 +9,10 @@ export interface Appointment {
     createdAt: string
 }
 
+export interface AppointmentWithPsycho extends Appointment {
+    psychoName: string
+}
+
 export interface CreateAppointmentDTO {
     startTime: string
     endTime: string

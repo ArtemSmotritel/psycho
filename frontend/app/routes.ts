@@ -37,5 +37,6 @@ export default [
     layout('routes/client/layout.tsx', [
         route('client', 'routes/client/dashboard.tsx'),
         route('client/no-psychologist', 'routes/client/no-psychologist.tsx'),
+        route('client/appointments', 'routes/client/appointments.tsx'),
     ]),
 ] satisfies RouteConfig

@@ -1,5 +1,10 @@
 import { api } from './api'
-import type { Appointment, CreateAppointmentDTO, UpdateAppointmentDTO } from '~/models/appointment'
+import type {
+    Appointment,
+    AppointmentWithPsycho,
+    CreateAppointmentDTO,
+    UpdateAppointmentDTO,
+} from '~/models/appointment'
 
 export const appointmentService = {
     create: (clientId: string, data: CreateAppointmentDTO) =>
@@ -19,4 +24,6 @@ export const appointmentService = {
         api.patch<{ appointment: Appointment }>(
             `/clients/${clientId}/appointments/${appointmentId}/start`,
         ),
+    getClientGlobalList: () =>
+        api.get<{ appointments: AppointmentWithPsycho[] }>('/appointments'),
 }

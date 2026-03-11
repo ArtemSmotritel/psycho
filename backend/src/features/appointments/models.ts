@@ -8,3 +8,7 @@ export interface Appointment {
     googleMeetLink: string | null
     createdAt: string
 }
+
+export interface AppointmentWithPsycho extends Appointment {
+    psychoName: string
+}
