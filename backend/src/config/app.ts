@@ -9,6 +9,7 @@ import { clientRoutes } from '../features/clients/routes'
 import { userRoutes } from '../features/users/routes'
 import { appointmentRoutes } from '../features/appointments/routes'
 import { clientAppointmentRoutes } from '../features/appointments/client-routes'
+import { psychoAppointmentRoutes } from '../features/appointments/psycho-routes'
 
 export const app = new Hono<{
     Variables: {
@@ -73,3 +74,4 @@ app.route('/api/clients', clientRoutes)
 app.route('/api/users', userRoutes)
 app.route('/api/clients/:clientId/appointments', appointmentRoutes)
 app.route('/api/appointments', clientAppointmentRoutes)
+app.route('/api/psycho/appointments', psychoAppointmentRoutes)

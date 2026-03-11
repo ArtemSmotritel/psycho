@@ -3,6 +3,7 @@ import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     createAppointment,
     deleteAppointment,
+    endAppointment,
     findActiveAppointmentByPsycho,
     findAppointmentById,
     isClientLinkedAndActive,
@@ -75,6 +76,31 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/star
     }
 
     const appointment = await startAppointment(appointmentId)
+    return c.json({ appointment }, 200)
+})
+
+appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/end', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+    const appointmentId = c.req.param('appointmentId')
+
+    const existing = await findAppointmentById(appointmentId, user.id, clientId)
+    if (!existing) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    if (existing.status !== 'active') {
+        return c.json(
+            {
+                error: 'AppointmentNotEndable',
+                message: 'Only active appointments can be ended.',
+            },
+            400,
+        )
+    }
+
+    // TODO: EDG-47 — save whiteboard snapshot before ending
+    const appointment = await endAppointment(appointmentId)
     return c.json({ appointment }, 200)
 })
 

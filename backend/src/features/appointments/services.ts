@@ -96,6 +96,18 @@ export async function startAppointment(appointmentId: string): Promise<Appointme
     return row as Appointment
 }
 
+export async function endAppointment(appointmentId: string): Promise<Appointment> {
+    const [row] = await db`
+        UPDATE appointments
+        SET status = 'past'
+        WHERE id = ${appointmentId}
+        RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
+                  start_time AS "startTime", end_time AS "endTime",
+                  status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+    `
+    return row as Appointment
+}
+
 export async function findActiveAppointmentByPsycho(psychoId: string): Promise<Appointment | null> {
     const [row] = await db`
         SELECT id, psycho_id AS "psychoId", client_id AS "clientId",
