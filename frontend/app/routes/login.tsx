@@ -18,13 +18,13 @@ export default function LoginChoice() {
         if (selectedRole === 'psycho') {
             await auth.signIn.social({
                 provider: 'google',
-                callbackURL: '/auth/callback',
+                callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/callback`,
                 scopes: ['https://www.googleapis.com/auth/calendar.events'],
             })
         } else {
             await auth.signIn.social({
                 provider: 'google',
-                callbackURL: '/auth/callback',
+                callbackURL: `${import.meta.env.VITE_FRONTEND_URL}/auth/callback`,
             })
         }
     }

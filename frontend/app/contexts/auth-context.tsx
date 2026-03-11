@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     name: data.name,
                     image: session.user.image ?? null,
                     activeRole: data.active_role,
-                })
+                } as User)
             })
             .catch(() => {
                 setUser(null)

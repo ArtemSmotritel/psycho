@@ -1,12 +1,12 @@
 import { Hono } from 'hono'
 import { authorized } from '../../middlewares/auth'
-import { getMe, setActiveRole } from './service'
+import { findUserById, setActiveRole } from './service'
 
 export const userRoutes = new Hono()
 
 userRoutes.get('/me', authorized, async (c) => {
     const user = c.get('user')
-    const fullUser = await getMe(user.id)
+    const fullUser = await findUserById(user.id)
 
     return c.json({
         id: (fullUser as any).id,

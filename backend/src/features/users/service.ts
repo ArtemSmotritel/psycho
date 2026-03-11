@@ -5,11 +5,6 @@ export const findUserById = async (id: any): Promise<object> => {
     return user
 }
 
-export const getMe = async (userId: string) => {
-    const [user] = await db`SELECT * FROM "user" WHERE id = ${userId}`
-    return user
-}
-
 export const setActiveRole = async (userId: string, role: 'psycho' | 'client') => {
     const [user] =
         await db`UPDATE "user" SET active_role = ${role} WHERE id = ${userId} RETURNING *`
