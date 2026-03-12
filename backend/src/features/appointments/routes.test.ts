@@ -1,117 +1,52 @@
-import { describe, expect, it, mock } from 'bun:test'
-import { Hono } from 'hono'
+import { describe, expect, it } from 'bun:test'
+import { app } from 'config/app'
+import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { linkClientToPsycho } from '../clients/services'
+import { createAppointment, endAppointment, startAppointment } from './services'
 
-// Mock auth middleware helpers
-const mockPsychoUser = {
-    id: 'psycho-123',
-    email: 'psycho@example.com',
-    name: 'Dr. Smith',
-    image: null,
-}
-
-const mockAuthorizedPsycho = mock(async (c: any, next: any) => {
-    c.set('user', mockPsychoUser)
-    c.set('session', { id: 'session-123' })
-    await next()
-})
-
-const mockUnauthorized = mock(async (c: any, _next: any) => {
-    return c.json({ error: 'Unauthorized' }, 401)
-})
-
-const mockForbidden = mock(async (c: any, _next: any) => {
-    return c.json(
-        { error: 'Unauthorized', message: 'Only a psychologist can make this request' },
-        403,
-    )
-})
+const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
+const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 describe('POST /api/clients/:clientId/appointments', () => {
     it('returns 201 with appointment on happy path', async () => {
-        const mockAppointment = {
-            id: 'apt-001',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
-            status: 'upcoming',
-            googleMeetLink: null,
-            createdAt: '2026-03-10T15:00:00.000Z',
-        }
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
-        const mockCreate = mock(async (_params: any) => mockAppointment)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const body = await c.req.json()
-
-            if (!body.startTime) {
-                return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
-            }
-            if (!body.endTime) {
-                return c.json({ error: 'BadRequest', message: 'endTime is required' }, 400)
-            }
-            if (new Date(body.endTime) <= new Date(body.startTime)) {
-                return c.json(
-                    { error: 'BadRequest', message: 'endTime must be after startTime' },
-                    400,
-                )
-            }
-
-            const linked = await mockIsLinked(clientId, user.id)
-            if (!linked) {
-                return c.json(
-                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
-                    400,
-                )
-            }
-
-            const appointment = await mockCreate({
-                psychoId: user.id,
-                clientId,
-                startTime: body.startTime,
-                endTime: body.endTime,
-            })
-
-            return c.json({ appointment }, 201)
-        })
-
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                startTime: '2026-04-01T10:00:00.000Z',
-                endTime: '2026-04-01T11:00:00.000Z',
-                generateGoogleMeet: false,
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-01T10:00:00.000Z',
+                    endTime: '2026-04-01T11:00:00.000Z',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(201)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'upcoming')
         expect(body.appointment).toHaveProperty('googleMeetLink', null)
-        expect(body.appointment).toHaveProperty('clientId', 'client-456')
-        expect(body.appointment).toHaveProperty('psychoId', 'psycho-123')
+        expect(body.appointment).toHaveProperty('clientId', client.id)
+        expect(body.appointment).toHaveProperty('psychoId', psycho.id)
     })
 
     it('returns 400 BadRequest when startTime is missing', async () => {
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const body = await c.req.json()
-            if (!body.startTime) {
-                return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
-            }
-            return c.json({ appointment: {} }, 201)
-        })
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endTime: '2026-04-01T11:00:00.000Z' }),
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ endTime: '2026-04-01T11:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -120,23 +55,18 @@ describe('POST /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 400 BadRequest when endTime is missing', async () => {
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const body = await c.req.json()
-            if (!body.startTime) {
-                return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
-            }
-            if (!body.endTime) {
-                return c.json({ error: 'BadRequest', message: 'endTime is required' }, 400)
-            }
-            return c.json({ appointment: {} }, 201)
-        })
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime: '2026-04-01T10:00:00.000Z' }),
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-01T10:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -145,32 +75,21 @@ describe('POST /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 400 BadRequest when endTime <= startTime', async () => {
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const body = await c.req.json()
-            if (!body.startTime) {
-                return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
-            }
-            if (!body.endTime) {
-                return c.json({ error: 'BadRequest', message: 'endTime is required' }, 400)
-            }
-            if (new Date(body.endTime) <= new Date(body.startTime)) {
-                return c.json(
-                    { error: 'BadRequest', message: 'endTime must be after startTime' },
-                    400,
-                )
-            }
-            return c.json({ appointment: {} }, 201)
-        })
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                startTime: '2026-04-01T11:00:00.000Z',
-                endTime: '2026-04-01T10:00:00.000Z',
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-01T11:00:00.000Z',
+                    endTime: '2026-04-01T10:00:00.000Z',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -179,46 +98,20 @@ describe('POST /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 400 ClientNotLinked when client is not linked to psychologist', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
 
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const body = await c.req.json()
-
-            if (!body.startTime) {
-                return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
-            }
-            if (!body.endTime) {
-                return c.json({ error: 'BadRequest', message: 'endTime is required' }, 400)
-            }
-            if (new Date(body.endTime) <= new Date(body.startTime)) {
-                return c.json(
-                    { error: 'BadRequest', message: 'endTime must be after startTime' },
-                    400,
-                )
-            }
-
-            const linked = await mockIsLinked(clientId, user.id)
-            if (!linked) {
-                return c.json(
-                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
-                    400,
-                )
-            }
-
-            return c.json({ appointment: {} }, 201)
-        })
-
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                startTime: '2026-04-01T10:00:00.000Z',
-                endTime: '2026-04-01T11:00:00.000Z',
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-01T10:00:00.000Z',
+                    endTime: '2026-04-01T11:00:00.000Z',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -227,12 +120,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 201)
-        })
-
-        const res = await app.request('/client-456/appointments', {
+        const res = await app.request('/api/clients/some-client/appointments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -240,197 +128,72 @@ describe('POST /api/clients/:clientId/appointments', () => {
                 endTime: '2026-04-01T11:00:00.000Z',
             }),
         })
-
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.post('/:clientId/appointments', mockForbidden, async (c) => {
-            return c.json({ appointment: {} }, 201)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Helpsycho-User-Role': 'client',
-            },
-            body: JSON.stringify({
-                startTime: '2026-04-01T10:00:00.000Z',
-                endTime: '2026-04-01T11:00:00.000Z',
+        const res = await app.request(
+            '/api/clients/some-client/appointments',
+            await asUser(user.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-01T10:00:00.000Z',
+                    endTime: '2026-04-01T11:00:00.000Z',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
-describe('createAppointment service (unit)', () => {
-    it('returns appointment with status upcoming and null googleMeetLink', async () => {
-        const mockCreate = mock(
-            async (_params: {
-                psychoId: string
-                clientId: string
-                startTime: string
-                endTime: string
-                googleMeetLink?: string | null
-            }) => ({
-                id: 'apt-001',
-                psychoId: _params.psychoId,
-                clientId: _params.clientId,
-                startTime: _params.startTime,
-                endTime: _params.endTime,
-                status: 'upcoming' as const,
-                googleMeetLink: null,
-                createdAt: '2026-03-10T15:00:00.000Z',
-            }),
-        )
-
-        const result = await mockCreate({
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
+    it('returns 200 with updated appointment on happy path', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-04-01T10:00:00.000Z',
             endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        expect(result.status).toBe('upcoming')
-        expect(result.googleMeetLink).toBeNull()
-        expect(result.psychoId).toBe('psycho-123')
-        expect(result.clientId).toBe('client-456')
-    })
-})
-
-describe('isClientLinkedAndActive service (unit)', () => {
-    it('returns true when client is actively linked (disconnected_at IS NULL)', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
-        const result = await mockIsLinked('client-456', 'psycho-123')
-        expect(result).toBe(true)
-    })
-
-    it('returns false when client link has disconnected_at set', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
-        const result = await mockIsLinked('client-456', 'psycho-123')
-        expect(result).toBe(false)
-    })
-
-    it('returns false when no link exists', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
-        const result = await mockIsLinked('client-999', 'psycho-123')
-        expect(result).toBe(false)
-    })
-})
-
-describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
-    const mockUpcomingAppointment = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'upcoming' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-    }
-
-    it('returns 200 with updated appointment on happy path', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-        const mockUpdate = mock(async (_id: string, _params: any) => ({
-            ...mockUpcomingAppointment,
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
-            googleMeetLink: 'https://meet.google.com/abc',
-        }))
-
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-            const body = await c.req.json()
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotEditable',
-                        message: 'Only upcoming appointments can be edited.',
-                    },
-                    400,
-                )
-            }
-
-            const mergedStart = body.startTime ?? existing.startTime
-            const mergedEnd = body.endTime ?? existing.endTime
-            const mergedLink =
-                'googleMeetLink' in body ? body.googleMeetLink : existing.googleMeetLink
-
-            if (new Date(mergedEnd) <= new Date(mergedStart)) {
-                return c.json(
-                    { error: 'BadRequest', message: 'endTime must be after startTime' },
-                    400,
-                )
-            }
-
-            const appointment = await mockUpdate(appointmentId, {
-                startTime: mergedStart,
-                endTime: mergedEnd,
-                googleMeetLink: mergedLink,
-            })
-
-            return c.json({ appointment }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                startTime: '2026-04-02T10:00:00.000Z',
-                endTime: '2026-04-02T11:00:00.000Z',
-                googleMeetLink: 'https://meet.google.com/abc',
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T10:00:00.000Z',
+                    endTime: '2026-04-02T11:00:00.000Z',
+                    googleMeetLink: 'https://meet.google.com/abc',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment).toHaveProperty('startTime', '2026-04-02T10:00:00.000Z')
-        expect(body.appointment).toHaveProperty('endTime', '2026-04-02T11:00:00.000Z')
         expect(body.appointment).toHaveProperty('googleMeetLink', 'https://meet.google.com/abc')
-        expect(mockUpdate).toHaveBeenCalledWith('apt-001', {
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
-            googleMeetLink: 'https://meet.google.com/abc',
-        })
     })
 
     it('returns 404 NotFound when appointment does not exist', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/nonexistent', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/nonexistent`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(404)
         const resBody = await res.json()
@@ -438,38 +201,26 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 400 AppointmentNotEditable for past appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'past' as const,
-        }))
-
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotEditable',
-                        message: 'Only upcoming appointments can be edited.',
-                    },
-                    400,
-                )
-            }
-            return c.json({ appointment: {} }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(400)
         const resBody = await res.json()
@@ -478,38 +229,25 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 400 AppointmentNotEditable for active appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'active' as const,
-        }))
-
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotEditable',
-                        message: 'Only upcoming appointments can be edited.',
-                    },
-                    400,
-                )
-            }
-            return c.json({ appointment: {} }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -517,52 +255,27 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 400 BadRequest when merged endTime is before merged startTime', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-            const body = await c.req.json()
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotEditable',
-                        message: 'Only upcoming appointments can be edited.',
-                    },
-                    400,
-                )
-            }
-
-            const mergedStart = body.startTime ?? existing.startTime
-            const mergedEnd = body.endTime ?? existing.endTime
-
-            if (new Date(mergedEnd) <= new Date(mergedStart)) {
-                return c.json(
-                    { error: 'BadRequest', message: 'endTime must be after startTime' },
-                    400,
-                )
-            }
-
-            return c.json({ appointment: {} }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                startTime: '2026-04-02T12:00:00.000Z',
-                endTime: '2026-04-02T10:00:00.000Z',
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T12:00:00.000Z',
+                    endTime: '2026-04-02T10:00:00.000Z',
+                }),
             }),
-        })
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -571,150 +284,61 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001', {
+        const res = await app.request('/api/clients/some-client/appointments/some-apt', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
         })
-
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId', mockForbidden, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Helpsycho-User-Role': 'client',
-            },
-            body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt',
+            await asUser(user.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+            }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
-describe('findAppointmentById service (unit)', () => {
-    it('returns appointment when id, psychoId, and clientId all match', async () => {
-        const expected = {
-            id: 'apt-001',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
+    it('returns 200 { success: true } on happy path', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-04-01T10:00:00.000Z',
             endTime: '2026-04-01T11:00:00.000Z',
-            status: 'upcoming' as const,
-            googleMeetLink: null,
-            createdAt: '2026-03-10T15:00:00.000Z',
-        }
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => expected,
-        )
-        const result = await mockFindById('apt-001', 'psycho-123', 'client-456')
-        expect(result).toEqual(expected)
-    })
-
-    it('returns null when appointmentId does not match', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
-        const result = await mockFindById('apt-999', 'psycho-123', 'client-456')
-        expect(result).toBeNull()
-    })
-
-    it('returns null when psychoId does not match', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
-        const result = await mockFindById('apt-001', 'psycho-wrong', 'client-456')
-        expect(result).toBeNull()
-    })
-
-    it('returns null when clientId does not match', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
-        const result = await mockFindById('apt-001', 'psycho-123', 'client-wrong')
-        expect(result).toBeNull()
-    })
-})
-
-describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
-    const mockUpcomingAppointment = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'upcoming' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-    }
-
-    it('returns 200 { success: true } on happy path', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-        const mockDelete = mock(async (_id: string) => undefined)
-
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotDeletable',
-                        message: 'Only upcoming appointments can be deleted.',
-                    },
-                    400,
-                )
-            }
-
-            await mockDelete(appointmentId)
-
-            return c.json({ success: true }, 200)
         })
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'DELETE',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('success', true)
-        expect(mockDelete).toHaveBeenCalledWith('apt-001')
     })
 
     it('returns 404 NotFound when appointment does not exist', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-
-            return c.json({ success: true }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/nonexistent', {
-            method: 'DELETE',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/nonexistent`,
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(404)
         const body = await res.json()
@@ -722,37 +346,22 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 400 AppointmentNotDeletable for past appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'past' as const,
-        }))
-
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotDeletable',
-                        message: 'Only upcoming appointments can be deleted.',
-                    },
-                    400,
-                )
-            }
-
-            return c.json({ success: true }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'DELETE',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -761,37 +370,21 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 400 AppointmentNotDeletable for active appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'active' as const,
-        }))
-
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const existing = await mockFindById(appointmentId, user.id, clientId)
-            if (!existing) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            if (existing.status !== 'upcoming') {
-                return c.json(
-                    {
-                        error: 'AppointmentNotDeletable',
-                        message: 'Only upcoming appointments can be deleted.',
-                    },
-                    400,
-                )
-            }
-
-            return c.json({ success: true }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'DELETE',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -799,155 +392,55 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockUnauthorized, async (c) => {
-            return c.json({ success: true }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001', {
+        const res = await app.request('/api/clients/some-client/appointments/some-apt', {
             method: 'DELETE',
         })
-
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.delete('/:clientId/appointments/:appointmentId', mockForbidden, async (c) => {
-            return c.json({ success: true }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'DELETE',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt',
+            await asUser(user.id, { method: 'DELETE', headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
-describe('deleteAppointment service (unit)', () => {
-    it('resolves without error', async () => {
-        const mockDelete = mock(async (_id: string) => undefined)
-        await expect(mockDelete('apt-001')).resolves.toBeUndefined()
-        expect(mockDelete).toHaveBeenCalledWith('apt-001')
-    })
-})
-
-describe('updateAppointment service (unit)', () => {
-    it('returns updated appointment with new times and googleMeetLink', async () => {
-        const mockUpdate = mock(
-            async (
-                _id: string,
-                params: { startTime: string; endTime: string; googleMeetLink: string | null },
-            ) => ({
-                id: 'apt-001',
-                psychoId: 'psycho-123',
-                clientId: 'client-456',
-                startTime: params.startTime,
-                endTime: params.endTime,
-                status: 'upcoming' as const,
-                googleMeetLink: params.googleMeetLink,
-                createdAt: '2026-03-10T15:00:00.000Z',
-            }),
-        )
-
-        const result = await mockUpdate('apt-001', {
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
-            googleMeetLink: 'https://meet.google.com/new',
-        })
-
-        expect(result.startTime).toBe('2026-04-02T10:00:00.000Z')
-        expect(result.endTime).toBe('2026-04-02T11:00:00.000Z')
-        expect(result.googleMeetLink).toBe('https://meet.google.com/new')
-    })
-
-    it('returns updated appointment with null googleMeetLink when cleared', async () => {
-        const mockUpdate = mock(
-            async (
-                _id: string,
-                params: { startTime: string; endTime: string; googleMeetLink: string | null },
-            ) => ({
-                id: 'apt-001',
-                psychoId: 'psycho-123',
-                clientId: 'client-456',
-                startTime: params.startTime,
-                endTime: params.endTime,
-                status: 'upcoming' as const,
-                googleMeetLink: params.googleMeetLink,
-                createdAt: '2026-03-10T15:00:00.000Z',
-            }),
-        )
-
-        const result = await mockUpdate('apt-001', {
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
-            googleMeetLink: null,
-        })
-
-        expect(result.googleMeetLink).toBeNull()
-    })
-})
-
 describe('GET /api/clients/:clientId/appointments', () => {
-    const mockAppointments = [
-        {
-            id: 'apt-001',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+    it('returns 200 with appointments array when client is linked and appointments exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-04-01T10:00:00.000Z',
             endTime: '2026-04-01T11:00:00.000Z',
-            status: 'upcoming' as const,
-            googleMeetLink: null,
-            createdAt: '2026-03-10T15:00:00.000Z',
-        },
-        {
-            id: 'apt-002',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+        })
+        const apt2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-03-01T10:00:00.000Z',
             endTime: '2026-03-01T11:00:00.000Z',
-            status: 'past' as const,
-            googleMeetLink: 'https://meet.google.com/abc',
-            createdAt: '2026-02-01T15:00:00.000Z',
-        },
-        {
-            id: 'apt-003',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+        })
+        await startAppointment(apt2.id)
+        await endAppointment(apt2.id)
+        const apt3 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-03-10T09:00:00.000Z',
             endTime: '2026-03-10T10:00:00.000Z',
-            status: 'active' as const,
-            googleMeetLink: null,
-            createdAt: '2026-02-15T15:00:00.000Z',
-        },
-    ]
-
-    it('returns 200 with appointments array when client is linked and appointments exist', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
-        const mockList = mock(async (_psychoId: string, _clientId: string) => mockAppointments)
-
-        const app = new Hono()
-        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-
-            const linked = await mockIsLinked(clientId, user.id)
-            if (!linked) {
-                return c.json(
-                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
-                    400,
-                )
-            }
-
-            const appointments = await mockList(user.id, clientId)
-            return c.json({ appointments }, 200)
         })
+        await startAppointment(apt3.id)
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'GET',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -960,29 +453,14 @@ describe('GET /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 200 with empty appointments array when client is linked but has no appointments', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => true)
-        const mockList = mock(async (_psychoId: string, _clientId: string) => [])
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-
-            const linked = await mockIsLinked(clientId, user.id)
-            if (!linked) {
-                return c.json(
-                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
-                    400,
-                )
-            }
-
-            const appointments = await mockList(user.id, clientId)
-            return c.json({ appointments }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments', {
-            method: 'GET',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -991,27 +469,13 @@ describe('GET /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 400 ClientNotLinked when client is not linked to psychologist', async () => {
-        const mockIsLinked = mock(async (_clientId: string, _psychoId: string) => false)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
 
-        const app = new Hono()
-        app.get('/:clientId/appointments', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-
-            const linked = await mockIsLinked(clientId, user.id)
-            if (!linked) {
-                return c.json(
-                    { error: 'ClientNotLinked', message: 'This client is not in your list.' },
-                    400,
-                )
-            }
-
-            return c.json({ appointments: [] }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments', {
-            method: 'GET',
-        })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1020,126 +484,55 @@ describe('GET /api/clients/:clientId/appointments', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.get('/:clientId/appointments', mockUnauthorized, async (c) => {
-            return c.json({ appointments: [] }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments', {
-            method: 'GET',
-        })
-
+        const res = await app.request('/api/clients/some-client/appointments')
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.get('/:clientId/appointments', mockForbidden, async (c) => {
-            return c.json({ appointments: [] }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments', {
-            method: 'GET',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments',
+            await asUser(user.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
-describe('listAppointments service (unit)', () => {
-    it('returns array of appointments for matching psychoId and clientId', async () => {
-        const expected = [
-            {
-                id: 'apt-001',
-                psychoId: 'psycho-123',
-                clientId: 'client-456',
-                startTime: '2026-04-01T10:00:00.000Z',
-                endTime: '2026-04-01T11:00:00.000Z',
-                status: 'upcoming' as const,
-                googleMeetLink: null,
-                createdAt: '2026-03-10T15:00:00.000Z',
-            },
-            {
-                id: 'apt-002',
-                psychoId: 'psycho-123',
-                clientId: 'client-456',
-                startTime: '2026-03-01T10:00:00.000Z',
-                endTime: '2026-03-01T11:00:00.000Z',
-                status: 'past' as const,
-                googleMeetLink: null,
-                createdAt: '2026-02-01T15:00:00.000Z',
-            },
-        ]
-        const mockList = mock(async (_psychoId: string, _clientId: string) => expected)
-        const result = await mockList('psycho-123', 'client-456')
-        expect(result).toEqual(expected)
-        expect(result).toHaveLength(2)
-    })
-
-    it('returns empty array when no appointments exist for psychoId + clientId', async () => {
-        const mockList = mock(async (_psychoId: string, _clientId: string) => [])
-        const result = await mockList('psycho-123', 'client-999')
-        expect(result).toEqual([])
-    })
-})
-
 describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
-    const mockUpcomingAppointment = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'upcoming' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-    }
-
     it('returns 200 with appointment on happy path', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-
-        const app = new Hono()
-        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const appointment = await mockFindById(appointmentId, user.id, clientId)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment).toHaveProperty('id', 'apt-001')
+        expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('status', 'upcoming')
     })
 
     it('returns 404 when appointment does not exist', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const appointment = await mockFindById(appointmentId, user.id, clientId)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/nonexistent', { method: 'GET' })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/nonexistent`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(404)
         const body = await res.json()
@@ -1147,127 +540,58 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
     })
 
     it('returns 404 when psychoId does not match', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
-
-        const app = new Hono()
-        app.get('/:clientId/appointments/:appointmentId', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const clientId = c.req.param('clientId')
-            const appointmentId = c.req.param('appointmentId')
-
-            const appointment = await mockFindById(appointmentId, user.id, clientId)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho2.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(404)
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.get('/:clientId/appointments/:appointmentId', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001', { method: 'GET' })
-
+        const res = await app.request('/api/clients/some-client/appointments/some-apt')
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.get('/:clientId/appointments/:appointmentId', mockForbidden, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments/apt-001', {
-            method: 'GET',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt',
+            await asUser(user.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
 describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () => {
-    const mockUpcomingAppointment = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'upcoming' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-    }
-
-    const mockActiveAppointment = {
-        id: 'apt-999',
-        psychoId: 'psycho-123',
-        clientId: 'client-789',
-        startTime: '2026-03-10T09:00:00.000Z',
-        endTime: '2026-03-10T10:00:00.000Z',
-        status: 'active' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-01T15:00:00.000Z',
-    }
-
     it('returns 200 with appointment status active on happy path', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-        const mockFindActive = mock(async (_psychoId: string) => null)
-        const mockStart = mock(async (_id: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'active' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/start',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'upcoming') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotStartable',
-                            message: 'Only upcoming appointments can be started.',
-                        },
-                        400,
-                    )
-                }
-
-                const active = await mockFindActive(user.id)
-                if (active) {
-                    return c.json(
-                        {
-                            error: 'AnotherAppointmentActive',
-                            message: 'End your active appointment before starting a new one.',
-                            activeAppointmentId: active.id,
-                        },
-                        400,
-                    )
-                }
-
-                const appointment = await mockStart(appointmentId)
-                return c.json({ appointment }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/start', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -1276,27 +600,14 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
     })
 
     it('returns 404 when appointment does not exist', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/start',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                return c.json({ appointment: {} }, 200)
-            },
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/nonexistent/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
         )
-
-        const res = await app.request('/client-456/appointments/nonexistent/start', {
-            method: 'PATCH',
-        })
 
         expect(res.status).toBe(404)
         const body = await res.json()
@@ -1304,40 +615,22 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
     })
 
     it('returns 400 AppointmentNotStartable for past appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'past' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/start',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'upcoming') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotStartable',
-                            message: 'Only upcoming appointments can be started.',
-                        },
-                        400,
-                    )
-                }
-
-                return c.json({ appointment: {} }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/start', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1346,40 +639,21 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
     })
 
     it('returns 400 AppointmentNotStartable for already active appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockUpcomingAppointment,
-            status: 'active' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/start',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'upcoming') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotStartable',
-                            message: 'Only upcoming appointments can be started.',
-                        },
-                        400,
-                    )
-                }
-
-                return c.json({ appointment: {} }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/start', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1387,52 +661,29 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
     })
 
     it('returns 400 AnotherAppointmentActive with activeAppointmentId when another is active', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockUpcomingAppointment,
-        )
-        const mockFindActive = mock(async (_psychoId: string) => mockActiveAppointment)
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/start',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'upcoming') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotStartable',
-                            message: 'Only upcoming appointments can be started.',
-                        },
-                        400,
-                    )
-                }
-
-                const active = await mockFindActive(user.id)
-                if (active) {
-                    return c.json(
-                        {
-                            error: 'AnotherAppointmentActive',
-                            message: 'End your active appointment before starting a new one.',
-                            activeAppointmentId: active.id,
-                        },
-                        400,
-                    )
-                }
-
-                return c.json({ appointment: {} }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/start', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client1 = await insertTestUser({ email: 'client1@test.com' })
+        const client2 = await insertTestUser({ email: 'client2@test.com' })
+        await linkClientToPsycho(client1.id, psycho.id)
+        await linkClientToPsycho(client2.id, psycho.id)
+        const apt1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client1.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        const apt2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client2.id,
+            startTime: '2026-04-02T10:00:00.000Z',
+            endTime: '2026-04-02T11:00:00.000Z',
+        })
+        await startAppointment(apt1.id)
+
+        const res = await app.request(
+            `/api/clients/${client2.id}/appointments/${apt2.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1441,111 +692,50 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
             'message',
             'End your active appointment before starting a new one.',
         )
-        expect(body).toHaveProperty('activeAppointmentId', 'apt-999')
+        expect(body).toHaveProperty('activeAppointmentId', apt1.id)
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId/start', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001/start', {
+        const res = await app.request('/api/clients/some-client/appointments/some-apt/start', {
             method: 'PATCH',
         })
-
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId/start', mockForbidden, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments/apt-001/start', {
-            method: 'PATCH',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/start',
+            await asUser(user.id, { method: 'PATCH', headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
-describe('startAppointment service (unit)', () => {
-    it('returns appointment with status active', async () => {
-        const mockStart = mock(async (_id: string) => ({
-            id: 'apt-001',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
-            status: 'active' as const,
-            googleMeetLink: null,
-            createdAt: '2026-03-10T15:00:00.000Z',
-        }))
-
-        const result = await mockStart('apt-001')
-
-        expect(result.status).toBe('active')
-        expect(result.id).toBe('apt-001')
-    })
-})
-
 describe('GET /api/appointments (client)', () => {
-    const mockClientUser = {
-        id: 'client-456',
-        email: 'client@example.com',
-        name: 'Jane Client',
-        image: null,
-    }
-
-    const mockAuthorizedClient = mock(async (c: any, next: any) => {
-        c.set('user', mockClientUser)
-        c.set('session', { id: 'session-456' })
-        await next()
-    })
-
-    const mockForbiddenForClient = mock(async (c: any, _next: any) => {
-        return c.json({ error: 'Unauthorized' }, 403)
-    })
-
-    const mockAppointmentsWithPsycho = [
-        {
-            id: 'apt-001',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+    it('returns 200 with appointments including psychoName on happy path', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-04-01T10:00:00.000Z',
             endTime: '2026-04-01T11:00:00.000Z',
-            status: 'upcoming' as const,
-            googleMeetLink: null,
-            createdAt: '2026-03-10T15:00:00.000Z',
-            psychoName: 'Dr. Smith',
-        },
-        {
-            id: 'apt-002',
-            psychoId: 'psycho-123',
-            clientId: 'client-456',
+        })
+        await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
             startTime: '2026-03-01T10:00:00.000Z',
             endTime: '2026-03-01T11:00:00.000Z',
-            status: 'past' as const,
-            googleMeetLink: null,
-            createdAt: '2026-02-01T15:00:00.000Z',
-            psychoName: 'Dr. Smith',
-        },
-    ]
-
-    it('returns 200 with appointments including psychoName on happy path', async () => {
-        const mockListForClient = mock(async (_clientId: string) => mockAppointmentsWithPsycho)
-
-        const app = new Hono()
-        app.get('/', mockAuthorizedClient, async (c) => {
-            const user = c.get('user')
-            const appointments = await mockListForClient(user.id)
-            return c.json({ appointments }, 200)
         })
 
-        const res = await app.request('/', { method: 'GET' })
+        const res = await app.request(
+            '/api/appointments',
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -1553,20 +743,15 @@ describe('GET /api/appointments (client)', () => {
         expect(body.appointments).toHaveLength(2)
         expect(body.appointments[0]).toHaveProperty('psychoName', 'Dr. Smith')
         expect(body.appointments[1]).toHaveProperty('psychoName', 'Dr. Smith')
-        expect(mockListForClient).toHaveBeenCalledWith('client-456')
     })
 
     it('returns 200 with empty appointments array when client has no appointments', async () => {
-        const mockListForClient = mock(async (_clientId: string) => [])
+        const client = await insertTestUser({ email: 'client@test.com' })
 
-        const app = new Hono()
-        app.get('/', mockAuthorizedClient, async (c) => {
-            const user = c.get('user')
-            const appointments = await mockListForClient(user.id)
-            return c.json({ appointments }, 200)
-        })
-
-        const res = await app.request('/', { method: 'GET' })
+        const res = await app.request(
+            '/api/appointments',
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -1575,102 +760,53 @@ describe('GET /api/appointments (client)', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.get('/', mockUnauthorized, async (c) => {
-            return c.json({ appointments: [] }, 200)
-        })
-
-        const res = await app.request('/', { method: 'GET' })
-
+        const res = await app.request('/api/appointments')
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for psycho-role request', async () => {
-        const app = new Hono()
-        app.get('/', mockForbiddenForClient, async (c) => {
-            return c.json({ appointments: [] }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/', {
-            method: 'GET',
-            headers: { 'Helpsycho-User-Role': 'psycho' },
-        })
+        const res = await app.request(
+            '/api/appointments',
+            await asUser(user.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
 describe('GET /api/appointments/:appointmentId (client)', () => {
-    const mockClientUser = {
-        id: 'client-456',
-        email: 'client@example.com',
-        name: 'Jane Client',
-        image: null,
-    }
-
-    const mockAuthorizedClient = mock(async (c: any, next: any) => {
-        c.set('user', mockClientUser)
-        c.set('session', { id: 'session-456' })
-        await next()
-    })
-
-    const mockForbiddenForPsycho = mock(async (c: any, _next: any) => {
-        return c.json({ error: 'Unauthorized' }, 403)
-    })
-
-    const mockAppointmentWithPsycho = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'upcoming' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-        psychoName: 'Dr. Smith',
-    }
-
     it('returns 200 with appointment including psychoName on happy path', async () => {
-        const mockFindById = mock(
-            async (_appointmentId: string, _clientId: string) => mockAppointmentWithPsycho,
-        )
-
-        const app = new Hono()
-        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
-            const user = c.get('user')
-            const appointmentId = c.req.param('appointmentId')
-            const appointment = await mockFindById(appointmentId, user.id)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        const res = await app.request('/apt-001', { method: 'GET' })
+        const res = await app.request(
+            `/api/appointments/${apt.id}`,
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment).toHaveProperty('id', 'apt-001')
+        expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('psychoName', 'Dr. Smith')
-        expect(mockFindById).toHaveBeenCalledWith('apt-001', 'client-456')
     })
 
     it('returns 404 when appointment is not found', async () => {
-        const mockFindById = mock(async (_appointmentId: string, _clientId: string) => null)
+        const client = await insertTestUser({ email: 'client@test.com' })
 
-        const app = new Hono()
-        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
-            const user = c.get('user')
-            const appointmentId = c.req.param('appointmentId')
-            const appointment = await mockFindById(appointmentId, user.id)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
-        })
-
-        const res = await app.request('/nonexistent', { method: 'GET' })
+        const res = await app.request(
+            '/api/appointments/nonexistent',
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(404)
         const body = await res.json()
@@ -1678,101 +814,59 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
     })
 
     it('returns 404 when appointment belongs to a different client', async () => {
-        const mockFindById = mock(async (_appointmentId: string, _clientId: string) => null)
-
-        const app = new Hono()
-        app.get('/:appointmentId', mockAuthorizedClient, async (c) => {
-            const user = c.get('user')
-            const appointmentId = c.req.param('appointmentId')
-            const appointment = await mockFindById(appointmentId, user.id)
-            if (!appointment) {
-                return c.json({ error: 'NotFound' }, 404)
-            }
-            return c.json({ appointment }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client1 = await insertTestUser({ email: 'client1@test.com' })
+        const client2 = await insertTestUser({ email: 'client2@test.com' })
+        await linkClientToPsycho(client1.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client1.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
 
-        const res = await app.request('/apt-001', { method: 'GET' })
+        const res = await app.request(
+            `/api/appointments/${apt.id}`,
+            await asUser(client2.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(404)
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.get('/:appointmentId', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/apt-001', { method: 'GET' })
-
+        const res = await app.request('/api/appointments/some-apt')
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for psycho-role request', async () => {
-        const app = new Hono()
-        app.get('/:appointmentId', mockForbiddenForPsycho, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/apt-001', {
-            method: 'GET',
-            headers: { 'Helpsycho-User-Role': 'psycho' },
-        })
+        const res = await app.request(
+            '/api/appointments/some-apt',
+            await asUser(user.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
 describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
-    const mockActiveAppointment = {
-        id: 'apt-001',
-        psychoId: 'psycho-123',
-        clientId: 'client-456',
-        startTime: '2026-04-01T10:00:00.000Z',
-        endTime: '2026-04-01T11:00:00.000Z',
-        status: 'active' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-10T15:00:00.000Z',
-    }
-
     it('returns 200 with status past on happy path (active appointment)', async () => {
-        const mockFindById = mock(
-            async (_id: string, _psychoId: string, _clientId: string) => mockActiveAppointment,
-        )
-        const mockEnd = mock(async (_id: string) => ({
-            ...mockActiveAppointment,
-            status: 'past' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/end',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'active') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotEndable',
-                            message: 'Only active appointments can be ended.',
-                        },
-                        400,
-                    )
-                }
-
-                const appointment = await mockEnd(appointmentId)
-                return c.json({ appointment }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/end', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -1781,27 +875,14 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
     })
 
     it('returns 404 when appointment does not exist', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/end',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                return c.json({ appointment: {} }, 200)
-            },
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/nonexistent/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
         )
-
-        const res = await app.request('/client-456/appointments/nonexistent/end', {
-            method: 'PATCH',
-        })
 
         expect(res.status).toBe(404)
         const body = await res.json()
@@ -1809,40 +890,20 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
     })
 
     it('returns 400 AppointmentNotEndable for upcoming appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockActiveAppointment,
-            status: 'upcoming' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/end',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'active') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotEndable',
-                            message: 'Only active appointments can be ended.',
-                        },
-                        400,
-                    )
-                }
-
-                return c.json({ appointment: {} }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/end', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1851,40 +912,22 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
     })
 
     it('returns 400 AppointmentNotEndable for past appointment', async () => {
-        const mockFindById = mock(async (_id: string, _psychoId: string, _clientId: string) => ({
-            ...mockActiveAppointment,
-            status: 'past' as const,
-        }))
-
-        const app = new Hono()
-        app.patch(
-            '/:clientId/appointments/:appointmentId/end',
-            mockAuthorizedPsycho,
-            async (c) => {
-                const user = c.get('user')
-                const clientId = c.req.param('clientId')
-                const appointmentId = c.req.param('appointmentId')
-
-                const existing = await mockFindById(appointmentId, user.id, clientId)
-                if (!existing) return c.json({ error: 'NotFound' }, 404)
-
-                if (existing.status !== 'active') {
-                    return c.json(
-                        {
-                            error: 'AppointmentNotEndable',
-                            message: 'Only active appointments can be ended.',
-                        },
-                        400,
-                    )
-                }
-
-                return c.json({ appointment: {} }, 200)
-            },
-        )
-
-        const res = await app.request('/client-456/appointments/apt-001/end', {
-            method: 'PATCH',
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
         })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(400)
         const body = await res.json()
@@ -1892,75 +935,56 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId/end', mockUnauthorized, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
-
-        const res = await app.request('/client-456/appointments/apt-001/end', {
+        const res = await app.request('/api/clients/some-client/appointments/some-apt/end', {
             method: 'PATCH',
         })
-
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.patch('/:clientId/appointments/:appointmentId/end', mockForbidden, async (c) => {
-            return c.json({ appointment: {} }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/client-456/appointments/apt-001/end', {
-            method: 'PATCH',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/end',
+            await asUser(user.id, { method: 'PATCH', headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
     })
 })
 
 describe('GET /api/psycho/appointments', () => {
-    const mockActiveAppointment = {
-        id: 'apt-999',
-        psychoId: 'psycho-123',
-        clientId: 'client-789',
-        startTime: '2026-03-10T09:00:00.000Z',
-        endTime: '2026-03-10T10:00:00.000Z',
-        status: 'active' as const,
-        googleMeetLink: null,
-        createdAt: '2026-03-01T15:00:00.000Z',
-    }
-
     it('returns 200 with active appointment when one exists', async () => {
-        const mockFindActive = mock(async (_psychoId: string) => mockActiveAppointment)
-
-        const app = new Hono()
-        app.get('/', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const appointment = await mockFindActive(user.id)
-            return c.json({ appointment }, 200)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-03-10T09:00:00.000Z',
+            endTime: '2026-03-10T10:00:00.000Z',
         })
+        await startAppointment(apt.id)
 
-        const res = await app.request('/', { method: 'GET' })
+        const res = await app.request(
+            '/api/psycho/appointments',
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment).toHaveProperty('id', 'apt-999')
+        expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('status', 'active')
     })
 
     it('returns 200 with null appointment when none active', async () => {
-        const mockFindActive = mock(async (_psychoId: string) => null)
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
 
-        const app = new Hono()
-        app.get('/', mockAuthorizedPsycho, async (c) => {
-            const user = c.get('user')
-            const appointment = await mockFindActive(user.id)
-            return c.json({ appointment }, 200)
-        })
-
-        const res = await app.request('/', { method: 'GET' })
+        const res = await app.request(
+            '/api/psycho/appointments',
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
 
         expect(res.status).toBe(200)
         const body = await res.json()
@@ -1968,52 +992,18 @@ describe('GET /api/psycho/appointments', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const app = new Hono()
-        app.get('/', mockUnauthorized, async (c) => {
-            return c.json({ appointment: null }, 200)
-        })
-
-        const res = await app.request('/', { method: 'GET' })
-
+        const res = await app.request('/api/psycho/appointments')
         expect(res.status).toBe(401)
     })
 
     it('returns 403 for client-role request', async () => {
-        const app = new Hono()
-        app.get('/', mockForbidden, async (c) => {
-            return c.json({ appointment: null }, 200)
-        })
+        const user = await insertTestUser()
 
-        const res = await app.request('/', {
-            method: 'GET',
-            headers: { 'Helpsycho-User-Role': 'client' },
-        })
+        const res = await app.request(
+            '/api/psycho/appointments',
+            await asUser(user.id, { headers: CLIENT_HEADER }),
+        )
 
         expect(res.status).toBe(403)
-    })
-})
-
-describe('findActiveAppointmentByPsycho service (unit)', () => {
-    it('returns active appointment when one exists', async () => {
-        const expected = {
-            id: 'apt-999',
-            psychoId: 'psycho-123',
-            clientId: 'client-789',
-            startTime: '2026-03-10T09:00:00.000Z',
-            endTime: '2026-03-10T10:00:00.000Z',
-            status: 'active' as const,
-            googleMeetLink: null,
-            createdAt: '2026-03-01T15:00:00.000Z',
-        }
-        const mockFindActive = mock(async (_psychoId: string) => expected)
-        const result = await mockFindActive('psycho-123')
-        expect(result).toEqual(expected)
-        expect(result?.status).toBe('active')
-    })
-
-    it('returns null when no active appointment exists', async () => {
-        const mockFindActive = mock(async (_psychoId: string) => null)
-        const result = await mockFindActive('psycho-123')
-        expect(result).toBeNull()
     })
 })
