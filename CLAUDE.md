@@ -51,6 +51,12 @@ GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI
 ENV                   # Set to "production" to hide stack traces
 ```
 
+## Testing
+
+- Write tests with **minimum mocks** — prefer real implementations and the existing test infrastructure over mocking.
+- Follow the patterns established by existing tests in the codebase (helpers, fixtures, test DB setup, etc.).
+- Do not mock the database or internal services unless there is no alternative.
+
 ## Code Style
 - Backend & Frontend uses Prettier (config in root `.prettierrc.json`): 4-space indent, semicolons, trailing commas.
   - run `bunx prettier -w ./backend` & `bunx prettier -w ./frontend` from the repo root to apply the prettier format
