@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { Video, LogIn } from 'lucide-react'
 import { format } from 'date-fns'
 import '@excalidraw/excalidraw/index.css'
+import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import {
@@ -17,6 +18,8 @@ import { Button } from '~/components/ui/button'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import type { AppointmentWithPsycho } from '~/models/appointment'
+import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
+import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -31,6 +34,10 @@ export default function LiveAppointment() {
     const [appointment, setAppointment] = useState<AppointmentWithPsycho | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [showEndedModal, setShowEndedModal] = useState(false)
+    const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
+        useState<ExcalidrawImperativeAPI | null>(null)
+    const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
+        useWhiteboardSync(appointmentId!)
 
     // Initial fetch
     useEffect(() => {
@@ -142,33 +149,42 @@ export default function LiveAppointment() {
                 </ActionsSection>
             )}
 
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div style={{ position: 'relative' }}>
+                <Suspense
+                    fallback={
+                        <div className="flex items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                        </div>
+                    }
+                >
+                    <div className="w-full h-full border border-gray-300">
+                        <Excalidraw
+                            excalidrawAPI={(api: ExcalidrawImperativeAPI) => {
+                                setExcalidrawAPI(api)
+                                setExcalidrawAPIInstance(api)
+                            }}
+                            theme="light"
+                            zenModeEnabled={true}
+                            gridModeEnabled={true}
+                            onChange={onWhiteboardChange}
+                            onPointerUpdate={onPointerUpdate}
+                            UIOptions={{
+                                canvasActions: {
+                                    saveToActiveFile: false,
+                                    loadScene: false,
+                                    export: false,
+                                    toggleTheme: false,
+                                    clearCanvas: false,
+                                },
+                            }}
+                        />
                     </div>
-                }
-            >
-                <div className="w-full h-full border border-gray-300">
-                    <Excalidraw
-                        theme="light"
-                        zenModeEnabled={true}
-                        gridModeEnabled={true}
-                        onChange={(_elements: readonly any[], _appState: any, _files: any) => {
-                            // TODO: Implement sync logic here (EDG-46)
-                        }}
-                        UIOptions={{
-                            canvasActions: {
-                                saveToActiveFile: false,
-                                loadScene: false,
-                                export: false,
-                                toggleTheme: false,
-                                clearCanvas: false,
-                            },
-                        }}
-                    />
-                </div>
-            </Suspense>
+                </Suspense>
+                <WhiteboardCursorOverlay
+                    remoteCursors={remoteCursors}
+                    excalidrawAPI={excalidrawAPIInstance}
+                />
+            </div>
 
             <Dialog open={showEndedModal} onOpenChange={() => {}}>
                 <DialogContent>

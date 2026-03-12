@@ -41,6 +41,16 @@ vi.mock('@excalidraw/excalidraw', () => ({
     Excalidraw: () => <div data-testid="excalidraw" />,
 }))
 
+vi.mock('~/hooks/useWhiteboardSync', () => ({
+    useWhiteboardSync: () => ({
+        setExcalidrawAPI: vi.fn(),
+        onWhiteboardChange: vi.fn(),
+        onPointerUpdate: vi.fn(),
+        remoteCursors: new Map(),
+        connected: false,
+    }),
+}))
+
 vi.mock('~/components/ui/dialog', () => ({
     Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
     DialogContent: ({ children }: any) => <div>{children}</div>,

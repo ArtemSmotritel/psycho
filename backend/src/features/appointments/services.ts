@@ -136,6 +136,27 @@ export async function findAppointmentByIdForClient(
     return (row as AppointmentWithPsycho) ?? null
 }
 
+export async function findAppointmentByIdForParticipant(
+    appointmentId: string,
+    userId: string,
+): Promise<Appointment | null> {
+    const [row] = await db`
+        SELECT
+            id,
+            psycho_id AS "psychoId",
+            client_id AS "clientId",
+            start_time AS "startTime",
+            end_time AS "endTime",
+            status,
+            google_meet_link AS "googleMeetLink",
+            created_at AS "createdAt"
+        FROM appointments
+        WHERE id = ${appointmentId}
+          AND (psycho_id = ${userId} OR client_id = ${userId})
+    `
+    return (row as Appointment) ?? null
+}
+
 export async function listAppointmentsForClient(
     clientId: string,
 ): Promise<AppointmentWithPsycho[]> {

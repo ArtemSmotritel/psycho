@@ -4,12 +4,15 @@ import { Video, LogIn, StopCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import '@excalidraw/excalidraw/index.css'
+import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { ConfirmAction } from '~/components/ConfirmAction'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
+import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
+import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -26,8 +29,11 @@ export default function LiveSession() {
     const { appointment, isLoading } = useCurrentAppointment()
 
     const [time, setTime] = useState<string>('00:00')
-    const [excalidrawAPI] = useState<any>(null)
     const [isEnding, setIsEnding] = useState(false)
+    const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
+        useWhiteboardSync(appointmentId!)
+    const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
+        useState<ExcalidrawImperativeAPI | null>(null)
     const appointmentStatus = appointment?.status
 
     useEffect(() => {
@@ -132,34 +138,42 @@ export default function LiveSession() {
                 />
             </ActionsSection>
 
-            <Suspense
-                fallback={
-                    <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div style={{ position: 'relative' }}>
+                <Suspense
+                    fallback={
+                        <div className="flex items-center justify-center h-full">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                        </div>
+                    }
+                >
+                    <div className="w-full h-full border border-gray-300">
+                        <Excalidraw
+                            excalidrawAPI={(api: ExcalidrawImperativeAPI) => {
+                                setExcalidrawAPI(api)
+                                setExcalidrawAPIInstance(api)
+                            }}
+                            theme="light"
+                            zenModeEnabled={true}
+                            gridModeEnabled={true}
+                            onChange={onWhiteboardChange}
+                            onPointerUpdate={onPointerUpdate}
+                            UIOptions={{
+                                canvasActions: {
+                                    saveToActiveFile: false,
+                                    loadScene: false,
+                                    export: false,
+                                    toggleTheme: false,
+                                    clearCanvas: false,
+                                },
+                            }}
+                        />
                     </div>
-                }
-            >
-                <div className="w-full h-full border border-gray-300">
-                    <Excalidraw
-                        excalidrawAPI={excalidrawAPI}
-                        theme="light"
-                        zenModeEnabled={true}
-                        gridModeEnabled={true}
-                        onChange={(_elements: readonly any[], _appState: any, _files: any) => {
-                            // TODO: Implement sync logic here
-                        }}
-                        UIOptions={{
-                            canvasActions: {
-                                saveToActiveFile: false,
-                                loadScene: false,
-                                export: false,
-                                toggleTheme: false,
-                                clearCanvas: false,
-                            },
-                        }}
-                    />
-                </div>
-            </Suspense>
+                </Suspense>
+                <WhiteboardCursorOverlay
+                    remoteCursors={remoteCursors}
+                    excalidrawAPI={excalidrawAPIInstance}
+                />
+            </div>
         </div>
     )
 }

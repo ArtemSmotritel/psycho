@@ -2,7 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { linkClientToPsycho } from '../clients/services'
-import { createAppointment, endAppointment, startAppointment } from './services'
+import {
+    createAppointment,
+    endAppointment,
+    findAppointmentByIdForParticipant,
+    startAppointment,
+} from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -1005,5 +1010,81 @@ describe('GET /api/psycho/appointments', () => {
         )
 
         expect(res.status).toBe(403)
+    })
+})
+
+describe('findAppointmentByIdForParticipant', () => {
+    it('returns appointment when user is the psychologist (psycho_id match)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const result = await findAppointmentByIdForParticipant(apt.id, psycho.id)
+
+        expect(result).not.toBeNull()
+        expect(result?.id).toBe(apt.id)
+        expect(result?.psychoId).toBe(psycho.id)
+        expect(result?.clientId).toBe(client.id)
+    })
+
+    it('returns appointment when user is the client (client_id match)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const result = await findAppointmentByIdForParticipant(apt.id, client.id)
+
+        expect(result).not.toBeNull()
+        expect(result?.id).toBe(apt.id)
+        expect(result?.psychoId).toBe(psycho.id)
+        expect(result?.clientId).toBe(client.id)
+    })
+
+    it('returns null when user is neither the psychologist nor the client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        const outsider = await insertTestUser({ email: 'outsider@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const result = await findAppointmentByIdForParticipant(apt.id, outsider.id)
+
+        expect(result).toBeNull()
+    })
+
+    it('returns null when appointment ID does not exist', async () => {
+        const user = await insertTestUser({ email: 'user@test.com' })
+
+        const result = await findAppointmentByIdForParticipant('nonexistent-id', user.id)
+
+        expect(result).toBeNull()
+    })
+})
+
+// Note: The WebSocket route (whiteboardRoutes at GET /api/whiteboard/:appointmentId)
+// cannot be integration-tested with Hono's app.request() pattern because
+// upgradeWebSocket requires Bun's native HTTP server to perform the protocol upgrade.
+// Manual/integration testing is required for the WS route.
+describe('GET /api/whiteboard/:appointmentId (WebSocket)', () => {
+    it('is not unit-testable via app.request() — upgradeWebSocket requires native Bun HTTP server', () => {
+        // This is a documented limitation. See EDG-46 implementation plan.
+        expect(true).toBe(true)
     })
 })

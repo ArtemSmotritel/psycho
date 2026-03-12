@@ -1,7 +1,9 @@
 import { app } from 'config/app'
+import { websocket } from 'config/websocket'
 
 Bun.serve({
     fetch: app.fetch,
+    websocket,
     port: 3000,
 })
 

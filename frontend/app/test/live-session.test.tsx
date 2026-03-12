@@ -66,6 +66,16 @@ vi.mock('@excalidraw/excalidraw', () => ({
     Excalidraw: () => <div data-testid="excalidraw" />,
 }))
 
+vi.mock('~/hooks/useWhiteboardSync', () => ({
+    useWhiteboardSync: () => ({
+        setExcalidrawAPI: vi.fn(),
+        onWhiteboardChange: vi.fn(),
+        onPointerUpdate: vi.fn(),
+        remoteCursors: new Map(),
+        connected: false,
+    }),
+}))
+
 // Controlled mock for useCurrentAppointment
 let mockUseCurrentAppointment: () => { appointment: any; isLoading: boolean }
 
