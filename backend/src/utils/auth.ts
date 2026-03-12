@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth'
+import { testUtils } from 'better-auth/plugins'
 import { DB_URL } from 'config/index'
 import { Pool } from 'pg'
 import { createUserClient } from '../features/clients/services'
@@ -18,6 +19,7 @@ export const auth = betterAuth({
             redirectUri: process.env.GOOGLE_REDIRECT_URI as string,
         },
     },
+    plugins: [...(process.env.NODE_ENV === 'test' ? [testUtils()] : [])],
     databaseHooks: {
         user: {
             create: {
