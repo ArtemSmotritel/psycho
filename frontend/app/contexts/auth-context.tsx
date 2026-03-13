@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             })
     }, [isPending, session])
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         await auth.signOut()
         setUser(null)
         setApiRole(null)
-    }
+    }, [])
 
     const setActiveRole = useCallback(async (role: 'psycho' | 'client') => {
         const res = await userService.setActiveRole(role)
