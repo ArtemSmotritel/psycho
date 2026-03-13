@@ -1,6 +1,7 @@
 import { api } from './api'
 import type {
     Appointment,
+    AppointmentWithClient,
     AppointmentWithPsycho,
     CreateAppointmentDTO,
     UpdateAppointmentDTO,
@@ -29,6 +30,8 @@ export const appointmentService = {
             `/clients/${clientId}/appointments/${appointmentId}/end`,
         ),
     getActiveForPsycho: () => api.get<{ appointment: Appointment | null }>('/psycho/appointments'),
+    getAllForPsycho: () =>
+        api.get<{ appointments: AppointmentWithClient[] }>('/psycho/appointments/all'),
     getClientGlobalList: () => api.get<{ appointments: AppointmentWithPsycho[] }>('/appointments'),
     getClientAppointmentById: (appointmentId: string) =>
         api.get<{ appointment: AppointmentWithPsycho }>(`/appointments/${appointmentId}`),

@@ -17,8 +17,8 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table'
-import { useState } from 'react'
-import { isToday, formatISO } from 'date-fns'
+import { useEffect, useState } from 'react'
+import { isToday, formatISO, format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import {
@@ -32,118 +32,125 @@ import {
 import { useNavigate } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
 import { DataTablePagination } from '@/components/DataTablePagination'
-import { fakeSessionsList } from '@/test-data/fakeSessions'
-import { getSessionName } from '~/utils/utils'
-import type { SessionListItemDTO } from '~/models/session'
+import type { AppointmentWithClient } from '~/models/appointment'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 import { appointmentService } from '~/services/appointment.service'
 
-const todayFilterFn: FilterFn<SessionListItemDTO> = (row, columnId) => {
-    const date = row.getValue(columnId) as Date | null
-    return date ? isToday(date) : false
-}
-
-const columns: ColumnDef<SessionListItemDTO>[] = [
-    {
-        id: 'index',
-        header: '#',
-        cell: ({ row }) => {
-            return row.index + 1
-        },
-    },
-    {
-        accessorKey: 'date',
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-                >
-                    Start Time
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => {
-            const date = row.getValue('date') as Date
-            return getSessionName({ date })
-        },
-        filterFn: todayFilterFn,
-    },
-    {
-        accessorKey: 'status',
-        header: 'Status',
-    },
-    {
-        accessorKey: 'notes',
-        header: 'Notes',
-        cell: ({ row }) => {
-            const notes = row.getValue('notes') as { id: string }[]
-            return notes.length
-        },
-    },
-    {
-        accessorKey: 'recommendations',
-        header: 'Recommendations',
-        cell: ({ row }) => {
-            const recommendations = row.getValue('recommendations') as { id: string }[]
-            return recommendations.length
-        },
-    },
-    {
-        accessorKey: 'impressions',
-        header: 'Impressions',
-        cell: ({ row }) => {
-            const impressions = row.getValue('impressions') as { id: string }[]
-            return impressions.length
-        },
-    },
-    {
-        id: 'actions',
-        enableHiding: false,
-        cell: ({ row }) => {
-            const session = row.original
-            const navigate = useNavigate()
-
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={() =>
-                                navigate(
-                                    `/psycho/clients/${session.clientId}/appointments/${session.id}`,
-                                )
-                            }
-                        >
-                            View appointment details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => navigate(`/psycho/clients/${session.clientId}`)}
-                        >
-                            View client profile
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
-        },
-    },
-]
-
 export default function Sessions() {
-    const [data] = useState<SessionListItemDTO[]>(fakeSessionsList)
+    const navigate = useNavigate()
+
+    const [data, setData] = useState<AppointmentWithClient[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
     const [isCreating, setIsCreating] = useState(false)
     const [createError, setCreateError] = useState<string | null>(null)
+
+    const fetchAppointments = async () => {
+        setIsLoading(true)
+        setError(null)
+        try {
+            const res = await appointmentService.getAllForPsycho()
+            setData(res.data.appointments)
+        } catch {
+            setError('Failed to load appointments. Please try again.')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchAppointments()
+    }, [])
+
+    const todayFilterFn: FilterFn<AppointmentWithClient> = (row, columnId) => {
+        const value = row.getValue(columnId) as string
+        return isToday(new Date(value))
+    }
+
+    const columns: ColumnDef<AppointmentWithClient>[] = [
+        {
+            id: 'index',
+            header: '#',
+            cell: ({ row }) => {
+                return row.index + 1
+            },
+        },
+        {
+            accessorKey: 'startTime',
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                    >
+                        Start Time
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const startTime = row.getValue('startTime') as string
+                return format(new Date(startTime), 'PPP HH:mm')
+            },
+            filterFn: todayFilterFn,
+        },
+        {
+            accessorKey: 'endTime',
+            header: 'End Time',
+            cell: ({ row }) => {
+                const endTime = row.getValue('endTime') as string
+                return format(new Date(endTime), 'HH:mm')
+            },
+        },
+        {
+            accessorKey: 'status',
+            header: 'Status',
+        },
+        {
+            accessorKey: 'clientName',
+            header: 'Client',
+        },
+        {
+            id: 'actions',
+            enableHiding: false,
+            cell: ({ row }) => {
+                const appointment = row.original
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    navigate(
+                                        `/psycho/clients/${appointment.clientId}/appointments/${appointment.id}`,
+                                    )
+                                }
+                            >
+                                View appointment details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => navigate(`/psycho/clients/${appointment.clientId}`)}
+                            >
+                                View client profile
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
+        },
+    ]
 
     const handleAddSession = async (values: any) => {
         if (!values.clientId) return
@@ -155,6 +162,7 @@ export default function Sessions() {
                 endTime: formatISO(values.endTime),
                 generateGoogleMeet: values.generateGoogleMeet ?? false,
             })
+            await fetchAppointments()
         } catch {
             setCreateError('Failed to schedule appointment. Please try again.')
         } finally {
@@ -179,10 +187,18 @@ export default function Sessions() {
 
     const handleShowOnlyToday = (checked: boolean) => {
         if (checked) {
-            setColumnFilters([{ id: 'date', value: true }])
+            setColumnFilters([{ id: 'startTime', value: true }])
         } else {
             setColumnFilters([])
         }
+    }
+
+    if (isLoading) {
+        return <p className="text-muted-foreground">Loading appointments...</p>
+    }
+
+    if (error) {
+        return <p className="text-destructive">{error}</p>
     }
 
     return (
@@ -197,7 +213,7 @@ export default function Sessions() {
                         <div className="flex items-center space-x-2">
                             <Checkbox
                                 id="showOnlyToday"
-                                checked={columnFilters.some((filter) => filter.id === 'date')}
+                                checked={columnFilters.some((filter) => filter.id === 'startTime')}
                                 onCheckedChange={handleShowOnlyToday}
                             />
                             <label

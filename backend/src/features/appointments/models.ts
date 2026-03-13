@@ -12,3 +12,7 @@ export interface Appointment {
 export interface AppointmentWithPsycho extends Appointment {
     psychoName: string
 }
+
+export interface AppointmentWithClient extends Appointment {
+    clientName: string
+}

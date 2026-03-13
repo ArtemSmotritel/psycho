@@ -1088,3 +1088,60 @@ describe('GET /api/whiteboard/:appointmentId (WebSocket)', () => {
         expect(true).toBe(true)
     })
 })
+
+describe('GET /api/psycho/appointments/all', () => {
+    it('returns 200 with appointments array including clientName when psycho has appointments', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com', name: 'Test Client' })
+        await linkClientToPsycho(client.id, psycho.id)
+        await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const res = await app.request(
+            '/api/psycho/appointments/all',
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toHaveLength(1)
+        expect(body.appointments[0]).toHaveProperty('clientName', 'Test Client')
+        expect(body.appointments[0]).toHaveProperty('clientId', client.id)
+        expect(body.appointments[0]).toHaveProperty('psychoId', psycho.id)
+    })
+
+    it('returns 200 with empty appointments array when psycho has no appointments', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+
+        const res = await app.request(
+            '/api/psycho/appointments/all',
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointments')
+        expect(body.appointments).toEqual([])
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const res = await app.request('/api/psycho/appointments/all')
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const user = await insertTestUser()
+
+        const res = await app.request(
+            '/api/psycho/appointments/all',
+            await asUser(user.id, { headers: CLIENT_HEADER }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+})
