@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { User } from '~/models/user'
 import { auth } from '~/services/auth.service'
 import { setApiRole } from '~/services/api'
@@ -59,19 +59,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setApiRole(null)
     }
 
-    const setActiveRole = async (role: 'psycho' | 'client') => {
-        const res = await userService.setActiveRole(role)
-        const data = res.data
-        setApiRole(data.active_role as 'psycho' | 'client' | null)
-        setUser((prev) =>
-            prev
-                ? {
-                      ...prev,
-                      activeRole: data.active_role,
-                  }
-                : null,
-        )
-    }
+  const setActiveRole = useCallback(async (role: 'psycho' | 'client') => {
+    const res = await userService.setActiveRole(role)
+    const data = res.data
+    setApiRole(data.active_role as 'psycho' | 'client' | null)
+    setUser((prev) =>
+      prev
+        ? {
+          ...prev,
+          activeRole: data.active_role,
+        }
+        : null,
+    )
+  }, []);
 
     const isLoading = isPending || isFetchingUser
     const activeRole = user?.activeRole ?? null

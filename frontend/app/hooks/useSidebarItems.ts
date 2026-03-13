@@ -27,7 +27,7 @@ export function useSidebarItems(): SidebarItem[] {
         {
             title: 'Sessions',
             icon: CalendarIcon,
-            href: '/psycho/sessions',
+            href: '/psycho/appointments',
             availableTo: 'psychologist',
         },
         {

@@ -22,9 +22,9 @@ export default function AuthCallback() {
         if (!intendedRole) {
             navigate('/login')
             return
-        } else {
-            sessionContext.setActiveRole(intendedRole as any)
         }
+
+      sessionContext.setActiveRole(intendedRole as any)
 
         if (intendedRole === 'psycho') {
             navigate('/psycho')
