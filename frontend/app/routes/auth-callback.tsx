@@ -1,17 +1,15 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '~/contexts/auth-context'
-import { auth } from '~/services/auth.service'
 
 export default function AuthCallback() {
-    const sessionContext = useAuth()
-    const { data: session, isPending } = auth.useSession()
+    const { isLoading, isAuthenticated, setActiveRole } = useAuth()
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (isPending) return
+        if (isLoading) return
 
-        if (!session) {
+        if (!isAuthenticated) {
             navigate('/login')
             return
         }
@@ -24,16 +22,16 @@ export default function AuthCallback() {
             return
         }
 
-      sessionContext.setActiveRole(intendedRole as any)
-
-        if (intendedRole === 'psycho') {
-            navigate('/psycho')
-        } else if (intendedRole === 'client') {
-            navigate('/client')
-        } else {
-            navigate('/login')
-        }
-    }, [isPending, session, navigate, sessionContext?.setActiveRole])
+        setActiveRole(intendedRole as 'psycho' | 'client').then(() => {
+            if (intendedRole === 'psycho') {
+                navigate('/psycho')
+            } else if (intendedRole === 'client') {
+                navigate('/client')
+            } else {
+                navigate('/login')
+            }
+        })
+    }, [isLoading, isAuthenticated, navigate, setActiveRole])
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
