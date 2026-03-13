@@ -11,6 +11,7 @@ import { useSidebarItems } from '../hooks/useSidebarItems'
 import { useAuth } from '../contexts/auth-context'
 import { useHasActiveAppointment } from '../hooks/useHasActiveAppointment'
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
+import { ConfirmAction } from '../components/ConfirmAction'
 import { ArrowLeftRight, LogOut } from 'lucide-react'
 
 export function AppSidebar() {
@@ -28,7 +29,6 @@ export function AppSidebar() {
     }
 
     const handleRoleSwitch = async () => {
-        if (hasActiveAppointment || !activeRole) return
         await setActiveRole(otherRole)
         if (otherRole === 'psycho') {
             navigate('/psycho')
@@ -58,29 +58,47 @@ export function AppSidebar() {
                     <SidebarMenu>
                         {activeRole && (
                             <SidebarMenuItem>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <SidebarMenuButton
-                                            disabled={hasActiveAppointment}
-                                            onClick={handleRoleSwitch}
-                                        >
-                                            <ArrowLeftRight />
-                                            <span>{otherRoleLabel}</span>
-                                        </SidebarMenuButton>
-                                    </TooltipTrigger>
-                                    {hasActiveAppointment && (
+                                {hasActiveAppointment ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <SidebarMenuButton disabled>
+                                                <ArrowLeftRight />
+                                                <span>{otherRoleLabel}</span>
+                                            </SidebarMenuButton>
+                                        </TooltipTrigger>
                                         <TooltipContent>
                                             End your active appointment before switching roles.
                                         </TooltipContent>
-                                    )}
-                                </Tooltip>
+                                    </Tooltip>
+                                ) : (
+                                    <ConfirmAction
+                                        trigger={
+                                            <SidebarMenuButton>
+                                                <ArrowLeftRight />
+                                                <span>{otherRoleLabel}</span>
+                                            </SidebarMenuButton>
+                                        }
+                                        title={otherRoleLabel}
+                                        description={`You will be switched to the ${otherRole} mode. You can switch back at any time.`}
+                                        confirmText="Switch"
+                                        onConfirm={handleRoleSwitch}
+                                    />
+                                )}
                             </SidebarMenuItem>
                         )}
                         <SidebarMenuItem>
-                            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive">
-                                <LogOut />
-                                <span>Log out</span>
-                            </SidebarMenuButton>
+                            <ConfirmAction
+                                trigger={
+                                    <SidebarMenuButton className="text-destructive hover:text-destructive">
+                                        <LogOut />
+                                        <span>Log out</span>
+                                    </SidebarMenuButton>
+                                }
+                                title="Log out"
+                                description="Are you sure you want to log out?"
+                                confirmText="Log out"
+                                onConfirm={handleLogout}
+                            />
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>
