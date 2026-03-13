@@ -6,7 +6,8 @@
         "dev": "bun run --hot src/index.ts",
         "migrate": "bun run scripts/run-migrations.ts",
         "migration:create": "bun run scripts/create-migration.ts",
-        "lint": "oxlint . -c ../oxlintrc.json"
+        "lint": "oxlint . -c ../oxlintrc.json",
+        "prettier": "bunx prettier -w . --config /Users/artem/uni/psycho/.prettierrc.json"
     },
     "dependencies": {
         "better-auth": "^1.5.5",

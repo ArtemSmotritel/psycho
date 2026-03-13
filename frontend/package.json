@@ -9,7 +9,8 @@
         "typecheck": "react-router typegen && tsc",
         "test": "vitest run",
         "test:watch": "vitest",
-        "lint": "oxlint . -c ../oxlintrc.json"
+        "lint": "oxlint . -c ../oxlintrc.json",
+        "prettier": "bunx prettier -w . --config /Users/artem/uni/psycho/.prettierrc.json"
     },
     "dependencies": {
         "@excalidraw/excalidraw": "^0.18.0",
