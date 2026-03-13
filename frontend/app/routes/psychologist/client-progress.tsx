@@ -55,7 +55,7 @@ function SessionInTimeline({
                 <Card className="flex-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <Link
-                            to={`/psychologist/clients/${clientId}/sessions/${session.id}`}
+                            to={`/psycho/clients/${clientId}/sessions/${session.id}`}
                             className="text-sm font-medium hover:underline"
                         >
                             Session {startIndex + index + 1}
@@ -72,7 +72,7 @@ function SessionInTimeline({
                                     <li key={impression.id} className="flex items-start gap-2">
                                         <ImageIcon className="mt-1 h-4 w-4 text-muted-foreground" />
                                         <Link
-                                            to={`/psychologist/clients/${clientId}/sessions/${session.id}/attachment/${impression.id}`}
+                                            to={`/psycho/clients/${clientId}/sessions/${session.id}/attachment/${impression.id}`}
                                             className="hover:underline"
                                         >
                                             {impression.text}
@@ -89,7 +89,7 @@ function SessionInTimeline({
                                     <li key={recommendation.id} className="flex items-start gap-2">
                                         <MessageSquare className="mt-1 h-4 w-4 text-muted-foreground" />
                                         <Link
-                                            to={`/psychologist/clients/${clientId}/sessions/${session.id}/attachment/${recommendation.id}`}
+                                            to={`/psycho/clients/${clientId}/sessions/${session.id}/attachment/${recommendation.id}`}
                                             className="hover:underline"
                                         >
                                             {recommendation.text}

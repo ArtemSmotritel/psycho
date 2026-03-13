@@ -136,14 +136,14 @@ export default function SessionAttachment() {
                     />
                 )}
 
-                <Link to={`/psychologist/clients/${clientId}`}>
+                <Link to={`/psycho/clients/${clientId}`}>
                     <ActionItem
                         icon={<User className="h-6" />}
                         label={`Open ${userRole === 'client' ? 'My' : 'Client'} Profile`}
                     />
                 </Link>
 
-                <Link to={`/psychologist/clients/${clientId}/sessions/${sessionId}`}>
+                <Link to={`/psycho/clients/${clientId}/sessions/${sessionId}`}>
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
 

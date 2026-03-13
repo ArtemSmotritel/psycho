@@ -113,13 +113,13 @@ const columns: ColumnDef<Client>[] = [
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={() => navigate(`/psychologist/clients/${client.id}`)}
+                            onClick={() => navigate(`/psycho/clients/${client.id}`)}
                         >
                             View client profile
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() =>
-                                navigate(`/psychologist/clients/${client.id}/appointments`)
+                                navigate(`/psycho/clients/${client.id}/appointments`)
                             }
                         >
                             View appointment history

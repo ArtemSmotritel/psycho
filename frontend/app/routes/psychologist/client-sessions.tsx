@@ -41,7 +41,7 @@ function AppointmentCard({ appointment, clientId }: AppointmentCardProps) {
 
     return (
         <Link
-            to={`/psychologist/clients/${clientId}/appointments/${appointment.id}`}
+            to={`/psycho/clients/${clientId}/appointments/${appointment.id}`}
             className="block"
         >
             <Card className="hover:bg-accent/50 transition-colors max-w-lg">

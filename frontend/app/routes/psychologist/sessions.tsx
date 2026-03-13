@@ -119,14 +119,14 @@ const columns: ColumnDef<SessionListItemDTO>[] = [
                         <DropdownMenuItem
                             onClick={() =>
                                 navigate(
-                                    `/psychologist/clients/${session.clientId}/appointments/${session.id}`,
+                                    `/psycho/clients/${session.clientId}/appointments/${session.id}`,
                                 )
                             }
                         >
                             View appointment details
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            onClick={() => navigate(`/psychologist/clients/${session.clientId}`)}
+                            onClick={() => navigate(`/psycho/clients/${session.clientId}`)}
                         >
                             View client profile
                         </DropdownMenuItem>

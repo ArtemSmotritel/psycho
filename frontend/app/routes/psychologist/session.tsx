@@ -16,7 +16,7 @@ export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
     const { userRole } = useRoleGuard(['psychologist', 'client'])
     const navigate = useNavigate()
-    const { role, clientId } = useParams<{ role: string; clientId: string }>()
+    const { clientId } = useParams<{ clientId: string }>()
 
     const [isStarting, setIsStarting] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -41,7 +41,7 @@ export default function Session() {
     if (appointment.status === 'active') {
         return (
             <Link
-                to={`/${role}/clients/${appointment.clientId}/appointments/${appointment.id}/live`}
+                to={`/psycho/clients/${appointment.clientId}/appointments/${appointment.id}/live`}
             >
                 <Button>Go to Active Appointment</Button>
             </Link>
@@ -55,7 +55,7 @@ export default function Session() {
         setStartError(null)
         try {
             await appointmentService.start(appointment.clientId, appointment.id)
-            navigate(`/${role}/clients/${appointment.clientId}/appointments/${appointment.id}/live`)
+            navigate(`/psycho/clients/${appointment.clientId}/appointments/${appointment.id}/live`)
         } catch (err: any) {
             const errorCode = err?.response?.data?.error
             if (errorCode === 'AnotherAppointmentActive') {
@@ -77,7 +77,7 @@ export default function Session() {
         try {
             await appointmentService.delete(appointment.clientId, appointment.id)
             toast.success('Appointment deleted.')
-            navigate(`/${role}/clients/${appointment.clientId}/appointments`)
+            navigate(`/psycho/clients/${appointment.clientId}/appointments`)
         } catch {
             toast.error('Failed to delete appointment. Please try again.')
         } finally {
@@ -125,7 +125,7 @@ export default function Session() {
                             size="sm"
                             onClick={() =>
                                 navigate(
-                                    `/${role}/clients/${clientId}/appointments/${startError.activeAppointmentId}`,
+                                    `/psycho/clients/${clientId}/appointments/${startError.activeAppointmentId}`,
                                 )
                             }
                         >
@@ -192,7 +192,7 @@ export default function Session() {
                 <ActionItem
                     icon={<User className="h-6" />}
                     label="Visit Client Profile"
-                    to={`/${role}/clients/${appointment.clientId}`}
+                    to={`/psycho/clients/${appointment.clientId}`}
                 />
 
                 {userRole === 'psychologist' && (

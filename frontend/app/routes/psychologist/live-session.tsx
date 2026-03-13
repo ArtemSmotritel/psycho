@@ -20,8 +20,7 @@ const Excalidraw = lazy(() =>
 
 export default function LiveSession() {
     useRoleGuard(['psychologist'])
-    const { role, clientId, appointmentId } = useParams<{
-        role: string
+    const { clientId, appointmentId } = useParams<{
         clientId: string
         appointmentId: string
     }>()
@@ -58,7 +57,7 @@ export default function LiveSession() {
         return (
             <div>
                 <p>No active appointment found.</p>
-                <Link to={`/${role}/clients/${clientId}/appointments/${appointmentId}`}>
+                <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
                     Back to appointment
                 </Link>
             </div>
@@ -74,7 +73,7 @@ export default function LiveSession() {
         try {
             await appointmentService.end(clientId!, appointmentId!)
             toast.success('Appointment ended.')
-            navigate(`/${role}/clients/${clientId}/appointments/${appointmentId}`)
+            navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
         } catch {
             toast.error('Failed to end appointment. Please try again.')
         } finally {
