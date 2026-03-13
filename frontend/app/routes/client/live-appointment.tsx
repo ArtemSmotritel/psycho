@@ -6,6 +6,7 @@ import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
+import { AppPageHeader } from '~/components/AppPageHeader'
 import {
     Dialog,
     DialogContent,
@@ -113,6 +114,7 @@ export default function LiveAppointment() {
 
     return (
         <div className="w-full h-full">
+            <AppPageHeader text="Live Session" linkTo={`/client/appointments/${appointmentId}`} />
             <div className="mb-4">
                 <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
                 <p className="text-muted-foreground">

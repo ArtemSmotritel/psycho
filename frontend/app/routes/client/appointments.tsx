@@ -15,6 +15,7 @@ import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
+import { AppPageHeader } from '~/components/AppPageHeader'
 
 type AppointmentCardProps = {
     appointment: AppointmentWithPsycho
@@ -177,29 +178,28 @@ export default function ClientAppointments() {
             })
     }, [])
 
-    if (isLoading) {
-        return <p className="text-muted-foreground">Loading appointments...</p>
-    }
-
-    if (error) {
-        return <p className="text-destructive">{error}</p>
-    }
-
     const pastAppointments = appointments.filter((a) => a.status === 'past')
     const upcomingAppointments = appointments.filter((a) => a.status !== 'past')
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            <AppointmentsList
-                title="Past Appointments"
-                appointments={pastAppointments}
-                oldestFirst={false}
-            />
-            <AppointmentsList
-                title="Upcoming Appointments"
-                appointments={upcomingAppointments}
-                oldestFirst={true}
-            />
+        <div className="container mx-auto p-4">
+            <AppPageHeader text="Appointments" />
+            {isLoading && <p className="text-muted-foreground">Loading appointments...</p>}
+            {error && <p className="text-destructive">{error}</p>}
+            {!isLoading && !error && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                    <AppointmentsList
+                        title="Past Appointments"
+                        appointments={pastAppointments}
+                        oldestFirst={false}
+                    />
+                    <AppointmentsList
+                        title="Upcoming Appointments"
+                        appointments={upcomingAppointments}
+                        oldestFirst={true}
+                    />
+                </div>
+            )}
         </div>
     )
 }

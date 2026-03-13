@@ -1,5 +1,6 @@
 import { Video, LogIn } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router'
+import { AppPageHeader } from '~/components/AppPageHeader'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
@@ -34,7 +35,8 @@ export default function ClientAppointmentDetail() {
     const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
-        <>
+        <div className="container mx-auto p-4">
+            <AppPageHeader text="Appointment" linkTo="/client/appointments" />
             <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
             <p className="text-muted-foreground mb-4">
                 {formattedStart} – {formattedEnd}
@@ -69,6 +71,6 @@ export default function ClientAppointmentDetail() {
                     />
                 </ActionsSection>
             )}
-        </>
+        </div>
     )
 }

@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AppPageHeader } from '~/components/AppPageHeader'
 
 export default function ClientDashboard() {
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Client Dashboard</h1>
+            <AppPageHeader text="Dashboard" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <Card>
