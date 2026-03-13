@@ -11,8 +11,7 @@ import { useSidebarItems } from '../hooks/useSidebarItems'
 import { useAuth } from '../contexts/auth-context'
 import { useHasActiveAppointment } from '../hooks/useHasActiveAppointment'
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
-import { Button } from '../components/ui/button'
-import { LogOut } from 'lucide-react'
+import { ArrowLeftRight, LogOut } from 'lucide-react'
 
 export function AppSidebar() {
     const sidebarItems = useSidebarItems()
@@ -22,8 +21,6 @@ export function AppSidebar() {
 
     const otherRole = activeRole === 'psycho' ? 'client' : 'psycho'
     const otherRoleLabel = activeRole === 'psycho' ? 'Switch to Client' : 'Switch to Psychologist'
-    const currentRoleLabel =
-        activeRole === 'psycho' ? 'Psychologist' : activeRole === 'client' ? 'Client' : null
 
     const handleLogout = async () => {
         await logout()
@@ -58,27 +55,18 @@ export function AppSidebar() {
             </SidebarContent>
             {isAuthenticated && (
                 <SidebarFooter>
-                    <div className="px-2 py-2">
+                    <SidebarMenu>
                         {activeRole && (
-                            <>
-                                {currentRoleLabel && (
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                        Role: {currentRoleLabel}
-                                    </p>
-                                )}
+                            <SidebarMenuItem>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <span className="w-full">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full"
-                                                disabled={hasActiveAppointment}
-                                                onClick={handleRoleSwitch}
-                                            >
-                                                {otherRoleLabel}
-                                            </Button>
-                                        </span>
+                                        <SidebarMenuButton
+                                            disabled={hasActiveAppointment}
+                                            onClick={handleRoleSwitch}
+                                        >
+                                            <ArrowLeftRight />
+                                            <span>{otherRoleLabel}</span>
+                                        </SidebarMenuButton>
                                     </TooltipTrigger>
                                     {hasActiveAppointment && (
                                         <TooltipContent>
@@ -86,18 +74,15 @@ export function AppSidebar() {
                                         </TooltipContent>
                                     )}
                                 </Tooltip>
-                            </>
+                            </SidebarMenuItem>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full mt-1 text-destructive hover:text-destructive"
-                            onClick={handleLogout}
-                        >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Log out
-                        </Button>
-                    </div>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive">
+                                <LogOut />
+                                <span>Log out</span>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
                 </SidebarFooter>
             )}
         </Sidebar>
