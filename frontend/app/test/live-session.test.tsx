@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 
 const mockEnd = vi.fn()
 const mockNavigate = vi.fn()
+let mockExcalidrawAPI: any = null
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
@@ -62,8 +63,17 @@ vi.mock('~/components/ActionsSection', () => ({
     },
 }))
 
+const mockExportToBlob = vi.fn()
+
 vi.mock('@excalidraw/excalidraw', () => ({
-    Excalidraw: () => <div data-testid="excalidraw" />,
+    Excalidraw: ({ excalidrawAPI }: any) => {
+        // Allow tests to inject a fake API instance by calling the callback
+        if (excalidrawAPI && mockExcalidrawAPI) {
+            excalidrawAPI(mockExcalidrawAPI)
+        }
+        return <div data-testid="excalidraw" />
+    },
+    exportToBlob: (...args: any[]) => mockExportToBlob(...args),
 }))
 
 vi.mock('~/hooks/useWhiteboardSync', () => ({
@@ -126,6 +136,8 @@ describe('LiveSession page', () => {
     beforeEach(() => {
         mockEnd.mockReset()
         mockNavigate.mockReset()
+        mockExportToBlob.mockReset()
+        mockExcalidrawAPI = null
         vi.mocked(toast.success).mockReset?.()
         vi.mocked(toast.error).mockReset?.()
     })
@@ -193,7 +205,7 @@ describe('LiveSession page', () => {
         })
 
         await waitFor(() => {
-            expect(mockEnd).toHaveBeenCalledWith('client-456', 'apt-001')
+            expect(mockEnd).toHaveBeenCalledWith('client-456', 'apt-001', null)
             expect(vi.mocked(toast.success)).toHaveBeenCalledWith('Appointment ended.')
             expect(mockNavigate).toHaveBeenCalledWith(
                 '/psycho/clients/client-456/appointments/apt-001',
@@ -240,5 +252,101 @@ describe('LiveSession page', () => {
         renderLiveSession()
 
         expect(screen.getByText(/no active appointment found/i)).toBeInTheDocument()
+    })
+
+    it('calls exportToBlob and passes base64 data URL to appointmentService.end when API instance is available', async () => {
+        mockUseCurrentAppointment = () => ({
+            appointment: activeAppointment,
+            isLoading: false,
+        })
+
+        const fakeBlob = new Blob(['fake-png-data'], { type: 'image/png' })
+        mockExportToBlob.mockResolvedValue(fakeBlob)
+        mockEnd.mockResolvedValue({
+            data: { appointment: { ...activeAppointment, status: 'past' } },
+        })
+
+        const fakeElements = [{ id: 'el1' }]
+        const fakeFiles = { file1: { id: 'file1' } }
+        mockExcalidrawAPI = {
+            getSceneElements: () => fakeElements,
+            getFiles: () => fakeFiles,
+            getAppState: () => ({ scrollX: 0, scrollY: 0 }),
+        }
+
+        renderLiveSession()
+
+        const confirmBtn = screen.getByTestId('confirm-end')
+        await act(async () => {
+            confirmBtn.click()
+        })
+
+        await waitFor(() => {
+            expect(mockExportToBlob).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    elements: fakeElements,
+                    files: fakeFiles,
+                    mimeType: 'image/png',
+                }),
+            )
+            const endCallArgs = mockEnd.mock.calls[0]
+            expect(endCallArgs[0]).toBe('client-456')
+            expect(endCallArgs[1]).toBe('apt-001')
+            expect(typeof endCallArgs[2]).toBe('string')
+            expect(endCallArgs[2]).toMatch(/^data:/)
+        })
+    })
+
+    it('calls appointmentService.end with null when exportToBlob throws', async () => {
+        mockUseCurrentAppointment = () => ({
+            appointment: activeAppointment,
+            isLoading: false,
+        })
+
+        mockExportToBlob.mockRejectedValue(new Error('Export failed'))
+        mockEnd.mockResolvedValue({
+            data: { appointment: { ...activeAppointment, status: 'past' } },
+        })
+
+        mockExcalidrawAPI = {
+            getSceneElements: () => [],
+            getFiles: () => ({}),
+            getAppState: () => ({ scrollX: 0, scrollY: 0 }),
+        }
+
+        renderLiveSession()
+
+        const confirmBtn = screen.getByTestId('confirm-end')
+        await act(async () => {
+            confirmBtn.click()
+        })
+
+        await waitFor(() => {
+            expect(mockEnd).toHaveBeenCalledWith('client-456', 'apt-001', null)
+        })
+    })
+
+    it('calls appointmentService.end with null when excalidrawAPIInstance is null', async () => {
+        mockUseCurrentAppointment = () => ({
+            appointment: activeAppointment,
+            isLoading: false,
+        })
+
+        mockEnd.mockResolvedValue({
+            data: { appointment: { ...activeAppointment, status: 'past' } },
+        })
+
+        // mockExcalidrawAPI is null (set in beforeEach)
+
+        renderLiveSession()
+
+        const confirmBtn = screen.getByTestId('confirm-end')
+        await act(async () => {
+            confirmBtn.click()
+        })
+
+        await waitFor(() => {
+            expect(mockEnd).toHaveBeenCalledWith('client-456', 'apt-001', null)
+        })
     })
 })

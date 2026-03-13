@@ -5,6 +5,8 @@ import { format } from 'date-fns'
 import { toast } from 'sonner'
 import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
+// TODO: import exportToBlob lazily to reduce initial bundle size (EDG-47)
+import { exportToBlob } from '@excalidraw/excalidraw'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { ConfirmAction } from '~/components/ConfirmAction'
@@ -71,7 +73,25 @@ export default function LiveSession() {
     const handleEndAppointment = async () => {
         setIsEnding(true)
         try {
-            await appointmentService.end(clientId!, appointmentId!)
+            let snapshotDataUrl: string | null = null
+            if (excalidrawAPIInstance !== null) {
+                try {
+                    const blob = await exportToBlob({
+                        elements: excalidrawAPIInstance.getSceneElements(),
+                        files: excalidrawAPIInstance.getFiles(),
+                        mimeType: 'image/png',
+                    })
+                    snapshotDataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => resolve(reader.result as string)
+                        reader.onerror = reject
+                        reader.readAsDataURL(blob)
+                    })
+                } catch {
+                    snapshotDataUrl = null
+                }
+            }
+            await appointmentService.end(clientId!, appointmentId!, snapshotDataUrl)
             toast.success('Appointment ended.')
             navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
         } catch {

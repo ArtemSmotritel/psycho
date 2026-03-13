@@ -3,7 +3,7 @@ import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     createAppointment,
     deleteAppointment,
-    endAppointment,
+    endAppointmentWithSnapshot,
     findActiveAppointmentByPsycho,
     findAppointmentById,
     isClientLinkedAndActive,
@@ -99,8 +99,16 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/end'
         )
     }
 
-    // TODO: EDG-47 — save whiteboard snapshot before ending
-    const appointment = await endAppointment(appointmentId)
+    let body: Record<string, unknown> = {}
+    try {
+        body = await c.req.json()
+    } catch {
+        // body is empty or not JSON — treat as no snapshot
+    }
+
+    const snapshotDataUrl = typeof body.snapshotDataUrl === 'string' ? body.snapshotDataUrl : null
+
+    const appointment = await endAppointmentWithSnapshot(appointmentId, snapshotDataUrl)
     return c.json({ appointment }, 200)
 })
 

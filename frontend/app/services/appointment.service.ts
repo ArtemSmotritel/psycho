@@ -25,9 +25,10 @@ export const appointmentService = {
         api.patch<{ appointment: Appointment }>(
             `/clients/${clientId}/appointments/${appointmentId}/start`,
         ),
-    end: (clientId: string, appointmentId: string) =>
+    end: (clientId: string, appointmentId: string, snapshotDataUrl?: string | null) =>
         api.patch<{ appointment: Appointment }>(
             `/clients/${clientId}/appointments/${appointmentId}/end`,
+            { snapshotDataUrl: snapshotDataUrl ?? null },
         ),
     getActiveForPsycho: () => api.get<{ appointment: Appointment | null }>('/psycho/appointments'),
     getAllForPsycho: () =>

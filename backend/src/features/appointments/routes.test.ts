@@ -879,6 +879,65 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         expect(body.appointment).toHaveProperty('status', 'past')
     })
 
+    it('returns 200 with whiteboardSnapshotUrl when snapshotDataUrl is provided', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await startAppointment(apt.id)
+
+        const snapshotDataUrl =
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ snapshotDataUrl }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('status', 'past')
+        expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', snapshotDataUrl)
+    })
+
+    it('returns 200 with whiteboardSnapshotUrl null when body is empty', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({}),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('status', 'past')
+        expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', null)
+    })
+
     it('returns 404 when appointment does not exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })

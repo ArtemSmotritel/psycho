@@ -19,6 +19,7 @@ export const createAppointment = async (params: {
             end_time AS "endTime",
             status,
             google_meet_link AS "googleMeetLink",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
     `
     return row as Appointment
@@ -38,6 +39,7 @@ export const findAppointmentById = async (
             end_time AS "endTime",
             status,
             google_meet_link AS "googleMeetLink",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
         FROM appointments
         WHERE id = ${appointmentId}
@@ -66,6 +68,7 @@ export const updateAppointment = async (
             end_time AS "endTime",
             status,
             google_meet_link AS "googleMeetLink",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
     `
     return row as Appointment
@@ -91,19 +94,31 @@ export async function startAppointment(appointmentId: string): Promise<Appointme
         WHERE id = ${appointmentId}
         RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
                   start_time AS "startTime", end_time AS "endTime",
-                  status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+                  status, google_meet_link AS "googleMeetLink",
+                  whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+                  created_at AS "createdAt"
     `
     return row as Appointment
 }
 
 export async function endAppointment(appointmentId: string): Promise<Appointment> {
+    return endAppointmentWithSnapshot(appointmentId, null)
+}
+
+export async function endAppointmentWithSnapshot(
+    appointmentId: string,
+    snapshotDataUrl: string | null,
+): Promise<Appointment> {
     const [row] = await db`
         UPDATE appointments
-        SET status = 'past'
+        SET status = 'past',
+            whiteboard_snapshot_url = ${snapshotDataUrl}
         WHERE id = ${appointmentId}
         RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
                   start_time AS "startTime", end_time AS "endTime",
-                  status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+                  status, google_meet_link AS "googleMeetLink",
+                  whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+                  created_at AS "createdAt"
     `
     return row as Appointment
 }
@@ -112,7 +127,9 @@ export async function findActiveAppointmentByPsycho(psychoId: string): Promise<A
     const [row] = await db`
         SELECT id, psycho_id AS "psychoId", client_id AS "clientId",
                start_time AS "startTime", end_time AS "endTime",
-               status, google_meet_link AS "googleMeetLink", created_at AS "createdAt"
+               status, google_meet_link AS "googleMeetLink",
+               whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+               created_at AS "createdAt"
         FROM appointments
         WHERE psycho_id = ${psychoId} AND status = 'active'
         LIMIT 1
@@ -127,7 +144,9 @@ export async function findAppointmentByIdForClient(
     const [row] = await db`
         SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
                a.start_time AS "startTime", a.end_time AS "endTime",
-               a.status, a.google_meet_link AS "googleMeetLink", a.created_at AS "createdAt",
+               a.status, a.google_meet_link AS "googleMeetLink",
+               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+               a.created_at AS "createdAt",
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -149,6 +168,7 @@ export async function findAppointmentByIdForParticipant(
             end_time AS "endTime",
             status,
             google_meet_link AS "googleMeetLink",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
         FROM appointments
         WHERE id = ${appointmentId}
@@ -163,7 +183,9 @@ export async function listAppointmentsForClient(
     const rows = await db`
         SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
                a.start_time AS "startTime", a.end_time AS "endTime",
-               a.status, a.google_meet_link AS "googleMeetLink", a.created_at AS "createdAt",
+               a.status, a.google_meet_link AS "googleMeetLink",
+               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+               a.created_at AS "createdAt",
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -185,6 +207,7 @@ export async function listAllAppointmentsForPsycho(
             a.end_time AS "endTime",
             a.status,
             a.google_meet_link AS "googleMeetLink",
+            a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             a.created_at AS "createdAt",
             u.name AS "clientName"
         FROM appointments a
@@ -208,6 +231,7 @@ export const listAppointments = async (
             end_time AS "endTime",
             status,
             google_meet_link AS "googleMeetLink",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
         FROM appointments
         WHERE psycho_id = ${psychoId}
