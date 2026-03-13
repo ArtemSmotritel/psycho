@@ -15,7 +15,7 @@ export function useSidebarItems(): SidebarItem[] {
         {
             title: 'Dashboard',
             icon: HomeIcon,
-            href: '/psycho/clients',
+            href: '/psycho',
             availableTo: 'psychologist',
         },
         {

@@ -1,13 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { auth } from '~/services/auth.service'
+import { useAuth } from '~/contexts/auth-context'
 
 type Role = 'psycho' | 'client'
 
 export default function LoginChoice() {
+    const { isLoading, isAuthenticated, activeRole } = useAuth()
+    const navigate = useNavigate()
     const [selectedRole, setSelectedRole] = useState<Role | null>(null)
     const [isRedirecting, setIsRedirecting] = useState(false)
+
+    useEffect(() => {
+        if (isLoading) return
+        if (!isAuthenticated) return
+
+        if (activeRole === 'psycho') {
+            navigate('/psycho')
+        } else if (activeRole === 'client') {
+            navigate('/client')
+        } else {
+            navigate('/role-select')
+        }
+    }, [isLoading, isAuthenticated, activeRole, navigate])
 
     async function handleContinue() {
         if (!selectedRole) return

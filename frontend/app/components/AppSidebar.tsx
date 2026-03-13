@@ -28,7 +28,7 @@ export function AppSidebar() {
         if (hasActiveAppointment || !activeRole) return
         await setActiveRole(otherRole)
         if (otherRole === 'psycho') {
-            navigate('/psycho/clients')
+            navigate('/psycho')
         } else {
             navigate('/client')
         }

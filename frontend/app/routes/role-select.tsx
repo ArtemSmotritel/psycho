@@ -16,7 +16,7 @@ export default function RoleSelect() {
         }
 
         if (activeRole === 'psycho') {
-            navigate('/psycho/clients')
+            navigate('/psycho')
             return
         }
 
@@ -45,7 +45,7 @@ export default function RoleSelect() {
     async function handleSelectRole(role: 'psycho' | 'client') {
         await setActiveRole(role)
         if (role === 'psycho') {
-            navigate('/psycho/clients')
+            navigate('/psycho')
         } else {
             navigate('/client')
         }
