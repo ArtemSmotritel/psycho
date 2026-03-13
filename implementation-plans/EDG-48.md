@@ -1,210 +1,354 @@
 # Implementation Plan: EDG-48 — Psychologist Notes per Appointment (text, image, audio)
 
-## Issues & Questions
+## Resolved Questions
 
-**Questions**
+1. **File storage**: Disk + `/api/files` endpoint implemented in this ticket. Files saved to `./uploads/`, served via `GET /api/files/:filename`. Audio and images both stored as binary files, referenced by URL in `image_urls`/`audio_urls`.
 
-1. **File storage backend**: There is a `fileService` in the frontend (`/Users/artem/uni/psycho/frontend/app/services/file.service.ts`) that calls `POST /api/files/upload`, but no corresponding backend route for file uploads exists in the codebase. EDG-48 requires image and audio attachments. Does a file storage backend (local disk, S3, or similar) need to be wired up as part of this ticket, or should files be stored as base64 blobs in the database for now? This must be resolved before implementation begins — the choice drastically changes the migration and service design.
+2. **Note `name` field**: `name` is **required** — `name TEXT NOT NULL` in the DB.
 
-2. **Note "name" field**: The existing `AttachmentForm` component requires a `name` field. The ticket description does not mention a name/title for notes. Should notes carry a freetext name/title in addition to the body text, or is the body text the only required field?
+3. **Editing**: Notes are editable (name + text only). Media (`image_urls`, `audio_urls`) is locked after creation — `PATCH` ignores media fields at the API level; media fields are disabled in the frontend edit form.
 
-3. **Editing vs. append-only**: Decision 27 states "no editing after submission" for impressions. The ticket description says notes are "creatable/editable." Confirm: psychologist can edit the text content of a note after creation. Can they also add or remove image/audio files from an existing note in the same edit operation?
+4. **Shared table**: All attachment types (notes, impressions, recommendations) share a single `attachments` table with a `type TEXT NOT NULL CHECK (type IN ('note', 'impression', 'recommendation'))` column. EDG-48 introduces this table; EDG-49 and EDG-50 add their own routes on top of it without new migrations.
 
-4. **Audio storage format**: The `AttachmentForm` records audio as `audio/wav` blobs. Should audio files be stored the same way as image files (uploaded as binary files and stored by URL), or should they be stored differently? (Resolves when file storage question #1 is answered.)
+5. **Appointment status constraint**: Notes are only accessible when appointment is `active` or `past`. Returns `400 AppointmentNotActive` for `upcoming`. Note: EDG-50 (recommendations) uses a different error name `AppointmentNotStarted` for the same concept — this is an inconsistency between plans but both work correctly in isolation.
 
-**Logical / business logic issues**
+6. **Access control decisions**: 404 always (never 403) when access is denied — do not reveal resource existence to unauthorized callers. Past appointment data remains accessible even if the psychologist-client link is later removed. Full URL chain is validated on every request: `clientId → appointmentId → attachmentId` must all be consistently owned by / linked to the authenticated user. `attachmentId` mismatch with `appointmentId` returns 404.
 
-5. **Appointment status constraint**: Decision 5 says notes can be created/edited during **active** or any **past** appointment. The ticket header says "creatable/editable during active or any past appointment (Decision 16)" — Decision 16 is about data preservation after disconnection, not note creation timing. This appears to be a typo in the ticket table. The correct reference is Decision 5. The implementation should enforce the active-or-past constraint.
+---
 
-6. **`/api/files/upload` route does not exist**: If files are required for images and audio, a file upload route must be created. This is not currently in scope for EDG-48 but is a prerequisite. The plan below assumes a pragmatic approach: store file URLs as an array of strings in the notes table (uploaded separately), and a file upload endpoint must exist or be created as part of this ticket. If file upload is out of scope, only the `text` field should be implemented for MVP.
+## Access Control Rules
+
+These rules apply to **every** route handler in the notes feature. Violations always return `404` (never `403`).
+
+### Psychologist notes routes (`/api/clients/:clientId/appointments/:appointmentId/notes`)
+
+**Step 1 — appointment ownership** (all routes):
+- Fetch the appointment by `appointmentId`.
+- Verify `appointment.psychoId === user.id` AND `appointment.clientId === clientId` (URL param).
+- If appointment not found or either check fails → `404`.
+
+**Step 2 — status check** (all routes):
+- If `appointment.status === 'upcoming'` → `400 AppointmentNotActive`.
+
+**Step 3 — attachment chain** (single-resource routes: `GET /:id`, `PATCH /:id`, `DELETE /:id`):
+- Fetch attachment by `attachmentId`.
+- Verify ALL of: `attachment.appointmentId === appointmentId` AND `attachment.type === 'note'` AND `attachment.authorId === user.id`.
+- If attachment not found or any check fails → `404`.
+
+**Additional edge cases:**
+- Clients are blocked at the middleware level (`onlyPsychoRequest`) — they cannot access notes routes at all.
+- A psychologist cannot access another psychologist's notes even on the same appointment (`attachment.authorId === user.id` check).
+- A psychologist cannot access impressions or recommendations via notes routes (`attachment.type === 'note'` check).
+- Manipulating `clientId` in the URL to access another client's data is blocked by the appointment ownership check.
 
 ---
 
 ## Overview
 
-EDG-48 adds psychologist-private notes to appointments. A note belongs to one appointment, is owned by the psychologist, and is never visible to clients. Notes can be created and edited when the appointment is in **active** or **past** status. Each note has a text body plus optional image URLs and audio URLs. The feature requires: a DB migration for the `appointment_notes` table, backend CRUD routes under `/api/clients/:clientId/appointments/:appointmentId/notes` (psycho-only), a frontend service, TypeScript model, and a UI panel on the past appointment detail view (`frontend/app/routes/psychologist/session.tsx` — currently the "past" branch shows a stub placeholder) and on the live appointment view (`frontend/app/routes/psychologist/live-session.tsx`).
+EDG-48 introduces three foundational pieces:
+
+1. **`attachments` table** — a single unified table for all appointment-scoped content (notes, impressions, recommendations), distinguished by a `type` column. Only this ticket creates the migration; EDG-49 and EDG-50 add routes that write to the same table.
+2. **File upload infrastructure** — `POST /api/files/upload` + `GET /api/files/:filename`, shared by all attachment types and future features.
+3. **Notes feature** — psychologist-private notes on appointments. CRUD routes under `/api/clients/:clientId/appointments/:appointmentId/notes`, using `type='note'` filter. UI panel on the live appointment view and past appointment detail view.
 
 ---
 
 ## Implementation Steps
 
-### 1. Database Migration
+### 1. Database Migrations
 
-Create a new migration file: `backend/src/migrations/<timestamp>_create-appointment-notes.sql`.
+**a) Files table** — `backend/src/migrations/<timestamp>_create-files-table.sql`:
 
-The table:
 ```sql
-CREATE TABLE appointment_notes (
-  id             TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-  appointment_id TEXT NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
-  psycho_id      TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  text           TEXT,
-  image_urls     TEXT[] NOT NULL DEFAULT '{}',
-  audio_urls     TEXT[] NOT NULL DEFAULT '{}',
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+CREATE TABLE files (
+    id            TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+    original_name TEXT NOT NULL,
+    stored_name   TEXT NOT NULL UNIQUE,
+    mime_type     TEXT NOT NULL,
+    size          BIGINT NOT NULL,
+    uploaded_by   TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX ON appointment_notes (appointment_id, psycho_id);
 ```
 
-Add `appointment_notes` to the `ALL_APP_TABLES` array in `backend/src/test-fixtures/db.ts` so tests truncate it properly.
+**b) Attachments table** — `backend/src/migrations/<timestamp>_create-attachments-table.sql`:
+
+```sql
+CREATE TABLE attachments (
+    id             TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+    appointment_id TEXT NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+    author_id      TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    type           TEXT NOT NULL CHECK (type IN ('note', 'impression', 'recommendation')),
+    name           TEXT,
+    text           TEXT,
+    image_urls     TEXT[] NOT NULL DEFAULT '{}',
+    audio_urls     TEXT[] NOT NULL DEFAULT '{}',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX ON attachments (appointment_id, type);
+CREATE INDEX ON attachments (author_id);
+```
+
+`name` is nullable at the DB level (impressions don't use it). Route-level validation enforces `name` is required for `note` and `recommendation` types.
+
+Add `'files'` and `'attachments'` to `ALL_APP_TABLES` in `backend/src/test-fixtures/db.ts`.
+
+Create `backend/uploads/` directory: add `.gitkeep`, add `uploads/*` (except `.gitkeep`) to `backend/.gitignore`.
 
 ---
 
-### 2. Backend — Models
+### 2. Backend — File Upload Feature
 
-Create `backend/src/features/notes/models.ts`.
+Create `backend/src/features/files/routes.ts`. A Hono router mounted at `/api/files`.
 
-Define:
-- `AppointmentNote` interface: `id`, `appointmentId`, `psychoId`, `text: string | null`, `imageUrls: string[]`, `audioUrls: string[]`, `createdAt: string`, `updatedAt: string`.
+**`POST /upload`** — guard: `authorized`. Accepts `multipart/form-data` with a `file` field. Parse the body with `c.req.parseBody()` (not `c.req.json()`).
+- Returns `400 BadRequest` if no file.
+- Generates `storedName` = `<uuid>.<ext>` (preserve extension from original filename).
+- `Bun.write('./uploads/' + storedName, await file.arrayBuffer())`. **Note**: `./uploads/` is relative to the server's CWD; the server must be started from the `backend/` directory (standard `bun run dev` does this).
+- Inserts row into `files` table.
+- Returns `201 { id, url: '/api/files/<storedName>', originalName, mimeType, size, uploadedAt }`.
 
----
+**Note on response shape**: The existing frontend `FileUploadResponse` model (`frontend/app/models/file.ts`) uses `{ id, url, name, size, type, uploadedAt }`. The backend must return a merged shape `{ id, url, originalName, mimeType, size, uploadedAt }` and the frontend model must be updated to match (see Files to Modify).
 
-### 3. Backend — Services
+**`GET /:filename`** — no auth. Serves `./uploads/<filename>` via `Bun.file` with correct `Content-Type`. The path `./uploads/<filename>` is also relative to CWD. Returns `404` if not found.
 
-Create `backend/src/features/notes/services.ts`.
-
-Functions to implement (all use the `db` import from `config/db`, following the pattern in `backend/src/features/appointments/services.ts`):
-
-- `createNote(params: { appointmentId, psychoId, text, imageUrls, audioUrls }): Promise<AppointmentNote>` — INSERT, RETURNING all fields with camelCase aliases.
-- `findNotesByAppointment(appointmentId: string, psychoId: string): Promise<AppointmentNote[]>` — SELECT WHERE appointment_id = $1 AND psycho_id = $2 ORDER BY created_at ASC.
-- `findNoteById(noteId: string, psychoId: string): Promise<AppointmentNote | null>` — SELECT WHERE id = $1 AND psycho_id = $2.
-- `updateNote(noteId: string, params: { text, imageUrls, audioUrls }): Promise<AppointmentNote>` — UPDATE SET text, image_urls, audio_urls, updated_at = NOW() WHERE id = $1 RETURNING all fields.
-- `deleteNote(noteId: string): Promise<void>` — DELETE WHERE id = $1.
-
----
-
-### 4. Backend — Routes
-
-Create `backend/src/features/notes/routes.ts`.
-
-Route group: `noteRoutes` (a `new Hono()`). All routes use `authorized` + `onlyPsychoRequest` from `../../middlewares/auth`.
-
-The routes are mounted under `/api/clients/:clientId/appointments/:appointmentId/notes`. The `clientId` and `appointmentId` params are available via `c.req.param()`.
-
-For every route, first verify the appointment exists and belongs to the psychologist-client pair using `findAppointmentById` from `../appointments/services`. If not found, return `404`. Then enforce status: notes are only accessible (read/write) when the appointment is `active` or `past`. If the appointment is `upcoming`, return `400` with error `AppointmentNotActive` and message `"Notes are only available during or after an appointment."`.
-
-Routes:
-
-**`GET /`** — List all notes for the appointment.
-- Response `200`: `{ notes: AppointmentNote[] }`
-
-**`POST /`** — Create a new note.
-- Body: `{ text?: string, imageUrls?: string[], audioUrls?: string[] }`.
-- Validation: at least one of `text`, `imageUrls` (non-empty), or `audioUrls` (non-empty) must be provided. If none, return `400` `{ error: 'BadRequest', message: 'A note must have text, at least one image, or at least one audio file.' }`.
-- Response `201`: `{ note: AppointmentNote }`.
-
-**`GET /:noteId`** — Get a single note.
-- Call `findNoteById(noteId, user.id)`. If null, return `404`.
-- Response `200`: `{ note: AppointmentNote }`.
-
-**`PATCH /:noteId`** — Edit a note.
-- Call `findNoteById(noteId, user.id)`. If null, return `404`.
-- Body: `{ text?: string, imageUrls?: string[], audioUrls?: string[] }` (partial; merge with existing values).
-- Re-run the "at least one field" validation against the merged result.
-- Response `200`: `{ note: AppointmentNote }`.
-
-**`DELETE /:noteId`** — Delete a note.
-- Call `findNoteById(noteId, user.id)`. If null, return `404`.
-- Call `deleteNote(noteId)`.
-- Response `200`: `{ success: true }`.
+Register in `backend/src/config/app.ts`:
+```ts
+import { fileRoutes } from '../features/files/routes'
+app.route('/api/files', fileRoutes)
+```
 
 ---
 
-### 5. Backend — Register Routes
+### 3. Backend — Shared Attachment Models
 
-In `backend/src/config/app.ts`, add:
+Create `backend/src/features/attachments/models.ts`:
 
 ```ts
-import { noteRoutes } from '../features/notes/routes'
-// ...
-app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
+export type AttachmentType = 'note' | 'impression' | 'recommendation'
+
+export interface Attachment {
+    id: string
+    appointmentId: string
+    authorId: string
+    type: AttachmentType
+    name: string | null
+    text: string | null
+    imageUrls: string[]
+    audioUrls: string[]
+    createdAt: string
+    updatedAt: string
+}
 ```
 
-This must be added after the existing `appointmentRoutes` mounting line.
+---
+
+### 4. Backend — Shared Attachment Services
+
+Create `backend/src/features/attachments/services.ts`. All functions use `db` from `config/db`.
+
+```ts
+createAttachment(params: {
+    appointmentId: string
+    authorId: string
+    type: AttachmentType
+    name?: string | null
+    text?: string | null
+    imageUrls?: string[]
+    audioUrls?: string[]
+}): Promise<Attachment>
+// INSERT INTO attachments (...) RETURNING all fields with camelCase aliases
+
+listAttachments(appointmentId: string, type: AttachmentType): Promise<Attachment[]>
+// SELECT ... WHERE appointment_id = $1 AND type = $2 ORDER BY created_at ASC
+
+listAttachmentsByAuthor(appointmentId: string, type: AttachmentType, authorId: string): Promise<Attachment[]>
+// SELECT ... WHERE appointment_id = $1 AND type = $2 AND author_id = $3 ORDER BY created_at ASC
+
+findAttachmentById(id: string): Promise<Attachment | null>
+// SELECT ... WHERE id = $1
+
+updateAttachment(id: string, params: { name?: string | null; text?: string | null }): Promise<Attachment>
+// UPDATE attachments SET name = COALESCE($name, name), text = COALESCE($text, text),
+//   updated_at = NOW() WHERE id = $1 RETURNING ...
+// Media fields intentionally excluded.
+// Note: COALESCE means passing null/undefined for a field keeps the existing value —
+// clearing a field back to null is not supported. This is intentional for thesis scope.
+
+deleteAttachment(id: string): Promise<void>
+// DELETE FROM attachments WHERE id = $1
+```
+
+---
+
+### 5. Backend — Notes Routes
+
+Create `backend/src/features/attachments/notes-routes.ts`. A Hono router.
+
+All routes: `authorized` + `onlyPsychoRequest`.
+
+Every handler applies the **Access Control Rules** defined above before any business logic.
+
+**`GET /`**
+1. Steps 1–2 (appointment ownership + status check). **Note**: Step 2 intentionally applies to GET — an upcoming appointment logically has no notes, so `400 AppointmentNotActive` is returned rather than an empty list. This is a conservative guard that prevents psychologists from accessing the notes panel before a session starts.
+2. `listAttachmentsByAuthor(appointmentId, 'note', user.id)`.
+3. Returns `{ notes: Attachment[] }`.
+
+**`POST /`**
+1. Steps 1–2.
+2. Body: `{ name: string, text?: string, imageUrls?: string[], audioUrls?: string[] }`. Validate `name` non-empty → `400 BadRequest` if missing.
+3. `createAttachment({ appointmentId, authorId: user.id, type: 'note', name, text, imageUrls, audioUrls })`.
+4. Returns `201 { note: Attachment }`.
+
+**`GET /:attachmentId`**
+1. Steps 1–3 (full chain: appointment + status + attachment ownership/type).
+2. Returns `{ note: Attachment }`.
+
+**`PATCH /:attachmentId`**
+1. Steps 1–3.
+2. Body: `{ name?: string, text?: string }`. Any `imageUrls`/`audioUrls` fields silently ignored.
+3. `updateAttachment(attachmentId, { name, text })`.
+4. Returns `{ note: Attachment }`.
+
+**`DELETE /:attachmentId`**
+1. Steps 1–3.
+2. `deleteAttachment(attachmentId)`.
+3. Returns `{ success: true }`.
+
+Register in `backend/src/config/app.ts`:
+```ts
+import { noteRoutes } from '../features/attachments/notes-routes'
+app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
+```
 
 ---
 
 ### 6. Backend — Tests
 
-Create `backend/src/features/notes/routes.test.ts`.
+Create `backend/src/features/attachments/notes-routes.test.ts`.
 
-Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`:
-- Import `app`, `insertTestUser`, `asUser` from test fixtures.
-- Import `linkClientToPsycho` from `../clients/services`.
-- Import `createAppointment`, `startAppointment`, `endAppointment` from `../appointments/services`.
-- Use `PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }` and `CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }` constants.
-- Set up a psycho, client, and active/past appointment in each test group.
+Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`: use `insertTestUser`, `asUser`, `linkClientToPsycho`, `createAppointment`, `startAppointment`, `endAppointment` fixtures. See Tests section.
 
 ---
 
-### 7. Frontend — TypeScript Model
+### 7. Frontend — Shared Attachment Model
 
-Create `frontend/app/models/note.ts`.
+Create `frontend/app/models/attachment.ts`:
 
-Interfaces:
-- `AppointmentNote`: `id`, `appointmentId`, `psychoId`, `text: string | null`, `imageUrls: string[]`, `audioUrls: string[]`, `createdAt: string`, `updatedAt: string`.
-- `CreateNoteDTO`: `{ text?: string, imageUrls?: string[], audioUrls?: string[] }`.
-- `UpdateNoteDTO`: same shape as `CreateNoteDTO` (all optional).
+```ts
+export type AttachmentType = 'note' | 'impression' | 'recommendation'
+
+export interface Attachment {
+    id: string
+    appointmentId: string
+    authorId: string
+    type: AttachmentType
+    name: string | null
+    text: string | null
+    imageUrls: string[]
+    audioUrls: string[]
+    createdAt: string
+    updatedAt: string
+}
+
+export interface CreateNoteDTO {
+    name: string
+    text?: string
+    imageUrls?: string[]
+    audioUrls?: string[]
+}
+
+export interface UpdateNoteDTO {
+    name?: string
+    text?: string
+    // no media fields — locked after creation
+}
+```
 
 ---
 
-### 8. Frontend — Service
+### 8. Frontend — Notes Service
 
-Create `frontend/app/services/note.service.ts`.
+Create `frontend/app/services/note.service.ts`. Follow pattern from `appointment.service.ts`.
 
-Follow the pattern in `frontend/app/services/appointment.service.ts`. Base URL segment: `/clients/${clientId}/appointments/${appointmentId}/notes`.
-
-Methods:
-- `getList(clientId, appointmentId)` → `GET /`
-- `create(clientId, appointmentId, data: CreateNoteDTO)` → `POST /`
-- `getById(clientId, appointmentId, noteId)` → `GET /:noteId`
-- `update(clientId, appointmentId, noteId, data: UpdateNoteDTO)` → `PATCH /:noteId`
-- `delete(clientId, appointmentId, noteId)` → `DELETE /:noteId`
+```ts
+export const noteService = {
+    getList:  (clientId, appointmentId) =>
+        api.get<{ notes: Attachment[] }>(`/clients/${clientId}/appointments/${appointmentId}/notes`),
+    create:   (clientId, appointmentId, data: CreateNoteDTO) =>
+        api.post<{ note: Attachment }>(`/clients/${clientId}/appointments/${appointmentId}/notes`, data),
+    getById:  (clientId, appointmentId, noteId) =>
+        api.get<{ note: Attachment }>(`/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`),
+    update:   (clientId, appointmentId, noteId, data: UpdateNoteDTO) =>
+        api.patch<{ note: Attachment }>(`/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`, data),
+    delete:   (clientId, appointmentId, noteId) =>
+        api.delete(`/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`),
+}
+```
 
 ---
 
-### 9. Frontend — Notes Panel Component
+### 9. Frontend — Extend `AttachmentForm` for Edit Mode
+
+Modify `frontend/app/components/AttachmentForm.tsx`.
+
+The existing component only supports create mode. Add edit mode support:
+- Add `mode: 'create' | 'edit'` prop (default `'create'`).
+- In `edit` mode: disable voice recording button and image upload button/input.
+- Change submit button label to `"Save {type}"` when `mode === 'edit'` (currently always `"Create {type}"`).
+- The existing `initialData` prop is used to pre-populate `name` and `text` in edit mode.
+
+Updated interface:
+```ts
+interface AttachmentFormProps {
+    type: AttachmentType
+    mode?: 'create' | 'edit'   // default 'create'
+    trigger: React.ReactNode
+    initialData?: Partial<FormValues>
+    onSubmit: (values: FormValues) => void
+}
+```
+
+---
+
+### 10. Frontend — `AppointmentNotesPanel` Component
 
 Create `frontend/app/components/AppointmentNotesPanel.tsx`.
 
-This is a self-contained panel that:
-- Accepts props: `clientId: string`, `appointmentId: string`.
-- Fetches notes on mount via `noteService.getList(...)`.
-- Displays a list of notes, each showing: text body (if any), image count, audio count, and creation timestamp.
-- Has an "Add Note" button that opens a dialog using the existing `AttachmentForm` component (type `'note'`). On submit, calls `noteService.create(...)` and refreshes the list.
-- Each note card has an "Edit" action that re-opens the `AttachmentForm` in edit mode (pre-populated) and on submit calls `noteService.update(...)`.
-- Each note card has a "Delete" action using the existing `ConfirmAction` component; on confirm calls `noteService.delete(...)`.
-- While loading, show a loading state consistent with other routes (e.g. `<p>Loading notes...</p>`).
-- If the fetch fails, show an error message.
+Props: `clientId: string`, `appointmentId: string`.
 
-The `AttachmentForm` component in its current form accepts `name`, `text`, `voiceFiles`, and `imageFiles` as form values. The `AppointmentNotesPanel` must handle the mapping: `voiceFiles` → `audioUrls` (after upload) and `imageFiles` → `imageUrls` (after upload). File upload calls should go through the existing `fileService.upload(file)` pattern from `frontend/app/services/file.service.ts`.
+Behavior:
+- Fetches notes on mount via `noteService.getList(...)`. Shows `<p>Loading notes...</p>` while loading; shows error message on failure.
+- Lists notes, each showing: `name` (bold), `text` (if any), image count, audio count, formatted `createdAt`.
+- "Add Note" button opens `AttachmentForm` in create mode (`mode="create"`, `type="note"`). On submit: uploads any `imageFiles`/`voiceFiles` via `fileService.upload(file)` to get URLs, then calls `noteService.create(...)`. Refreshes list on success.
+- Each note card: "Edit" action opens `AttachmentForm` in edit mode (`mode="edit"`, pre-populated with `name` and `text`). Voice/image inputs are disabled. On submit calls `noteService.update(...)`. Refreshes list on success.
+- Each note card: "Delete" action wrapped in `ConfirmAction`. On confirm calls `noteService.delete(...)`. Refreshes list on success.
 
-Note: The `name` field in `AttachmentForm` does not map to a field in `AppointmentNote`. If the decision on question #2 is that notes do not have a name, the `AttachmentForm` must either be made to accept an optional `name` prop, or a simpler purpose-built dialog without the name field should be used instead. This decision must be made before implementing this component.
+`AttachmentForm` mapping: form `name` → `CreateNoteDTO.name`, `text` → `CreateNoteDTO.text`, `voiceFiles` → `fileService.upload` each → `audioUrls`, `imageFiles` → `fileService.upload` each → `imageUrls`.
 
 ---
 
-### 10. Frontend — Psychologist Past Appointment Detail View
+### 11. Frontend — Psychologist Past Appointment Detail View
 
 Modify `frontend/app/routes/psychologist/session.tsx`.
 
-Currently the `past` branch returns: `<p>This is a past appointment. Detail view coming in EDG-21.</p>`.
-
-Replace this stub with a proper past appointment detail view that includes:
-- Appointment date/time header (already formatted in the `upcoming` branch — reuse that pattern).
-- A notes panel: render `<AppointmentNotesPanel clientId={clientId} appointmentId={appointment.id} />`.
-- A placeholder section for whiteboard snapshot (EDG-47 will fill this in later — a `{/* TODO: EDG-47 whiteboard snapshot */}` comment is sufficient).
-- A placeholder section for client impressions and recommendations (EDG-49/50 will handle these).
-
-The `appointmentId` is available from `useParams()` (already used in the component). The `clientId` is already extracted from `useParams()` in the component.
+Replace the `past` branch stub (`<p>This is a past appointment. Detail view coming in EDG-21.</p>`) with:
+- Date/time header (same format as `upcoming` branch).
+- `<AppointmentNotesPanel clientId={clientId} appointmentId={appointment.id} />` (`clientId` comes from `useParams`, `appointment.id` from `useCurrentAppointment`).
+- `{/* TODO: EDG-47 — whiteboard snapshot */}`
+- `{/* TODO: EDG-49 — client impressions */}`
+- `{/* TODO: EDG-50 — recommendations */}`
 
 ---
 
-### 11. Frontend — Live Appointment Notes Panel
+### 12. Frontend — Live Appointment Notes Panel
 
 Modify `frontend/app/routes/psychologist/live-session.tsx`.
 
-Add the `AppointmentNotesPanel` component below the whiteboard section. The panel should be collapsible (using a shadcn/ui `Collapsible` or a simple toggle) so the psychologist can hide it to maximize the whiteboard. Pass `clientId` and `appointmentId` from `useParams()`.
+**Prerequisite**: Install the shadcn Collapsible component first: `bunx shadcn add collapsible`.
+
+Add `<AppointmentNotesPanel clientId={clientId!} appointmentId={appointmentId!} />` below the whiteboard section, wrapped in a shadcn/ui `Collapsible` so the psychologist can hide it.
 
 ---
 
@@ -212,80 +356,97 @@ Add the `AppointmentNotesPanel` component below the whiteboard section. The pane
 
 | Path | Description |
 |------|-------------|
-| `backend/src/migrations/<timestamp>_create-appointment-notes.sql` | Creates the `appointment_notes` table |
-| `backend/src/features/notes/models.ts` | `AppointmentNote` TypeScript interface |
-| `backend/src/features/notes/services.ts` | Raw SQL CRUD functions for notes |
-| `backend/src/features/notes/routes.ts` | Hono route handlers for the notes API |
-| `backend/src/features/notes/routes.test.ts` | Backend integration tests for notes API |
-| `frontend/app/models/note.ts` | `AppointmentNote` interface + DTOs |
-| `frontend/app/services/note.service.ts` | Axios wrapper for the notes API |
-| `frontend/app/components/AppointmentNotesPanel.tsx` | Notes CRUD panel component |
-
----
+| `backend/src/migrations/<ts>_create-files-table.sql` | `files` table for uploaded file metadata |
+| `backend/src/migrations/<ts>_create-attachments-table.sql` | Unified `attachments` table with `type` column |
+| `backend/src/features/files/routes.ts` | `POST /upload` and `GET /:filename` |
+| `backend/src/features/attachments/models.ts` | `Attachment` interface and `AttachmentType` union |
+| `backend/src/features/attachments/services.ts` | Shared CRUD functions: `createAttachment`, `listAttachments`, `listAttachmentsByAuthor`, `findAttachmentById`, `updateAttachment`, `deleteAttachment` |
+| `backend/src/features/attachments/notes-routes.ts` | Psycho-only notes routes (type='note') |
+| `backend/src/features/attachments/notes-routes.test.ts` | Backend integration tests for notes routes |
+| `frontend/app/models/attachment.ts` | `Attachment`, `AttachmentType`, `CreateNoteDTO`, `UpdateNoteDTO` |
+| `frontend/app/services/note.service.ts` | Axios wrapper for notes API |
+| `frontend/app/components/AppointmentNotesPanel.tsx` | Notes CRUD panel |
 
 ## Files to Modify
 
 | Path | Change |
 |------|--------|
-| `backend/src/config/app.ts` | Register `noteRoutes` under `/api/clients/:clientId/appointments/:appointmentId/notes` |
-| `backend/src/test-fixtures/db.ts` | Add `'appointment_notes'` to `ALL_APP_TABLES` |
-| `frontend/app/routes/psychologist/session.tsx` | Replace the `past` appointment stub with a real detail view that renders `AppointmentNotesPanel` |
-| `frontend/app/routes/psychologist/live-session.tsx` | Add `AppointmentNotesPanel` below the whiteboard |
+| `backend/src/config/app.ts` | Register `fileRoutes` at `/api/files` and `noteRoutes` at `/api/clients/:clientId/appointments/:appointmentId/notes` |
+| `backend/src/test-fixtures/db.ts` | Add `'attachments'` and `'files'` to `ALL_APP_TABLES` |
+| `frontend/app/models/file.ts` | Update `FileUploadResponse` to `{ id, url, originalName, mimeType, size, uploadedAt }` |
+| `frontend/app/components/AttachmentForm.tsx` | Add `mode: 'create' \| 'edit'` prop; disable media inputs in edit mode; change submit label |
+| `frontend/app/routes/psychologist/session.tsx` | Replace `past` stub with real detail view + `AppointmentNotesPanel` |
+| `frontend/app/routes/psychologist/live-session.tsx` | Install Collapsible component; add collapsible `AppointmentNotesPanel` below whiteboard |
+
+## Files to Delete
+
+| Path | Reason |
+|------|--------|
+| `frontend/app/services/attachment.service.ts` | Stale stub that imports `Attachment` from `~/models/session` (a different type). Replaced by `note.service.ts` and future per-type service files. |
 
 ---
 
 ## Tests
 
-### What to test
-
-**Backend**
+**Backend** (`notes-routes.test.ts`)
 
 - `GET /api/clients/:clientId/appointments/:appointmentId/notes`:
-  - Happy path (past appointment, returns list of notes belonging to the psycho).
-  - Returns `[]` when no notes exist.
-  - Returns `403` when called with client role header.
-  - Returns `401` when unauthenticated.
-  - Returns `404` when appointment does not belong to the psycho-client pair.
-  - Returns `400 AppointmentNotActive` when appointment is in `upcoming` status.
+  - Happy path — past appointment, returns only this psycho's notes (not another psycho's notes on the same appointment).
+  - Returns `{ notes: [] }` when no notes exist.
+  - Returns `403` with client role header (route blocked by `onlyPsychoRequest`).
+  - Returns `401` unauthenticated.
+  - Returns `404` when `appointmentId` does not belong to this psychologist.
+  - Returns `404` when `clientId` URL param does not match the appointment's actual client.
+  - Returns `400 AppointmentNotActive` when `upcoming`.
 
 - `POST /api/clients/:clientId/appointments/:appointmentId/notes`:
-  - Happy path (active appointment, creates note with text only).
-  - Happy path (past appointment, creates note with text + imageUrls).
-  - Returns `400 BadRequest` when body has no text, no imageUrls, and no audioUrls.
-  - Returns `400 AppointmentNotActive` when appointment is `upcoming`.
-  - Returns `403` when called with client role header.
-  - Returns `401` when unauthenticated.
+  - Happy path — active appointment, creates note with `name`.
+  - Happy path — past appointment, creates note with `imageUrls`.
+  - Returns `400 BadRequest` when `name` is missing.
+  - Returns `400 AppointmentNotActive` when `upcoming`.
+  - Returns `403` with client role header.
+  - Returns `401` unauthenticated.
+  - Returns `404` when appointment does not belong to this psychologist.
 
-- `PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:noteId`:
-  - Happy path (updates text of an existing note).
-  - Returns `404` when noteId does not belong to the psychologist.
-  - Returns `404` when appointment is not found.
-  - Returns `400 AppointmentNotActive` when appointment is `upcoming`.
-  - Returns `403` with client role.
+- `GET /api/clients/:clientId/appointments/:appointmentId/notes/:attachmentId`:
+  - Happy path — returns `{ note: Attachment }` for a note owned by this psychologist.
+  - Returns `404` when `attachmentId` belongs to a different appointment.
+  - Returns `404` when `attachmentId` has `type !== 'note'` (e.g. an impression ID).
+  - Returns `404` when note was created by a different psychologist.
+  - Returns `400 AppointmentNotActive` when `upcoming`.
+  - Returns `403` with client role header.
+  - Returns `401` unauthenticated.
 
-- `DELETE /api/clients/:clientId/appointments/:appointmentId/notes/:noteId`:
-  - Happy path (deletes a note, returns `{ success: true }`).
-  - Returns `404` when note does not belong to the psychologist.
-  - Returns `403` with client role.
+- `PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attachmentId`:
+  - Happy path — updates `name` and `text`; `imageUrls` in body does not change the stored `imageUrls`.
+  - Returns `404` when `attachmentId` belongs to a different appointment.
+  - Returns `404` when `attachmentId` has `type !== 'note'` (e.g. a recommendation ID).
+  - Returns `404` when note was created by a different psychologist.
+  - Returns `400 AppointmentNotActive` when `upcoming`.
+  - Returns `403` with client role header.
 
-**Frontend**
+- `DELETE /api/clients/:clientId/appointments/:appointmentId/notes/:attachmentId`:
+  - Happy path — deletes note, returns `{ success: true }`.
+  - Returns `404` when `attachmentId` belongs to a different appointment.
+  - Returns `404` when note was created by a different psychologist.
+  - Returns `403` with client role header.
 
-- `AppointmentNotesPanel`:
-  - Renders "Loading notes..." while fetch is in progress.
-  - Renders a list of notes when fetch succeeds.
-  - Renders an empty state when the list is empty.
-  - Shows an error message when the fetch fails.
-  - Calls `noteService.create` when the "Add Note" form is submitted and refreshes the list.
-  - Calls `noteService.update` when the edit form is submitted and refreshes the list.
-  - Calls `noteService.delete` when the confirm-delete action is confirmed and refreshes the list.
+**Frontend** (`AppointmentNotesPanel`)
+
+- Renders "Loading notes..." while fetch is in progress.
+- Renders list of notes when fetch succeeds.
+- Renders empty state when list is empty.
+- Shows error when fetch fails.
+- Calls `noteService.create` on form submit, refreshes list.
+- Calls `noteService.update` on edit submit, refreshes list.
+- Calls `noteService.delete` on confirm-delete, refreshes list.
 
 ---
 
 ## Out of Scope
 
-- File upload backend endpoint (prerequisite that must be resolved per question #1 — if it does not exist, image and audio fields are accepted as URL strings from an external upload mechanism and are not uploaded within this ticket).
-- Client visibility of notes — notes are always private to the psychologist (Decision 16).
-- Client impressions (EDG-49) and psychologist recommendations (EDG-50) — these are separate tickets.
-- Whiteboard snapshot display in the past appointment view (EDG-47).
-- Email notifications triggered by note creation.
-- Pagination of notes (the list is expected to be small per appointment).
+- File deletion when a note is deleted — uploaded files persist on disk.
+- File serving from CDN/S3 — local disk only for thesis scope.
+- Client visibility of notes — always private to the psychologist.
+- Impressions (EDG-49) and recommendations (EDG-50) — separate tickets that reuse this ticket's `attachments` table and services.
+- Pagination of notes.

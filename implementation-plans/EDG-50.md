@@ -1,238 +1,256 @@
 # Implementation Plan: EDG-50 — Psychologist recommendations per appointment (text, image, audio)
 
-## Issues & Questions
+## Resolved Questions
 
-1. **No file storage infrastructure exists.** The `fileService` on the frontend and a `POST /files/upload` route are referenced in existing code (e.g., `session-attachment.tsx`, `file.service.ts`), but neither a files table, file upload endpoint, nor an actual file storage backend (disk, S3, etc.) exists. Recommendations include images and audio. There are two options: (a) store files inline as base64 in the DB, (b) implement a file storage backend and reference URLs, or (c) defer media attachments (text-only for this ticket, media in a follow-up). The ticket description says "text, image, audio" but gives no detail on storage strategy. **This must be resolved before implementation.** This plan scopes media as file uploads stored on disk by the backend (Bun can serve static files), which is the simplest viable path for a thesis demo. A file upload endpoint and a minimal file table will be added.
+1. **Shared table**: Recommendations use the `attachments` table introduced in EDG-48 with `type='recommendation'`. No new migration needed — EDG-48 is a prerequisite.
 
-2. **EDG-48 (psychologist notes) and EDG-49 (client impressions) are unimplemented.** Recommendations share the exact same data model as notes and impressions (text + image files + audio files, scoped to an appointment). There is no existing feature implementation to follow for the DB schema or service layer. This plan defines the schema from scratch, using a dedicated `recommendations` table (not a shared `appointment_attachments` table) to avoid blocking on EDG-48/49.
+2. **File storage**: Reuses the `/api/files/upload` infrastructure from EDG-48.
 
-3. **Appointment state constraint for creating recommendations.** Decision 5 states that notes and impressions are creatable "during active or any past appointment." The same rule applies here: recommendations can be created during an **active** or any **past** appointment. The backend `POST` handler must enforce: status must be `active` or `past`. Return `400` if status is `upcoming`.
+3. **`name` field**: Required for recommendations (same as notes). Route-level validation enforces non-empty `name`.
 
-4. **Editing vs. immutability.** No design decision explicitly addresses whether recommendations can be edited or deleted. Notes (EDG-48) are described as "creatable/editable" in the ticket table. Impressions (EDG-49) are explicitly "no editing after submission." Recommendations have no stated immutability rule. This plan includes `PATCH` (edit text) and `DELETE` routes for recommendations, restricted to the psychologist, consistent with recommendations being a professional tool the psychologist controls. This should be confirmed.
+4. **Editing**: Recommendations are editable by the psychologist (name + text only; media locked after creation) — same rule as notes.
 
-5. **Email notification (EDG-56).** EDG-56 requires sending an email to the client when a psychologist creates a recommendation. That email ticket is a separate scope item. This plan includes a `// TODO: EDG-56 — send new recommendation email to client` comment in the POST route handler.
+5. **Appointment status**: Recommendations can be created when appointment is `active` or `past`. Returns `400 AppointmentNotStarted` for `upcoming`.
 
-6. **Frontend display location.** The natural display locations are: (a) the past appointment detail view for the psychologist (`session.tsx` when `status === 'past'`, which currently shows a stub), and (b) the client's past appointment detail view (`appointment-detail.tsx` when `status === 'past'`, also a stub). This plan adds a recommendations section to those pages.
+6. **Visibility**: The psychologist creates and reads via `/api/clients/:clientId/appointments/:appointmentId/recommendations`. The client reads via `/api/appointments/:appointmentId/recommendations`. Reactions (EDG-51) are a separate concern.
+
+7. **EDG-56 email**: A `// TODO: EDG-56 — send recommendation email to client` comment is added in the `POST` handler.
+
+8. **Access control decisions**: 404 always on unauthorized access. Full URL chain validated on every request. Past data accessible even after psychologist-client link removal.
+
+---
+
+## Access Control Rules
+
+Violations always return `404`.
+
+### Psychologist recommendation routes (`/api/clients/:clientId/appointments/:appointmentId/recommendations`)
+
+**Step 1 — appointment ownership** (all routes):
+- Fetch appointment by `appointmentId`.
+- Verify `appointment.psychoId === user.id` AND `appointment.clientId === clientId` (URL param).
+- If not found or check fails → `404`.
+
+**Step 2 — status check** (`POST` only):
+- If `appointment.status === 'upcoming'` → `400 AppointmentNotStarted`.
+
+**Step 3 — attachment chain** (single-resource routes: `GET /:id`, `PATCH /:id`, `DELETE /:id`):
+- Fetch attachment by `attachmentId`.
+- Verify ALL of: `attachment.appointmentId === appointmentId` AND `attachment.type === 'recommendation'` AND `attachment.authorId === user.id`.
+- If attachment not found or any check fails → `404`.
+
+**Additional edge cases:**
+- Clients are blocked by `onlyPsychoRequest` from all psychologist recommendation routes.
+- A psychologist cannot access another psychologist's recommendations (`attachment.authorId === user.id`).
+- A psychologist cannot access notes or impressions via recommendation routes (`type === 'recommendation'` check).
+- Manipulating `clientId` in the URL to access another client's appointment data is blocked by the appointment check.
+
+### Client recommendation read route (`/api/appointments/:appointmentId/recommendations`)
+
+**Step 1 — appointment ownership**:
+- Fetch appointment by `appointmentId`.
+- Verify `appointment.clientId === user.id`.
+- If not found or check fails → `404`.
+
+**Additional edge cases:**
+- Psychologists are blocked by `onlyClientRequest`.
+- Client reads ALL recommendations for their appointment (no author filter — all recommendations from their assigned psychologist).
+- A client cannot read recommendations from an appointment they are not part of.
 
 ---
 
 ## Overview
 
-EDG-50 adds psychologist recommendations to appointments. A new `recommendations` table stores each recommendation (title, body text, image file URLs, audio file URLs) scoped to a specific appointment. A file upload endpoint is added to support image and audio uploads. The backend exposes CRUD routes at `POST /api/clients/:clientId/appointments/:appointmentId/recommendations` and `GET/PATCH/DELETE /:recommendationId`, restricted to the psychologist. A separate read route `GET /api/appointments/:appointmentId/recommendations` is added for the client. The frontend gains a `recommendation.service.ts`, a `Recommendation` model, and two route updates: the psychologist's past appointment view (`session.tsx`) and the client's past appointment view (`appointment-detail.tsx`) each gain a recommendations section. The psychologist can create, edit, and delete recommendations; the client can only read them (reactions are EDG-51 scope).
+EDG-50 adds psychologist recommendations to appointments. Recommendations are stored as `type='recommendation'` rows in the shared `attachments` table (introduced in EDG-48). This ticket adds two route files to the existing `attachments` feature module — no new migration or services file needed beyond reusing what EDG-48 provides. The frontend gains a `recommendationService`, a `RecommendationForm` component, and updates to the psychologist past appointment view (`session.tsx`) and client past appointment view (`appointment-detail.tsx`).
+
+**Prerequisites**: EDG-48 (creates `attachments` table and shared services).
 
 ---
 
 ## Implementation Steps
 
-### 1. Database — create recommendations table migration
+### 1. Backend — Psychologist Recommendation Routes
 
-File: `backend/src/migrations/<timestamp>_create-recommendations-table.sql` (new)
+Create `backend/src/features/attachments/recommendations-psycho-routes.ts`. A Hono router.
 
-Create with: `bun run migration:create -- --name create-recommendations-table`
+All routes: `authorized` + `onlyPsychoRequest`.
 
-Schema:
-- `id TEXT PRIMARY KEY DEFAULT gen_random_uuid()`
-- `appointment_id TEXT NOT NULL REFERENCES appointments(id) ON DELETE CASCADE`
-- `psycho_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE`
-- `title TEXT NOT NULL`
-- `body TEXT` — optional text content
-- `image_urls TEXT[] NOT NULL DEFAULT '{}'` — array of file paths
-- `audio_urls TEXT[] NOT NULL DEFAULT '{}'` — array of file paths
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-- `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+Every handler applies the **Psychologist recommendation access control rules** defined above.
 
-Add index: `CREATE INDEX ON recommendations (appointment_id)`.
+**`GET /`**
+1. Step 1 (appointment ownership) + Step 2 not applicable.
+2. `listAttachmentsByAuthor(appointmentId, 'recommendation', user.id)`.
+3. Returns `{ recommendations: Attachment[] }`.
 
-### 2. Database — create files table and upload infrastructure migration
+**`POST /`**
+1. Steps 1–2 (appointment ownership + status check).
+2. Body: `{ name: string, text?: string, imageUrls?: string[], audioUrls?: string[] }`. Validate `name` non-empty → `400 BadRequest`.
+3. `createAttachment({ appointmentId, authorId: user.id, type: 'recommendation', name, text, imageUrls, audioUrls })`.
+4. Returns `201 { recommendation: Attachment }`.
+5. `// TODO: EDG-56 — send recommendation email to client`.
 
-File: `backend/src/migrations/<timestamp>_create-files-table.sql` (new)
+**`GET /:attachmentId`**
+1. Steps 1 + 3 (appointment ownership + full attachment chain: `appointmentId` match, `type === 'recommendation'`, `authorId === user.id`).
+2. Returns `{ recommendation: Attachment }`.
 
-Create with: `bun run migration:create -- --name create-files-table`
+**`PATCH /:attachmentId`**
+1. Steps 1 + 3.
+2. Body: `{ name?: string, text?: string }`. Media fields in body silently ignored.
+3. `updateAttachment(attachmentId, { name, text })`.
+4. Returns `{ recommendation: Attachment }`.
 
-The table tracks uploaded files:
-- `id TEXT PRIMARY KEY DEFAULT gen_random_uuid()`
-- `original_name TEXT NOT NULL`
-- `stored_name TEXT NOT NULL` — unique filename on disk
-- `mime_type TEXT NOT NULL`
-- `size INTEGER NOT NULL`
-- `uploaded_by TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE`
-- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-
-Also add `'files'` to `ALL_APP_TABLES` in `backend/src/test-fixtures/db.ts`.
-
-### 3. Backend — models for recommendations
-
-File: `backend/src/features/recommendations/models.ts` (new)
-
-```typescript
-export interface Recommendation {
-    id: string
-    appointmentId: string
-    psychoId: string
-    title: string
-    body: string | null
-    imageUrls: string[]
-    audioUrls: string[]
-    createdAt: string
-    updatedAt: string
-}
-```
-
-### 4. Backend — services for recommendations
-
-File: `backend/src/features/recommendations/services.ts` (new)
-
-Functions, following the pattern in `backend/src/features/appointments/services.ts` (raw SQL via `db` template literal, camelCase aliases in `RETURNING`):
-
-- `createRecommendation(params: { appointmentId, psychoId, title, body?, imageUrls?, audioUrls? }): Promise<Recommendation>`
-- `listRecommendationsForAppointment(appointmentId: string): Promise<Recommendation[]>` — no psycho filter, used by both psycho and client GET
-- `findRecommendationById(id: string): Promise<Recommendation | null>`
-- `updateRecommendation(id: string, params: { title?, body?, imageUrls?, audioUrls? }): Promise<Recommendation>`
-- `deleteRecommendation(id: string): Promise<void>`
-
-### 5. Backend — file upload feature
-
-File: `backend/src/features/files/routes.ts` (new)
-
-A new Hono router for file uploads, mounted at `/api/files`.
-
-`POST /upload` — `authorized` middleware, accepts `multipart/form-data` with a `file` field. Validates file is present, generates a UUID-based `storedName`, writes to `./uploads/<storedName>` using `Bun.write`, inserts a row into the `files` table, returns `{ id, url: '/api/files/<storedName>', originalName, mimeType, size }`.
-
-`GET /:filename` — no auth required. Reads the file from `./uploads/<filename>` using `Bun.file`, returns it with the correct `Content-Type` header. Returns `404` if file not found.
+**`DELETE /:attachmentId`**
+1. Steps 1 + 3.
+2. `deleteAttachment(attachmentId)`.
+3. Returns `{ success: true }`.
 
 Register in `backend/src/config/app.ts`:
-```typescript
-app.route('/api/files', fileRoutes)
+```ts
+import { recommendationPsychoRoutes } from '../features/attachments/recommendations-psycho-routes'
+app.route('/api/clients/:clientId/appointments/:appointmentId/recommendations', recommendationPsychoRoutes)
 ```
 
-Create an `uploads/` directory at the backend root (add `.gitkeep`, add `uploads/*` to `.gitignore`).
+---
 
-### 6. Backend — recommendation routes (psychologist-side)
+### 2. Backend — Client Recommendation Read Route
 
-File: `backend/src/features/recommendations/psycho-routes.ts` (new)
+Create `backend/src/features/attachments/recommendations-client-routes.ts`. A Hono router.
 
-A Hono router mounted at `/api/clients/:clientId/appointments/:appointmentId/recommendations`.
+All routes: `authorized` + `onlyClientRequest`.
 
-All routes use `authorized, onlyPsychoRequest`.
+Every handler applies the **Client recommendation read access control rules** defined above.
 
-Shared pre-check: call `findAppointmentById(appointmentId)` and verify `psychoId === user.id && clientId === param clientId`. If null → `404`. If `upcoming` → `400 { error: 'AppointmentNotStarted', message: 'Recommendations can only be added to active or past appointments.' }`.
-
-`GET /` — calls `listRecommendationsForAppointment(appointmentId)`, returns `{ recommendations }`.
-
-`POST /` — validates `title` is present (else `400`). Calls `createRecommendation(...)`. Returns `201 { recommendation }`. Includes `// TODO: EDG-56 — send new recommendation email to client` comment.
-
-`GET /:recommendationId` — calls `findRecommendationById(recommendationId)`. If null or `recommendation.appointmentId !== appointmentId` → `404`. Returns `{ recommendation }`.
-
-`PATCH /:recommendationId` — same lookup. Merges fields. Calls `updateRecommendation(...)`. Returns `{ recommendation }`.
-
-`DELETE /:recommendationId` — same lookup. Calls `deleteRecommendation(...)`. Returns `{ success: true }`.
+**`GET /`**
+1. Step 1 (appointment ownership: `appointment.clientId === user.id`).
+2. `listAttachments(appointmentId, 'recommendation')` — no author filter, client reads all recommendations for their appointment.
+3. Returns `{ recommendations: Attachment[] }`.
 
 Register in `backend/src/config/app.ts`:
-```typescript
-app.route('/api/clients/:clientId/appointments/:appointmentId/recommendations', psychoRecommendationRoutes)
+```ts
+import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
+app.route('/api/appointments/:appointmentId/recommendations', recommendationClientRoutes)
 ```
 
-### 7. Backend — recommendation routes (client-side)
+---
 
-File: `backend/src/features/recommendations/client-routes.ts` (new)
+### 3. Backend — Tests
 
-A Hono router mounted at `/api/appointments/:appointmentId/recommendations`.
+Create `backend/src/features/attachments/recommendations-routes.test.ts`.
 
-Uses `authorized, onlyClientRequest`.
+Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`.
 
-`GET /` — calls `findAppointmentByIdForClient(appointmentId, clientId)`. If null → `404`. Calls `listRecommendationsForAppointment(appointmentId)`. Returns `{ recommendations }`.
+**`POST /api/clients/:clientId/appointments/:appointmentId/recommendations`**
+- Returns 201 with `type: 'recommendation'` when appointment is `active`.
+- Returns 201 when appointment is `past`.
+- Returns 400 `AppointmentNotStarted` when `upcoming`.
+- Returns 400 `BadRequest` when `name` is missing.
+- Returns 404 when `appointmentId` does not belong to this psychologist.
+- Returns 404 when `clientId` URL param does not match the appointment's actual client.
+- Returns 401 unauthenticated.
+- Returns 403 with client role header (blocked by `onlyPsychoRequest`).
 
-Register in `backend/src/config/app.ts`:
-```typescript
-app.route('/api/appointments/:appointmentId/recommendations', clientRecommendationRoutes)
-```
+**`GET /api/clients/:clientId/appointments/:appointmentId/recommendations`**
+- Returns 200 with only this psycho's recommendations (not another psycho's).
+- Returns 200 `{ recommendations: [] }` when none exist.
+- Returns 404 when `appointmentId` does not belong to this psychologist.
+- Returns 404 when `clientId` does not match the appointment.
+- Returns 404 with client role header.
 
-### 8. Backend — tests
+**`PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId`**
+- Returns 200 with updated name/text; `imageUrls` in body is ignored (unchanged in response).
+- Returns 404 when `attachmentId` belongs to a different appointment.
+- Returns 404 when `attachmentId` has `type !== 'recommendation'`.
+- Returns 404 when recommendation was created by a different psychologist.
+- Returns 400 `AppointmentNotStarted` when `upcoming`.
+- Returns 404 with client role header.
 
-File: `backend/src/features/recommendations/routes.test.ts` (new)
+**`DELETE /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId`**
+- Returns 200 `{ success: true }`.
+- Returns 404 when `attachmentId` belongs to a different appointment.
+- Returns 404 when recommendation was created by a different psychologist.
+- Returns 404 with client role header.
 
-Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`: use `insertTestUser`, `asUser`, `linkClientToPsycho`, `createAppointment`, `startAppointment`, `endAppointment` as fixtures. See the Tests section below.
+**`GET /api/appointments/:appointmentId/recommendations`**
+- Returns 200 with all recommendations for this appointment.
+- Returns 404 when `appointmentId` does not belong to this client.
+- Returns 404 when client provides another client's `appointmentId`.
+- Returns 403 with psycho role header (blocked by `onlyClientRequest`).
 
-### 9. Frontend — Recommendation model
+---
 
-File: `frontend/app/models/recommendation.ts` (new)
+### 4. Frontend — DTOs
 
-```typescript
-export interface Recommendation {
-    id: string
-    appointmentId: string
-    psychoId: string
-    title: string
-    body: string | null
-    imageUrls: string[]
-    audioUrls: string[]
-    createdAt: string
-    updatedAt: string
-}
+Add to `frontend/app/models/attachment.ts`:
 
+```ts
 export interface CreateRecommendationDTO {
-    title: string
-    body?: string
+    name: string
+    text?: string
     imageUrls?: string[]
     audioUrls?: string[]
 }
 
 export interface UpdateRecommendationDTO {
-    title?: string
-    body?: string
-    imageUrls?: string[]
-    audioUrls?: string[]
+    name?: string
+    text?: string
+    // no media fields
 }
 ```
 
-### 10. Frontend — recommendation service
+---
 
-File: `frontend/app/services/recommendation.service.ts` (new)
+### 5. Frontend — Recommendation Service
 
-Follow the pattern from `frontend/app/services/appointment.service.ts` (uses `api` from `./api`):
+Create `frontend/app/services/recommendation.service.ts`:
 
-- `getForAppointment(clientId, appointmentId)` — `GET /clients/:clientId/appointments/:appointmentId/recommendations` (psychologist)
-- `create(clientId, appointmentId, data: CreateRecommendationDTO)` — `POST` to same path
-- `update(clientId, appointmentId, recommendationId, data: UpdateRecommendationDTO)` — `PATCH /:recommendationId`
-- `delete(clientId, appointmentId, recommendationId)` — `DELETE /:recommendationId`
-- `getForClientAppointment(appointmentId)` — `GET /appointments/:appointmentId/recommendations` (client)
+```ts
+export const recommendationService = {
+    getList: (clientId: string, appointmentId: string) =>
+        api.get<{ recommendations: Attachment[] }>(`/clients/${clientId}/appointments/${appointmentId}/recommendations`),
+    create: (clientId: string, appointmentId: string, data: CreateRecommendationDTO) =>
+        api.post<{ recommendation: Attachment }>(`/clients/${clientId}/appointments/${appointmentId}/recommendations`, data),
+    update: (clientId: string, appointmentId: string, id: string, data: UpdateRecommendationDTO) =>
+        api.patch<{ recommendation: Attachment }>(`/clients/${clientId}/appointments/${appointmentId}/recommendations/${id}`, data),
+    delete: (clientId: string, appointmentId: string, id: string) =>
+        api.delete(`/clients/${clientId}/appointments/${appointmentId}/recommendations/${id}`),
+    getClientList: (appointmentId: string) =>
+        api.get<{ recommendations: Attachment[] }>(`/appointments/${appointmentId}/recommendations`),
+}
+```
 
-### 11. Frontend — `RecommendationForm` component
+---
 
-File: `frontend/app/components/RecommendationForm.tsx` (new)
+### 6. Frontend — `RecommendationForm` Component
 
-A Dialog-based form (following the pattern of `AttachmentForm.tsx`) for creating and editing recommendations. Uses `react-hook-form` + `zod`. Fields: `title` (required), `body` (optional textarea), image file uploads (via `fileService.upload`), audio recordings (via `useReactMediaRecorder` + `fileService.upload`).
+Create `frontend/app/components/RecommendationForm.tsx`.
 
-On submit, images and audio are uploaded first via `fileService.upload` to get back URLs, then those URLs are included in the `CreateRecommendationDTO`.
+A Dialog-based form (following the pattern of `AttachmentForm.tsx`) with fields: `name` (required text input), `body` (optional textarea), image file uploads, audio recordings. Uploads files via `fileService.upload(file)` before submit. In edit mode, media fields are disabled.
 
-Props: `mode: 'create' | 'edit'`, `trigger: React.ReactNode`, `initialData?: Partial<FormValues>`, `isLoading: boolean`, `onSubmit: (dto: CreateRecommendationDTO | UpdateRecommendationDTO) => void`.
+Props: `mode: 'create' | 'edit'`, `trigger: React.ReactNode`, `initialData?: { name: string; text?: string }`, `isLoading: boolean`, `onSubmit: (dto: CreateRecommendationDTO | UpdateRecommendationDTO) => void`.
 
-### 12. Frontend — update `session.tsx` (psychologist past appointment view)
+---
 
-File: `frontend/app/routes/psychologist/session.tsx` (modify)
+### 7. Frontend — `session.tsx` (psychologist past appointment view)
 
-The `if (appointment.status === 'past')` branch currently returns `<p>This is a past appointment. Detail view coming in EDG-21.</p>`. Replace this stub with a real past appointment detail section that includes:
+Modify `frontend/app/routes/psychologist/session.tsx`.
 
-- Date/time header (same format as the upcoming branch).
-- A "Recommendations" section showing a list of existing recommendations. Each item shows title, body preview, image/audio counts, and Edit/Delete actions (psychologist only).
-- An "Add Recommendation" button that opens `RecommendationForm` in `create` mode.
-- Use `useEffect` to fetch recommendations via `recommendationService.getForAppointment(clientId, appointmentId)` on mount.
-- `useState` for `recommendations: Recommendation[]`, `isLoadingRecs: boolean`.
+Replace the `{/* TODO: EDG-50 — recommendations */}` placeholder with a recommendations section:
+- Fetch via `recommendationService.getList(clientId, appointmentId)` on mount.
+- Render list of recommendation cards (name, text preview, image/audio count).
+- "Add Recommendation" button → `RecommendationForm` create mode → `recommendationService.create(...)` on submit.
+- Edit action → `RecommendationForm` edit mode → `recommendationService.update(...)`.
+- Delete action → `ConfirmAction` → `recommendationService.delete(...)`.
 
-Editing: clicking Edit opens `RecommendationForm` in `edit` mode pre-filled with current data, calls `recommendationService.update(...)` on submit.
+---
 
-Deleting: wrapped in `ConfirmAction`, calls `recommendationService.delete(...)` on confirm.
+### 8. Frontend — `appointment-detail.tsx` (client past appointment view)
 
-### 13. Frontend — update `appointment-detail.tsx` (client past appointment view)
+Modify `frontend/app/routes/client/appointment-detail.tsx`.
 
-File: `frontend/app/routes/client/appointment-detail.tsx` (modify)
-
-The `if (appointment.status === 'past')` branch currently returns `<p>This is a past appointment. Detail view coming in EDG-24.</p>`. Replace with a real past appointment detail section that includes:
-
-- Date/time header (psychologist name as subtitle, same format as the upcoming branch).
-- A "Recommendations" section showing the list of recommendations fetched via `recommendationService.getForClientAppointment(appointmentId)`.
-- Each recommendation shows title, body, and image/audio playback (read-only). No edit/delete actions (reactions are EDG-51).
-- `useState` for `recommendations: Recommendation[]`, `isLoadingRecs: boolean`.
+Add a read-only recommendations section to the `past` branch (alongside the impressions section from EDG-49):
+- Fetch via `recommendationService.getClientList(appointmentId)` on mount.
+- Render each recommendation's `name`, `text`, image/audio playback (read-only, no edit/delete).
+- Reactions (EDG-51) will add interactive controls on top of this.
 
 ---
 
@@ -240,99 +258,26 @@ The `if (appointment.status === 'past')` branch currently returns `<p>This is a 
 
 | Path | Description |
 |------|-------------|
-| `backend/src/migrations/<ts>_create-recommendations-table.sql` | New `recommendations` table |
-| `backend/src/migrations/<ts>_create-files-table.sql` | New `files` table for uploaded file metadata |
-| `backend/src/features/recommendations/models.ts` | `Recommendation` TypeScript interface |
-| `backend/src/features/recommendations/services.ts` | Raw SQL queries for recommendations CRUD |
-| `backend/src/features/recommendations/psycho-routes.ts` | Hono routes for psychologist recommendations |
-| `backend/src/features/recommendations/client-routes.ts` | Hono routes for client reading recommendations |
-| `backend/src/features/recommendations/routes.test.ts` | Integration tests for recommendation routes |
-| `backend/src/features/files/routes.ts` | File upload and serve routes |
-| `frontend/app/models/recommendation.ts` | `Recommendation`, `CreateRecommendationDTO`, `UpdateRecommendationDTO` interfaces |
-| `frontend/app/services/recommendation.service.ts` | Axios calls wrapping recommendation API |
-| `frontend/app/components/RecommendationForm.tsx` | Dialog form for create/edit recommendations |
-
----
+| `backend/src/features/attachments/recommendations-psycho-routes.ts` | Psychologist CRUD routes for recommendations |
+| `backend/src/features/attachments/recommendations-client-routes.ts` | Client read route for recommendations |
+| `backend/src/features/attachments/recommendations-routes.test.ts` | Backend integration tests |
+| `frontend/app/services/recommendation.service.ts` | Axios wrapper for recommendation API |
+| `frontend/app/components/RecommendationForm.tsx` | Dialog form for create/edit |
 
 ## Files to Modify
 
 | Path | Change |
 |------|--------|
-| `backend/src/config/app.ts` | Register `psychoRecommendationRoutes`, `clientRecommendationRoutes`, and `fileRoutes` |
-| `backend/src/test-fixtures/db.ts` | Add `'recommendations'` and `'files'` to `ALL_APP_TABLES` |
-| `frontend/app/routes/psychologist/session.tsx` | Replace `past` branch stub with real recommendations list + create/edit/delete UI |
-| `frontend/app/routes/client/appointment-detail.tsx` | Replace `past` branch stub with real recommendations read-only list |
-
----
-
-## Tests
-
-### What to test
-
-**Backend**
-
-- `POST /api/clients/:clientId/appointments/:appointmentId/recommendations`:
-  - Happy path — active appointment → 201, returns recommendation with correct fields
-  - Happy path — past appointment → 201
-  - Upcoming appointment → 400 `AppointmentNotStarted`
-  - Missing `title` → 400 `BadRequest`
-  - Appointment not found → 404
-  - Wrong role (client header) → 403
-  - Unauthenticated → 401
-
-- `GET /api/clients/:clientId/appointments/:appointmentId/recommendations`:
-  - Happy path — returns list of recommendations for the appointment
-  - Empty list when no recommendations exist → 200 with empty array
-  - Appointment not found → 404
-
-- `GET /api/clients/:clientId/appointments/:appointmentId/recommendations/:recommendationId`:
-  - Happy path — returns the recommendation
-  - Not found (wrong ID) → 404
-  - Recommendation belongs to a different appointment → 404
-
-- `PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:recommendationId`:
-  - Happy path — updates title and body, returns updated recommendation
-  - Recommendation not found → 404
-
-- `DELETE /api/clients/:clientId/appointments/:appointmentId/recommendations/:recommendationId`:
-  - Happy path → 200 `{ success: true }`, row removed from DB
-  - Not found → 404
-
-- `GET /api/appointments/:appointmentId/recommendations` (client route):
-  - Happy path — client can read recommendations for their own appointment
-  - Appointment not belonging to this client → 404
-  - Wrong role (psycho header) → 403
-
-- `POST /api/files/upload`:
-  - Happy path — returns URL and file metadata
-  - Missing file field → 400
-
-**Frontend**
-
-- `RecommendationForm`:
-  - Does not submit when `title` is empty (validation error shown)
-  - Calls `onSubmit` with correct DTO when valid title provided
-  - Shows "Create Recommendation" in create mode, "Edit Recommendation" in edit mode
-  - Pre-populates fields in edit mode from `initialData`
-  - Disables submit button while `isLoading` is true
-
-- `session.tsx` past branch:
-  - Renders recommendations list on mount (calls `recommendationService.getForAppointment`)
-  - Shows empty state when list is empty
-  - Calls `recommendationService.delete` and removes item from list on confirmed delete
-
-- `appointment-detail.tsx` past branch:
-  - Renders recommendations list fetched from `recommendationService.getForClientAppointment`
-  - Shows read-only view (no edit/delete buttons present for client)
+| `backend/src/config/app.ts` | Register recommendation psycho and client routes |
+| `frontend/app/models/attachment.ts` | Add `CreateRecommendationDTO`, `UpdateRecommendationDTO` |
+| `frontend/app/routes/psychologist/session.tsx` | Replace `{/* TODO: EDG-50 */}` with recommendations CRUD section |
+| `frontend/app/routes/client/appointment-detail.tsx` | Add read-only recommendations section to `past` branch |
 
 ---
 
 ## Out of Scope
 
-- **Client reactions to recommendations** — this is EDG-51 (done/not-done toggle + comment + psychologist reply).
-- **EDG-56 email notification** — the `// TODO: EDG-56` comment is added but the email sending logic is not implemented.
-- **Whiteboard snapshot display** on past appointment views — this is EDG-47.
-- **Psychologist notes (EDG-48)** and **client impressions (EDG-49)** — separate tickets. The schema design here deliberately avoids a shared table to prevent blocking.
-- **EDG-21 (full psychologist past appointment review)** and **EDG-24 (full client past appointment review)** — those tickets may later expand the past appointment views added here. The recommendations section added in steps 12 and 13 is additive and should not conflict.
-- **File serving from CDN or S3** — files are stored on local disk in `./uploads/` for thesis demo purposes.
-- **File deletion** — uploaded files are not garbage collected when a recommendation is deleted in this ticket.
+- Client reactions to recommendations — EDG-51.
+- EDG-56 email notification — `// TODO: EDG-56` comment added only.
+- File deletion when recommendation is deleted.
+- Pagination.

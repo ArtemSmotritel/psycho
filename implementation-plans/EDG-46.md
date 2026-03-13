@@ -227,9 +227,14 @@ Bun.serve({
 
 File: `backend/src/features/appointments/routes.test.ts`
 
-Add a describe block for `findAppointmentByIdForParticipant` following the same `bun:test` + `mock()` pattern used throughout that file. See Tests section for case categories.
+Add a `describe('findAppointmentByIdForParticipant', ...)` block using the real test DB infrastructure — **no mocking**. Follow exactly the same setup pattern used throughout that file:
 
-The WebSocket route itself cannot be unit-tested with the existing `Hono` + inline mock pattern due to the `upgradeWebSocket` upgrade mechanism. A brief note explaining this can be left as a comment in the new describe block placeholder.
+- Use `insertTestUser()` (from `test-fixtures/users`) to create psychologist and client users.
+- Use `createAppointment()` (from `features/appointments/services`) to insert a real appointment row.
+- Call `findAppointmentByIdForParticipant` directly (not via HTTP) and assert on the returned value.
+- `beforeEach` already truncates all tables via the preloaded `test-setup.ts`, so no extra cleanup is needed.
+
+The WebSocket route itself cannot be integration-tested with the existing `Hono` + `app.request()` pattern because `upgradeWebSocket` requires Bun's native HTTP server to perform the protocol upgrade. Leave a comment in a placeholder describe block documenting this.
 
 ### 7. Frontend — add `VITE_API_URL` type declaration
 
@@ -359,15 +364,26 @@ Ensure `ImportMetaEnv` declares `VITE_API_URL: string`. Check whether `/// <refe
 
 File: `frontend/app/test/useWhiteboardSync.test.tsx` (new)
 
-Use `renderHook` from `@testing-library/react`. Mock `global.WebSocket` with a class-based mock that exposes `send`, `close`, and lets tests call `onopen`, `onmessage`, `onclose` manually. See Tests section for case categories.
+Use `renderHook` from `@testing-library/react` and `act` for state-updating operations. Follow the same conventions as existing frontend tests (`vitest`, globals enabled, jsdom environment).
+
+**WebSocket mock** — jsdom does not provide `WebSocket`, so it must be replaced with a `vi.fn()` class mock. Keep the mock minimal: expose `send`, `close`, `readyState`, and allow tests to trigger `onopen`/`onmessage`/`onclose`/`onerror` callbacks directly. Store the most-recently constructed instance in a module-level variable (`lastWs`) so tests can interact with it.
+
+**Excalidraw API mock** — create a plain object with `vi.fn()` stubs for `updateScene` and `addFiles`. Pass it to the hook via `setExcalidrawAPI`. No Excalidraw library import or render is needed.
+
+**Do not mock** anything else — the hook has no other external dependencies beyond `WebSocket` (browser API) and the Excalidraw imperative API (passed in by the caller). See Tests section for case categories.
 
 ### 14. Frontend — update existing test files for modified components
 
 Files: `frontend/app/test/live-session.test.tsx` and `frontend/app/test/live-appointment.test.tsx`
 
-**Do not change any existing passing tests.** Add a `vi.mock('~/hooks/useWhiteboardSync', ...)` mock to both test files so they do not attempt to open real WebSocket connections. The mock should return a no-op `setExcalidrawAPI`, `onWhiteboardChange`, `onPointerUpdate`, empty `remoteCursors`, and `connected: false`.
+**Do not change any existing passing tests.** Add a `vi.mock('~/hooks/useWhiteboardSync', ...)` alongside the existing `vi.mock(...)` calls at the top of each file. This follows the same mocking convention already used in these files for services and context hooks. The mock returns:
+- `setExcalidrawAPI`: `vi.fn()`
+- `onWhiteboardChange`: `vi.fn()`
+- `onPointerUpdate`: `vi.fn()`
+- `remoteCursors`: `new Map()`
+- `connected`: `false`
 
-The mock must be added at the top of each file alongside the existing mocks and must not alter any existing test expectations.
+This prevents the hook from attempting a real WebSocket connection during component tests. No existing test expectations should be altered.
 
 ---
 
@@ -403,13 +419,15 @@ The mock must be added at the top of each file alongside the existing mocks and 
 
 **Backend**
 
+Tests use the **real test database** (no mocking). Set up data with `insertTestUser()` and `createAppointment()` from the existing fixtures/services.
+
 - `findAppointmentByIdForParticipant`:
-  - Happy path: user is `psycho_id` → returns the appointment.
-  - Happy path: user is `client_id` → returns the appointment.
-  - User is neither → returns `null`.
+  - Happy path: user is `psycho_id` → returns the full appointment object.
+  - Happy path: user is `client_id` → returns the full appointment object.
+  - User is neither psycho nor client of that appointment → returns `null`.
   - Appointment ID does not exist → returns `null`.
 
-Note: The WebSocket route (`whiteboardRoutes`) cannot be tested with the existing `Hono`-based inline mock pattern because `upgradeWebSocket` requires Bun's native HTTP server to perform the protocol upgrade. A comment in `routes.test.ts` should document this and indicate that manual/integration testing is required for the WS route.
+Note: The WebSocket route (`whiteboardRoutes`) cannot be tested with `app.request()` because `upgradeWebSocket` requires Bun's native HTTP server to perform the protocol upgrade. Leave a comment in a placeholder describe block in `routes.test.ts` documenting this; manual/integration testing is required for the WS route.
 
 **Frontend**
 
