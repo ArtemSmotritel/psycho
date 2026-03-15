@@ -40,10 +40,7 @@ function AppointmentCard({ appointment, clientId }: AppointmentCardProps) {
     useRoleGuard(['psychologist', 'client'])
 
     return (
-        <Link
-            to={`/psycho/clients/${clientId}/appointments/${appointment.id}`}
-            className="block"
-        >
+        <Link to={`/psycho/clients/${clientId}/appointments/${appointment.id}`} className="block">
             <Card className="hover:bg-accent/50 transition-colors max-w-lg">
                 <CardHeader className="max-w-lg">
                     <div className="flex sm:items-center sm:flex-row flex-col sm:justify-between items-start">

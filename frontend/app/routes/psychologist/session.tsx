@@ -13,6 +13,7 @@ import { impressionService } from '~/services/impression.service'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
+import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
 import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
 
@@ -72,7 +73,12 @@ export default function Session() {
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
                     <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
                 </div>
-                {/* TODO: EDG-50 — recommendations */}
+                <div className="mt-6">
+                    <AppointmentRecommendationsPanel
+                        clientId={clientId!}
+                        appointmentId={appointment.id}
+                    />
+                </div>
             </>
         )
     }

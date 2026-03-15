@@ -1,5 +1,10 @@
 import { db } from 'config/db'
-import type { Attachment, AttachmentType } from './models'
+import type {
+    Attachment,
+    AttachmentType,
+    AttachmentWithReaction,
+    RecommendationReaction,
+} from './models'
 
 const ATTACHMENT_SELECT = `
     a.id,
@@ -142,4 +147,123 @@ export async function updateAttachment(
 
 export async function deleteAttachment(id: string): Promise<void> {
     await db`DELETE FROM attachments WHERE id = ${id}`
+}
+
+const REACTION_SELECT = `
+    rr.attachment_id AS "attachmentId",
+    rr.done,
+    rr.client_comment AS "clientComment",
+    rr.psychologist_reply AS "psychologistReply",
+    rr.updated_at AS "updatedAt"
+`
+
+export async function findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
+    const [row] = await db`
+        SELECT ${db.unsafe(REACTION_SELECT)}
+        FROM recommendation_reactions rr
+        WHERE rr.attachment_id = ${attachmentId}
+    `
+    return (row as RecommendationReaction) ?? null
+}
+
+export async function upsertReaction(
+    attachmentId: string,
+    params: { done?: boolean; comment?: string },
+): Promise<RecommendationReaction> {
+    const [row] = await db`
+        INSERT INTO recommendation_reactions (attachment_id, done, client_comment)
+        VALUES (
+            ${attachmentId},
+            ${params.done ?? false},
+            ${params.comment ?? null}
+        )
+        ON CONFLICT (attachment_id) DO UPDATE SET
+            done = COALESCE(EXCLUDED.done, recommendation_reactions.done),
+            client_comment = CASE
+                WHEN recommendation_reactions.client_comment IS NULL THEN EXCLUDED.client_comment
+                ELSE recommendation_reactions.client_comment
+            END,
+            updated_at = NOW()
+        RETURNING
+            attachment_id AS "attachmentId",
+            done,
+            client_comment AS "clientComment",
+            psychologist_reply AS "psychologistReply",
+            updated_at AS "updatedAt"
+    `
+    return row as RecommendationReaction
+}
+
+export async function setReply(
+    attachmentId: string,
+    reply: string,
+): Promise<RecommendationReaction> {
+    const [row] = await db`
+        INSERT INTO recommendation_reactions (attachment_id, psychologist_reply)
+        VALUES (${attachmentId}, ${reply})
+        ON CONFLICT (attachment_id) DO UPDATE SET
+            psychologist_reply = EXCLUDED.psychologist_reply,
+            updated_at = NOW()
+        RETURNING
+            attachment_id AS "attachmentId",
+            done,
+            client_comment AS "clientComment",
+            psychologist_reply AS "psychologistReply",
+            updated_at AS "updatedAt"
+    `
+    return row as RecommendationReaction
+}
+
+export async function listAttachmentsWithReactions(
+    appointmentId: string,
+    type: AttachmentType,
+): Promise<AttachmentWithReaction[]> {
+    const rows = await db`
+        SELECT
+            ${db.unsafe(ATTACHMENT_SELECT)},
+            CASE
+                WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                    'attachmentId', rr.attachment_id,
+                    'done', rr.done,
+                    'clientComment', rr.client_comment,
+                    'psychologistReply', rr.psychologist_reply,
+                    'updatedAt', rr.updated_at
+                )
+                ELSE NULL
+            END AS reaction
+        FROM attachments a
+        LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+        WHERE a.appointment_id = ${appointmentId}
+          AND a.type = ${type}
+        ORDER BY a.created_at ASC
+    `
+    return rows as AttachmentWithReaction[]
+}
+
+export async function listAttachmentsWithReactionsByAuthor(
+    appointmentId: string,
+    type: AttachmentType,
+    authorId: string,
+): Promise<AttachmentWithReaction[]> {
+    const rows = await db`
+        SELECT
+            ${db.unsafe(ATTACHMENT_SELECT)},
+            CASE
+                WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                    'attachmentId', rr.attachment_id,
+                    'done', rr.done,
+                    'clientComment', rr.client_comment,
+                    'psychologistReply', rr.psychologist_reply,
+                    'updatedAt', rr.updated_at
+                )
+                ELSE NULL
+            END AS reaction
+        FROM attachments a
+        LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+        WHERE a.appointment_id = ${appointmentId}
+          AND a.type = ${type}
+          AND a.author_id = ${authorId}
+        ORDER BY a.created_at ASC
+    `
+    return rows as AttachmentWithReaction[]
 }

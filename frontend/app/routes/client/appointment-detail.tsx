@@ -8,7 +8,9 @@ import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { impressionService } from '~/services/impression.service'
-import type { Attachment } from '~/models/attachment'
+import { recommendationService } from '~/services/recommendation.service'
+import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
+import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
 import { ImpressionForm } from '~/components/ImpressionForm'
 import { toast } from 'sonner'
@@ -22,6 +24,8 @@ export default function ClientAppointmentDetail() {
     const [impressions, setImpressions] = useState<Attachment[]>([])
     const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
     const [isSubmittingImpression, setIsSubmittingImpression] = useState(false)
+    const [recommendations, setRecommendations] = useState<AttachmentWithReaction[]>([])
+    const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
 
     useEffect(() => {
         if (!appointmentId || !appointment || appointment.status !== 'past') return
@@ -36,6 +40,22 @@ export default function ClientAppointmentDetail() {
             })
             .finally(() => {
                 setIsLoadingImpressions(false)
+            })
+    }, [appointmentId, appointment])
+
+    useEffect(() => {
+        if (!appointmentId || !appointment || appointment.status !== 'past') return
+        setIsLoadingRecommendations(true)
+        recommendationService
+            .getClientList(appointmentId)
+            .then((res) => {
+                setRecommendations(res.data.recommendations)
+            })
+            .catch(() => {
+                // Silently ignore
+            })
+            .finally(() => {
+                setIsLoadingRecommendations(false)
             })
     }, [appointmentId, appointment])
 
@@ -97,6 +117,61 @@ export default function ClientAppointmentDetail() {
                             }
                         }}
                     />
+                </div>
+                <div className="mt-6 space-y-4">
+                    <h3 className="text-lg font-semibold">Recommendations</h3>
+                    {isLoadingRecommendations ? (
+                        <div
+                            data-testid="loading-spinner"
+                            className="flex items-center justify-center py-4"
+                        >
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+                        </div>
+                    ) : recommendations.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No recommendations yet.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {recommendations.map((recommendation) => (
+                                <RecommendationCard
+                                    key={recommendation.id}
+                                    recommendation={recommendation}
+                                    role="client"
+                                    onToggleDone={async (id, done) => {
+                                        if (!appointmentId) return
+                                        try {
+                                            await recommendationService.react(appointmentId, id, {
+                                                done,
+                                            })
+                                            const res =
+                                                await recommendationService.getClientList(
+                                                    appointmentId,
+                                                )
+                                            setRecommendations(res.data.recommendations)
+                                        } catch {
+                                            toast.error('Failed to update. Please try again.')
+                                        }
+                                    }}
+                                    onSubmitComment={async (id, comment) => {
+                                        if (!appointmentId) return
+                                        try {
+                                            await recommendationService.react(appointmentId, id, {
+                                                comment,
+                                            })
+                                            const res =
+                                                await recommendationService.getClientList(
+                                                    appointmentId,
+                                                )
+                                            setRecommendations(res.data.recommendations)
+                                        } catch {
+                                            toast.error(
+                                                'Failed to submit comment. Please try again.',
+                                            )
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         )

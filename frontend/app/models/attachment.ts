@@ -39,3 +39,37 @@ export interface CreateImpressionDTO {
     imageFileIds?: string[]
     audioFileIds?: string[]
 }
+
+export interface CreateRecommendationDTO {
+    name: string
+    text?: string
+    imageFileIds?: string[]
+    audioFileIds?: string[]
+}
+
+export interface UpdateRecommendationDTO {
+    name?: string
+    text?: string
+    // no media fields
+}
+
+export interface RecommendationReaction {
+    attachmentId: string
+    done: boolean
+    clientComment: string | null
+    psychologistReply: string | null
+    updatedAt: string
+}
+
+export interface AttachmentWithReaction extends Attachment {
+    reaction: RecommendationReaction | null
+}
+
+export interface UpsertReactionDTO {
+    done?: boolean
+    comment?: string
+}
+
+export interface SetReplyDTO {
+    reply: string
+}

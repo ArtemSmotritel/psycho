@@ -20,3 +20,15 @@ export interface Attachment {
     createdAt: string
     updatedAt: string
 }
+
+export interface RecommendationReaction {
+    attachmentId: string
+    done: boolean
+    clientComment: string | null
+    psychologistReply: string | null
+    updatedAt: string
+}
+
+export interface AttachmentWithReaction extends Attachment {
+    reaction: RecommendationReaction | null
+}

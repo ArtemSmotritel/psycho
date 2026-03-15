@@ -15,6 +15,8 @@ import { fileRoutes } from '../features/files/routes'
 import { noteRoutes } from '../features/attachments/notes-routes'
 import { impressionClientRoutes } from '../features/attachments/impressions-client-routes'
 import { impressionPsychoRoutes } from '../features/attachments/impressions-psycho-routes'
+import { recommendationPsychoRoutes } from '../features/attachments/recommendations-psycho-routes'
+import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
 
 export const app = new Hono<{
     Variables: {
@@ -85,3 +87,8 @@ app.route('/api/files', fileRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
 app.route('/api/appointments/:appointmentId/impressions', impressionClientRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/impressions', impressionPsychoRoutes)
+app.route(
+    '/api/clients/:clientId/appointments/:appointmentId/recommendations',
+    recommendationPsychoRoutes,
+)
+app.route('/api/appointments/:appointmentId/recommendations', recommendationClientRoutes)
