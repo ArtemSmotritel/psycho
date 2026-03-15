@@ -73,7 +73,16 @@ export default function Session() {
                     {pastFormattedStart} – {pastFormattedEnd}
                 </p>
                 <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
-                {/* TODO: EDG-47 — whiteboard snapshot */}
+                {appointment.whiteboardSnapshotUrl && (
+                    <div className="mt-6 space-y-2">
+                        <h3 className="text-lg font-semibold">Whiteboard Snapshot</h3>
+                        <img
+                            src={appointment.whiteboardSnapshotUrl}
+                            alt="Whiteboard Snapshot"
+                            className="w-full rounded-lg"
+                        />
+                    </div>
+                )}
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
                     <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
