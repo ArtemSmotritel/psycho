@@ -10,7 +10,7 @@
 
 4. **Editing**: Recommendations are editable by the psychologist (name + text only; media locked after creation) — same rule as notes.
 
-5. **Appointment status**: Recommendations can be created when appointment is `active` or `past`. Returns `400 AppointmentNotStarted` for `upcoming`.
+5. **Appointment status**: Recommendations can be created when appointment is `active` or `past`. Returns `400 AppointmentNotActive` for `upcoming`.
 
 6. **Visibility**: The psychologist creates and reads via `/api/clients/:clientId/appointments/:appointmentId/recommendations`. The client reads via `/api/appointments/:appointmentId/recommendations`. Reactions (EDG-51) are a separate concern.
 
@@ -32,7 +32,7 @@ Violations always return `404`.
 - If not found or check fails → `404`.
 
 **Step 2 — status check** (`POST` only):
-- If `appointment.status === 'upcoming'` → `400 AppointmentNotStarted`.
+- If `appointment.status === 'upcoming'` → `400 AppointmentNotActive`.
 
 **Step 3 — attachment chain** (single-resource routes: `GET /:id`, `PATCH /:id`, `DELETE /:id`):
 - Fetch attachment by `attachmentId`.
@@ -78,14 +78,14 @@ All routes: `authorized` + `onlyPsychoRequest`.
 Every handler applies the **Psychologist recommendation access control rules** defined above.
 
 **`GET /`**
-1. Step 1 (appointment ownership) + Step 2 not applicable.
+1. Step 1 (appointment ownership) only. Step 2 (status check) intentionally not applied — listing recommendations is allowed regardless of appointment status (unlike notes).
 2. `listAttachmentsByAuthor(appointmentId, 'recommendation', user.id)`.
 3. Returns `{ recommendations: Attachment[] }`.
 
 **`POST /`**
 1. Steps 1–2 (appointment ownership + status check).
-2. Body: `{ name: string, text?: string, imageUrls?: string[], audioUrls?: string[] }`. Validate `name` non-empty → `400 BadRequest`.
-3. `createAttachment({ appointmentId, authorId: user.id, type: 'recommendation', name, text, imageUrls, audioUrls })`.
+2. Body: `{ name: string, text?: string, imageFileIds?: string[], audioFileIds?: string[] }`. Validate `name` non-empty → `400 BadRequest`.
+3. `createAttachment({ appointmentId, authorId: user.id, type: 'recommendation', name, text, imageFileIds, audioFileIds })`.
 4. Returns `201 { recommendation: Attachment }`.
 5. `// TODO: EDG-56 — send recommendation email to client`.
 
@@ -142,7 +142,7 @@ Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`
 **`POST /api/clients/:clientId/appointments/:appointmentId/recommendations`**
 - Returns 201 with `type: 'recommendation'` when appointment is `active`.
 - Returns 201 when appointment is `past`.
-- Returns 400 `AppointmentNotStarted` when `upcoming`.
+- Returns 400 `AppointmentNotActive` when `upcoming`.
 - Returns 400 `BadRequest` when `name` is missing.
 - Returns 404 when `appointmentId` does not belong to this psychologist.
 - Returns 404 when `clientId` URL param does not match the appointment's actual client.
@@ -157,11 +157,11 @@ Follow the exact pattern from `backend/src/features/appointments/routes.test.ts`
 - Returns 404 with client role header.
 
 **`PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId`**
-- Returns 200 with updated name/text; `imageUrls` in body is ignored (unchanged in response).
+- Returns 200 with updated name/text; `imageFileIds` in body is ignored (unchanged in response).
 - Returns 404 when `attachmentId` belongs to a different appointment.
 - Returns 404 when `attachmentId` has `type !== 'recommendation'`.
 - Returns 404 when recommendation was created by a different psychologist.
-- Returns 400 `AppointmentNotStarted` when `upcoming`.
+- Returns 400 `AppointmentNotActive` when `upcoming`.
 - Returns 404 with client role header.
 
 **`DELETE /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId`**
@@ -186,8 +186,8 @@ Add to `frontend/app/models/attachment.ts`:
 export interface CreateRecommendationDTO {
     name: string
     text?: string
-    imageUrls?: string[]
-    audioUrls?: string[]
+    imageFileIds?: string[]
+    audioFileIds?: string[]
 }
 
 export interface UpdateRecommendationDTO {
