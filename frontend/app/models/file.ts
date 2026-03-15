@@ -1,10 +1,10 @@
 export interface FileUploadResponse {
     id: string
     url: string
-    name: string
+    originalName: string
+    mimeType: string
     size: number
-    type: string
-    uploadedAt: Date
+    uploadedAt: string
 }
 
 export interface FileDeleteResponse {

@@ -11,6 +11,7 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
@@ -35,7 +36,21 @@ export default function Session() {
     }
 
     if (appointment.status === 'past') {
-        return <p>This is a past appointment. Detail view coming in EDG-21.</p>
+        const pastFormattedDate = format(new Date(appointment.startTime), 'PPP')
+        const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
+        const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
+        return (
+            <>
+                <h2 className="text-xl font-semibold mb-1">{pastFormattedDate}</h2>
+                <p className="text-muted-foreground mb-4">
+                    {pastFormattedStart} – {pastFormattedEnd}
+                </p>
+                <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
+                {/* TODO: EDG-47 — whiteboard snapshot */}
+                {/* TODO: EDG-49 — client impressions */}
+                {/* TODO: EDG-50 — recommendations */}
+            </>
+        )
     }
 
     if (appointment.status === 'active') {

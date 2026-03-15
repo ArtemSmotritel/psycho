@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Video, LogIn, StopCircle } from 'lucide-react'
+import { Video, LogIn, StopCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import '@excalidraw/excalidraw/index.css'
@@ -15,6 +15,9 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible'
+import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
+import { Button } from '~/components/ui/button'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -31,6 +34,7 @@ export default function LiveSession() {
 
     const [time, setTime] = useState<string>('00:00')
     const [isEnding, setIsEnding] = useState(false)
+    const [notesOpen, setNotesOpen] = useState(false)
     const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
         useWhiteboardSync(appointmentId!)
     const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
@@ -193,6 +197,22 @@ export default function LiveSession() {
                     excalidrawAPI={excalidrawAPIInstance}
                 />
             </div>
+
+            <Collapsible open={notesOpen} onOpenChange={setNotesOpen} className="mt-4">
+                <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 w-full">
+                        {notesOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                        ) : (
+                            <ChevronDown className="h-4 w-4" />
+                        )}
+                        {notesOpen ? 'Hide Notes' : 'Show Notes'}
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                    <AppointmentNotesPanel clientId={clientId!} appointmentId={appointmentId!} />
+                </CollapsibleContent>
+            </Collapsible>
         </div>
     )
 }

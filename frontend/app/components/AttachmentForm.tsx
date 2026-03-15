@@ -49,12 +49,19 @@ type AttachmentType = 'note' | 'recommendation' | 'impression'
 
 interface AttachmentFormProps {
     type: AttachmentType
+    mode?: 'create' | 'edit'
     trigger: React.ReactNode
     initialData?: Partial<FormValues>
     onSubmit: (values: FormValues) => void
 }
 
-export function AttachmentForm({ type, trigger, initialData, onSubmit }: AttachmentFormProps) {
+export function AttachmentForm({
+    type,
+    mode = 'create',
+    trigger,
+    initialData,
+    onSubmit,
+}: AttachmentFormProps) {
     const [open, setOpen] = useState(false)
     const [voiceFiles, setVoiceFiles] = useState<(File | string)[]>([])
     const [imageFiles, setImageFiles] = useState<(File | string)[]>([])
@@ -140,10 +147,13 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Create {getAttachmentTypeLabel(type)}</DialogTitle>
+                    <DialogTitle>
+                        {mode === 'edit' ? 'Edit' : 'Create'} {getAttachmentTypeLabel(type)}
+                    </DialogTitle>
                     <DialogDescription>
-                        Add a new {type.toLowerCase()} with optional text, voice recordings, and
-                        images.
+                        {mode === 'edit'
+                            ? `Edit the name and text of this ${type.toLowerCase()}.`
+                            : `Add a new ${type.toLowerCase()} with optional text, voice recordings, and images.`}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -197,8 +207,9 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                                                 : handleStartRecording
                                         }
                                         disabled={
-                                            voiceFiles.length >= MAX_VOICE_FILES &&
-                                            status !== 'recording'
+                                            mode === 'edit' ||
+                                            (voiceFiles.length >= MAX_VOICE_FILES &&
+                                                status !== 'recording')
                                         }
                                     >
                                         {status === 'recording' ? (
@@ -273,7 +284,9 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                                     variant="outline"
                                     className="flex items-center gap-2"
                                     onClick={() => document.getElementById('image-input')?.click()}
-                                    disabled={imageFiles.length >= MAX_IMAGE_FILES}
+                                    disabled={
+                                        mode === 'edit' || imageFiles.length >= MAX_IMAGE_FILES
+                                    }
                                 >
                                     <ImageIcon className="h-4 w-4" />
                                     Upload Images
@@ -339,7 +352,9 @@ export function AttachmentForm({ type, trigger, initialData, onSubmit }: Attachm
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Create {getAttachmentTypeLabel(type)}</Button>
+                            <Button type="submit">
+                                {mode === 'edit' ? 'Save' : 'Create'} {getAttachmentTypeLabel(type)}
+                            </Button>
                         </div>
                     </form>
                 </Form>

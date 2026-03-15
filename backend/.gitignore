@@ -41,3 +41,7 @@ yarn-error.log*
 **/*.log
 package-lock.json
 **/*.bun
+
+# uploaded files (keep directory, ignore contents)
+uploads/*
+!uploads/.gitkeep
