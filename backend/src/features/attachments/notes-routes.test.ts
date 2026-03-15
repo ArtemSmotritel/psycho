@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { insertTestFile } from '../../test-fixtures/files'
 import { linkClientToPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
@@ -215,7 +216,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/notes', () => 
         expect(body.note).toHaveProperty('appointmentId', apt.id)
     })
 
-    it('happy path — past appointment, creates note with imageUrls', async () => {
+    it('happy path — past appointment, creates note with imageFileIds', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
@@ -228,6 +229,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/notes', () => 
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
+        const file = await insertTestFile(psycho.id, { originalName: 'photo.png' })
+
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/notes`,
             await asUser(psycho.id, {
@@ -235,7 +238,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/notes', () => 
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
                     name: 'Image Note',
-                    imageUrls: ['/api/files/test.png'],
+                    imageFileIds: [file.id],
                 }),
             }),
         )
@@ -243,7 +246,9 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/notes', () => 
         expect(res.status).toBe(201)
         const body = await res.json()
         expect(body.note).toHaveProperty('name', 'Image Note')
-        expect(body.note.imageUrls).toEqual(['/api/files/test.png'])
+        expect(body.note.imageFiles).toHaveLength(1)
+        expect(body.note.imageFiles[0]).toHaveProperty('id', file.id)
+        expect(body.note.imageFiles[0]).toHaveProperty('url', `/api/files/${file.storedName}`)
     })
 
     it('returns 400 BadRequest when name is missing', async () => {
@@ -542,7 +547,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/notes/:attachme
 // ─── PATCH /:attachmentId ─────────────────────────────────────────────────────
 
 describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attachmentId', () => {
-    it('happy path — updates name and text; imageUrls in body does not change stored imageUrls', async () => {
+    it('happy path — updates name and text; imageFileIds in body does not change stored imageFiles', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
@@ -555,13 +560,14 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
+        const file = await insertTestFile(psycho.id, { originalName: 'original.png' })
         const note = await createAttachment({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
             name: 'Original Name',
             text: 'Original Text',
-            imageUrls: ['/api/files/original.png'],
+            imageFileIds: [file.id],
         })
 
         const res = await app.request(
@@ -572,7 +578,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
                 body: JSON.stringify({
                     name: 'Updated Name',
                     text: 'Updated Text',
-                    imageUrls: ['/api/files/new.png'],
+                    imageFileIds: ['some-other-id'],
                 }),
             }),
         )
@@ -582,8 +588,9 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         expect(body).toHaveProperty('note')
         expect(body.note).toHaveProperty('name', 'Updated Name')
         expect(body.note).toHaveProperty('text', 'Updated Text')
-        // imageUrls should NOT be changed (locked after creation)
-        expect(body.note.imageUrls).toEqual(['/api/files/original.png'])
+        // imageFiles should NOT be changed (locked after creation)
+        expect(body.note.imageFiles).toHaveLength(1)
+        expect(body.note.imageFiles[0]).toHaveProperty('id', file.id)
     })
 
     it('returns 404 when attachmentId belongs to a different appointment', async () => {

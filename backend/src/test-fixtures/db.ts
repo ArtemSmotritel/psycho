@@ -8,6 +8,7 @@ export const testDb = new SQL({
 // All app tables. Exclude schema_migrations.
 // WITH CASCADE, order does not matter for TRUNCATE.
 export const ALL_APP_TABLES = [
+    'attachment_files',
     'attachments',
     'files',
     'appointments',

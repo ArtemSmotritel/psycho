@@ -62,7 +62,7 @@ noteRoutes.post('/', async (c) => {
     if (!check.ok) return check.response
 
     const body = await c.req.json()
-    const { name, text, imageUrls, audioUrls } = body
+    const { name, text, imageFileIds, audioFileIds } = body
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
         return c.json({ error: 'BadRequest', message: 'name is required' }, 400)
@@ -74,8 +74,8 @@ noteRoutes.post('/', async (c) => {
         type: 'note',
         name: name.trim(),
         text: text ?? null,
-        imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
-        audioUrls: Array.isArray(audioUrls) ? audioUrls : [],
+        imageFileIds: Array.isArray(imageFileIds) ? imageFileIds : [],
+        audioFileIds: Array.isArray(audioFileIds) ? audioFileIds : [],
     })
 
     return c.json({ note }, 201)

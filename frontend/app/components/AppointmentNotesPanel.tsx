@@ -42,31 +42,27 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         imageFiles: (File | string)[]
     }) => {
         try {
-            const audioUrls: string[] = []
+            const audioFileIds: string[] = []
             for (const f of values.voiceFiles) {
                 if (f instanceof File) {
                     const res = await fileService.upload(f)
-                    audioUrls.push(res.data.url)
-                } else {
-                    audioUrls.push(f)
+                    audioFileIds.push(res.data.id)
                 }
             }
 
-            const imageUrls: string[] = []
+            const imageFileIds: string[] = []
             for (const f of values.imageFiles) {
                 if (f instanceof File) {
                     const res = await fileService.upload(f)
-                    imageUrls.push(res.data.url)
-                } else {
-                    imageUrls.push(f)
+                    imageFileIds.push(res.data.id)
                 }
             }
 
             await noteService.create(clientId, appointmentId, {
                 name: values.name,
                 text: values.text,
-                audioUrls,
-                imageUrls,
+                audioFileIds,
+                imageFileIds,
             })
             toast.success('Note created.')
             await fetchNotes()
@@ -167,11 +163,11 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                 <p className="text-sm text-muted-foreground">{note.text}</p>
                             )}
                             <div className="flex gap-3 text-xs text-muted-foreground">
-                                {note.imageUrls.length > 0 && (
-                                    <span>{note.imageUrls.length} image(s)</span>
+                                {note.imageFiles.length > 0 && (
+                                    <span>{note.imageFiles.length} image(s)</span>
                                 )}
-                                {note.audioUrls.length > 0 && (
-                                    <span>{note.audioUrls.length} recording(s)</span>
+                                {note.audioFiles.length > 0 && (
+                                    <span>{note.audioFiles.length} recording(s)</span>
                                 )}
                                 <span>{format(new Date(note.createdAt), 'PPP HH:mm')}</span>
                             </div>
