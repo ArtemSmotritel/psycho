@@ -2,6 +2,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
 const mockImpressionSubmit = vi.fn()
@@ -32,20 +33,6 @@ vi.mock('react-router', async (importOriginal) => {
         useNavigate: () => mockNavigate,
     }
 })
-
-vi.mock('~/components/AppPageHeader', () => ({
-    AppPageHeader: ({ text }: any) => <div>{text}</div>,
-}))
-
-vi.mock('~/components/ActionsSection', () => ({
-    ActionsSection: ({ children }: any) => <div>{children}</div>,
-    ActionItem: ({ label, href }: any) => {
-        if (href) {
-            return <a href={href}>{label}</a>
-        }
-        return <button>{label}</button>
-    },
-}))
 
 vi.mock('@excalidraw/excalidraw', () => ({
     Excalidraw: () => <div data-testid="excalidraw" />,
@@ -107,14 +94,16 @@ const sampleImpression = {
 
 function renderLiveAppointment(path = '/client/appointments/apt-001/live') {
     return render(
-        <MemoryRouter initialEntries={[path]}>
-            <Routes>
-                <Route
-                    path="/client/appointments/:appointmentId/live"
-                    element={<LiveAppointment />}
-                />
-            </Routes>
-        </MemoryRouter>,
+        <SidebarProvider>
+            <MemoryRouter initialEntries={[path]}>
+                <Routes>
+                    <Route
+                        path="/client/appointments/:appointmentId/live"
+                        element={<LiveAppointment />}
+                    />
+                </Routes>
+            </MemoryRouter>
+        </SidebarProvider>,
     )
 }
 

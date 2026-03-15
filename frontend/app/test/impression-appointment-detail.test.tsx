@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockImpressionSubmit = vi.fn()
 const mockImpressionGetClientList = vi.fn()
@@ -15,15 +16,6 @@ vi.mock('~/services/impression.service', () => ({
 
 vi.mock('~/hooks/useRoleGuard', () => ({
     useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
-vi.mock('~/components/AppPageHeader', () => ({
-    AppPageHeader: ({ text }: any) => <div>{text}</div>,
-}))
-
-vi.mock('~/components/ActionsSection', () => ({
-    ActionsSection: ({ children }: any) => <div>{children}</div>,
-    ActionItem: ({ label, href }: any) => <a href={href ?? '#'}>{label}</a>,
 }))
 
 // Controlled mock for useCurrentClientAppointment
@@ -72,15 +64,17 @@ const sampleImpression = {
 
 function renderDetail(path = '/client/appointments/apt-001') {
     return render(
-        <MemoryRouter initialEntries={[path]}>
-            <Routes>
-                <Route
-                    path="/client/appointments/:appointmentId"
-                    element={<ClientAppointmentDetail />}
-                />
-                <Route path="*" element={<div data-testid="redirected" />} />
-            </Routes>
-        </MemoryRouter>,
+        <SidebarProvider>
+            <MemoryRouter initialEntries={[path]}>
+                <Routes>
+                    <Route
+                        path="/client/appointments/:appointmentId"
+                        element={<ClientAppointmentDetail />}
+                    />
+                    <Route path="*" element={<div data-testid="redirected" />} />
+                </Routes>
+            </MemoryRouter>
+        </SidebarProvider>,
     )
 }
 

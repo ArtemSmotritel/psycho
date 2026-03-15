@@ -60,7 +60,7 @@ describe('RoleSelect', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/login')
     })
 
-    it('redirects to /psycho/clients when activeRole is psycho', () => {
+    it('redirects to /psycho when activeRole is psycho', () => {
         mockUseAuth.mockReturnValue({
             user: { id: '1', email: 'a@b.com', name: 'User', image: null, activeRole: 'psycho' },
             isLoading: false,
@@ -74,7 +74,7 @@ describe('RoleSelect', () => {
             </MemoryRouter>,
         )
 
-        expect(mockNavigate).toHaveBeenCalledWith('/psycho/clients')
+        expect(mockNavigate).toHaveBeenCalledWith('/psycho')
     })
 
     it('redirects to /client when activeRole is client', () => {
@@ -94,7 +94,7 @@ describe('RoleSelect', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/client')
     })
 
-    it('calls setActiveRole and navigates to /psycho/clients on Psychologist card click', async () => {
+    it('calls setActiveRole and navigates to /psycho on Psychologist card click', async () => {
         mockSetActiveRole.mockResolvedValue(undefined)
         mockUseAuth.mockReturnValue({
             user: { id: '1', email: 'a@b.com', name: 'User', image: null, activeRole: null },
@@ -113,7 +113,7 @@ describe('RoleSelect', () => {
 
         await waitFor(() => {
             expect(mockSetActiveRole).toHaveBeenCalledWith('psycho')
-            expect(mockNavigate).toHaveBeenCalledWith('/psycho/clients')
+            expect(mockNavigate).toHaveBeenCalledWith('/psycho')
         })
     })
 

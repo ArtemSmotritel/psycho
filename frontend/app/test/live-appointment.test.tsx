@@ -1,6 +1,7 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
 const mockNavigate = vi.fn()
@@ -91,14 +92,16 @@ const pastAppointment = {
 
 function renderLiveAppointment(path = '/client/appointments/apt-001/live') {
     return render(
-        <MemoryRouter initialEntries={[path]}>
-            <Routes>
-                <Route
-                    path="/client/appointments/:appointmentId/live"
-                    element={<LiveAppointment />}
-                />
-            </Routes>
-        </MemoryRouter>,
+        <SidebarProvider>
+            <MemoryRouter initialEntries={[path]}>
+                <Routes>
+                    <Route
+                        path="/client/appointments/:appointmentId/live"
+                        element={<LiveAppointment />}
+                    />
+                </Routes>
+            </MemoryRouter>
+        </SidebarProvider>,
     )
 }
 

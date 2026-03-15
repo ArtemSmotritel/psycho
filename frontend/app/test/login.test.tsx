@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router'
+import { AuthProvider } from '~/contexts/auth-context'
 
 // Mock auth service — factory must not reference top-level variables (hoisting constraint)
 vi.mock('~/services/auth.service', () => ({
@@ -25,7 +26,9 @@ describe('LoginChoice', () => {
     it('renders the sign in heading', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
         expect(screen.getByText(/sign in to helpsycho/i)).toBeInTheDocument()
@@ -34,7 +37,9 @@ describe('LoginChoice', () => {
     it('"Continue with Google" button is disabled until a role is selected', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
 
@@ -45,7 +50,9 @@ describe('LoginChoice', () => {
     it('enables "Continue with Google" after selecting Psychologist', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
 
@@ -57,7 +64,9 @@ describe('LoginChoice', () => {
     it('enables "Continue with Google" after selecting Client', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
 
@@ -69,7 +78,9 @@ describe('LoginChoice', () => {
     it('stores "psycho" in sessionStorage when Psychologist is selected and Continue is clicked', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
 
@@ -82,7 +93,9 @@ describe('LoginChoice', () => {
     it('stores "client" in sessionStorage when Client is selected and Continue is clicked', () => {
         render(
             <MemoryRouter>
-                <LoginChoice />
+                <AuthProvider>
+                    <LoginChoice />
+                </AuthProvider>
             </MemoryRouter>,
         )
 

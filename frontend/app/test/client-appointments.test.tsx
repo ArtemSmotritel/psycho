@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientGlobalList = vi.fn()
 
@@ -18,11 +19,13 @@ import ClientAppointments from '~/routes/client/appointments'
 
 function renderWithRouter() {
     return render(
-        <MemoryRouter initialEntries={['/client/appointments']}>
-            <Routes>
-                <Route path="/client/appointments" element={<ClientAppointments />} />
-            </Routes>
-        </MemoryRouter>,
+        <SidebarProvider>
+            <MemoryRouter initialEntries={['/client/appointments']}>
+                <Routes>
+                    <Route path="/client/appointments" element={<ClientAppointments />} />
+                </Routes>
+            </MemoryRouter>
+        </SidebarProvider>,
     )
 }
 
