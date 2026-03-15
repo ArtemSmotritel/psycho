@@ -1,0 +1,4 @@
+ALTER TABLE appointments
+    DROP COLUMN status,
+    ADD COLUMN started_at TIMESTAMPTZ DEFAULT NULL,
+    ADD COLUMN ended_at   TIMESTAMPTZ DEFAULT NULL;

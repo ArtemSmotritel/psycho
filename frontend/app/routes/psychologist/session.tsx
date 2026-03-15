@@ -34,7 +34,12 @@ export default function Session() {
     const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
 
     useEffect(() => {
-        if (!appointment || appointment.status !== 'past' || !clientId) return
+        if (
+            !appointment ||
+            (appointment.status !== 'past' && appointment.status !== 'missed') ||
+            !clientId
+        )
+            return
         setIsLoadingImpressions(true)
         impressionService
             .getPsychoList(clientId, appointment.id)
@@ -57,7 +62,7 @@ export default function Session() {
         return <p>Appointment not found.</p>
     }
 
-    if (appointment.status === 'past') {
+    if (appointment.status === 'past' || appointment.status === 'missed') {
         const pastFormattedDate = format(new Date(appointment.startTime), 'PPP')
         const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
         const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
@@ -191,7 +196,7 @@ export default function Session() {
                     />
                 )}
 
-                {userRole === 'psychologist' && (
+                {userRole === 'psychologist' && appointment.status === 'upcoming' && (
                     <SessionForm
                         mode="edit"
                         trigger={
@@ -240,7 +245,7 @@ export default function Session() {
                     to={`/psycho/clients/${appointment.clientId}`}
                 />
 
-                {userRole === 'psychologist' && (
+                {userRole === 'psychologist' && appointment.status === 'upcoming' && (
                     <ConfirmAction
                         trigger={
                             <ActionItem

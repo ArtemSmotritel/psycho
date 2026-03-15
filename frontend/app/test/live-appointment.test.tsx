@@ -69,6 +69,8 @@ const activeAppointment = {
     psychoId: 'psycho-123',
     startTime: '2026-04-01T10:00:00.000Z',
     endTime: '2026-04-01T11:00:00.000Z',
+    startedAt: '2026-04-01T10:00:00.000Z',
+    endedAt: null,
     status: 'active' as const,
     googleMeetLink: 'https://meet.google.com/abc',
     createdAt: '2026-03-10T15:00:00.000Z',

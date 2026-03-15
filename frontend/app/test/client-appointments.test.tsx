@@ -69,6 +69,8 @@ describe('ClientAppointments route', () => {
                 psychoId: 'psycho-123',
                 startTime: '2025-01-10T10:00:00.000Z',
                 endTime: '2025-01-10T11:00:00.000Z',
+                startedAt: null,
+                endedAt: null,
                 status: 'past',
                 googleMeetLink: null,
                 createdAt: '2025-01-01T00:00:00.000Z',
@@ -80,6 +82,8 @@ describe('ClientAppointments route', () => {
                 psychoId: 'psycho-123',
                 startTime: '2027-06-10T10:00:00.000Z',
                 endTime: '2027-06-10T11:00:00.000Z',
+                startedAt: null,
+                endedAt: null,
                 status: 'upcoming',
                 googleMeetLink: null,
                 createdAt: '2025-01-01T00:00:00.000Z',
@@ -99,6 +103,36 @@ describe('ClientAppointments route', () => {
             // psychoName appears in appointment cards
             const psychoNames = screen.getAllByText('Dr. Smith')
             expect(psychoNames.length).toBeGreaterThanOrEqual(2)
+        })
+    })
+
+    it('places missed appointment in the Past Appointments section', async () => {
+        const appointments = [
+            {
+                id: 'apt-missed',
+                clientId: 'client-456',
+                psychoId: 'psycho-123',
+                startTime: '2025-01-10T10:00:00.000Z',
+                endTime: '2025-01-10T11:00:00.000Z',
+                startedAt: null,
+                endedAt: null,
+                status: 'missed',
+                googleMeetLink: null,
+                createdAt: '2025-01-01T00:00:00.000Z',
+                psychoName: 'Dr. Smith',
+            },
+        ]
+
+        mockGetClientGlobalList.mockResolvedValue({
+            data: { appointments },
+        })
+
+        renderWithRouter()
+
+        await waitFor(() => {
+            expect(screen.getByText(/past appointments/i)).toBeInTheDocument()
+            expect(screen.getByText(/upcoming appointments/i)).toBeInTheDocument()
+            expect(screen.getByText('Missed')).toBeInTheDocument()
         })
     })
 

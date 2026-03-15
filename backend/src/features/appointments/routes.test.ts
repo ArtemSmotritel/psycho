@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { testDb } from '../../test-fixtures/db'
 import { linkClientToPsycho } from '../clients/services'
 import {
     createAppointment,
@@ -420,7 +421,7 @@ describe('GET /api/clients/:clientId/appointments', () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
-        const apt1 = await createAppointment({
+        await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
             startTime: '2026-04-01T10:00:00.000Z',
@@ -438,9 +439,9 @@ describe('GET /api/clients/:clientId/appointments', () => {
             psychoId: psycho.id,
             clientId: client.id,
             startTime: '2026-03-10T09:00:00.000Z',
-            endTime: '2026-03-10T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z', // future end_time so status stays 'active'
         })
-        await startAppointment(apt3.id)
+        await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt3.id}`
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments`,
@@ -640,7 +641,10 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         expect(res.status).toBe(400)
         const body = await res.json()
         expect(body).toHaveProperty('error', 'AppointmentNotStartable')
-        expect(body).toHaveProperty('message', 'Only upcoming appointments can be started.')
+        expect(body).toHaveProperty(
+            'message',
+            'Only upcoming or warning appointments can be started.',
+        )
     })
 
     it('returns 400 AppointmentNotStartable for already active appointment', async () => {
@@ -1026,9 +1030,9 @@ describe('GET /api/psycho/appointments', () => {
             psychoId: psycho.id,
             clientId: client.id,
             startTime: '2026-03-10T09:00:00.000Z',
-            endTime: '2026-03-10T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z', // future end_time so findActiveAppointmentByPsycho finds it
         })
-        await startAppointment(apt.id)
+        await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt.id}`
 
         const res = await app.request(
             '/api/psycho/appointments',
@@ -1134,6 +1138,189 @@ describe('findAppointmentByIdForParticipant', () => {
         const result = await findAppointmentByIdForParticipant('nonexistent-id', user.id)
 
         expect(result).toBeNull()
+    })
+})
+
+describe('GET /:appointmentId — time-based status computation', () => {
+    it('returns status warning when start_time has passed but started_at is null and end_time has not passed', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        // Backdate start_time to past, keep end_time in the future, started_at stays null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'warning')
+    })
+
+    it('returns status missed when end_time has passed and started_at is null', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        // Both times in the past, started_at stays null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'missed')
+    })
+
+    it('returns status active when started_at is not null and end_time has not passed', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '30 minutes', end_time = NOW() + INTERVAL '30 minutes', started_at = NOW() - INTERVAL '25 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'active')
+    })
+
+    it('returns status past when started_at is not null and ended_at is not null', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '90 minutes', end_time = NOW() - INTERVAL '30 minutes', started_at = NOW() - INTERVAL '85 minutes', ended_at = NOW() - INTERVAL '35 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'past')
+    })
+
+    it('returns status past when started_at is not null and end_time has elapsed (auto-past without explicit /end)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        // started but ended_at is null; end_time is in the past
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'past')
+    })
+
+    it('PATCH /start returns 200 when appointment status is warning', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        // In warning window: start_time passed, end_time not yet, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('status', 'active')
+    })
+
+    it('PATCH /start returns 400 AppointmentNotStartable when status is missed', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        // Missed: both times in past, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotStartable')
+    })
+
+    it('response includes startedAt and endedAt fields', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointment).toHaveProperty('startedAt', null)
+        expect(body.appointment).toHaveProperty('endedAt', null)
     })
 })
 

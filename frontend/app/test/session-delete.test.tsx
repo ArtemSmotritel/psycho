@@ -66,6 +66,8 @@ const mockUpcomingAppointment = {
     psychoId: 'psycho-123',
     startTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
     endTime: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7 + 3600000).toISOString(),
+    startedAt: null,
+    endedAt: null,
     status: 'upcoming' as const,
     googleMeetLink: null,
     createdAt: '2026-03-10T15:00:00.000Z',

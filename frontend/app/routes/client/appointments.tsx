@@ -36,7 +36,7 @@ function AppointmentCard({ appointment }: AppointmentCardProps) {
                 <CardHeader className="max-w-lg">
                     <div className="flex sm:items-center sm:flex-row flex-col sm:justify-between items-start">
                         <div className="flex items-center gap-2">
-                            {appointment.status === 'past' ? (
+                            {appointment.status === 'past' || appointment.status === 'missed' ? (
                                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
                                 <Circle className="h-5 w-5 text-yellow-500" />
@@ -56,7 +56,22 @@ function AppointmentCard({ appointment }: AppointmentCardProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex gap-4 text-sm text-muted-foreground">
-                        <span className="capitalize">{appointment.status}</span>
+                        <span
+                            className={
+                                appointment.status === 'warning'
+                                    ? 'text-amber-500'
+                                    : appointment.status === 'missed'
+                                      ? 'text-destructive'
+                                      : 'capitalize'
+                            }
+                        >
+                            {appointment.status === 'warning'
+                                ? 'Warning'
+                                : appointment.status === 'missed'
+                                  ? 'Missed'
+                                  : appointment.status.charAt(0).toUpperCase() +
+                                    appointment.status.slice(1)}
+                        </span>
                         <span>{appointment.psychoName}</span>
                     </div>
                 </CardContent>
@@ -178,8 +193,12 @@ export default function ClientAppointments() {
             })
     }, [])
 
-    const pastAppointments = appointments.filter((a) => a.status === 'past')
-    const upcomingAppointments = appointments.filter((a) => a.status !== 'past')
+    const pastAppointments = appointments.filter(
+        (a) => a.status === 'past' || a.status === 'missed',
+    )
+    const upcomingAppointments = appointments.filter(
+        (a) => a.status !== 'past' && a.status !== 'missed',
+    )
 
     return (
         <div className="container mx-auto p-4">

@@ -28,7 +28,12 @@ export default function ClientAppointmentDetail() {
     const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
 
     useEffect(() => {
-        if (!appointmentId || !appointment || appointment.status !== 'past') return
+        if (
+            !appointmentId ||
+            !appointment ||
+            (appointment.status !== 'past' && appointment.status !== 'missed')
+        )
+            return
         setIsLoadingImpressions(true)
         impressionService
             .getClientList(appointmentId)
@@ -44,7 +49,12 @@ export default function ClientAppointmentDetail() {
     }, [appointmentId, appointment])
 
     useEffect(() => {
-        if (!appointmentId || !appointment || appointment.status !== 'past') return
+        if (
+            !appointmentId ||
+            !appointment ||
+            (appointment.status !== 'past' && appointment.status !== 'missed')
+        )
+            return
         setIsLoadingRecommendations(true)
         recommendationService
             .getClientList(appointmentId)
@@ -67,7 +77,7 @@ export default function ClientAppointmentDetail() {
         return <p>Appointment not found.</p>
     }
 
-    if (appointment.status === 'past') {
+    if (appointment.status === 'past' || appointment.status === 'missed') {
         const pastFormattedDate = format(new Date(appointment.startTime), 'PPP')
         const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
         const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')

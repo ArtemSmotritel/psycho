@@ -31,6 +31,8 @@ const upcomingAppointment = {
     psychoId: 'psycho-123',
     startTime: '2026-04-01T10:00:00.000Z',
     endTime: '2026-04-01T11:00:00.000Z',
+    startedAt: null,
+    endedAt: null,
     status: 'upcoming' as const,
     googleMeetLink: 'https://meet.google.com/abc',
     createdAt: '2026-03-10T15:00:00.000Z',
@@ -45,6 +47,11 @@ const upcomingNoMeet = {
 const pastAppointment = {
     ...upcomingAppointment,
     status: 'past' as const,
+}
+
+const missedAppointment = {
+    ...upcomingAppointment,
+    status: 'missed' as const,
 }
 
 const activeAppointment = {
@@ -89,6 +96,17 @@ describe('ClientAppointmentDetail route', () => {
 
     it('renders past appointment detail view with impressions section', async () => {
         mockUseCurrentClientAppointment = () => ({ appointment: pastAppointment, isLoading: false })
+        renderDetail()
+        await waitFor(() => {
+            expect(screen.getByText(/my impressions/i)).toBeInTheDocument()
+        })
+    })
+
+    it('renders missed appointment detail view with impressions section', async () => {
+        mockUseCurrentClientAppointment = () => ({
+            appointment: missedAppointment,
+            isLoading: false,
+        })
         renderDetail()
         await waitFor(() => {
             expect(screen.getByText(/my impressions/i)).toBeInTheDocument()

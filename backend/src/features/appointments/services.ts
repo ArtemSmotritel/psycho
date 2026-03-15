@@ -1,6 +1,17 @@
 import { db } from 'config/db'
 import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from './models'
 
+const STATUS_EXPR = `
+    CASE
+        WHEN started_at IS NOT NULL
+         AND (ended_at IS NOT NULL OR end_time <= NOW()) THEN 'past'
+        WHEN started_at IS NOT NULL                      THEN 'active'
+        WHEN NOW() < start_time                          THEN 'upcoming'
+        WHEN NOW() <= end_time                           THEN 'warning'
+        ELSE                                                  'missed'
+    END
+`
+
 export const createAppointment = async (params: {
     psychoId: string
     clientId: string
@@ -17,7 +28,9 @@ export const createAppointment = async (params: {
             client_id AS "clientId",
             start_time AS "startTime",
             end_time AS "endTime",
-            status,
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             google_meet_link AS "googleMeetLink",
             whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
@@ -37,7 +50,9 @@ export const findAppointmentById = async (
             client_id AS "clientId",
             start_time AS "startTime",
             end_time AS "endTime",
-            status,
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             google_meet_link AS "googleMeetLink",
             whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
@@ -66,7 +81,9 @@ export const updateAppointment = async (
             client_id AS "clientId",
             start_time AS "startTime",
             end_time AS "endTime",
-            status,
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             google_meet_link AS "googleMeetLink",
             whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
@@ -90,11 +107,13 @@ export const isClientLinkedAndActive = async (
 export async function startAppointment(appointmentId: string): Promise<Appointment> {
     const [row] = await db`
         UPDATE appointments
-        SET status = 'active'
+        SET started_at = NOW()
         WHERE id = ${appointmentId}
         RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
                   start_time AS "startTime", end_time AS "endTime",
-                  status, google_meet_link AS "googleMeetLink",
+                  started_at AS "startedAt", ended_at AS "endedAt",
+                  ${db.unsafe(STATUS_EXPR)} AS "status",
+                  google_meet_link AS "googleMeetLink",
                   whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
                   created_at AS "createdAt"
     `
@@ -111,12 +130,14 @@ export async function endAppointmentWithSnapshot(
 ): Promise<Appointment> {
     const [row] = await db`
         UPDATE appointments
-        SET status = 'past',
+        SET ended_at = NOW(),
             whiteboard_snapshot_url = ${snapshotDataUrl}
         WHERE id = ${appointmentId}
         RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
                   start_time AS "startTime", end_time AS "endTime",
-                  status, google_meet_link AS "googleMeetLink",
+                  started_at AS "startedAt", ended_at AS "endedAt",
+                  ${db.unsafe(STATUS_EXPR)} AS "status",
+                  google_meet_link AS "googleMeetLink",
                   whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
                   created_at AS "createdAt"
     `
@@ -127,11 +148,16 @@ export async function findActiveAppointmentByPsycho(psychoId: string): Promise<A
     const [row] = await db`
         SELECT id, psycho_id AS "psychoId", client_id AS "clientId",
                start_time AS "startTime", end_time AS "endTime",
-               status, google_meet_link AS "googleMeetLink",
+               started_at AS "startedAt", ended_at AS "endedAt",
+               ${db.unsafe(STATUS_EXPR)} AS "status",
+               google_meet_link AS "googleMeetLink",
                whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
                created_at AS "createdAt"
         FROM appointments
-        WHERE psycho_id = ${psychoId} AND status = 'active'
+        WHERE psycho_id = ${psychoId}
+          AND started_at IS NOT NULL
+          AND ended_at IS NULL
+          AND end_time > NOW()
         LIMIT 1
     `
     return (row as Appointment) ?? null
@@ -144,7 +170,9 @@ export async function findAppointmentByIdForClient(
     const [row] = await db`
         SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
                a.start_time AS "startTime", a.end_time AS "endTime",
-               a.status, a.google_meet_link AS "googleMeetLink",
+               a.started_at AS "startedAt", a.ended_at AS "endedAt",
+               ${db.unsafe(STATUS_EXPR)} AS "status",
+               a.google_meet_link AS "googleMeetLink",
                a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
                a.created_at AS "createdAt",
                u.name AS "psychoName"
@@ -166,7 +194,9 @@ export async function findAppointmentByIdForParticipant(
             client_id AS "clientId",
             start_time AS "startTime",
             end_time AS "endTime",
-            status,
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             google_meet_link AS "googleMeetLink",
             whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"
@@ -183,7 +213,9 @@ export async function listAppointmentsForClient(
     const rows = await db`
         SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
                a.start_time AS "startTime", a.end_time AS "endTime",
-               a.status, a.google_meet_link AS "googleMeetLink",
+               a.started_at AS "startedAt", a.ended_at AS "endedAt",
+               ${db.unsafe(STATUS_EXPR)} AS "status",
+               a.google_meet_link AS "googleMeetLink",
                a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
                a.created_at AS "createdAt",
                u.name AS "psychoName"
@@ -205,7 +237,9 @@ export async function listAllAppointmentsForPsycho(
             a.client_id AS "clientId",
             a.start_time AS "startTime",
             a.end_time AS "endTime",
-            a.status,
+            a.started_at AS "startedAt",
+            a.ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             a.google_meet_link AS "googleMeetLink",
             a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             a.created_at AS "createdAt",
@@ -229,7 +263,9 @@ export const listAppointments = async (
             client_id AS "clientId",
             start_time AS "startTime",
             end_time AS "endTime",
-            status,
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
             google_meet_link AS "googleMeetLink",
             whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             created_at AS "createdAt"

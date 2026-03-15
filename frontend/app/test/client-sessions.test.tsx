@@ -71,6 +71,8 @@ describe('ClientSessions route', () => {
                         psychoId: 'psycho-1',
                         startTime: '2025-01-10T10:00:00.000Z',
                         endTime: '2025-01-10T11:00:00.000Z',
+                        startedAt: null,
+                        endedAt: null,
                         status: 'past',
                         googleMeetLink: null,
                         createdAt: '2025-01-01T00:00:00.000Z',
@@ -81,6 +83,8 @@ describe('ClientSessions route', () => {
                         psychoId: 'psycho-1',
                         startTime: '2027-01-10T10:00:00.000Z',
                         endTime: '2027-01-10T11:00:00.000Z',
+                        startedAt: null,
+                        endedAt: null,
                         status: 'upcoming',
                         googleMeetLink: null,
                         createdAt: '2025-01-01T00:00:00.000Z',
@@ -95,6 +99,35 @@ describe('ClientSessions route', () => {
             // Both section labels should be present
             expect(screen.getByText(/past appointments/i)).toBeInTheDocument()
             expect(screen.getByText(/upcoming appointments/i)).toBeInTheDocument()
+        })
+    })
+
+    it('places missed appointment in the Past Appointments section', async () => {
+        mockGetList.mockResolvedValue({
+            data: {
+                appointments: [
+                    {
+                        id: 'apt-missed',
+                        clientId: 'client-123',
+                        psychoId: 'psycho-1',
+                        startTime: '2025-01-10T10:00:00.000Z',
+                        endTime: '2025-01-10T11:00:00.000Z',
+                        startedAt: null,
+                        endedAt: null,
+                        status: 'missed',
+                        googleMeetLink: null,
+                        createdAt: '2025-01-01T00:00:00.000Z',
+                    },
+                ],
+            },
+        })
+
+        renderWithRouter()
+
+        await waitFor(() => {
+            expect(screen.getByText(/past appointments/i)).toBeInTheDocument()
+            expect(screen.getByText(/upcoming appointments/i)).toBeInTheDocument()
+            expect(screen.getByText('Missed')).toBeInTheDocument()
         })
     })
 

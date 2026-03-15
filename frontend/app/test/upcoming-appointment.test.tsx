@@ -77,6 +77,8 @@ const upcomingAppointment = {
     psychoId: 'psycho-123',
     startTime: '2026-04-01T10:00:00.000Z',
     endTime: '2026-04-01T11:00:00.000Z',
+    startedAt: null,
+    endedAt: null,
     status: 'upcoming' as const,
     googleMeetLink: 'https://meet.google.com/abc',
     createdAt: '2026-03-10T15:00:00.000Z',
@@ -90,6 +92,16 @@ const upcomingAppointmentNoMeet = {
 const pastAppointment = {
     ...upcomingAppointment,
     status: 'past' as const,
+}
+
+const warningAppointment = {
+    ...upcomingAppointment,
+    status: 'warning' as const,
+}
+
+const missedAppointment = {
+    ...upcomingAppointment,
+    status: 'missed' as const,
 }
 
 function renderSession(path = '/psycho/clients/client-456/appointments/apt-001') {
@@ -272,5 +284,31 @@ describe('upcoming appointment detail view', () => {
 
         expect(screen.getByRole('button', { name: /edit appointment/i })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: /delete appointment/i })).toBeInTheDocument()
+    })
+
+    it('missed appointment renders the past branch (no Start button)', () => {
+        mockUseCurrentAppointment = () => ({
+            appointment: missedAppointment,
+            isLoading: false,
+        })
+
+        renderSession()
+
+        expect(screen.queryByRole('button', { name: /start appointment/i })).not.toBeInTheDocument()
+    })
+
+    it('warning appointment renders Start Appointment button but no Edit or Delete', () => {
+        mockUseCurrentAppointment = () => ({
+            appointment: warningAppointment,
+            isLoading: false,
+        })
+
+        renderSession()
+
+        expect(screen.getByRole('button', { name: /start appointment/i })).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /edit appointment/i })).not.toBeInTheDocument()
+        expect(
+            screen.queryByRole('button', { name: /delete appointment/i }),
+        ).not.toBeInTheDocument()
     })
 })

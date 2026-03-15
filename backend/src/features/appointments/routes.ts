@@ -53,11 +53,11 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/star
         return c.json({ error: 'NotFound' }, 404)
     }
 
-    if (existing.status !== 'upcoming') {
+    if (existing.status !== 'upcoming' && existing.status !== 'warning') {
         return c.json(
             {
                 error: 'AppointmentNotStartable',
-                message: 'Only upcoming appointments can be started.',
+                message: 'Only upcoming or warning appointments can be started.',
             },
             400,
         )
@@ -89,7 +89,7 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/end'
         return c.json({ error: 'NotFound' }, 404)
     }
 
-    if (existing.status !== 'active') {
+    if (existing.startedAt === null || existing.endedAt !== null) {
         return c.json(
             {
                 error: 'AppointmentNotEndable',

@@ -4,7 +4,9 @@ export interface Appointment {
     psychoId: string
     startTime: string
     endTime: string
-    status: 'upcoming' | 'active' | 'past'
+    startedAt: string | null
+    endedAt: string | null
+    status: 'upcoming' | 'active' | 'past' | 'warning' | 'missed'
     googleMeetLink: string | null
     whiteboardSnapshotUrl: string | null
     createdAt: string
