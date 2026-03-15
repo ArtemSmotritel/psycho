@@ -14,6 +14,13 @@ vi.mock('~/services/impression.service', () => ({
     },
 }))
 
+vi.mock('~/services/recommendation.service', () => ({
+    recommendationService: {
+        getClientList: vi.fn().mockResolvedValue({ data: { recommendations: [] } }),
+        react: vi.fn(),
+    },
+}))
+
 // Controlled mock for useCurrentClientAppointment so tests can set different states
 let mockUseCurrentClientAppointment: () => { appointment: any; isLoading: boolean }
 
@@ -47,6 +54,17 @@ const upcomingNoMeet = {
 const pastAppointment = {
     ...upcomingAppointment,
     status: 'past' as const,
+    whiteboardSnapshotUrl: null,
+}
+
+const pastAppointmentWithSnapshot = {
+    ...pastAppointment,
+    whiteboardSnapshotUrl: 'https://example.com/snapshot.png',
+}
+
+const pastAppointmentNoSnapshot = {
+    ...pastAppointment,
+    whiteboardSnapshotUrl: null,
 }
 
 const missedAppointment = {
@@ -201,5 +219,27 @@ describe('ClientAppointmentDetail route', () => {
         })
         renderDetail()
         expect(screen.queryByText(/join call/i)).not.toBeInTheDocument()
+    })
+
+    it('renders whiteboard snapshot image when whiteboardSnapshotUrl is present', async () => {
+        mockUseCurrentClientAppointment = () => ({
+            appointment: pastAppointmentWithSnapshot,
+            isLoading: false,
+        })
+        renderDetail()
+        await waitFor(() => {
+            expect(screen.getByRole('img', { name: /whiteboard snapshot/i })).toBeInTheDocument()
+        })
+    })
+
+    it('renders "No whiteboard snapshot available." text when whiteboardSnapshotUrl is null', async () => {
+        mockUseCurrentClientAppointment = () => ({
+            appointment: pastAppointmentNoSnapshot,
+            isLoading: false,
+        })
+        renderDetail()
+        await waitFor(() => {
+            expect(screen.getByText(/no whiteboard snapshot available/i)).toBeInTheDocument()
+        })
     })
 })
