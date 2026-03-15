@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
 
 // Polyfill ResizeObserver for Radix UI components that depend on it
 global.ResizeObserver = class ResizeObserver {

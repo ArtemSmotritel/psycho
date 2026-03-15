@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router'
+import { toast } from 'sonner'
 import { useAuth } from '~/contexts/auth-context'
 
 interface ProtectedRouteProps {
@@ -7,24 +9,34 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-    const { user, isLoading, isAuthenticated } = useAuth()
+    const { isLoading, isAuthenticated, activeRole } = useAuth()
     const location = useLocation()
 
+    const mappedRole: 'psychologist' | 'client' | null =
+        activeRole === 'psycho' ? 'psychologist' : activeRole === 'client' ? 'client' : null
+
+    const isWrongRole =
+        !isLoading && isAuthenticated && !!allowedRoles && (!mappedRole || !allowedRoles.includes(mappedRole))
+
+    useEffect(() => {
+        if (isWrongRole) {
+            const expected = allowedRoles![0]
+            toast.warning(
+                `This page is only accessible to ${expected}s. Change your role in the sidebar to access the page.`,
+            )
+        }
+    }, [isWrongRole])
+
     if (isLoading) {
-        return <div>Loading...</div> // Or your loading component
+        return <div>Loading...</div>
     }
 
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />
     }
 
-    if (
-        allowedRoles &&
-        user &&
-        !!user.role &&
-        !allowedRoles.includes(user.role as 'psychologist' | 'client')
-    ) {
-        return <Navigate to="/unauthorized" replace />
+    if (isWrongRole) {
+        return <Navigate to="/login" replace />
     }
 
     return <>{children}</>

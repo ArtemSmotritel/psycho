@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         )
     }, [])
 
-    const isLoading = isPending || isFetchingUser
+    const isLoading = isPending || isFetchingUser || (!isPending && !!session && !user)
     const activeRole = user?.activeRole ?? null
 
     return (
