@@ -1,5 +1,9 @@
 import { api } from './api'
-import type { Attachment, CreateImpressionDTO } from '~/models/attachment'
+import type {
+    Attachment,
+    AttachmentWithAppointment,
+    CreateImpressionDTO,
+} from '~/models/attachment'
 
 export const impressionService = {
     submit: (appointmentId: string, data: CreateImpressionDTO) =>
@@ -11,5 +15,10 @@ export const impressionService = {
     getPsychoList: (clientId: string, appointmentId: string) =>
         api.get<{ impressions: Attachment[] }>(
             `/clients/${clientId}/appointments/${appointmentId}/impressions`,
+        ),
+
+    getPsychoProgressList: (clientId: string) =>
+        api.get<{ impressions: AttachmentWithAppointment[] }>(
+            `/clients/${clientId}/progress/impressions`,
         ),
 }

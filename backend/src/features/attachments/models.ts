@@ -32,3 +32,7 @@ export interface RecommendationReaction {
 export interface AttachmentWithReaction extends Attachment {
     reaction: RecommendationReaction | null
 }
+
+export interface AttachmentWithAppointment extends Attachment {
+    appointmentStartTime: string // ISO timestamp from appointments.start_time
+}

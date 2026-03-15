@@ -65,6 +65,10 @@ export interface AttachmentWithReaction extends Attachment {
     reaction: RecommendationReaction | null
 }
 
+export interface AttachmentWithAppointment extends Attachment {
+    appointmentStartTime: string
+}
+
 export interface UpsertReactionDTO {
     done?: boolean
     comment?: string

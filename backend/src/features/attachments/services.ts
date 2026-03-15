@@ -2,6 +2,7 @@ import { db } from 'config/db'
 import type {
     Attachment,
     AttachmentType,
+    AttachmentWithAppointment,
     AttachmentWithReaction,
     RecommendationReaction,
 } from './models'
@@ -238,6 +239,24 @@ export async function listAttachmentsWithReactions(
         ORDER BY a.created_at ASC
     `
     return rows as AttachmentWithReaction[]
+}
+
+export async function listImpressionsForClientByPsycho(
+    clientId: string,
+    psychoId: string,
+): Promise<AttachmentWithAppointment[]> {
+    const rows = await db`
+        SELECT
+            ${db.unsafe(ATTACHMENT_SELECT)},
+            ap.start_time AS "appointmentStartTime"
+        FROM attachments a
+        JOIN appointments ap ON ap.id = a.appointment_id
+        WHERE ap.psycho_id = ${psychoId}
+          AND ap.client_id = ${clientId}
+          AND a.type = 'impression'
+        ORDER BY a.created_at ASC
+    `
+    return rows as AttachmentWithAppointment[]
 }
 
 export async function listAttachmentsWithReactionsByAuthor(
