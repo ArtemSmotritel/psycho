@@ -18,9 +18,14 @@ import {
 import { Button } from '~/components/ui/button'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
+import { impressionService } from '~/services/impression.service'
 import type { AppointmentWithPsycho } from '~/models/appointment'
+import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
+import { ImpressionForm } from '~/components/ImpressionForm'
+import { ImpressionList } from '~/components/ImpressionList'
+import { toast } from 'sonner'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -39,6 +44,9 @@ export default function LiveAppointment() {
         useState<ExcalidrawImperativeAPI | null>(null)
     const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
         useWhiteboardSync(appointmentId!)
+    const [impressions, setImpressions] = useState<Attachment[]>([])
+    const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
+    const [isSubmittingImpression, setIsSubmittingImpression] = useState(false)
 
     // Initial fetch
     useEffect(() => {
@@ -58,6 +66,23 @@ export default function LiveAppointment() {
             })
             .finally(() => {
                 setIsLoading(false)
+            })
+    }, [appointmentId])
+
+    // Fetch impressions on mount
+    useEffect(() => {
+        if (!appointmentId) return
+        setIsLoadingImpressions(true)
+        impressionService
+            .getClientList(appointmentId)
+            .then((res) => {
+                setImpressions(res.data.impressions)
+            })
+            .catch(() => {
+                // Silently ignore
+            })
+            .finally(() => {
+                setIsLoadingImpressions(false)
             })
     }, [appointmentId])
 
@@ -185,6 +210,26 @@ export default function LiveAppointment() {
                 <WhiteboardCursorOverlay
                     remoteCursors={remoteCursors}
                     excalidrawAPI={excalidrawAPIInstance}
+                />
+            </div>
+
+            <div className="mt-6 space-y-4">
+                <h3 className="text-lg font-semibold">My Impressions</h3>
+                <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
+                <ImpressionForm
+                    isSubmitting={isSubmittingImpression}
+                    onSubmit={async (text) => {
+                        if (!appointmentId) return
+                        setIsSubmittingImpression(true)
+                        try {
+                            const res = await impressionService.submit(appointmentId, { text })
+                            setImpressions((prev) => [...prev, res.data.impression])
+                        } catch {
+                            toast.error('Failed to submit impression. Please try again.')
+                        } finally {
+                            setIsSubmittingImpression(false)
+                        }
+                    }}
                 />
             </div>
 

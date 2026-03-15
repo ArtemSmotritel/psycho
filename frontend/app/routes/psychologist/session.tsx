@@ -4,14 +4,17 @@ import { ConfirmAction } from '@/components/ConfirmAction'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { Link, useNavigate, useParams } from 'react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '~/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
+import { impressionService } from '~/services/impression.service'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
+import { ImpressionList } from '~/components/ImpressionList'
+import type { Attachment } from '~/models/attachment'
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
@@ -26,6 +29,24 @@ export default function Session() {
         message: string
         activeAppointmentId: string
     } | null>(null)
+    const [impressions, setImpressions] = useState<Attachment[]>([])
+    const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
+
+    useEffect(() => {
+        if (!appointment || appointment.status !== 'past' || !clientId) return
+        setIsLoadingImpressions(true)
+        impressionService
+            .getPsychoList(clientId, appointment.id)
+            .then((res) => {
+                setImpressions(res.data.impressions)
+            })
+            .catch(() => {
+                // Silently ignore
+            })
+            .finally(() => {
+                setIsLoadingImpressions(false)
+            })
+    }, [appointment, clientId])
 
     if (isLoading) {
         return <p>Loading appointment...</p>
@@ -47,7 +68,10 @@ export default function Session() {
                 </p>
                 <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
                 {/* TODO: EDG-47 — whiteboard snapshot */}
-                {/* TODO: EDG-49 — client impressions */}
+                <div className="mt-6 space-y-4">
+                    <h3 className="text-lg font-semibold">Client Impressions</h3>
+                    <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
+                </div>
                 {/* TODO: EDG-50 — recommendations */}
             </>
         )

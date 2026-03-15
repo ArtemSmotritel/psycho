@@ -33,3 +33,9 @@ export interface UpdateNoteDTO {
     text?: string
     // no media fields — locked after creation
 }
+
+export interface CreateImpressionDTO {
+    text?: string
+    imageFileIds?: string[]
+    audioFileIds?: string[]
+}

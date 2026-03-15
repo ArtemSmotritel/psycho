@@ -1,9 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
 
 vi.mock('~/hooks/useRoleGuard', () => ({
     useRoleGuard: () => ({ userRole: 'client' }),
+}))
+
+vi.mock('~/components/AppPageHeader', () => ({
+    AppPageHeader: ({ text }: any) => <div>{text}</div>,
 }))
 
 vi.mock('~/components/ActionsSection', () => ({
@@ -13,6 +17,13 @@ vi.mock('~/components/ActionsSection', () => ({
             {label}
         </a>
     ),
+}))
+
+vi.mock('~/services/impression.service', () => ({
+    impressionService: {
+        getClientList: vi.fn().mockResolvedValue({ data: { impressions: [] } }),
+        submit: vi.fn(),
+    },
 }))
 
 // Controlled mock for useCurrentClientAppointment so tests can set different states
@@ -86,11 +97,12 @@ describe('ClientAppointmentDetail route', () => {
         expect(screen.getByText(/appointment not found/i)).toBeInTheDocument()
     })
 
-    it('shows past placeholder for past appointment', () => {
+    it('renders past appointment detail view with impressions section', async () => {
         mockUseCurrentClientAppointment = () => ({ appointment: pastAppointment, isLoading: false })
         renderDetail()
-        expect(screen.getByText(/past appointment/i)).toBeInTheDocument()
-        expect(screen.getByText(/EDG-24/)).toBeInTheDocument()
+        await waitFor(() => {
+            expect(screen.getByText(/my impressions/i)).toBeInTheDocument()
+        })
     })
 
     it('redirects to live page when appointment is active', () => {

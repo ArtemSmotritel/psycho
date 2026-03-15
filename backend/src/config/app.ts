@@ -13,6 +13,8 @@ import { psychoAppointmentRoutes } from '../features/appointments/psycho-routes'
 import { whiteboardRoutes } from '../features/whiteboard/routes'
 import { fileRoutes } from '../features/files/routes'
 import { noteRoutes } from '../features/attachments/notes-routes'
+import { impressionClientRoutes } from '../features/attachments/impressions-client-routes'
+import { impressionPsychoRoutes } from '../features/attachments/impressions-psycho-routes'
 
 export const app = new Hono<{
     Variables: {
@@ -81,3 +83,5 @@ app.route('/api/psycho/appointments', psychoAppointmentRoutes)
 app.route('/api/whiteboard', whiteboardRoutes)
 app.route('/api/files', fileRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
+app.route('/api/appointments/:appointmentId/impressions', impressionClientRoutes)
+app.route('/api/clients/:clientId/appointments/:appointmentId/impressions', impressionPsychoRoutes)
