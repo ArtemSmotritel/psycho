@@ -1,5 +1,7 @@
 import type { Session } from './session'
 import type { Client } from './client'
+import type { AppointmentWithPsycho } from './appointment'
+import type { AttachmentWithReaction } from './attachment'
 
 export interface SessionDistribution {
     total: number
@@ -21,4 +23,14 @@ export interface DashboardStatistics {
     recentClients: Client[]
     sessionDistribution: SessionDistribution
     clientActivity: ClientActivity
+}
+
+export interface ClientDashboardData {
+    nextAppointment: AppointmentWithPsycho | null
+    pendingRecommendations: AttachmentWithReaction[]
+    appointmentCounts: {
+        upcoming: number
+        active: number
+        past: number
+    }
 }

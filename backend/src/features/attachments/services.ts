@@ -259,6 +259,33 @@ export async function listImpressionsForClientByPsycho(
     return rows as AttachmentWithAppointment[]
 }
 
+export async function listPendingRecommendationsForClient(
+    clientId: string,
+): Promise<AttachmentWithReaction[]> {
+    const rows = await db`
+        SELECT
+            ${db.unsafe(ATTACHMENT_SELECT)},
+            CASE
+                WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                    'attachmentId', rr.attachment_id,
+                    'done', rr.done,
+                    'clientComment', rr.client_comment,
+                    'psychologistReply', rr.psychologist_reply,
+                    'updatedAt', rr.updated_at
+                )
+                ELSE NULL
+            END AS reaction
+        FROM attachments a
+        JOIN appointments ap ON ap.id = a.appointment_id
+        LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+        WHERE ap.client_id = ${clientId}
+          AND a.type = 'recommendation'
+          AND (rr.attachment_id IS NULL OR rr.done = false)
+        ORDER BY a.created_at DESC
+    `
+    return rows as AttachmentWithReaction[]
+}
+
 export async function listAttachmentsWithReactionsByAuthor(
     appointmentId: string,
     type: AttachmentType,

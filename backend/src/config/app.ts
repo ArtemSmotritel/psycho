@@ -18,6 +18,7 @@ import { impressionPsychoRoutes } from '../features/attachments/impressions-psyc
 import { recommendationPsychoRoutes } from '../features/attachments/recommendations-psycho-routes'
 import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
 import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
+import { clientDashboardRoutes } from '../features/client-dashboard/routes'
 
 export const app = new Hono<{
     Variables: {
@@ -94,3 +95,4 @@ app.route(
 )
 app.route('/api/appointments/:appointmentId/recommendations', recommendationClientRoutes)
 app.route('/api/clients/:clientId/progress/impressions', progressPsychoRoutes)
+app.route('/api/client/dashboard', clientDashboardRoutes)

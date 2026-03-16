@@ -252,6 +252,58 @@ export async function listAllAppointmentsForPsycho(
     return rows as AppointmentWithClient[]
 }
 
+export async function findNextUpcomingAppointmentForClient(
+    clientId: string,
+): Promise<AppointmentWithPsycho | null> {
+    const [row] = await db`
+        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
+               a.start_time AS "startTime", a.end_time AS "endTime",
+               a.started_at AS "startedAt", a.ended_at AS "endedAt",
+               ${db.unsafe(STATUS_EXPR)} AS "status",
+               a.google_meet_link AS "googleMeetLink",
+               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+               a.created_at AS "createdAt",
+               u.name AS "psychoName"
+        FROM appointments a
+        JOIN "user" u ON u.id = a.psycho_id
+        WHERE a.client_id = ${clientId}
+          AND (
+              (a.started_at IS NOT NULL AND a.ended_at IS NULL AND a.end_time > NOW())
+              OR
+              (a.started_at IS NULL AND a.start_time > NOW())
+          )
+        ORDER BY a.start_time ASC
+        LIMIT 1
+    `
+    return (row as AppointmentWithPsycho) ?? null
+}
+
+export async function countAppointmentsForClient(
+    clientId: string,
+): Promise<{ upcoming: number; past: number; active: number }> {
+    const rows = await db`
+        SELECT
+            ${db.unsafe(STATUS_EXPR)} AS "status",
+            COUNT(*) AS "count"
+        FROM appointments
+        WHERE client_id = ${clientId}
+        GROUP BY ${db.unsafe(STATUS_EXPR)}
+    `
+
+    let upcoming = 0
+    let past = 0
+    let active = 0
+
+    for (const row of rows) {
+        const count = Number(row.count)
+        if (row.status === 'upcoming') upcoming += count
+        else if (row.status === 'past') past += count
+        else if (row.status === 'active') active += count
+    }
+
+    return { upcoming, past, active }
+}
+
 export const listAppointments = async (
     psychoId: string,
     clientId: string,
