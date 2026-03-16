@@ -1,28 +1,14 @@
-import type { Session } from './session'
 import type { Client } from './client'
-import type { AppointmentWithPsycho } from './appointment'
+import type { AppointmentWithClient, AppointmentWithPsycho } from './appointment'
 import type { AttachmentWithReaction } from './attachment'
 
-export interface SessionDistribution {
-    total: number
-    upcoming: number
-    completed: number
-    cancelled: number
-}
-
-export interface ClientActivity {
-    activeClients: number
-    newClients: number
-    inactiveClients: number
-}
-
-export interface DashboardStatistics {
+export interface PsychoDashboard {
     totalClients: number
-    totalSessions: number
-    upcomingSessions: Session[]
+    totalUpcomingAppointments: number
+    totalPastAppointments: number
+    activeAppointment: AppointmentWithClient | null
+    upcomingAppointments: AppointmentWithClient[]
     recentClients: Client[]
-    sessionDistribution: SessionDistribution
-    clientActivity: ClientActivity
 }
 
 export interface ClientDashboardData {
