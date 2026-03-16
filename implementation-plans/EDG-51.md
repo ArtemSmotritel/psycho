@@ -132,11 +132,19 @@ upsertReaction(attachmentId: string, params: { done?: boolean; comment?: string 
 // RETURNING ...
 
 setReply(attachmentId: string, reply: string): Promise<RecommendationReaction>
-// UPDATE recommendation_reactions SET psychologist_reply = $reply, updated_at = NOW()
-// WHERE attachment_id = $attachmentId RETURNING ...
+// INSERT INTO recommendation_reactions (attachment_id, psychologist_reply)
+//   VALUES ($attachmentId, $reply)
+// ON CONFLICT (attachment_id) DO UPDATE SET
+//   psychologist_reply = EXCLUDED.psychologist_reply,
+//   updated_at = NOW()
+// RETURNING ...
+// Note: must be an upsert — a reaction row may not exist yet if the client
+// has not interacted before the psychologist replies.
 ```
 
-Also add `listAttachmentsWithReactions(appointmentId, type)` — joins `attachments` with `recommendation_reactions` via LEFT JOIN, returns `AttachmentWithReaction[]`. Used by the updated GET list routes.
+Also add two query functions:
+- `listAttachmentsWithReactions(appointmentId, type)` — LEFT JOIN with `recommendation_reactions`, no author filter. Used by the client GET / route.
+- `listAttachmentsWithReactionsByAuthor(appointmentId, type, authorId)` — same LEFT JOIN but also filters `a.author_id = authorId`. Used by the psychologist GET / route (must preserve author-scoping).
 
 ---
 
@@ -184,7 +192,11 @@ Applies **Psychologist reply access control rules** defined above.
 
 ### 6. Backend — Update GET Routes to Include Reactions
 
-Update the `GET /` handlers in both `recommendations-psycho-routes.ts` and `recommendations-client-routes.ts` to use `listAttachmentsWithReactions(appointmentId, 'recommendation')` instead of `listAttachments(...)`. This ensures reactions are always returned with the recommendation list, so the frontend doesn't need a separate fetch.
+Update the `GET /` handlers to use the new reaction-joined queries instead of the plain list functions:
+- `recommendations-psycho-routes.ts` GET /: replace `listAttachmentsByAuthor(appointmentId, 'recommendation', user.id)` with `listAttachmentsWithReactionsByAuthor(appointmentId, 'recommendation', user.id)`.
+- `recommendations-client-routes.ts` GET /: replace `listAttachments(appointmentId, 'recommendation')` with `listAttachmentsWithReactions(appointmentId, 'recommendation')`.
+
+This ensures reactions are always returned with the recommendation list, so the frontend doesn't need a separate fetch.
 
 Response shape becomes: `{ recommendations: AttachmentWithReaction[] }`.
 
@@ -287,11 +299,13 @@ Renders:
 
 ---
 
-### 11. Frontend — Update `session.tsx` (psychologist)
+### 11. Frontend — Update `AppointmentRecommendationsPanel.tsx` (psychologist)
 
-Modify `frontend/app/routes/psychologist/session.tsx`.
+Modify `frontend/app/components/AppointmentRecommendationsPanel.tsx`.
 
-Replace the plain recommendation list (from EDG-50) with `<RecommendationCard>` components (`role="psychologist"`). Wire `onSubmitReply` to `recommendationService.reply(...)`. On success, call `refetch()`. Show `toast.error` on failure.
+Note: EDG-50 put all psychologist recommendation rendering and state management in this component — `session.tsx` only mounts `<AppointmentRecommendationsPanel>` and has no recommendation logic of its own. The change belongs here, not in `session.tsx`.
+
+Replace the inline recommendation card markup with `<RecommendationCard>` components (`role="psychologist"`). Wire `onSubmitReply` to `recommendationService.reply(...)`. On success, call `fetchRecommendations()` (the existing `useCallback` in the component) to re-fetch the updated list. Show `toast.error` on failure.
 
 ---
 
@@ -299,7 +313,7 @@ Replace the plain recommendation list (from EDG-50) with `<RecommendationCard>` 
 
 Modify `frontend/app/routes/client/appointment-detail.tsx`.
 
-Replace the read-only recommendation list (from EDG-50) with `<RecommendationCard>` components (`role="client"`). Wire `onToggleDone` and `onSubmitComment` to `recommendationService.react(...)`. On success, call `refetch()`. Show `toast.error` on failure.
+Replace the read-only recommendation list (from EDG-50) with `<RecommendationCard>` components (`role="client"`). Wire `onToggleDone` and `onSubmitComment` to `recommendationService.react(...)`. On success, re-fetch the updated list via `recommendationService.getClientList(appointmentId)` and call `setRecommendations(...)` with the result. Show `toast.error` on failure.
 
 ---
 
@@ -316,14 +330,14 @@ Replace the read-only recommendation list (from EDG-50) with `<RecommendationCar
 | Path | Change |
 |------|--------|
 | `backend/src/features/attachments/models.ts` | Add `RecommendationReaction`, `AttachmentWithReaction` |
-| `backend/src/features/attachments/services.ts` | Add `findReaction`, `upsertReaction`, `setReply`, `listAttachmentsWithReactions` |
+| `backend/src/features/attachments/services.ts` | Add `findReaction`, `upsertReaction`, `setReply`, `listAttachmentsWithReactions`, `listAttachmentsWithReactionsByAuthor` |
 | `backend/src/features/attachments/recommendations-client-routes.ts` | Add `PATCH /:attachmentId/reaction`; update `GET /` to use `listAttachmentsWithReactions` |
-| `backend/src/features/attachments/recommendations-psycho-routes.ts` | Add `PATCH /:attachmentId/reply`; update `GET /` to use `listAttachmentsWithReactions` |
+| `backend/src/features/attachments/recommendations-psycho-routes.ts` | Add `PATCH /:attachmentId/reply`; update `GET /` to use `listAttachmentsWithReactionsByAuthor` |
 | `backend/src/test-fixtures/db.ts` | Add `'recommendation_reactions'` to `ALL_APP_TABLES` |
 | `frontend/app/models/attachment.ts` | Add `RecommendationReaction`, `AttachmentWithReaction`, `UpsertReactionDTO`, `SetReplyDTO` |
 | `frontend/app/services/recommendation.service.ts` | Update return types; add `react` and `reply` methods |
-| `frontend/app/routes/psychologist/session.tsx` | Replace recommendation list with `RecommendationCard` components |
-| `frontend/app/routes/client/appointment-detail.tsx` | Replace recommendation list with `RecommendationCard` components |
+| `frontend/app/components/AppointmentRecommendationsPanel.tsx` | Replace inline card markup with `RecommendationCard` (`role="psychologist"`); wire reply |
+| `frontend/app/routes/client/appointment-detail.tsx` | Replace read-only recommendation list with `RecommendationCard` components (`role="client"`) |
 
 ---
 
@@ -335,7 +349,7 @@ Replace the read-only recommendation list (from EDG-50) with `<RecommendationCar
 
 - `RecommendationCard` (client role): renders name/text; renders done toggle; renders comment textarea when no comment; renders read-only comment when set; calls `onToggleDone` on toggle; calls `onSubmitComment` on submit.
 - `RecommendationCard` (psychologist role): does not render toggle; renders client comment read-only; renders reply textarea when no reply; renders read-only reply when set; calls `onSubmitReply` on submit.
-- `session.tsx` past branch: calls `recommendationService.reply` on reply submit; shows toast on error.
+- `AppointmentRecommendationsPanel.tsx`: calls `recommendationService.reply` on reply submit; calls `fetchRecommendations()` on success; shows toast on error.
 - `appointment-detail.tsx` past branch: calls `recommendationService.react` on done toggle; calls `recommendationService.react` on comment submit; shows toast on error.
 
 ---
