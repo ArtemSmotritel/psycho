@@ -312,6 +312,208 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
 
         expect(res.status).toBe(403)
     })
+
+    it('returns 200 with partial update when only startTime is sent', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: '2026-04-01T09:00:00.000Z' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty('startTime', '2026-04-01T09:00:00.000Z')
+        // endTime stays unchanged
+        expect(body.appointment.endTime).toContain('2026-04-01T11:00:00')
+    })
+
+    it('returns 200 with manual meet link override without reschedule flag', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            googleMeetLink: null,
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    googleMeetLink: 'https://meet.google.com/manual-link',
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment).toHaveProperty(
+            'googleMeetLink',
+            'https://meet.google.com/manual-link',
+        )
+        expect(body).toHaveProperty('meetRescheduleFailed', false)
+    })
+
+    it('returns 200 with meetRescheduleFailed false when rescheduleGoogleMeet is false', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            googleMeetLink: 'https://meet.google.com/existing-link',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T10:00:00.000Z',
+                    endTime: '2026-04-02T11:00:00.000Z',
+                    rescheduleGoogleMeet: false,
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('appointment')
+        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        expect(body).toHaveProperty('meetRescheduleFailed', false)
+        // existing google meet link is preserved unchanged
+        expect(body.appointment).toHaveProperty(
+            'googleMeetLink',
+            'https://meet.google.com/existing-link',
+        )
+    })
+
+    it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true and no googleCalendarEventId, no Google account', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            googleMeetLink: 'https://meet.google.com/old-link',
+        })
+        // No googleCalendarEventId set (it's null by default), no Google OAuth account in test DB
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T10:00:00.000Z',
+                    endTime: '2026-04-02T11:00:00.000Z',
+                    rescheduleGoogleMeet: true,
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('meetRescheduleFailed', true)
+        // appointment times are still updated
+        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+    })
+
+    it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true and has googleCalendarEventId but no valid token', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            googleMeetLink: 'https://meet.google.com/old-link',
+        })
+        // Directly set googleCalendarEventId via testDb
+        await testDb`UPDATE appointments SET google_calendar_event_id = 'fake-event-id-123' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T10:00:00.000Z',
+                    endTime: '2026-04-02T11:00:00.000Z',
+                    rescheduleGoogleMeet: true,
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('meetRescheduleFailed', true)
+        // appointment times are still updated
+        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        // googleCalendarEventId is preserved (not exposed to frontend, check via DB)
+        const [row] =
+            await testDb`SELECT google_calendar_event_id FROM appointments WHERE id = ${apt.id}`
+        expect(row.google_calendar_event_id).toBe('fake-event-id-123')
+    })
+
+    it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true on appointment with no meet link, no Google account', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+            googleMeetLink: null,
+        })
+        // No googleCalendarEventId, no meet link, no Google account
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: '2026-04-02T10:00:00.000Z',
+                    endTime: '2026-04-02T11:00:00.000Z',
+                    rescheduleGoogleMeet: true,
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('meetRescheduleFailed', true)
+        // appointment is still updated
+        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+    })
 })
 
 describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {

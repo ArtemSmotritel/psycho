@@ -54,15 +54,17 @@ export default function ClientDashboard() {
 
     const { nextAppointment, pendingRecommendations, appointmentCounts } = data!
 
-    const handleToggleDoneForRec = (appointmentId: string) => async (attachmentId: string, done: boolean) => {
-        await recommendationService.react(appointmentId, attachmentId, { done })
-        await fetchDashboard()
-    }
+    const handleToggleDoneForRec =
+        (appointmentId: string) => async (attachmentId: string, done: boolean) => {
+            await recommendationService.react(appointmentId, attachmentId, { done })
+            await fetchDashboard()
+        }
 
-    const handleSubmitCommentForRec = (appointmentId: string) => async (attachmentId: string, comment: string) => {
-        await recommendationService.react(appointmentId, attachmentId, { comment })
-        await fetchDashboard()
-    }
+    const handleSubmitCommentForRec =
+        (appointmentId: string) => async (attachmentId: string, comment: string) => {
+            await recommendationService.react(appointmentId, attachmentId, { comment })
+            await fetchDashboard()
+        }
 
     return (
         <div className="container mx-auto p-4">
@@ -122,7 +124,9 @@ export default function ClientDashboard() {
                                         recommendation={rec}
                                         role="client"
                                         onToggleDone={handleToggleDoneForRec(rec.appointmentId)}
-                                        onSubmitComment={handleSubmitCommentForRec(rec.appointmentId)}
+                                        onSubmitComment={handleSubmitCommentForRec(
+                                            rec.appointmentId,
+                                        )}
                                     />
                                 ))}
                             </div>
@@ -146,8 +150,7 @@ export default function ClientDashboard() {
                                 {appointmentCounts.active}
                             </p>
                             <p className="text-sm">
-                                <span className="font-medium">Past:</span>{' '}
-                                {appointmentCounts.past}
+                                <span className="font-medium">Past:</span> {appointmentCounts.past}
                             </p>
                         </div>
                         <Link to="/client/appointments" className="text-sm underline">

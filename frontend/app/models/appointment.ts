@@ -30,4 +30,5 @@ export interface UpdateAppointmentDTO {
     startTime?: string
     endTime?: string
     googleMeetLink?: string | null
+    rescheduleGoogleMeet?: boolean
 }

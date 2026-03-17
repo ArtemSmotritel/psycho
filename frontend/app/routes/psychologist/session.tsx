@@ -213,6 +213,7 @@ export default function Session() {
                         }
                         initialData={{
                             startTime: new Date(appointment.startTime),
+                            endTime: new Date(appointment.endTime),
                             clientId: appointment.clientId,
                             googleMeetLink: appointment.googleMeetLink ?? undefined,
                         }}
@@ -224,13 +225,20 @@ export default function Session() {
                                     startTime: values.startTime.toISOString(),
                                     endTime: values.endTime.toISOString(),
                                     googleMeetLink: values.googleMeetLink || null,
+                                    rescheduleGoogleMeet: values.rescheduleGoogleMeet ?? false,
                                 }
-                                await appointmentService.update(
+                                const { data } = await appointmentService.update(
                                     appointment.clientId,
                                     appointment.id,
                                     dto,
                                 )
-                                toast.success('Appointment updated.')
+                                if (data.meetRescheduleFailed) {
+                                    toast.warning(
+                                        'Appointment rescheduled, but the Google Meet event could not be updated. The old link may still work — you can add a new one manually.',
+                                    )
+                                } else {
+                                    toast.success('Appointment updated.')
+                                }
                             } catch {
                                 toast.error('Failed to update appointment. Please try again.')
                             } finally {

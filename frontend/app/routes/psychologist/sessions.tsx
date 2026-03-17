@@ -164,7 +164,9 @@ export default function Sessions() {
                 generateGoogleMeet: values.generateGoogleMeet ?? false,
             })
             if (data.meetLinkGenerationFailed) {
-                toast.warning('Appointment created, but the Google Meet link could not be generated. You can add it manually later.')
+                toast.warning(
+                    'Appointment created, but the Google Meet link could not be generated. You can add it manually later.',
+                )
             }
             await fetchAppointments()
         } catch {

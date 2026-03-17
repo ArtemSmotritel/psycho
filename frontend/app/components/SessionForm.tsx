@@ -47,6 +47,7 @@ const formSchema = z
         endTime: z.date(),
         clientId: z.string().min(1, 'Please select a client'),
         generateGoogleMeet: z.boolean().default(true).optional(),
+        rescheduleGoogleMeet: z.boolean().default(false).optional(),
         googleMeetLink: z.string().optional(),
     })
     .refine((data) => data.endTime > data.startTime, {
@@ -325,29 +326,75 @@ export function SessionForm({ mode, trigger, initialData, onSubmit, isLoading }:
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="generateGoogleMeet"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={mode === 'edit'}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Generate Google Meet link</FormLabel>
-                                        <FormDescription>
-                                            {mode === 'edit'
-                                                ? 'Meeting link settings cannot be changed after creation'
-                                                : 'A meeting link will be automatically generated and sent to the client'}
-                                        </FormDescription>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
+                        {mode === 'add' ? (
+                            <FormField
+                                control={form.control}
+                                name="generateGoogleMeet"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>Generate Google Meet link</FormLabel>
+                                            <FormDescription>
+                                                A meeting link will be automatically generated and
+                                                sent to the client
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        ) : initialData?.googleMeetLink ? (
+                            <FormField
+                                control={form.control}
+                                name="rescheduleGoogleMeet"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Reschedule Google Meet to new times
+                                            </FormLabel>
+                                            <FormDescription>
+                                                The existing Google Meet event will be updated to
+                                                match the new appointment time.
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        ) : (
+                            <FormField
+                                control={form.control}
+                                name="generateGoogleMeet"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>Generate Google Meet link</FormLabel>
+                                            <FormDescription>
+                                                A new Google Meet link will be generated for the
+                                                updated appointment time.
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         {mode === 'edit' && (
                             <FormField

@@ -18,7 +18,7 @@ export const appointmentService = {
     getById: (clientId: string, appointmentId: string) =>
         api.get<{ appointment: Appointment }>(`/clients/${clientId}/appointments/${appointmentId}`),
     update: (clientId: string, appointmentId: string, data: UpdateAppointmentDTO) =>
-        api.patch<{ appointment: Appointment }>(
+        api.patch<{ appointment: Appointment; meetRescheduleFailed: boolean }>(
             `/clients/${clientId}/appointments/${appointmentId}`,
             data,
         ),

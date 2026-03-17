@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { generateGoogleMeetLink } from '../../utils/google-meet'
+import { generateGoogleMeetLink, rescheduleGoogleCalendarEvent } from '../../utils/google-meet'
 import {
     createAppointment,
     deleteAppointment,
@@ -139,9 +139,12 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
     }
 
     let googleMeetLink: string | null = null
+    let googleCalendarEventId: string | null = null
     let meetLinkGenerationFailed = false
     if (generateGoogleMeet === true) {
-        googleMeetLink = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
+        const result = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
+        googleMeetLink = result.link
+        googleCalendarEventId = result.eventId
         if (googleMeetLink === null) {
             meetLinkGenerationFailed = true
         }
@@ -153,6 +156,7 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
         startTime,
         endTime,
         googleMeetLink,
+        googleCalendarEventId,
     })
 
     return c.json({ appointment, meetLinkGenerationFailed }, 201)
@@ -181,21 +185,47 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId', as
 
     const mergedStart = body.startTime ?? existing.startTime
     const mergedEnd = body.endTime ?? existing.endTime
-    const mergedLink = 'googleMeetLink' in body ? body.googleMeetLink : existing.googleMeetLink
+    let mergedLink = 'googleMeetLink' in body ? body.googleMeetLink : existing.googleMeetLink
+    let mergedCalendarEventId = existing.googleCalendarEventId
 
     if (new Date(mergedEnd) <= new Date(mergedStart)) {
         return c.json({ error: 'BadRequest', message: 'endTime must be after startTime' }, 400)
+    }
+
+    const { rescheduleGoogleMeet } = body
+    let meetRescheduleFailed = false
+
+    if (rescheduleGoogleMeet === true) {
+        if (existing.googleCalendarEventId) {
+            const success = await rescheduleGoogleCalendarEvent(
+                user.id,
+                existing.googleCalendarEventId,
+                mergedStart,
+                mergedEnd,
+            )
+            if (!success) {
+                meetRescheduleFailed = true
+            }
+        } else {
+            const result = await generateGoogleMeetLink(user.id, clientId, mergedStart, mergedEnd)
+            mergedLink = result.link ?? mergedLink
+            mergedCalendarEventId = result.eventId
+            if (result.link === null) {
+                meetRescheduleFailed = true
+            }
+        }
     }
 
     const appointment = await updateAppointment(appointmentId, {
         startTime: mergedStart,
         endTime: mergedEnd,
         googleMeetLink: mergedLink,
+        googleCalendarEventId: mergedCalendarEventId,
     })
 
     // TODO: EDG-58 — send rescheduled email to client if startTime or endTime changed
 
-    return c.json({ appointment }, 200)
+    return c.json({ appointment, meetRescheduleFailed }, 200)
 })
 
 appointmentRoutes.use(authorized, onlyPsychoRequest).delete('/:appointmentId', async (c) => {

@@ -16,7 +16,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         activeRole === 'psycho' ? 'psychologist' : activeRole === 'client' ? 'client' : null
 
     const isWrongRole =
-        !isLoading && isAuthenticated && !!allowedRoles && (!mappedRole || !allowedRoles.includes(mappedRole))
+        !isLoading &&
+        isAuthenticated &&
+        !!allowedRoles &&
+        (!mappedRole || !allowedRoles.includes(mappedRole))
 
     useEffect(() => {
         if (isWrongRole) {
