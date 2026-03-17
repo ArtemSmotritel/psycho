@@ -13,10 +13,17 @@ export const auth = betterAuth({
     trustedOrigins: [process.env.FRONTEND_URL as string],
     socialProviders: {
         google: {
-            prompt: 'select_account',
+            prompt: 'consent',
+            accessType: 'offline',
             clientId: process.env.GOOGLE_CLIENT_ID as string,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
             redirectUri: process.env.GOOGLE_REDIRECT_URI as string,
+            scope: [
+                'openid',
+                'email',
+                'profile',
+                'https://www.googleapis.com/auth/calendar.events',
+            ],
         },
     },
     plugins: [...(process.env.NODE_ENV === 'test' ? [testUtils()] : [])],

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
+import { generateGoogleMeetLink } from '../../utils/google-meet'
 import {
     createAppointment,
     deleteAppointment,
@@ -117,7 +118,7 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
     const clientId = c.req.param('clientId')
     const body = await c.req.json()
 
-    const { startTime, endTime } = body
+    const { startTime, endTime, generateGoogleMeet } = body
 
     if (!startTime) {
         return c.json({ error: 'BadRequest', message: 'startTime is required' }, 400)
@@ -137,12 +138,17 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
         )
     }
 
+    let googleMeetLink: string | null = null
+    if (generateGoogleMeet === true) {
+        googleMeetLink = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
+    }
+
     const appointment = await createAppointment({
         psychoId: user.id,
         clientId,
         startTime,
         endTime,
-        googleMeetLink: null,
+        googleMeetLink,
     })
 
     return c.json({ appointment }, 201)
