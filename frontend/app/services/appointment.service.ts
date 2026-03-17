@@ -9,7 +9,10 @@ import type {
 
 export const appointmentService = {
     create: (clientId: string, data: CreateAppointmentDTO) =>
-        api.post<{ appointment: Appointment }>(`/clients/${clientId}/appointments`, data),
+        api.post<{ appointment: Appointment; meetLinkGenerationFailed: boolean }>(
+            `/clients/${clientId}/appointments`,
+            data,
+        ),
     getList: (clientId: string) =>
         api.get<{ appointments: Appointment[] }>(`/clients/${clientId}/appointments`),
     getById: (clientId: string, appointmentId: string) =>

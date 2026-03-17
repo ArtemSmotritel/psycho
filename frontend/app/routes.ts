@@ -29,4 +29,5 @@ export default [
         route('client/appointments/:appointmentId', 'routes/client/appointment-detail.tsx'),
         route('client/appointments/:appointmentId/live', 'routes/client/live-appointment.tsx'),
     ]),
+    route('.well-known/*', 'routes/well-known.tsx'),
 ] satisfies RouteConfig

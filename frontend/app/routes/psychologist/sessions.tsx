@@ -35,6 +35,7 @@ import { DataTablePagination } from '@/components/DataTablePagination'
 import type { AppointmentWithClient } from '~/models/appointment'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 import { appointmentService } from '~/services/appointment.service'
+import { toast } from 'sonner'
 
 export default function Sessions() {
     const navigate = useNavigate()
@@ -157,11 +158,14 @@ export default function Sessions() {
         setIsCreating(true)
         setCreateError(null)
         try {
-            await appointmentService.create(values.clientId, {
+            const { data } = await appointmentService.create(values.clientId, {
                 startTime: formatISO(values.startTime),
                 endTime: formatISO(values.endTime),
                 generateGoogleMeet: values.generateGoogleMeet ?? false,
             })
+            if (data.meetLinkGenerationFailed) {
+                toast.warning('Appointment created, but the Google Meet link could not be generated. You can add it manually later.')
+            }
             await fetchAppointments()
         } catch {
             setCreateError('Failed to schedule appointment. Please try again.')

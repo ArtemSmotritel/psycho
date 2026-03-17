@@ -139,8 +139,12 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
     }
 
     let googleMeetLink: string | null = null
+    let meetLinkGenerationFailed = false
     if (generateGoogleMeet === true) {
         googleMeetLink = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
+        if (googleMeetLink === null) {
+            meetLinkGenerationFailed = true
+        }
     }
 
     const appointment = await createAppointment({
@@ -151,7 +155,7 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).post('/', async (c) => {
         googleMeetLink,
     })
 
-    return c.json({ appointment }, 201)
+    return c.json({ appointment, meetLinkGenerationFailed }, 201)
 })
 
 appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId', async (c) => {
