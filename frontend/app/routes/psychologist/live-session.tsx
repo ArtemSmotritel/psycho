@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Video, LogIn, StopCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
@@ -40,6 +40,27 @@ export default function LiveSession() {
     const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
         useState<ExcalidrawImperativeAPI | null>(null)
     const appointmentStatus = appointment?.status
+
+    const handleExcalidrawAPI = useCallback(
+        (api: ExcalidrawImperativeAPI) => {
+            setExcalidrawAPI(api)
+            setExcalidrawAPIInstance(api)
+        },
+        [setExcalidrawAPI],
+    )
+
+    const excalidrawUIOptions = useMemo(
+        () => ({
+            canvasActions: {
+                saveToActiveFile: false,
+                loadScene: false,
+                export: false as const,
+                toggleTheme: false,
+                clearCanvas: false,
+            },
+        }),
+        [],
+    )
 
     useEffect(() => {
         if (appointmentStatus !== 'active') return
@@ -164,31 +185,20 @@ export default function LiveSession() {
             <div style={{ position: 'relative' }}>
                 <Suspense
                     fallback={
-                        <div className="flex items-center justify-center h-full">
+                        <div className="flex items-center justify-center h-[600px]">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
                         </div>
                     }
                 >
-                    <div className="w-full h-full border border-gray-300">
+                    <div className="w-full h-[600px] border border-gray-300">
                         <Excalidraw
-                            excalidrawAPI={(api: ExcalidrawImperativeAPI) => {
-                                setExcalidrawAPI(api)
-                                setExcalidrawAPIInstance(api)
-                            }}
+                            excalidrawAPI={handleExcalidrawAPI}
                             theme="light"
                             zenModeEnabled={true}
                             gridModeEnabled={true}
                             onChange={onWhiteboardChange}
                             onPointerUpdate={onPointerUpdate}
-                            UIOptions={{
-                                canvasActions: {
-                                    saveToActiveFile: false,
-                                    loadScene: false,
-                                    export: false,
-                                    toggleTheme: false,
-                                    clearCanvas: false,
-                                },
-                            }}
+                            UIOptions={excalidrawUIOptions}
                         />
                     </div>
                 </Suspense>

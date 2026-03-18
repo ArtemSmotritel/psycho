@@ -18,7 +18,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
-import { isToday, formatISO, format } from 'date-fns'
+import { isToday, format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import {
@@ -35,7 +35,7 @@ import { DataTablePagination } from '@/components/DataTablePagination'
 import type { AppointmentWithClient } from '~/models/appointment'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 import { appointmentService } from '~/services/appointment.service'
-import { toast } from 'sonner'
+import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 
 export default function Sessions() {
     const navigate = useNavigate()
@@ -46,9 +46,6 @@ export default function Sessions() {
 
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-
-    const [isCreating, setIsCreating] = useState(false)
-    const [createError, setCreateError] = useState<string | null>(null)
 
     const fetchAppointments = async () => {
         setIsLoading(true)
@@ -66,6 +63,8 @@ export default function Sessions() {
     useEffect(() => {
         fetchAppointments()
     }, [])
+
+    const { handleCreate: handleAddSession, isCreating } = useCreateAppointment(fetchAppointments)
 
     const todayFilterFn: FilterFn<AppointmentWithClient> = (row, columnId) => {
         const value = row.getValue(columnId) as string
@@ -153,28 +152,6 @@ export default function Sessions() {
         },
     ]
 
-    const handleAddSession = async (values: any) => {
-        if (!values.clientId) return
-        setIsCreating(true)
-        setCreateError(null)
-        try {
-            const { data } = await appointmentService.create(values.clientId, {
-                startTime: formatISO(values.startTime),
-                endTime: formatISO(values.endTime),
-                generateGoogleMeet: values.generateGoogleMeet ?? false,
-            })
-            if (data.meetLinkGenerationFailed) {
-                toast.warning(
-                    'Appointment created, but the Google Meet link could not be generated. You can add it manually later.',
-                )
-            }
-            await fetchAppointments()
-        } catch {
-            setCreateError('Failed to schedule appointment. Please try again.')
-        } finally {
-            setIsCreating(false)
-        }
-    }
 
     const table = useReactTable({
         data,
@@ -212,9 +189,7 @@ export default function Sessions() {
             <div className="container mx-auto p-4">
                 <AppPageHeader text="Appointments" />
 
-                {createError && <p className="text-sm text-destructive mb-2">{createError}</p>}
-
-                <div className="flex justify-between items-center mb-4">
+<div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
                             <Checkbox

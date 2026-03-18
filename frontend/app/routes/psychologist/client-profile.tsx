@@ -23,6 +23,7 @@ import { ConfirmAction } from '~/components/ConfirmAction'
 import { formatAppDate } from '~/utils/utils'
 import { ProtectedComponent } from '~/components/ProtectedComponent'
 import { clientService } from '~/services/client.service'
+import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 
 type ClientProfileProps = {
     params: {
@@ -97,6 +98,8 @@ function ContactItem({ icon, label, value, onCopy, type }: ContactItemProps) {
 export default function ClientProfile({ params }: ClientProfileProps) {
     const navigate = useNavigate()
     const { role } = useParams<{ role: string }>()
+    const { handleCreate: handleAddSession, isCreating: isCreatingAppointment } =
+        useCreateAppointment()
 
     // This would be replaced with actual data fetching
     const client = {
@@ -251,10 +254,9 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                                 label="Schedule Session"
                             />
                         }
-                        onSubmit={(values) => {
-                            console.log('Scheduling session:', values)
-                            // TODO: Implement actual session scheduling
-                        }}
+                        initialData={{ clientId: params.clientId }}
+                        isLoading={isCreatingAppointment}
+                        onSubmit={handleAddSession}
                     />
                 </ProtectedComponent>
 

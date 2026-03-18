@@ -2,6 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 
+/** Lightweight signature of an element array: "id@version" entries sorted and joined. */
+function elementSignature(els: readonly ExcalidrawElement[]): string {
+    return els
+        .map((e) => `${e.id}@${e.version}`)
+        .sort()
+        .join('|')
+}
+
 export function useWhiteboardSync(appointmentId: string): {
     setExcalidrawAPI: (api: ExcalidrawImperativeAPI) => void
     onWhiteboardChange: (
@@ -16,6 +24,9 @@ export function useWhiteboardSync(appointmentId: string): {
     const wsRef = useRef<WebSocket | null>(null)
     const excalidrawAPIRef = useRef<ExcalidrawImperativeAPI | null>(null)
     const sentFilesRef = useRef<Set<string>>(new Set())
+    // Signature of the last element array received from the server.
+    // Used to suppress the onChange echo that fires after a remote updateScene call.
+    const lastRemoteSignatureRef = useRef<string>('')
     const [remoteCursors, setRemoteCursors] = useState<Map<string, { x: number; y: number }>>(
         new Map(),
     )
@@ -59,16 +70,27 @@ export function useWhiteboardSync(appointmentId: string): {
             if (parsed.type === 'scene_init') {
                 const elements = parsed.elements ?? []
                 const files = parsed.files ?? {}
-                excalidrawAPIRef.current?.updateScene({ elements: elements as ExcalidrawElement[] })
-                excalidrawAPIRef.current?.addFiles(Object.values(files) as any[])
+                // Only restore if there is actual prior state — an empty scene_init
+                // must not wipe drawings the user made before the WS connected.
+                if (elements.length > 0) {
+                    lastRemoteSignatureRef.current = elementSignature(
+                        elements as ExcalidrawElement[],
+                    )
+                    excalidrawAPIRef.current?.updateScene({
+                        elements: elements as ExcalidrawElement[],
+                    })
+                }
+                if (Object.keys(files).length > 0) {
+                    excalidrawAPIRef.current?.addFiles(Object.values(files) as any[])
+                }
                 // Mark received file IDs as already sent to avoid re-sending
                 for (const fileId of Object.keys(files)) {
                     sentFilesRef.current.add(fileId)
                 }
             } else if (parsed.type === 'elements') {
-                excalidrawAPIRef.current?.updateScene({
-                    elements: (parsed.elements ?? []) as ExcalidrawElement[],
-                })
+                const elements = (parsed.elements ?? []) as ExcalidrawElement[]
+                lastRemoteSignatureRef.current = elementSignature(elements)
+                excalidrawAPIRef.current?.updateScene({ elements })
             } else if (parsed.type === 'files') {
                 const files = parsed.files ?? {}
                 excalidrawAPIRef.current?.addFiles(Object.values(files) as any[])
@@ -98,6 +120,13 @@ export function useWhiteboardSync(appointmentId: string): {
     const onWhiteboardChange = useCallback(
         (elements: readonly ExcalidrawElement[], _appState: AppState, files: BinaryFiles) => {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return
+
+            // Skip if this onChange was triggered by a remote updateScene call.
+            // When the server pushes elements and we call updateScene(), Excalidraw fires
+            // onChange with those same elements — sending them back would create an
+            // infinite broadcast loop that overwrites local drawings.
+            const sig = elementSignature(elements)
+            if (sig === lastRemoteSignatureRef.current) return
 
             wsRef.current.send(JSON.stringify({ type: 'elements', elements }))
 

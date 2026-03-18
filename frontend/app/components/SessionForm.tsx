@@ -83,11 +83,19 @@ export function SessionForm({ mode, trigger, initialData, onSubmit, isLoading }:
             })
     }, [])
 
+    const defaultStart = (() => {
+        const d = new Date()
+        d.setMinutes(0, 0, 0)
+        d.setHours(d.getHours() + 1)
+        return d
+    })()
+    const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000)
+
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            startTime: new Date(),
-            endTime: new Date(),
+            startTime: defaultStart,
+            endTime: defaultEnd,
             clientId: currentClient?.id || '',
             generateGoogleMeet: true,
             ...initialData,
