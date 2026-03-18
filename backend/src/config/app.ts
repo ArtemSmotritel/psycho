@@ -5,7 +5,7 @@ import { logger } from 'hono/logger'
 import { auth } from 'utils/auth'
 import { log } from 'utils/logger'
 import { setSession, setUserRole } from '../middlewares/auth'
-import { clientRoutes } from '../features/clients/routes'
+import { clientRoutes, clientSelfRoutes } from '../features/clients/routes'
 import { userRoutes } from '../features/users/routes'
 import { appointmentRoutes } from '../features/appointments/routes'
 import { clientAppointmentRoutes } from '../features/appointments/client-routes'
@@ -81,6 +81,7 @@ app.use('*', setSession)
 
 app.use(setUserRole)
 
+app.route('/api/clients', clientSelfRoutes)
 app.route('/api/clients', clientRoutes)
 app.route('/api/users', userRoutes)
 app.route('/api/clients/:clientId/appointments', appointmentRoutes)

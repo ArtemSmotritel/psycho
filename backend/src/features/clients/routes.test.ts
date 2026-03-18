@@ -571,3 +571,76 @@ describe('PUT /api/clients/:clientId', () => {
         expect(res.status).toBe(403)
     })
 })
+
+describe('GET /api/clients/me', () => {
+    it('returns 200 with own profile when called with client role', async () => {
+        const client = await insertTestUser({ email: 'client@test.com' })
+
+        const res = await app.request(
+            '/api/clients/me',
+            await asUser(client.id, {
+                method: 'GET',
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toMatchObject({
+            id: client.id,
+            email: 'client@test.com',
+        })
+    })
+
+    it('returns 403 when called with psycho role', async () => {
+        const psycho = await insertTestUser()
+
+        const res = await app.request(
+            '/api/clients/me',
+            await asUser(psycho.id, {
+                method: 'GET',
+                headers: { ...PSYCHO_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+})
+
+describe('PUT /api/clients/me', () => {
+    it('returns 200 with updated client when called with client role', async () => {
+        const client = await insertTestUser()
+
+        const res = await app.request(
+            '/api/clients/me',
+            await asUser(client.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ phone: '+1234567890', telegram: '@testuser' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toMatchObject({
+            id: client.id,
+            phone: '+1234567890',
+            telegram: '@testuser',
+        })
+    })
+
+    it('returns 403 when called with psycho role', async () => {
+        const psycho = await insertTestUser()
+
+        const res = await app.request(
+            '/api/clients/me',
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ phone: '+1234567890' }),
+            }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+})

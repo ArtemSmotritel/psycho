@@ -16,4 +16,9 @@ export const clientService = {
         api.get(`/clients/${clientId}/sessions`, { params }),
 
     getProgress: (clientId: string) => api.get(`/clients/${clientId}/progress`),
+
+    getMe: () => api.get<{ client: Client }>('/clients/me'),
+
+    updateMe: (data: Partial<Pick<Client, 'name' | 'username' | 'phone' | 'telegram' | 'instagram'>>) =>
+        api.put<{ client: Client }>('/clients/me', data),
 }

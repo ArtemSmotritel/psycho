@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
+import { authorized, onlyClientRequest, onlyPsychoRequest } from '../../middlewares/auth'
 import {
     findClientByEmail,
     findClientById,
@@ -10,6 +10,25 @@ import {
     unlinkClientFromPsycho,
     updateClient,
 } from './services'
+
+export const clientSelfRoutes = new Hono()
+
+clientSelfRoutes
+    .get('/me', authorized, onlyClientRequest, async (c) => {
+        const user = c.get('user')
+        const client = await findClientById(user.id)
+        if (!client) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
+        return c.json({ client })
+    })
+    .put('/me', authorized, onlyClientRequest, async (c) => {
+        const user = c.get('user')
+        const { name, username, phone, telegram, instagram } = await c.req.json()
+        await updateClient(user.id, { name, username, phone, telegram, instagram })
+        const client = await findClientById(user.id)
+        return c.json({ client })
+    })
 
 export const clientRoutes = new Hono()
 
