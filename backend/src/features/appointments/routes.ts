@@ -12,6 +12,7 @@ import {
     startAppointment,
     updateAppointment,
 } from './services'
+import { clearWhiteboardState } from '../whiteboard/services'
 
 export const appointmentRoutes = new Hono()
 
@@ -110,6 +111,12 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).patch('/:appointmentId/end'
     const snapshotDataUrl = typeof body.snapshotDataUrl === 'string' ? body.snapshotDataUrl : null
 
     const appointment = await endAppointmentWithSnapshot(appointmentId, snapshotDataUrl)
+
+    // Clear persisted whiteboard state now that the appointment has ended
+    await clearWhiteboardState(appointmentId).catch((err) => {
+        console.warn('Failed to clear whiteboard state for appointment', appointmentId, err)
+    })
+
     return c.json({ appointment }, 200)
 })
 

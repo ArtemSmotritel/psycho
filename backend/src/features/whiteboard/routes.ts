@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { auth } from 'utils/auth'
 import { upgradeWebSocket } from 'config/websocket'
 import { findAppointmentByIdForParticipant } from '../appointments/services'
+import { loadWhiteboardState, saveWhiteboardState } from './services'
 
 interface RoomConnection {
     ws: ServerWebSocket<unknown>
@@ -15,6 +16,7 @@ interface Room {
 }
 
 const rooms = new Map<string, Room>()
+const saveTimers = new Map<string, Timer>()
 
 export const whiteboardRoutes = new Hono()
 
@@ -59,23 +61,32 @@ whiteboardRoutes.get(
                 const rawWs = ws.raw as ServerWebSocket<unknown>
                 thisConnection = { ws: rawWs, userId }
 
-                if (!rooms.has(appointmentId)) {
-                    rooms.set(appointmentId, {
-                        connections: new Set(),
-                        lastElements: [],
-                        lastFiles: {},
-                    })
-                }
-                const room = rooms.get(appointmentId)!
-                room.connections.add(thisConnection)
+                const initRoom = async () => {
+                    if (!rooms.has(appointmentId)) {
+                        // Load persisted state from DB
+                        const state = await loadWhiteboardState(appointmentId)
+                        rooms.set(appointmentId, {
+                            connections: new Set(),
+                            lastElements: state.elements,
+                            lastFiles: state.files,
+                        })
+                    }
+                    const room = rooms.get(appointmentId)!
+                    room.connections.add(thisConnection!)
 
-                // Replay last known scene to the new connection
-                const initMsg = JSON.stringify({
-                    type: 'scene_init',
-                    elements: room.lastElements,
-                    files: room.lastFiles,
+                    // Replay last known scene to the new connection
+                    const initMsg = JSON.stringify({
+                        type: 'scene_init',
+                        elements: room.lastElements,
+                        files: room.lastFiles,
+                    })
+                    rawWs.send(initMsg)
+                }
+
+                initRoom().catch((err) => {
+                    console.error('whiteboard: failed to init room', err)
+                    rawWs.close(1011, 'InternalError')
                 })
-                rawWs.send(initMsg)
             },
 
             onMessage(event, _ws) {
@@ -98,12 +109,44 @@ whiteboardRoutes.get(
                     y?: number
                 }
 
-                // Update cached state
+                // Update cached state and schedule debounced DB save
                 if (parsed.type === 'elements' && Array.isArray(parsed.elements)) {
                     room.lastElements = parsed.elements
+
+                    const existing = saveTimers.get(appointmentId)
+                    if (existing) clearTimeout(existing)
+                    saveTimers.set(
+                        appointmentId,
+                        setTimeout(() => {
+                            saveTimers.delete(appointmentId)
+                            saveWhiteboardState(
+                                appointmentId,
+                                room.lastElements,
+                                room.lastFiles,
+                            ).catch((err) => {
+                                console.error('whiteboard: failed to save elements', err)
+                            })
+                        }, 3000),
+                    )
                 }
                 if (parsed.type === 'files' && parsed.files) {
                     room.lastFiles = { ...room.lastFiles, ...parsed.files }
+
+                    const existing = saveTimers.get(appointmentId)
+                    if (existing) clearTimeout(existing)
+                    saveTimers.set(
+                        appointmentId,
+                        setTimeout(() => {
+                            saveTimers.delete(appointmentId)
+                            saveWhiteboardState(
+                                appointmentId,
+                                room.lastElements,
+                                room.lastFiles,
+                            ).catch((err) => {
+                                console.error('whiteboard: failed to save files', err)
+                            })
+                        }, 3000),
+                    )
                 }
 
                 // Broadcast to all other connections in this room

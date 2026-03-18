@@ -1144,6 +1144,38 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', null)
     })
 
+    it('clears whiteboard_elements and whiteboard_files on end', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await startAppointment(apt.id)
+
+        // Seed whiteboard state directly
+        await testDb`
+            UPDATE appointments
+            SET whiteboard_elements = ${JSON.stringify([{ id: 'el1', type: 'rectangle' }])}::jsonb,
+                whiteboard_files    = ${JSON.stringify({ 'file-1': { id: 'file-1' } })}::jsonb
+            WHERE id = ${apt.id}
+        `
+
+        await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
+
+        const [row] = await testDb`
+            SELECT whiteboard_elements, whiteboard_files FROM appointments WHERE id = ${apt.id}
+        `
+        expect(row.whiteboard_elements).toBeNull()
+        expect(row.whiteboard_files).toBeNull()
+    })
+
     it('returns 404 when appointment does not exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })

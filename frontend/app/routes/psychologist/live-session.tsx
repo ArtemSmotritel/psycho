@@ -63,18 +63,20 @@ export default function LiveSession() {
     )
 
     useEffect(() => {
-        if (appointmentStatus !== 'active') return
+        if (appointmentStatus !== 'active' || !appointment) return
 
-        const startTime = Date.now()
-        const timer = setInterval(() => {
-            const elapsed = Date.now() - startTime
+        const sessionStart = new Date(appointment.startedAt ?? appointment.startTime).getTime()
+        const tick = () => {
+            const elapsed = Date.now() - sessionStart
             const hours = Math.floor(elapsed / (1000 * 60 * 60))
             const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60))
             setTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
-        }, 1000)
+        }
+        tick()
+        const timer = setInterval(tick, 1000)
 
         return () => clearInterval(timer)
-    }, [appointmentStatus])
+    }, [appointmentStatus, appointment])
 
     if (isLoading) {
         return <p>Loading appointment...</p>
