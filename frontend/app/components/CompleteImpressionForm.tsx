@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -21,10 +23,12 @@ type FormValues = z.infer<typeof formSchema>
 interface CompleteImpressionFormProps {
     isOpen: boolean
     onClose: () => void
-    onSubmit: (values: FormValues) => void
+    onSubmit: (values: FormValues) => Promise<void>
 }
 
 export function CompleteImpressionForm({ isOpen, onClose, onSubmit }: CompleteImpressionFormProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -32,10 +36,17 @@ export function CompleteImpressionForm({ isOpen, onClose, onSubmit }: CompleteIm
         },
     })
 
-    const handleSubmit = (values: FormValues) => {
-        onSubmit(values)
-        form.reset()
-        onClose()
+    const handleSubmit = async (values: FormValues) => {
+        setIsSubmitting(true)
+        try {
+            await onSubmit(values)
+            form.reset()
+            onClose()
+        } catch {
+            toast.error('Failed to complete impression. Please try again.')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -55,6 +66,7 @@ export function CompleteImpressionForm({ isOpen, onClose, onSubmit }: CompleteIm
                         <Textarea
                             id="response"
                             placeholder="Enter your response..."
+                            disabled={isSubmitting}
                             {...form.register('response')}
                         />
                         {form.formState.errors.response && (
@@ -64,10 +76,12 @@ export function CompleteImpressionForm({ isOpen, onClose, onSubmit }: CompleteIm
                         )}
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose}>
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                             Cancel
                         </Button>
-                        <Button type="submit">Complete</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            Complete
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

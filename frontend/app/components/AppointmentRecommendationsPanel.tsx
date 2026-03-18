@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { RecommendationForm } from './RecommendationForm'
@@ -135,6 +136,13 @@ export function AppointmentRecommendationsPanel({
                                     />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
+                                    <Link
+                                        to={`/psycho/clients/${clientId}/appointments/${appointmentId}/attachment/${recommendation.id}`}
+                                    >
+                                        <Button variant="ghost" size="sm">
+                                            Open
+                                        </Button>
+                                    </Link>
                                     <RecommendationForm
                                         mode="edit"
                                         trigger={

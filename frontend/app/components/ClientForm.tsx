@@ -58,11 +58,12 @@ interface ClientFormProps {
     mode: 'add' | 'edit'
     trigger: React.ReactNode
     initialData?: Partial<FormValues>
-    onSubmit: (values: FormValues) => void
+    onSubmit: (values: FormValues) => Promise<void>
 }
 
 export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormProps) {
     const [open, setOpen] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -77,9 +78,14 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
         },
     })
 
-    function handleSubmit(values: FormValues) {
-        onSubmit(values)
-        setOpen(false)
+    async function handleSubmit(values: FormValues) {
+        setIsSubmitting(true)
+        try {
+            await onSubmit(values)
+            setOpen(false)
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -175,10 +181,15 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
                             )}
                         />
                         <div className="flex justify-end space-x-2">
-                            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(false)}
+                                disabled={isSubmitting}
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit">
+                            <Button type="submit" disabled={isSubmitting}>
                                 {mode === 'add' ? 'Add Client' : 'Save Changes'}
                             </Button>
                         </div>

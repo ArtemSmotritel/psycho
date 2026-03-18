@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
@@ -56,14 +57,22 @@ export default function ClientDashboard() {
 
     const handleToggleDoneForRec =
         (appointmentId: string) => async (attachmentId: string, done: boolean) => {
-            await recommendationService.react(appointmentId, attachmentId, { done })
-            await fetchDashboard()
+            try {
+                await recommendationService.react(appointmentId, attachmentId, { done })
+                await fetchDashboard()
+            } catch {
+                toast.error('Failed to update recommendation. Please try again.')
+            }
         }
 
     const handleSubmitCommentForRec =
         (appointmentId: string) => async (attachmentId: string, comment: string) => {
-            await recommendationService.react(appointmentId, attachmentId, { comment })
-            await fetchDashboard()
+            try {
+                await recommendationService.react(appointmentId, attachmentId, { comment })
+                await fetchDashboard()
+            } catch {
+                toast.error('Failed to submit comment. Please try again.')
+            }
         }
 
     return (

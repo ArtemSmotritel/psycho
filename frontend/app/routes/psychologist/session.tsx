@@ -85,7 +85,7 @@ export default function Session() {
                 )}
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
-                    <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
+                    <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} clientId={clientId!} />
                 </div>
                 <div className="mt-6">
                     <AppointmentRecommendationsPanel

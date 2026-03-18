@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Textarea } from '~/components/ui/textarea'
@@ -30,6 +31,8 @@ export function RecommendationCard({
         setIsSubmitting(true)
         try {
             await onToggleDone(recommendation.id, checked)
+        } catch {
+            toast.error('Failed to update recommendation. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -41,6 +44,8 @@ export function RecommendationCard({
         try {
             await onSubmitComment(recommendation.id, commentText.trim())
             setCommentText('')
+        } catch {
+            toast.error('Failed to submit comment. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
@@ -52,6 +57,8 @@ export function RecommendationCard({
         try {
             await onSubmitReply(recommendation.id, replyText.trim())
             setReplyText('')
+        } catch {
+            toast.error('Failed to submit reply. Please try again.')
         } finally {
             setIsSubmitting(false)
         }

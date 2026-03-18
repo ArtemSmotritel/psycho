@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { AttachmentForm } from './AttachmentForm'
@@ -123,6 +124,13 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                             <div className="flex items-start justify-between gap-2">
                                 <p className="font-semibold">{note.name}</p>
                                 <div className="flex items-center gap-1 shrink-0">
+                                    <Link
+                                        to={`/psycho/clients/${clientId}/appointments/${appointmentId}/attachment/${note.id}`}
+                                    >
+                                        <Button variant="ghost" size="sm">
+                                            Open
+                                        </Button>
+                                    </Link>
                                     <AttachmentForm
                                         type="note"
                                         mode="edit"

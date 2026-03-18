@@ -1,6 +1,7 @@
 import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { ConfirmAction } from '@/components/ConfirmAction'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
 import { AttachmentIcon } from '~/utils/componentUtils'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
@@ -18,6 +19,8 @@ import {
 import { getAttachmentTypeLabel } from '~/utils/utils'
 import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { noteService } from '~/services/note.service'
+import { recommendationService } from '~/services/recommendation.service'
 import type { AttachmentFile } from '~/models/attachment'
 
 interface ImageAttachmentsProps {
@@ -81,8 +84,9 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
 }
 // TODO add client response if present.
 export default function SessionAttachment() {
-    const { attachment, isLoading } = useCurrentAttachment()
+    const { attachment, isLoading, refetch } = useCurrentAttachment()
     const { clientId, appointmentId } = useParams()
+    const navigate = useNavigate()
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
     const { userRole } = useRoleGuard(['psychologist', 'client'])
 
@@ -95,19 +99,47 @@ export default function SessionAttachment() {
     const canEditAttachment = userRole === 'psychologist' && attachment.type !== 'impression'
     const canDeleteAttachment = userRole === 'psychologist' && attachment.type !== 'impression'
 
-    const handleDeleteAttachment = () => {
-        console.log('Deleting attachment:', attachment.id)
-        // TODO: Implement attachment deletion
+    const handleDeleteAttachment = async () => {
+        try {
+            if (attachment.type === 'note') {
+                await noteService.delete(clientId!, appointmentId!, attachment.id)
+            } else if (attachment.type === 'recommendation') {
+                await recommendationService.delete(clientId!, appointmentId!, attachment.id)
+            }
+            toast.success('Attachment deleted.')
+            navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+        } catch {
+            toast.error('Failed to delete attachment. Please try again.')
+        }
     }
 
-    const handleComplete = (values: { response: string }) => {
-        console.log('Completing impression:', attachment.id, 'with response:', values.response)
-        // TODO: Implement completion functionality
+    const handleComplete = async (_values: { response: string }) => {
+        // TODO: Implement once the backend completion endpoint is available
     }
 
-    const handleEdit = (values: any) => {
-        console.log('Editing attachment:', attachment.id, 'with values:', values)
-        // TODO: Implement edit functionality
+    const handleEdit = async (values: {
+        name: string
+        text?: string
+        voiceFiles: (File | string)[]
+        imageFiles: (File | string)[]
+    }) => {
+        try {
+            if (attachment.type === 'note') {
+                await noteService.update(clientId!, appointmentId!, attachment.id, {
+                    name: values.name,
+                    text: values.text,
+                })
+            } else if (attachment.type === 'recommendation') {
+                await recommendationService.update(clientId!, appointmentId!, attachment.id, {
+                    name: values.name,
+                    text: values.text,
+                })
+            }
+            toast.success('Attachment updated.')
+            refetch()
+        } catch {
+            toast.error('Failed to update attachment. Please try again.')
+        }
     }
 
     return (

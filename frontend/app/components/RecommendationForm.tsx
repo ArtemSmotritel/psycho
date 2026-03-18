@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { AttachmentForm } from './AttachmentForm'
 import { fileService } from '~/services/file.service'
 import type { CreateRecommendationDTO, UpdateRecommendationDTO } from '~/models/attachment'
@@ -32,29 +33,33 @@ export function RecommendationForm({
             return
         }
 
-        const audioFileIds: string[] = []
-        for (const f of values.voiceFiles) {
-            if (f instanceof File) {
-                const res = await fileService.upload(f)
-                audioFileIds.push(res.data.id)
+        try {
+            const audioFileIds: string[] = []
+            for (const f of values.voiceFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    audioFileIds.push(res.data.id)
+                }
             }
-        }
 
-        const imageFileIds: string[] = []
-        for (const f of values.imageFiles) {
-            if (f instanceof File) {
-                const res = await fileService.upload(f)
-                imageFileIds.push(res.data.id)
+            const imageFileIds: string[] = []
+            for (const f of values.imageFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    imageFileIds.push(res.data.id)
+                }
             }
-        }
 
-        const dto: CreateRecommendationDTO = {
-            name: values.name,
-            text: values.text,
-            audioFileIds,
-            imageFileIds,
+            const dto: CreateRecommendationDTO = {
+                name: values.name,
+                text: values.text,
+                audioFileIds,
+                imageFileIds,
+            }
+            onSubmit(dto)
+        } catch {
+            toast.error('Failed to upload files. Please try again.')
         }
-        onSubmit(dto)
     }
 
     return (

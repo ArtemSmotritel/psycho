@@ -19,7 +19,7 @@ const makeImpression = (overrides: Partial<Attachment> = {}): Attachment => ({
 
 describe('ImpressionList', () => {
     it('renders "No impressions yet." when empty and not loading', () => {
-        render(<ImpressionList impressions={[]} isLoading={false} />)
+        render(<ImpressionList impressions={[]} isLoading={false} clientId="client-001" />)
 
         expect(screen.getByText(/no impressions yet/i)).toBeInTheDocument()
     })
@@ -34,20 +34,20 @@ describe('ImpressionList', () => {
             }),
         ]
 
-        render(<ImpressionList impressions={impressions} isLoading={false} />)
+        render(<ImpressionList impressions={impressions} isLoading={false} clientId="client-001" />)
 
         expect(screen.getByText('First impression')).toBeInTheDocument()
         expect(screen.getByText('Second impression')).toBeInTheDocument()
     })
 
     it('shows spinner while loading', () => {
-        render(<ImpressionList impressions={[]} isLoading={true} />)
+        render(<ImpressionList impressions={[]} isLoading={true} clientId="client-001" />)
 
         expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
     })
 
     it('does not show "No impressions yet." while loading', () => {
-        render(<ImpressionList impressions={[]} isLoading={true} />)
+        render(<ImpressionList impressions={[]} isLoading={true} clientId="client-001" />)
 
         expect(screen.queryByText(/no impressions yet/i)).not.toBeInTheDocument()
     })

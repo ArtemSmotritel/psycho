@@ -115,7 +115,7 @@ export function AttachmentForm({
     })
 
     function handleSubmit(values: FormValues) {
-        onSubmit(values)
+        onSubmit({ ...values, voiceFiles, imageFiles })
         setOpen(false)
     }
 
