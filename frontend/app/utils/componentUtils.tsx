@@ -1,5 +1,5 @@
 import { FileText, Smile, ThumbsUp } from 'lucide-react'
-import type { AttachmentType } from '~/models/session'
+import type { AttachmentType } from '~/models/attachment'
 
 // Icon mapping utilities
 interface AttachmentIconProps {

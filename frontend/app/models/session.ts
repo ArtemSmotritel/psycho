@@ -1,36 +1,8 @@
-export type AttachmentType = 'note' | 'recommendation' | 'impression'
+import type { Attachment, AttachmentWithReaction } from './attachment'
+import type { Appointment } from './appointment'
 
-export interface Attachment {
-    id: string
-    name: string
-    type: AttachmentType
-    text?: string
-    voiceFiles?: (File | string)[]
-    imageFiles?: (File | string)[]
-}
-
-export interface Session {
-    id: string
-    clientId: string
-    date: Date
-    googleMeetLink?: string
+export interface Session extends Appointment {
     notes: Attachment[]
-    recommendations: Attachment[]
+    recommendations: AttachmentWithReaction[]
     impressions: Attachment[]
-    notesCount: number
-    recommendationsCount: number
-    impressionsCount: number
-    isFinished?: boolean
-    duration?: string
-    description?: string
-}
-
-export interface SessionListItemDTO {
-    id: string
-    clientId: string
-    date: Date
-    status: string
-    notes: { id: string }[]
-    recommendations: { id: string }[]
-    impressions: { id: string }[]
 }

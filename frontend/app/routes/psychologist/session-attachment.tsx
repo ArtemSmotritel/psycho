@@ -15,12 +15,13 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel'
-import { getAttachmentTypeLabel, getFileUrl } from '~/utils/utils'
+import { getAttachmentTypeLabel } from '~/utils/utils'
 import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import type { AttachmentFile } from '~/models/attachment'
 
 interface ImageAttachmentsProps {
-    files: (File | string)[] | undefined
+    files: AttachmentFile[]
 }
 
 function ImageAttachments({ files }: ImageAttachmentsProps) {
@@ -41,7 +42,7 @@ function ImageAttachments({ files }: ImageAttachmentsProps) {
             <CarouselContent>
                 {files.map((file, index) => (
                     <CarouselItem key={index} className="sm:basis-1/1 md:basis-1/2 lg:basis-1/3">
-                        <ImagePreview src={file} alt={`Attachment image ${index + 1}`} />
+                        <ImagePreview src={file.url} alt={`Attachment image ${index + 1}`} />
                     </CarouselItem>
                 ))}
             </CarouselContent>
@@ -52,7 +53,7 @@ function ImageAttachments({ files }: ImageAttachmentsProps) {
 }
 
 interface VoiceAttachmentsProps {
-    files: (File | string)[] | undefined
+    files: AttachmentFile[]
 }
 
 function VoiceAttachments({ files }: VoiceAttachmentsProps) {
@@ -70,7 +71,7 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
             {files.map((file, index) => (
                 <div key={index} className="w-full max-w-md p-4 rounded-lg border">
                     <audio controls className="w-full">
-                        <source src={getFileUrl(file)} type="audio/wav" />
+                        <source src={file.url} type="audio/wav" />
                         Your browser does not support the audio element.
                     </audio>
                 </div>
@@ -80,10 +81,12 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
 }
 // TODO add client response if present.
 export default function SessionAttachment() {
-    const attachment = useCurrentAttachment()
-    const { clientId, sessionId } = useParams()
+    const { attachment, isLoading } = useCurrentAttachment()
+    const { clientId, appointmentId } = useParams()
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
     const { userRole } = useRoleGuard(['psychologist', 'client'])
+
+    if (isLoading) return <p>Loading...</p>
 
     if (!attachment) {
         return <div>Attachment not found</div>
@@ -127,10 +130,8 @@ export default function SessionAttachment() {
                             <ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />
                         }
                         initialData={{
-                            name: attachment.name,
-                            text: attachment.text,
-                            voiceFiles: attachment.voiceFiles,
-                            imageFiles: attachment.imageFiles,
+                            name: attachment.name ?? '',
+                            text: attachment.text ?? '',
                         }}
                         onSubmit={handleEdit}
                     />
@@ -143,7 +144,7 @@ export default function SessionAttachment() {
                     />
                 </Link>
 
-                <Link to={`/psycho/clients/${clientId}/sessions/${sessionId}`}>
+                <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
 
@@ -188,7 +189,7 @@ export default function SessionAttachment() {
                         <Mic className="h-5 w-5" />
                         <h3 className="text-lg font-medium">Voice Recordings</h3>
                     </div>
-                    <VoiceAttachments files={attachment.voiceFiles} />
+                    <VoiceAttachments files={attachment.audioFiles} />
                 </div>
 
                 <div className="space-y-4">

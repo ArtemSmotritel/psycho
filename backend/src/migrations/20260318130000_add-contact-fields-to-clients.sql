@@ -1,0 +1,5 @@
+ALTER TABLE clients
+    ADD COLUMN IF NOT EXISTS username    TEXT,
+    ADD COLUMN IF NOT EXISTS phone       TEXT,
+    ADD COLUMN IF NOT EXISTS telegram    TEXT,
+    ADD COLUMN IF NOT EXISTS instagram   TEXT;

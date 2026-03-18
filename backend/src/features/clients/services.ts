@@ -2,11 +2,77 @@ import { db } from 'config/db'
 import type { Client } from './models'
 
 export const findClientById = async (id: string): Promise<Client | null> => {
-    const [client] = await db`SELECT c.user_id AS id, u.name, u.email, u.image
-          FROM clients c
-          INNER JOIN "user" u ON u.id = c.user_id
-          WHERE c.user_id = ${id}`
+    const [client] = await db`
+        SELECT
+            c.user_id AS id,
+            u.name,
+            u.email,
+            u.image,
+            c.username,
+            c.phone,
+            c.telegram,
+            c.instagram,
+            u."createdAt" AS "registrationDate",
+            (SELECT COUNT(*)::int FROM appointments WHERE client_id = c.user_id) AS "sessionsCount",
+            (
+                SELECT COUNT(*)::int
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                WHERE ap.client_id = c.user_id AND a.type = 'impression'
+            ) AS "impressionsCount",
+            (
+                SELECT COUNT(*)::int
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                WHERE ap.client_id = c.user_id AND a.type = 'recommendation'
+            ) AS "recommendationsCount",
+            (
+                SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
+                FROM appointments ap
+                WHERE ap.client_id = c.user_id
+                  AND ap.ended_at IS NOT NULL
+                ORDER BY ap.start_time DESC
+                LIMIT 1
+            ) AS "lastAppointment",
+            (
+                SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
+                FROM appointments ap
+                WHERE ap.client_id = c.user_id
+                  AND ap.started_at IS NULL
+                  AND ap.start_time > NOW()
+                ORDER BY ap.start_time ASC
+                LIMIT 1
+            ) AS "nextAppointment"
+        FROM clients c
+        INNER JOIN "user" u ON u.id = c.user_id
+        WHERE c.user_id = ${id}
+    `
     return client ?? null
+}
+
+export const updateClient = async (
+    id: string,
+    params: {
+        name?: string
+        username?: string | null
+        phone?: string | null
+        telegram?: string | null
+        instagram?: string | null
+    },
+): Promise<void> => {
+    await db`
+        UPDATE clients
+        SET
+            username  = ${params.username !== undefined ? params.username : db.unsafe('username')},
+            phone     = ${params.phone !== undefined ? params.phone : db.unsafe('phone')},
+            telegram  = ${params.telegram !== undefined ? params.telegram : db.unsafe('telegram')},
+            instagram = ${params.instagram !== undefined ? params.instagram : db.unsafe('instagram')}
+        WHERE user_id = ${id}
+    `
+
+    if (params.name !== undefined) {
+        await db`UPDATE "user" SET name = ${params.name} WHERE id = ${id}`
+    }
 }
 
 export const findClients = async (params: any): Promise<Client[]> => {

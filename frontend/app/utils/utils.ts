@@ -1,8 +1,8 @@
 import { format } from 'date-fns'
 import type { Session } from '~/models/session'
 
-export function getSessionName(session: { date: Date }) {
-    return `Session ${formatAppDate(session.date)}`
+export function getSessionName(session: { startTime: string }) {
+    return `Session ${formatAppDate(session.startTime)}`
 }
 
 export function formatAppDate(date: Date | string) {
@@ -14,9 +14,9 @@ export function formatAppDate(date: Date | string) {
 }
 
 export function isSessionActive(session: Session): boolean {
-    if (!session?.date) return false
+    if (!session?.startTime) return false
 
-    const sessionStart = new Date(session.date)
+    const sessionStart = new Date(session.startTime)
     const sessionEnd = new Date(sessionStart.getTime() + 60 * 60 * 1000) // 1 hour after start
     const now = new Date()
     return now >= sessionStart && now <= sessionEnd

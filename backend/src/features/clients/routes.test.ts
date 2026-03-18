@@ -2,6 +2,12 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { linkClientToPsycho, unlinkClientFromPsycho } from './services'
+import {
+    createAppointment,
+    startAppointment,
+    endAppointment,
+} from '../appointments/services'
+import { createAttachment } from '../attachments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -165,6 +171,16 @@ describe('GET /api/clients/:clientId', () => {
         expect(body.client).toHaveProperty('id', client.id)
         expect(body.client).toHaveProperty('email', 'client@test.com')
         expect(body.client).toHaveProperty('name', 'Jane Doe')
+        expect(body.client).toHaveProperty('username') // null when not set
+        expect(body.client).toHaveProperty('phone') // null when not set
+        expect(body.client).toHaveProperty('telegram') // null when not set
+        expect(body.client).toHaveProperty('instagram') // null when not set
+        expect(body.client).toHaveProperty('registrationDate') // ISO string
+        expect(body.client).toHaveProperty('sessionsCount', 0)
+        expect(body.client).toHaveProperty('impressionsCount', 0)
+        expect(body.client).toHaveProperty('recommendationsCount', 0)
+        expect(body.client.lastAppointment).toBeNull()
+        expect(body.client.nextAppointment).toBeNull()
     })
 
     it('returns 404 for unknown clientId', async () => {
@@ -189,6 +205,178 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(403)
+    })
+
+    it('returns correct sessionsCount when appointments exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const a1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        const a2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(a1.id)
+        await endAppointment(a1.id)
+        await startAppointment(a2.id)
+        await endAppointment(a2.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toHaveProperty('sessionsCount', 2)
+    })
+
+    it('returns correct lastAppointment (most recent past appointment)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const a1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        })
+        const a2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(a1.id)
+        await endAppointment(a1.id)
+        await startAppointment(a2.id)
+        await endAppointment(a2.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client.lastAppointment).not.toBeNull()
+        expect(body.client.lastAppointment.id).toBe(a2.id)
+    })
+
+    it('returns correct nextAppointment (earliest upcoming appointment)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const a1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        })
+        const _a2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client.nextAppointment).not.toBeNull()
+        expect(body.client.nextAppointment.id).toBe(a1.id)
+    })
+
+    it('returns lastAppointment null and nextAppointment null when no appointments exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client.lastAppointment).toBeNull()
+        expect(body.client.nextAppointment).toBeNull()
+    })
+
+    it('returns correct impressionsCount', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const appt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(appt.id)
+        await endAppointment(appt.id)
+
+        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toHaveProperty('impressionsCount', 3)
+    })
+
+    it('returns correct recommendationsCount', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const appt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(appt.id)
+        await endAppointment(appt.id)
+
+        await createAttachment({
+            appointmentId: appt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+        })
+        await createAttachment({
+            appointmentId: appt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toHaveProperty('recommendationsCount', 2)
     })
 })
 
@@ -250,5 +438,136 @@ describe('DELETE /api/clients/:clientId', () => {
     it('returns 401 for unauthenticated request', async () => {
         const res = await app.request('/api/clients/some-id', { method: 'DELETE' })
         expect(res.status).toBe(401)
+    })
+})
+
+describe('PUT /api/clients/:clientId', () => {
+    it('returns 200 and updates username, phone, telegram, instagram', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    username: 'new_user',
+                    phone: '+1234',
+                    telegram: '@t',
+                    instagram: '@i',
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('client')
+        expect(body.client.username).toBe('new_user')
+        expect(body.client.phone).toBe('+1234')
+        expect(body.client.telegram).toBe('@t')
+        expect(body.client.instagram).toBe('@i')
+    })
+
+    it('updates name (in user table)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com', name: 'Old Name' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ name: 'New Name' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client.name).toBe('New Name')
+    })
+
+    it('does not update email even if sent in body', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ email: 'hacker@evil.com' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client.email).toBe('client@test.com')
+    })
+
+    it('returns full enriched client object after update', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ username: 'test_user' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.client).toHaveProperty('registrationDate')
+        expect(body.client).toHaveProperty('sessionsCount')
+        expect(body.client).toHaveProperty('impressionsCount')
+        expect(body.client).toHaveProperty('recommendationsCount')
+        expect(body.client).toHaveProperty('lastAppointment')
+        expect(body.client).toHaveProperty('nextAppointment')
+    })
+
+    it('returns 404 for unknown clientId', async () => {
+        const psycho = await insertTestUser()
+
+        const res = await app.request(
+            '/api/clients/nonexistent-id',
+            await asUser(psycho.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ username: 'test' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 401 for unauthenticated request', async () => {
+        const res = await app.request('/api/clients/some-id', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'test' }),
+        })
+        expect(res.status).toBe(401)
+    })
+
+    it('returns 403 for client-role request', async () => {
+        const user = await insertTestUser()
+
+        const res = await app.request(
+            '/api/clients/some-id',
+            await asUser(user.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ username: 'test' }),
+            }),
+        )
+
+        expect(res.status).toBe(403)
     })
 })

@@ -3,9 +3,14 @@ export interface Client {
     name: string
     email: string
     image: string | null
-    createdAt?: string
-    // Future fields (populated by EDG-17/EDG-20):
-    upcomingAppointment?: string | null
-    lastAppointment?: string | null
-    appointmentsCount?: number
+    username: string | null
+    phone: string | null
+    telegram: string | null
+    instagram: string | null
+    registrationDate: string
+    sessionsCount: number
+    impressionsCount: number
+    recommendationsCount: number
+    lastAppointment: { id: string; startTime: string } | null
+    nextAppointment: { id: string; startTime: string } | null
 }

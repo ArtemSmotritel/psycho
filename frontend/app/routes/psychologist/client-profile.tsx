@@ -24,6 +24,7 @@ import { formatAppDate } from '~/utils/utils'
 import { ProtectedComponent } from '~/components/ProtectedComponent'
 import { clientService } from '~/services/client.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
+import { useCurrentClient } from '~/hooks/useCurrentClient'
 
 type ClientProfileProps = {
     params: {
@@ -34,7 +35,7 @@ type ClientProfileProps = {
 interface ContactItemProps {
     icon: React.ReactNode
     label: string
-    value?: string
+    value?: string | null
     onCopy: () => void
     type?: 'telegram' | 'instagram' | 'email' | 'phone'
 }
@@ -47,12 +48,14 @@ function ContactItem({ icon, label, value, onCopy, type }: ContactItemProps) {
         if (!value) return null
 
         switch (type) {
-            case 'telegram':
+            case 'telegram': {
                 const telegramUsername = value.startsWith('@') ? value.slice(1) : value
                 return `https://t.me/${telegramUsername}`
-            case 'instagram':
+            }
+            case 'instagram': {
                 const instagramUsername = value.startsWith('@') ? value.slice(1) : value
                 return `https://instagram.com/${instagramUsername}`
+            }
             case 'email':
                 return `mailto:${value}`
             case 'phone':
@@ -100,32 +103,22 @@ export default function ClientProfile({ params }: ClientProfileProps) {
     const { role } = useParams<{ role: string }>()
     const { handleCreate: handleAddSession, isCreating: isCreatingAppointment } =
         useCreateAppointment()
+    const client = useCurrentClient()
 
-    // This would be replaced with actual data fetching
-    const client = {
-        id: params.clientId,
-        username: 'john_doe',
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+380731488420',
-        telegram: '@blinolad',
-        instagram: '@blinolad',
-        registrationDate: new Date(2024, 0, 1),
-        lastSession: { id: 'session1', date: new Date(2024, 3, 18, 15, 0) },
-        nextSession: { id: 'session2', date: new Date(2024, 3, 25, 15, 0) },
-        sessionsCount: 5,
-        impressionsCount: 12,
-        recommendationsCount: 3,
-    }
+    if (!client) return <p>Loading...</p>
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text)
         toast.success(`${label} has been copied to your clipboard.`)
     }
 
-    const handleEditClient = (values: any) => {
-        console.log('Editing client:', values)
-        // TODO: Implement actual client update
+    const handleEditClient = async (values: any) => {
+        try {
+            await clientService.update(client.id, values)
+            toast.success('Client updated.')
+        } catch {
+            toast.error('Failed to update client. Please try again.')
+        }
     }
 
     const handleRemoveClient = async () => {
@@ -147,7 +140,8 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     <CardContent>
                         <div className="space-y-4">
                             <div>
-                                <span className="font-medium">Username:</span> {client.username}
+                                <span className="font-medium">Username:</span>{' '}
+                                {client.username ?? '-'}
                             </div>
                             <div>
                                 <span className="font-medium">Name:</span> {client.name}
@@ -170,7 +164,9 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                             label="Phone"
                             value={client.phone}
                             type="phone"
-                            onCopy={() => copyToClipboard(client.phone, 'Phone number')}
+                            onCopy={() =>
+                                copyToClipboard(client.phone ?? '', 'Phone number')
+                            }
                         />
 
                         <ContactItem
@@ -178,7 +174,9 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                             label="Telegram"
                             value={client.telegram}
                             type="telegram"
-                            onCopy={() => copyToClipboard(client.telegram, 'Telegram username')}
+                            onCopy={() =>
+                                copyToClipboard(client.telegram ?? '', 'Telegram username')
+                            }
                         />
 
                         <ContactItem
@@ -186,7 +184,9 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                             label="Instagram"
                             value={client.instagram}
                             type="instagram"
-                            onCopy={() => copyToClipboard(client.instagram, 'Instagram username')}
+                            onCopy={() =>
+                                copyToClipboard(client.instagram ?? '', 'Instagram username')
+                            }
                         />
 
                         <ContactItem
@@ -211,11 +211,15 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                             </div>
                             <div>
                                 <span className="font-medium">Last Session:</span>{' '}
-                                {formatAppDate(client.lastSession.date)}
+                                {client.lastAppointment
+                                    ? formatAppDate(client.lastAppointment.startTime)
+                                    : '-'}
                             </div>
                             <div>
                                 <span className="font-medium">Next Session:</span>{' '}
-                                {client.nextSession ? formatAppDate(client.nextSession.date) : '-'}
+                                {client.nextAppointment
+                                    ? formatAppDate(client.nextAppointment.startTime)
+                                    : '-'}
                             </div>
                             <div>
                                 <span className="font-medium">Total Impressions:</span>{' '}
@@ -235,12 +239,12 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     mode="edit"
                     trigger={<ActionItem icon={<Edit className="h-6 w-6" />} label="Edit client" />}
                     initialData={{
-                        username: client.username,
+                        username: client.username ?? undefined,
                         name: client.name,
                         email: client.email,
-                        phone: client.phone,
-                        telegram: client.telegram,
-                        instagram: client.instagram,
+                        phone: client.phone ?? undefined,
+                        telegram: client.telegram ?? undefined,
+                        instagram: client.instagram ?? undefined,
                     }}
                     onSubmit={handleEditClient}
                 />
@@ -266,12 +270,12 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     to={`/psychologist/clients/${client.id}/progress`}
                 />
 
-                {client.lastSession && (
+                {client.lastAppointment && (
                     <ActionItem
                         icon={<ArrowLeft className="h-6 w-6" />}
                         label="View Last Session"
-                        to={`/psychologist/clients/${client.id}/sessions/${client.lastSession.id}`}
-                        subtext={formatAppDate(client.lastSession.date)}
+                        to={`/psychologist/clients/${client.id}/appointments/${client.lastAppointment.id}`}
+                        subtext={formatAppDate(client.lastAppointment.startTime)}
                     />
                 )}
 
@@ -281,12 +285,12 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     to={`/psychologist/clients/${client.id}/sessions`}
                 />
 
-                {client.nextSession && (
+                {client.nextAppointment && (
                     <ActionItem
                         icon={<ArrowRight className="h-6 w-6" />}
                         label="View Next Session"
-                        to={`/psychologist/clients/${client.id}/sessions/${client.nextSession.id}`}
-                        subtext={formatAppDate(client.nextSession.date)}
+                        to={`/psychologist/clients/${client.id}/appointments/${client.nextAppointment.id}`}
+                        subtext={formatAppDate(client.nextAppointment.startTime)}
                     />
                 )}
 
