@@ -47,7 +47,7 @@ fileRoutes.post('/upload', authorized, async (c) => {
     )
 })
 
-fileRoutes.get('/:filename', async (c) => {
+fileRoutes.get('/:filename', authorized, async (c) => {
     const filename = c.req.param('filename')
     const filePath = `./uploads/${filename}`
 

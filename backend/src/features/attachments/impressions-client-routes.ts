@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { authorized, onlyClientRequest } from '../../middlewares/auth'
+import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
 import { findAppointmentByIdForClient } from '../appointments/services'
 import { createAttachment, listAttachmentsByAuthor } from './services'
 
@@ -7,7 +7,7 @@ export const impressionClientRoutes = new Hono()
 
 impressionClientRoutes.use(authorized, onlyClientRequest)
 
-impressionClientRoutes.post('/', async (c) => {
+impressionClientRoutes.post('/', ownsFiles, async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 

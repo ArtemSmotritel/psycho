@@ -2,11 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { linkClientToPsycho, unlinkClientFromPsycho } from './services'
-import {
-    createAppointment,
-    startAppointment,
-    endAppointment,
-} from '../appointments/services'
+import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from '../attachments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
@@ -159,6 +155,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns 200 with client object for known clientId', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com', name: 'Jane Doe' })
+        await linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -304,6 +301,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns lastAppointment null and nextAppointment null when no appointments exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,

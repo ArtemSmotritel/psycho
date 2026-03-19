@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
+import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { findAppointmentById } from '../appointments/services'
 import {
     createAttachment,
@@ -75,7 +75,7 @@ recommendationPsychoRoutes.get('/', async (c) => {
     return c.json({ recommendations }, 200)
 })
 
-recommendationPsychoRoutes.post('/', async (c) => {
+recommendationPsychoRoutes.post('/', ownsFiles, async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 

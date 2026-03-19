@@ -1,5 +1,10 @@
 import { Hono } from 'hono'
-import { authorized, onlyClientRequest, onlyPsychoRequest } from '../../middlewares/auth'
+import {
+    authorized,
+    onlyClientRequest,
+    onlyLinkedClient,
+    onlyPsychoRequest,
+} from '../../middlewares/auth'
 import {
     findClientByEmail,
     findClientById,
@@ -41,7 +46,7 @@ clientRoutes
 
         return c.json({ clients })
     })
-    .get(':clientId', async (c) => {
+    .get(':clientId', onlyLinkedClient, async (c) => {
         const client = await findClientById(c.req.param('clientId'))
         if (!client) {
             return c.json({ error: 'NotFound' }, 404)
@@ -81,12 +86,8 @@ clientRoutes
 
         return c.json({ client }, 201)
     })
-    .put('/:clientId', async (c) => {
+    .put('/:clientId', onlyLinkedClient, async (c) => {
         const clientId = c.req.param('clientId')
-        const existing = await findClientById(clientId)
-        if (!existing) {
-            return c.json({ error: 'NotFound' }, 404)
-        }
         const body = await c.req.json()
         const { name, username, phone, telegram, instagram } = body
         await updateClient(clientId, { name, username, phone, telegram, instagram })
