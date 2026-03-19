@@ -48,9 +48,31 @@ fileRoutes.post('/upload', authorized, async (c) => {
 })
 
 fileRoutes.get('/:filename', authorized, async (c) => {
+    const user = c.get('user')
     const filename = c.req.param('filename')
-    const filePath = `./uploads/${filename}`
 
+    // Verify the user has access: they uploaded it, or it's attached to their appointment
+    const [allowed] = await db`
+        SELECT 1 FROM files f
+        WHERE f.stored_name = ${filename}
+          AND (
+            f.uploaded_by = ${user.id}
+            OR EXISTS (
+              SELECT 1
+              FROM attachment_files af
+              JOIN attachments a ON a.id = af.attachment_id
+              JOIN appointments ap ON ap.id = a.appointment_id
+              WHERE af.file_id = f.id
+                AND (ap.psycho_id = ${user.id} OR ap.client_id = ${user.id})
+            )
+          )
+    `
+
+    if (!allowed) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    const filePath = `./uploads/${filename}`
     const bunFile = Bun.file(filePath)
     const exists = await bunFile.exists()
 

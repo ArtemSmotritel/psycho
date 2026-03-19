@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { ClientForm } from '~/components/ClientForm'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
+import { AppPageHeader } from '~/components/AppPageHeader'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
@@ -94,10 +95,22 @@ export default function ClientProfile() {
         fetchProfile()
     }, [])
 
-    if (isLoading) return <p>Loading profile...</p>
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-4">
+                <AppPageHeader text="My Profile" />
+                <p>Loading profile...</p>
+            </div>
+        )
+    }
 
     if (error || !client) {
-        return <p className="text-destructive">{error ?? 'Profile not found.'}</p>
+        return (
+            <div className="container mx-auto p-4">
+                <AppPageHeader text="My Profile" />
+                <p className="text-destructive">{error ?? 'Profile not found.'}</p>
+            </div>
+        )
     }
 
     const handleEdit = async (values: any) => {
@@ -111,7 +124,8 @@ export default function ClientProfile() {
     }
 
     return (
-        <>
+        <div className="container mx-auto p-4">
+            <AppPageHeader text="My Profile" />
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
@@ -179,6 +193,6 @@ export default function ClientProfile() {
                     onSubmit={handleEdit}
                 />
             </ActionsSection>
-        </>
+        </div>
     )
 }

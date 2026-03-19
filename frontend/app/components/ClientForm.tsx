@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import {
     Dialog,
     DialogContent,
@@ -83,6 +84,8 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
         try {
             await onSubmit(values)
             setOpen(false)
+        } catch {
+            toast.error('Failed to save. Please try again.')
         } finally {
             setIsSubmitting(false)
         }
