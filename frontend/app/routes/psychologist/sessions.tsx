@@ -121,32 +121,35 @@ export default function Sessions() {
                 const appointment = row.original
 
                 return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    navigate(
-                                        `/psycho/clients/${appointment.clientId}/appointments/${appointment.id}`,
-                                    )
-                                }
-                            >
-                                View appointment details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => navigate(`/psycho/clients/${appointment.clientId}`)}
-                            >
-                                View client profile
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        navigate(
+                                            `/psycho/clients/${appointment.clientId}/appointments/${appointment.id}`,
+                                        )
+                                    }
+                                >
+                                    View appointment details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => navigate(`/psycho/clients/${appointment.clientId}`)}
+                                >
+                                    View client profile
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 )
             },
         },
@@ -240,6 +243,12 @@ export default function Sessions() {
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && 'selected'}
+                                        className="cursor-pointer"
+                                        onClick={() =>
+                                            navigate(
+                                                `/psycho/clients/${row.original.clientId}/appointments/${row.original.id}`,
+                                            )
+                                        }
                                     >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell key={cell.id}>

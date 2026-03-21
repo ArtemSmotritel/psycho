@@ -102,32 +102,36 @@ const columns: ColumnDef<Client>[] = [
             const navigate = useNavigate()
 
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => navigate(`/psycho/clients/${client.id}`)}>
-                            View client profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => navigate(`/psycho/clients/${client.id}/appointments`)}
-                        >
-                            View appointment history
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                <div onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => navigate(`/psycho/clients/${client.id}`)}>
+                                View client profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => navigate(`/psycho/clients/${client.id}/appointments`)}
+                            >
+                                View appointment history
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             )
         },
     },
 ]
 
 export default function Clients() {
+    const navigate = useNavigate()
     const [data, setData] = useState<Client[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -215,6 +219,12 @@ export default function Clients() {
                                             <TableRow
                                                 key={row.id}
                                                 data-state={row.getIsSelected() && 'selected'}
+                                                className="cursor-pointer"
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/psycho/clients/${row.original.id}`,
+                                                    )
+                                                }
                                             >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>
