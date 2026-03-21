@@ -4,6 +4,7 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 
 /** Lightweight signature of an element array: "id@version" entries sorted and joined. */
 function elementSignature(els: readonly ExcalidrawElement[]): string {
+    if (!Array.isArray(els)) return ''
     return els
         .map((e) => `${e.id}@${e.version}`)
         .sort()
@@ -27,14 +28,59 @@ export function useWhiteboardSync(appointmentId: string): {
     // Signature of the last element array received from the server.
     // Used to suppress the onChange echo that fires after a remote updateScene call.
     const lastRemoteSignatureRef = useRef<string>('')
+    // Buffer scene_init if it arrives before Excalidraw API is ready
+    const pendingSceneRef = useRef<{
+        elements: ExcalidrawElement[]
+        files: Record<string, unknown>
+    } | null>(null)
     const [remoteCursors, setRemoteCursors] = useState<Map<string, { x: number; y: number }>>(
         new Map(),
     )
     const [connected, setConnected] = useState(false)
 
-    const setExcalidrawAPI = useCallback((api: ExcalidrawImperativeAPI) => {
-        excalidrawAPIRef.current = api
-    }, [])
+    const applyScene = useCallback(
+        (
+            api: ExcalidrawImperativeAPI,
+            elements: ExcalidrawElement[],
+            files: Record<string, unknown>,
+        ) => {
+            if (elements.length > 0) {
+                lastRemoteSignatureRef.current = elementSignature(elements)
+                api.updateScene({ elements })
+            }
+            if (Object.keys(files).length > 0) {
+                api.addFiles(Object.values(files) as any[])
+            }
+            for (const fileId of Object.keys(files)) {
+                sentFilesRef.current.add(fileId)
+            }
+        },
+        [],
+    )
+
+    const setExcalidrawAPI = useCallback(
+        (api: ExcalidrawImperativeAPI) => {
+            excalidrawAPIRef.current = api
+            // Apply buffered scene_init if it arrived before the API was ready.
+            // Deferred to the next frame so Excalidraw's internal store is fully wired up.
+            // Uses excalidrawAPIRef.current (not the captured `api`) to handle React strict
+            // mode, which calls this callback twice with different API instances — the first
+            // is stale and the second is the real one.
+            if (pendingSceneRef.current) {
+                requestAnimationFrame(() => {
+                    if (excalidrawAPIRef.current && pendingSceneRef.current) {
+                        applyScene(
+                            excalidrawAPIRef.current,
+                            pendingSceneRef.current.elements,
+                            pendingSceneRef.current.files,
+                        )
+                        pendingSceneRef.current = null
+                    }
+                })
+            }
+        },
+        [applyScene],
+    )
 
     useEffect(() => {
         const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -57,6 +103,7 @@ export function useWhiteboardSync(appointmentId: string): {
             } catch {
                 return
             }
+            console.log(msg)
 
             const parsed = msg as {
                 type: string
@@ -68,24 +115,13 @@ export function useWhiteboardSync(appointmentId: string): {
             }
 
             if (parsed.type === 'scene_init') {
-                const elements = parsed.elements ?? []
-                const files = parsed.files ?? {}
-                // Only restore if there is actual prior state — an empty scene_init
-                // must not wipe drawings the user made before the WS connected.
-                if (elements.length > 0) {
-                    lastRemoteSignatureRef.current = elementSignature(
-                        elements as ExcalidrawElement[],
-                    )
-                    excalidrawAPIRef.current?.updateScene({
-                        elements: elements as ExcalidrawElement[],
-                    })
-                }
-                if (Object.keys(files).length > 0) {
-                    excalidrawAPIRef.current?.addFiles(Object.values(files) as any[])
-                }
-                // Mark received file IDs as already sent to avoid re-sending
-                for (const fileId of Object.keys(files)) {
-                    sentFilesRef.current.add(fileId)
+                const elements = (parsed.elements ?? []) as ExcalidrawElement[]
+                const files = (parsed.files ?? {}) as Record<string, unknown>
+                if (excalidrawAPIRef.current) {
+                    applyScene(excalidrawAPIRef.current, elements, files)
+                } else {
+                    // Buffer until Excalidraw API is ready
+                    pendingSceneRef.current = { elements, files }
                 }
             } else if (parsed.type === 'elements') {
                 const elements = (parsed.elements ?? []) as ExcalidrawElement[]
@@ -120,6 +156,11 @@ export function useWhiteboardSync(appointmentId: string): {
     const onWhiteboardChange = useCallback(
         (elements: readonly ExcalidrawElement[], _appState: AppState, files: BinaryFiles) => {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return
+
+            // Ignore empty element arrays — these are Excalidraw initialization artifacts.
+            // Even when all drawings are deleted, Excalidraw keeps them with isDeleted: true,
+            // so a real scene is never an empty array. Sending [] would wipe server state.
+            if (elements.length === 0) return
 
             // Skip if this onChange was triggered by a remote updateScene call.
             // When the server pushes elements and we call updateScene(), Excalidraw fires
