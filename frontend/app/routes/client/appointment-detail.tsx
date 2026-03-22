@@ -2,6 +2,7 @@ import { Video, LogIn } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router'
 import { useEffect, useState } from 'react'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
@@ -82,7 +83,7 @@ export default function ClientAppointmentDetail() {
         const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
         const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Appointment" linkTo="/client/appointments" />
                 <h2 className="text-xl font-semibold mb-1">{pastFormattedDate}</h2>
                 <p className="text-muted-foreground mb-4">
@@ -198,7 +199,7 @@ export default function ClientAppointmentDetail() {
                         </div>
                     )}
                 </div>
-            </div>
+            </PageContainer>
         )
     }
 
@@ -212,7 +213,7 @@ export default function ClientAppointmentDetail() {
     const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="Appointment" linkTo="/client/appointments" />
             <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
             <p className="text-muted-foreground mb-4">
@@ -248,6 +249,6 @@ export default function ClientAppointmentDetail() {
                     />
                 </ActionsSection>
             )}
-        </div>
+        </PageContainer>
     )
 }

@@ -1,9 +1,10 @@
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 
 export default function NoPsychologist() {
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="Dashboard" />
             <div className="flex h-full items-center justify-center py-24">
                 <EmptyMessage
@@ -11,6 +12,6 @@ export default function NoPsychologist() {
                     description="Check your email."
                 />
             </div>
-        </div>
+        </PageContainer>
     )
 }

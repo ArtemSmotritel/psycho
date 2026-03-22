@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
@@ -37,19 +38,19 @@ export default function ClientDashboard() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Dashboard" />
                 <p>Loading...</p>
-            </div>
+            </PageContainer>
         )
     }
 
     if (error) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Dashboard" />
                 <p className="text-destructive">{error}</p>
-            </div>
+            </PageContainer>
         )
     }
 
@@ -76,7 +77,7 @@ export default function ClientDashboard() {
         }
 
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="Dashboard" />
 
             <div className="grid grid-cols-1 gap-4 mb-8">
@@ -168,6 +169,6 @@ export default function ClientDashboard() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </PageContainer>
     )
 }

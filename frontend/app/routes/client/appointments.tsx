@@ -13,6 +13,7 @@ import {
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { AppPageHeader } from '~/components/AppPageHeader'
@@ -201,7 +202,7 @@ export default function ClientAppointments() {
     )
 
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="Appointments" />
             {isLoading && <p className="text-muted-foreground">Loading appointments...</p>}
             {error && <p className="text-destructive">{error}</p>}
@@ -219,6 +220,6 @@ export default function ClientAppointments() {
                     />
                 </div>
             )}
-        </div>
+        </PageContainer>
     )
 }

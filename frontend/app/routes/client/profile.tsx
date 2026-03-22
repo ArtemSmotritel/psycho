@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/button'
 import { ClientForm } from '~/components/ClientForm'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
@@ -97,19 +98,19 @@ export default function ClientProfile() {
 
     if (isLoading) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="My Profile" />
                 <p>Loading profile...</p>
-            </div>
+            </PageContainer>
         )
     }
 
     if (error || !client) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="My Profile" />
                 <p className="text-destructive">{error ?? 'Profile not found.'}</p>
-            </div>
+            </PageContainer>
         )
     }
 
@@ -124,7 +125,7 @@ export default function ClientProfile() {
     }
 
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="My Profile" />
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
@@ -181,7 +182,9 @@ export default function ClientProfile() {
             <ActionsSection title="Actions">
                 <ClientForm
                     mode="edit"
-                    trigger={<ActionItem icon={<Edit className="h-6 w-6" />} label="Edit Profile" />}
+                    trigger={
+                        <ActionItem icon={<Edit className="h-6 w-6" />} label="Edit Profile" />
+                    }
                     initialData={{
                         username: client.username ?? undefined,
                         name: client.name,
@@ -193,6 +196,6 @@ export default function ClientProfile() {
                     onSubmit={handleEdit}
                 />
             </ActionsSection>
-        </div>
+        </PageContainer>
     )
 }

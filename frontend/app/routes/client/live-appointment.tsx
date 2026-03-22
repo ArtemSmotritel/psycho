@@ -22,6 +22,7 @@ import {
     SheetDescription,
 } from '~/components/ui/sheet'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { impressionService } from '~/services/impression.service'
@@ -165,7 +166,7 @@ export default function LiveAppointment() {
     const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
-        <div className="flex flex-col w-full h-full p-4">
+        <PageContainer className="flex flex-col w-full h-full">
             {/* Header */}
             <div className="flex justify-between items-center mb-2 shrink-0">
                 <div className="flex items-center gap-4">
@@ -281,6 +282,6 @@ export default function LiveAppointment() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </PageContainer>
     )
 }

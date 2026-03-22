@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { Input } from '@/components/ui/input'
 import { useState } from 'react'
 import { Trash2, Save, X, Search } from 'lucide-react'
@@ -113,7 +114,7 @@ export default function AssociativeImages() {
 
     return (
         <ProtectedRoute allowedRoles={['psychologist']}>
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Associative Images" />
 
                 <div className="flex flex-col sm:flex-row items-center gap-8 mb-6">
@@ -149,7 +150,7 @@ export default function AssociativeImages() {
                         description="No images found matching your search"
                     />
                 )}
-            </div>
+            </PageContainer>
         </ProtectedRoute>
     )
 }

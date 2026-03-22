@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { dashboardService } from '~/services/dashboard.service'
 import type { PsychoDashboard } from '~/models/dashboard'
@@ -27,26 +28,26 @@ export default function DashboardOverview() {
 
     if (loading) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Dashboard" />
                 <p className="text-muted-foreground">Loading...</p>
-            </div>
+            </PageContainer>
         )
     }
 
     if (error || !data) {
         return (
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Dashboard" />
                 <div className="rounded-md border border-destructive p-3 text-sm text-destructive">
                     {error ?? 'Failed to load dashboard.'}
                 </div>
-            </div>
+            </PageContainer>
         )
     }
 
     return (
-        <div className="container mx-auto p-4">
+        <PageContainer>
             <AppPageHeader text="Dashboard" />
 
             {data.activeAppointment !== null && (
@@ -157,6 +158,6 @@ export default function DashboardOverview() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </PageContainer>
     )
 }

@@ -8,6 +8,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { PageContainer } from '~/components/PageContainer'
 import type { ColumnDef, ColumnFiltersState, SortingState, FilterFn } from '@tanstack/react-table'
 import {
     flexRender,
@@ -143,7 +144,9 @@ export default function Sessions() {
                                     View appointment details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={() => navigate(`/psycho/clients/${appointment.clientId}`)}
+                                    onClick={() =>
+                                        navigate(`/psycho/clients/${appointment.clientId}`)
+                                    }
                                 >
                                     View client profile
                                 </DropdownMenuItem>
@@ -154,7 +157,6 @@ export default function Sessions() {
             },
         },
     ]
-
 
     const table = useReactTable({
         data,
@@ -189,10 +191,10 @@ export default function Sessions() {
 
     return (
         <ProtectedRoute allowedRoles={['psychologist']}>
-            <div className="container mx-auto p-4">
+            <PageContainer>
                 <AppPageHeader text="Appointments" />
 
-<div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
                             <Checkbox
@@ -277,7 +279,7 @@ export default function Sessions() {
                 <div className="mt-4">
                     <DataTablePagination table={table} />
                 </div>
-            </div>
+            </PageContainer>
         </ProtectedRoute>
     )
 }
