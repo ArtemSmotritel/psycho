@@ -3,10 +3,12 @@ import { auth } from 'utils/auth'
 import { upgradeWebSocket } from 'config/websocket'
 import { findAppointmentByIdForParticipant } from '../appointments/services'
 import { loadWhiteboardState, saveWhiteboardState } from './services'
+import { log } from 'utils/logger'
 
 interface RoomConnection {
     ws: ServerWebSocket<unknown>
     userId: string
+    userName: string
 }
 
 interface Room {
@@ -23,7 +25,7 @@ export const whiteboardRoutes = new Hono()
 whiteboardRoutes.get(
     '/:appointmentId',
     upgradeWebSocket(async (c) => {
-        const appointmentId = c.req.param('appointmentId')
+        const appointmentId = c.req.param('appointmentId')!
 
         // Auth: read session from cookie headers
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
@@ -40,6 +42,7 @@ whiteboardRoutes.get(
         }
 
         const userId = session.user.id
+        const userName = session.user.name ?? 'Anonymous'
         const appointment = await findAppointmentByIdForParticipant(appointmentId, userId)
 
         if (!appointment || appointment.status !== 'active') {
@@ -59,7 +62,7 @@ whiteboardRoutes.get(
             onOpen(_, ws) {
                 // Ensure raw Bun WS is used for broadcast
                 const rawWs = ws.raw as ServerWebSocket<unknown>
-                thisConnection = { ws: rawWs, userId }
+                thisConnection = { ws: rawWs, userId, userName }
 
                 const initRoom = async () => {
                     if (!rooms.has(appointmentId)) {
@@ -100,6 +103,7 @@ whiteboardRoutes.get(
                 } catch {
                     return
                 }
+                log.info('new n', msg)
 
                 const parsed = msg as {
                     type: string
@@ -152,7 +156,7 @@ whiteboardRoutes.get(
                 // Broadcast to all other connections in this room
                 const outgoing = JSON.stringify(
                     parsed.type === 'cursor'
-                        ? { ...parsed, userId: thisConnection.userId }
+                        ? { ...parsed, userId: thisConnection.userId, userName: thisConnection.userName }
                         : parsed,
                 )
                 for (const conn of room.connections) {
@@ -168,6 +172,17 @@ whiteboardRoutes.get(
                 if (!room) return
                 room.connections.delete(thisConnection)
                 if (room.connections.size === 0) {
+                    // Flush any pending debounced save before discarding the room
+                    const pendingTimer = saveTimers.get(appointmentId)
+                    if (pendingTimer) {
+                        clearTimeout(pendingTimer)
+                        saveTimers.delete(appointmentId)
+                        saveWhiteboardState(appointmentId, room.lastElements, room.lastFiles).catch(
+                            (err) => {
+                                console.error('whiteboard: failed to save on close', err)
+                            },
+                        )
+                    }
                     rooms.delete(appointmentId)
                 }
             },

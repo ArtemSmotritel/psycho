@@ -8,9 +8,17 @@ export async function loadWhiteboardState(
         FROM appointments
         WHERE id = ${appointmentId}
     `
+    const rawElements = row?.whiteboard_elements
+    const rawFiles = row?.whiteboard_files
+
+    const elements =
+        typeof rawElements === 'string' ? JSON.parse(rawElements) : rawElements
+    const files =
+        typeof rawFiles === 'string' ? JSON.parse(rawFiles) : rawFiles
+
     return {
-        elements: (row?.whiteboard_elements as unknown[]) ?? [],
-        files: (row?.whiteboard_files as Record<string, unknown>) ?? {},
+        elements: (elements as unknown[]) ?? [],
+        files: (files as Record<string, unknown>) ?? {},
     }
 }
 

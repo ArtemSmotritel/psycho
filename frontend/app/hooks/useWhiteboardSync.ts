@@ -19,7 +19,7 @@ export function useWhiteboardSync(appointmentId: string): {
         files: BinaryFiles,
     ) => void
     onPointerUpdate: (payload: { pointer: { x: number; y: number }; button: string }) => void
-    remoteCursors: Map<string, { x: number; y: number }>
+    remoteCursors: Map<string, { x: number; y: number; name: string }>
     connected: boolean
 } {
     const wsRef = useRef<WebSocket | null>(null)
@@ -33,9 +33,9 @@ export function useWhiteboardSync(appointmentId: string): {
         elements: ExcalidrawElement[]
         files: Record<string, unknown>
     } | null>(null)
-    const [remoteCursors, setRemoteCursors] = useState<Map<string, { x: number; y: number }>>(
-        new Map(),
-    )
+    const [remoteCursors, setRemoteCursors] = useState<
+        Map<string, { x: number; y: number; name: string }>
+    >(new Map())
     const [connected, setConnected] = useState(false)
 
     const applyScene = useCallback(
@@ -112,6 +112,7 @@ export function useWhiteboardSync(appointmentId: string): {
                 x?: number
                 y?: number
                 userId?: string
+                userName?: string
             }
 
             if (parsed.type === 'scene_init') {
@@ -137,9 +138,10 @@ export function useWhiteboardSync(appointmentId: string): {
                 const userId = parsed.userId
                 const x = parsed.x ?? 0
                 const y = parsed.y ?? 0
+                const name = parsed.userName ?? 'Anonymous'
                 setRemoteCursors((prev) => {
                     const next = new Map(prev)
-                    next.set(userId, { x, y })
+                    next.set(userId, { x, y, name })
                     return next
                 })
             }
@@ -187,9 +189,13 @@ export function useWhiteboardSync(appointmentId: string): {
         [],
     )
 
+    const lastCursorSendRef = useRef<number>(0)
     const onPointerUpdate = useCallback(
         (payload: { pointer: { x: number; y: number }; button: string }) => {
             if (wsRef.current?.readyState !== WebSocket.OPEN) return
+            const now = Date.now()
+            if (now - lastCursorSendRef.current < 50) return
+            lastCursorSendRef.current = now
             wsRef.current.send(
                 JSON.stringify({ type: 'cursor', x: payload.pointer.x, y: payload.pointer.y }),
             )
