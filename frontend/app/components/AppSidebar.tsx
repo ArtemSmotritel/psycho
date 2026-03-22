@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import {
     Sidebar,
     SidebarContent,
@@ -19,6 +19,9 @@ export function AppSidebar() {
     const { activeRole, setActiveRole, isAuthenticated, logout } = useAuth()
     const { hasActiveAppointment } = useHasActiveAppointment()
     const navigate = useNavigate()
+    const location = useLocation()
+
+    const isOnLiveSession = location.pathname.endsWith('/live')
 
     const otherRole = activeRole === 'psycho' ? 'client' : 'psycho'
     const otherRoleLabel = activeRole === 'psycho' ? 'Switch to Client' : 'Switch to Psychologist'
@@ -43,12 +46,32 @@ export function AppSidebar() {
                 <SidebarMenu>
                     {sidebarItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton asChild isActive={item.href === location.pathname}>
-                                <Link to={item.href}>
-                                    <item.icon />
-                                    <span>{item.title}</span>
-                                </Link>
-                            </SidebarMenuButton>
+                            {isOnLiveSession ? (
+                                <ConfirmAction
+                                    trigger={
+                                        <SidebarMenuButton
+                                            isActive={item.href === location.pathname}
+                                        >
+                                            <item.icon />
+                                            <span>{item.title}</span>
+                                        </SidebarMenuButton>
+                                    }
+                                    title="Leave live session?"
+                                    description="You have an active session in progress. Are you sure you want to navigate away?"
+                                    confirmText="Leave"
+                                    onConfirm={() => navigate(item.href)}
+                                />
+                            ) : (
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={item.href === location.pathname}
+                                >
+                                    <Link to={item.href}>
+                                        <item.icon />
+                                        <span>{item.title}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            )}
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>
