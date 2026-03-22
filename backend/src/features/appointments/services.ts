@@ -265,7 +265,10 @@ export async function listAllAppointmentsForPsycho(
             a.google_calendar_event_id AS "googleCalendarEventId",
             a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             a.created_at AS "createdAt",
-            u.name AS "clientName"
+            u.name AS "clientName",
+            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'note'), 0)::int AS "notesCount",
+            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'impression'), 0)::int AS "impressionsCount",
+            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'recommendation'), 0)::int AS "recommendationsCount"
         FROM appointments a
         JOIN "user" u ON u.id = a.client_id
         WHERE a.psycho_id = ${psychoId}

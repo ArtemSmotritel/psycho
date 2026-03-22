@@ -26,21 +26,23 @@ export function ImpressionList({ impressions, isLoading, clientId }: ImpressionL
         <div className="space-y-3">
             {impressions.map((impression) => (
                 <div key={impression.id} className="border rounded-md p-3 space-y-1">
-                    {impression.text && <p className="text-sm">{impression.text}</p>}
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">
-                            {format(new Date(impression.createdAt), 'PPP HH:mm')}
-                        </p>
+                    <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm">{impression.text}</p>
                         {clientId && (
-                            <Link
-                                to={`/psycho/clients/${clientId}/appointments/${impression.appointmentId}/attachment/${impression.id}`}
-                            >
-                                <Button variant="ghost" size="sm">
-                                    Open
-                                </Button>
-                            </Link>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Link
+                                    to={`/psycho/clients/${clientId}/appointments/${impression.appointmentId}/attachment/${impression.id}`}
+                                >
+                                    <Button variant="ghost" size="sm">
+                                        Open
+                                    </Button>
+                                </Link>
+                            </div>
                         )}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                        {format(new Date(impression.createdAt), 'PPP HH:mm')}
+                    </p>
                 </div>
             ))}
         </div>

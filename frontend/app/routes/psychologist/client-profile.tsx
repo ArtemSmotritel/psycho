@@ -267,14 +267,14 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ActionItem
                     icon={<TrendingUp className="h-6 w-6" />}
                     label="View Progress"
-                    to={`/psychologist/clients/${client.id}/progress`}
+                    to={`/psycho/clients/${client.id}/progress`}
                 />
 
                 {client.lastAppointment && (
                     <ActionItem
                         icon={<ArrowLeft className="h-6 w-6" />}
                         label="View Last Session"
-                        to={`/psychologist/clients/${client.id}/appointments/${client.lastAppointment.id}`}
+                        to={`/psycho/clients/${client.id}/appointments/${client.lastAppointment.id}`}
                         subtext={formatAppDate(client.lastAppointment.startTime)}
                     />
                 )}
@@ -282,14 +282,14 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ActionItem
                     icon={<History className="h-6 w-6" />}
                     label="View Session History"
-                    to={`/psychologist/clients/${client.id}/sessions`}
+                    to={`/psycho/clients/${client.id}/appointments`}
                 />
 
                 {client.nextAppointment && (
                     <ActionItem
                         icon={<ArrowRight className="h-6 w-6" />}
                         label="View Next Session"
-                        to={`/psychologist/clients/${client.id}/appointments/${client.nextAppointment.id}`}
+                        to={`/psycho/clients/${client.id}/appointments/${client.nextAppointment.id}`}
                         subtext={formatAppDate(client.nextAppointment.startTime)}
                     />
                 )}

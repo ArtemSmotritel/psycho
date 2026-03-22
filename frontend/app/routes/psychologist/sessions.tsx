@@ -116,6 +116,18 @@ export default function Sessions() {
             header: 'Client',
         },
         {
+            accessorKey: 'notesCount',
+            header: 'Notes',
+        },
+        {
+            accessorKey: 'impressionsCount',
+            header: 'Impressions',
+        },
+        {
+            accessorKey: 'recommendationsCount',
+            header: 'Rec-s',
+        },
+        {
             id: 'actions',
             enableHiding: false,
             cell: ({ row }) => {

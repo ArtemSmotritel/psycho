@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
+import { Textarea } from '~/components/ui/textarea'
 import { ConfirmAction } from './ConfirmAction'
 import { RecommendationForm } from './RecommendationForm'
-import { RecommendationCard } from './RecommendationCard'
 import { recommendationService } from '~/services/recommendation.service'
 import type {
     AttachmentWithReaction,
@@ -26,6 +27,7 @@ export function AppointmentRecommendationsPanel({
     const [error, setError] = useState<string | null>(null)
     const [isCreating, setIsCreating] = useState(false)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
+    const [replyTexts, setReplyTexts] = useState<Record<string, string>>({})
 
     const fetchRecommendations = useCallback(async () => {
         setIsLoading(true)
@@ -126,15 +128,9 @@ export function AppointmentRecommendationsPanel({
             ) : (
                 <div className="space-y-3">
                     {recommendations.map((recommendation) => (
-                        <div key={recommendation.id} className="space-y-2">
+                        <div key={recommendation.id} className="border rounded-md p-3 space-y-1">
                             <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                    <RecommendationCard
-                                        recommendation={recommendation}
-                                        role="psychologist"
-                                        onSubmitReply={handleReply}
-                                    />
-                                </div>
+                                <p className="font-semibold">{recommendation.name}</p>
                                 <div className="flex items-center gap-1 shrink-0">
                                     <Link
                                         to={`/psycho/clients/${clientId}/appointments/${appointmentId}/attachment/${recommendation.id}`}
@@ -173,6 +169,81 @@ export function AppointmentRecommendationsPanel({
                                         onConfirm={() => handleDelete(recommendation.id)}
                                     />
                                 </div>
+                            </div>
+                            {recommendation.text && (
+                                <p className="text-sm text-muted-foreground">
+                                    {recommendation.text}
+                                </p>
+                            )}
+                            {recommendation.reaction && (
+                                <div className="space-y-1 pt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                        Status: {recommendation.reaction.done ? 'Done' : 'Not done'}
+                                    </p>
+                                    {recommendation.reaction.clientComment && (
+                                        <div>
+                                            <p className="text-xs font-medium text-muted-foreground">
+                                                Client comment:
+                                            </p>
+                                            <p className="text-sm">
+                                                {recommendation.reaction.clientComment}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {recommendation.reaction?.psychologistReply !== null &&
+                            recommendation.reaction?.psychologistReply !== undefined ? (
+                                <div className="pt-1">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        Your reply:
+                                    </p>
+                                    <p className="text-sm">
+                                        {recommendation.reaction.psychologistReply}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2 pt-1">
+                                    <Textarea
+                                        placeholder="Write a reply..."
+                                        value={replyTexts[recommendation.id] ?? ''}
+                                        onChange={(e) =>
+                                            setReplyTexts((prev) => ({
+                                                ...prev,
+                                                [recommendation.id]: e.target.value,
+                                            }))
+                                        }
+                                    />
+                                    <Button
+                                        size="sm"
+                                        onClick={async () => {
+                                            const text =
+                                                replyTexts[recommendation.id]?.trim()
+                                            if (!text) return
+                                            await handleReply(recommendation.id, text)
+                                            setReplyTexts((prev) => ({
+                                                ...prev,
+                                                [recommendation.id]: '',
+                                            }))
+                                        }}
+                                        disabled={
+                                            !replyTexts[recommendation.id]?.trim()
+                                        }
+                                    >
+                                        Submit
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="flex gap-3 text-xs text-muted-foreground">
+                                {recommendation.imageFiles.length > 0 && (
+                                    <span>{recommendation.imageFiles.length} image(s)</span>
+                                )}
+                                {recommendation.audioFiles.length > 0 && (
+                                    <span>{recommendation.audioFiles.length} recording(s)</span>
+                                )}
+                                <span>
+                                    {format(new Date(recommendation.createdAt), 'PPP HH:mm')}
+                                </span>
                             </div>
                         </div>
                     ))}

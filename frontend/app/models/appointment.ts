@@ -18,6 +18,9 @@ export interface AppointmentWithPsycho extends Appointment {
 
 export interface AppointmentWithClient extends Appointment {
     clientName: string
+    notesCount: number
+    impressionsCount: number
+    recommendationsCount: number
 }
 
 export interface CreateAppointmentDTO {
