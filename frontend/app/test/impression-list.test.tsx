@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { MemoryRouter } from 'react-router'
 import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
 
@@ -34,7 +35,11 @@ describe('ImpressionList', () => {
             }),
         ]
 
-        render(<ImpressionList impressions={impressions} isLoading={false} clientId="client-001" />)
+        render(
+            <MemoryRouter>
+                <ImpressionList impressions={impressions} isLoading={false} clientId="client-001" />
+            </MemoryRouter>,
+        )
 
         expect(screen.getByText('First impression')).toBeInTheDocument()
         expect(screen.getByText('Second impression')).toBeInTheDocument()

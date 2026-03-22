@@ -48,6 +48,23 @@ vi.mock('~/hooks/useWhiteboardSync', () => ({
     }),
 }))
 
+vi.mock('~/components/ui/sheet', () => ({
+    Sheet: ({ children }: any) => <div>{children}</div>,
+    SheetTrigger: ({ children }: any) => <div>{children}</div>,
+    SheetContent: ({ children }: any) => <div>{children}</div>,
+    SheetHeader: ({ children }: any) => <div>{children}</div>,
+    SheetTitle: ({ children }: any) => <h2>{children}</h2>,
+    SheetDescription: ({ children }: any) => <p>{children}</p>,
+}))
+
+vi.mock('~/components/AppPageHeader', () => ({
+    AppPageHeader: ({ text }: any) => <h1>{text}</h1>,
+}))
+
+vi.mock('~/components/PageContainer', () => ({
+    PageContainer: ({ children }: any) => <div>{children}</div>,
+}))
+
 vi.mock('~/components/ui/dialog', () => ({
     Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
     DialogContent: ({ children }: any) => <div>{children}</div>,

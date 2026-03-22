@@ -45,6 +45,24 @@ vi.mock('~/components/SessionForm', () => ({
     SessionForm: ({ trigger }: { trigger: React.ReactNode }) => <div>{trigger}</div>,
 }))
 
+vi.mock('~/hooks/useCurrentClient', () => ({
+    useCurrentClient: () => ({
+        id: 'client-123',
+        name: 'John Doe',
+        username: 'johndoe',
+        email: 'john@example.com',
+        phone: '+1234567890',
+        telegram: '@johndoe',
+        instagram: '@johndoe',
+        registrationDate: '2026-01-01T00:00:00.000Z',
+        sessionsCount: 5,
+        impressionsCount: 10,
+        recommendationsCount: 3,
+        lastAppointment: null,
+        nextAppointment: null,
+    }),
+}))
+
 import ClientProfile from '~/routes/psychologist/client-profile'
 import { toast } from 'sonner'
 

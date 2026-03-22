@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router'
 
 const mockFetchRecommendations = vi.fn()
 const mockReply = vi.fn()
@@ -70,7 +71,11 @@ describe('AppointmentRecommendationsPanel', () => {
         mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockResolvedValue({ data: { reaction: { psychologistReply: 'Keep it up!' } } })
 
-        render(<AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />)
+        render(
+            <MemoryRouter>
+                <AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />
+            </MemoryRouter>,
+        )
 
         await waitFor(() => {
             expect(screen.getByText('Do yoga')).toBeInTheDocument()
@@ -92,7 +97,11 @@ describe('AppointmentRecommendationsPanel', () => {
         mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockResolvedValue({ data: { reaction: { psychologistReply: 'Keep it up!' } } })
 
-        render(<AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />)
+        render(
+            <MemoryRouter>
+                <AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />
+            </MemoryRouter>,
+        )
 
         await waitFor(() => {
             expect(screen.getByText('Do yoga')).toBeInTheDocument()
@@ -113,7 +122,11 @@ describe('AppointmentRecommendationsPanel', () => {
         mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockRejectedValue(new Error('API error'))
 
-        render(<AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />)
+        render(
+            <MemoryRouter>
+                <AppointmentRecommendationsPanel clientId="client-001" appointmentId="apt-001" />
+            </MemoryRouter>,
+        )
 
         await waitFor(() => {
             expect(screen.getByText('Do yoga')).toBeInTheDocument()

@@ -209,7 +209,7 @@ describe('useWhiteboardSync', () => {
             })
 
             expect(result.current.remoteCursors.has('user-999')).toBe(true)
-            expect(result.current.remoteCursors.get('user-999')).toEqual({ x: 100, y: 200 })
+            expect(result.current.remoteCursors.get('user-999')).toEqual({ x: 100, y: 200, name: 'Anonymous' })
         })
     })
 
@@ -245,8 +245,9 @@ describe('useWhiteboardSync', () => {
             const fileB = { id: 'file-b', dataURL: 'data:image/png;base64,bbb' }
 
             // First call: both files are new
+            const dummyElements = [{ id: 'el1', type: 'rectangle', version: 1 }]
             act(() => {
-                result.current.onWhiteboardChange([] as any, {} as any, {
+                result.current.onWhiteboardChange(dummyElements as any, {} as any, {
                     'file-a': fileA as any,
                     'file-b': fileB as any,
                 })
@@ -267,8 +268,9 @@ describe('useWhiteboardSync', () => {
             ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
 
             // Second call: same files, should not send again
+            const dummyElements2 = [{ id: 'el1', type: 'rectangle', version: 2 }]
             act(() => {
-                result.current.onWhiteboardChange([] as any, {} as any, {
+                result.current.onWhiteboardChange(dummyElements2 as any, {} as any, {
                     'file-a': fileA as any,
                     'file-b': fileB as any,
                 })

@@ -136,6 +136,7 @@ describe('Session edit appointment flow', () => {
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
                 googleMeetLink: 'https://meet.google.com/abc',
+                rescheduleGoogleMeet: false,
             })
         })
     })
@@ -167,6 +168,7 @@ describe('Session edit appointment flow', () => {
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
                 googleMeetLink: null,
+                rescheduleGoogleMeet: false,
             })
         })
     })
