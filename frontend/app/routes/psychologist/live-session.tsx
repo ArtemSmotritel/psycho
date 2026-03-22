@@ -1,13 +1,22 @@
 import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Video, LogIn, StopCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Video, LogIn, StopCircle, PanelRightOpen, StickyNote, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 // TODO: import exportToBlob lazily to reduce initial bundle size (EDG-47)
 import { exportToBlob } from '@excalidraw/excalidraw'
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
+import { Button } from '~/components/ui/button'
+import {
+    Sheet,
+    SheetTrigger,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '~/components/ui/sheet'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { ConfirmAction } from '~/components/ConfirmAction'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
@@ -15,9 +24,8 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
-import { Button } from '~/components/ui/button'
+import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -34,7 +42,6 @@ export default function LiveSession() {
 
     const [time, setTime] = useState<string>('00:00')
     const [isEnding, setIsEnding] = useState(false)
-    const [notesOpen, setNotesOpen] = useState(false)
     const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
         useWhiteboardSync(appointmentId!)
     const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
@@ -129,70 +136,100 @@ export default function LiveSession() {
     }
 
     return (
-        <div className="w-full h-full">
-            <div className="flex justify-between items-center mb-4">
-                <div>
-                    <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
-                    <p className="text-muted-foreground">
-                        {formattedStart} – {formattedEnd}
-                    </p>
-                </div>
-                <div className="text-xl font-mono">{time}</div>
-            </div>
-
-            <Alert className="mb-4">
-                <Video className="text-primary" />
-                <AlertTitle>Google Meet</AlertTitle>
-                <AlertDescription>
-                    {appointment.googleMeetLink ? (
+        <div className="flex flex-col w-full h-full">
+            {/* Header */}
+            <div className="flex justify-between items-center px-2 py-2 shrink-0">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h2 className="text-lg font-semibold leading-tight">{formattedDate}</h2>
+                        <p className="text-sm text-muted-foreground">
+                            {formattedStart} – {formattedEnd}
+                        </p>
+                    </div>
+                    {appointment.googleMeetLink && (
                         <Link
                             to={appointment.googleMeetLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-primary underline"
                         >
-                            {appointment.googleMeetLink}
+                            <Button variant="outline" size="sm" className="gap-1.5">
+                                <Video className="h-4 w-4" />
+                                Join Call
+                            </Button>
                         </Link>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No Google Meet link</p>
                     )}
-                </AlertDescription>
-            </Alert>
-
-            <ActionsSection title="Actions">
-                {appointment.googleMeetLink && (
-                    <ActionItem
-                        icon={<LogIn className="h-6" />}
-                        label="Join Call"
-                        href={appointment.googleMeetLink}
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-lg font-mono tabular-nums">{time}</span>
+                    <ConfirmAction
+                        trigger={
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive gap-1.5"
+                                disabled={isEnding}
+                            >
+                                <StopCircle className="h-4 w-4" />
+                                End
+                            </Button>
+                        }
+                        title="End Appointment"
+                        description="Are you sure you want to end this appointment? It will be moved to past status."
+                        confirmText="End"
+                        onConfirm={handleEndAppointment}
                     />
-                )}
-                <ConfirmAction
-                    trigger={
-                        <ActionItem
-                            icon={<StopCircle className="h-6" />}
-                            label="End Appointment"
-                            variant="outline"
-                            className="text-destructive hover:text-destructive"
-                            disabled={isEnding}
-                        />
-                    }
-                    title="End Appointment"
-                    description="Are you sure you want to end this appointment? It will be moved to past status."
-                    confirmText="End"
-                    onConfirm={handleEndAppointment}
-                />
-            </ActionsSection>
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <PanelRightOpen className="h-4 w-4" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+                            <SheetHeader>
+                                <SheetTitle>Session Tools</SheetTitle>
+                                <SheetDescription>
+                                    Notes, recommendations, and session actions.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <Tabs defaultValue="notes" className="px-4">
+                                <TabsList className="w-full">
+                                    <TabsTrigger value="notes" className="gap-1.5">
+                                        <StickyNote className="h-3.5 w-3.5" />
+                                        Notes
+                                    </TabsTrigger>
+                                    <TabsTrigger value="recommendations" className="gap-1.5">
+                                        <ClipboardList className="h-3.5 w-3.5" />
+                                        Recommendations
+                                    </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="notes" className="mt-4">
+                                    <AppointmentNotesPanel
+                                        clientId={clientId!}
+                                        appointmentId={appointmentId!}
+                                    />
+                                </TabsContent>
+                                <TabsContent value="recommendations" className="mt-4">
+                                    <AppointmentRecommendationsPanel
+                                        clientId={clientId!}
+                                        appointmentId={appointmentId!}
+                                    />
+                                </TabsContent>
+                            </Tabs>
+                        </SheetContent>
+                    </Sheet>
+                </div>
+            </div>
 
-            <div style={{ position: 'relative' }}>
+            {/* Whiteboard — fills remaining space */}
+            <div className="flex-1 min-h-0 relative border border-border rounded-md">
                 <Suspense
                     fallback={
-                        <div className="flex items-center justify-center h-[600px]">
+                        <div className="flex items-center justify-center h-full">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
                         </div>
                     }
                 >
-                    <div className="w-full h-[600px] border border-gray-300">
+                    <div className="w-full h-full">
                         <Excalidraw
                             excalidrawAPI={handleExcalidrawAPI}
                             theme="light"
@@ -209,22 +246,6 @@ export default function LiveSession() {
                     excalidrawAPI={excalidrawAPIInstance}
                 />
             </div>
-
-            <Collapsible open={notesOpen} onOpenChange={setNotesOpen} className="mt-4">
-                <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2 w-full">
-                        {notesOpen ? (
-                            <ChevronUp className="h-4 w-4" />
-                        ) : (
-                            <ChevronDown className="h-4 w-4" />
-                        )}
-                        {notesOpen ? 'Hide Notes' : 'Show Notes'}
-                    </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-3">
-                    <AppointmentNotesPanel clientId={clientId!} appointmentId={appointmentId!} />
-                </CollapsibleContent>
-            </Collapsible>
         </div>
     )
 }

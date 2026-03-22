@@ -9,7 +9,7 @@ export default function ClientLayout() {
     const { appointment } = useCurrentAppointment()
 
     return (
-        <div className="container mx-auto p-4 w-full h-full">
+        <div className="container mx-auto p-4 w-full h-full flex flex-col">
             <AppPageHeader
                 text={`Profile: ${client?.name}`}
                 linkTo={`/psycho/clients/${client?.id}`}
@@ -25,7 +25,9 @@ export default function ClientLayout() {
                     </Link>
                 </h6>
             )}
-            <Outlet />
+            <div className="flex-1 min-h-0 flex flex-col">
+                <Outlet />
+            </div>
         </div>
     )
 }

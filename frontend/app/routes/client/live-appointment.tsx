@@ -1,12 +1,9 @@
 import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Video, LogIn } from 'lucide-react'
+import { Video, PanelRightOpen, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { ActionsSection, ActionItem } from '~/components/ActionsSection'
-import { AppPageHeader } from '~/components/AppPageHeader'
 import {
     Dialog,
     DialogContent,
@@ -16,6 +13,15 @@ import {
     DialogTitle,
 } from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
+import {
+    Sheet,
+    SheetTrigger,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '~/components/ui/sheet'
+import { AppPageHeader } from '~/components/AppPageHeader'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { impressionService } from '~/services/impression.service'
@@ -159,53 +165,90 @@ export default function LiveAppointment() {
     const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
-        <div className="w-full h-full">
-            <AppPageHeader text="Live Session" linkTo={`/client/appointments/${appointmentId}`} />
-            <div className="mb-4">
-                <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
-                <p className="text-muted-foreground">
-                    {formattedStart} – {formattedEnd}
-                </p>
-            </div>
-
-            <Alert className="mb-4">
-                <Video className="text-primary" />
-                <AlertTitle>Google Meet</AlertTitle>
-                <AlertDescription>
-                    {appointment.googleMeetLink ? (
+        <div className="flex flex-col w-full h-full p-4">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-2 shrink-0">
+                <div className="flex items-center gap-4">
+                    <AppPageHeader
+                        text="Live Session"
+                        linkTo={`/client/appointments/${appointmentId}`}
+                        className="mb-0"
+                    />
+                    <div>
+                        <p className="text-sm text-muted-foreground">
+                            {formattedDate} &middot; {formattedStart} – {formattedEnd}
+                        </p>
+                    </div>
+                    {appointment.googleMeetLink && (
                         <Link
                             to={appointment.googleMeetLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-primary underline"
                         >
-                            {appointment.googleMeetLink}
+                            <Button variant="outline" size="sm" className="gap-1.5">
+                                <Video className="h-4 w-4" />
+                                Join Call
+                            </Button>
                         </Link>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No Google Meet link</p>
                     )}
-                </AlertDescription>
-            </Alert>
+                </div>
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="outline" size="icon">
+                            <PanelRightOpen className="h-4 w-4" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+                        <SheetHeader>
+                            <SheetTitle>
+                                <div className="flex items-center gap-1.5">
+                                    <MessageSquare className="h-4 w-4" />
+                                    My Impressions
+                                </div>
+                            </SheetTitle>
+                            <SheetDescription>
+                                Share your thoughts and impressions during the session.
+                            </SheetDescription>
+                        </SheetHeader>
+                        <div className="px-4 space-y-4">
+                            <ImpressionForm
+                                isSubmitting={isSubmittingImpression}
+                                onSubmit={async (text) => {
+                                    if (!appointmentId) return
+                                    setIsSubmittingImpression(true)
+                                    try {
+                                        const res = await impressionService.submit(appointmentId, {
+                                            text,
+                                        })
+                                        setImpressions((prev) => [...prev, res.data.impression])
+                                    } catch {
+                                        toast.error(
+                                            'Failed to submit impression. Please try again.',
+                                        )
+                                    } finally {
+                                        setIsSubmittingImpression(false)
+                                    }
+                                }}
+                            />
+                            <ImpressionList
+                                impressions={impressions}
+                                isLoading={isLoadingImpressions}
+                            />
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            </div>
 
-            {appointment.googleMeetLink && (
-                <ActionsSection title="Actions">
-                    <ActionItem
-                        icon={<LogIn className="h-6" />}
-                        label="Join Call"
-                        href={appointment.googleMeetLink}
-                    />
-                </ActionsSection>
-            )}
-
-            <div style={{ position: 'relative' }}>
+            {/* Whiteboard — fills remaining space */}
+            <div className="flex-1 min-h-0 relative border border-border rounded-md">
                 <Suspense
                     fallback={
-                        <div className="flex items-center justify-center h-[600px]">
+                        <div className="flex items-center justify-center h-full">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
                         </div>
                     }
                 >
-                    <div className="w-full h-[600px] border border-gray-300">
+                    <div className="w-full h-full">
                         <Excalidraw
                             excalidrawAPI={handleExcalidrawAPI}
                             theme="light"
@@ -220,26 +263,6 @@ export default function LiveAppointment() {
                 <WhiteboardCursorOverlay
                     remoteCursors={remoteCursors}
                     excalidrawAPI={excalidrawAPIInstance}
-                />
-            </div>
-
-            <div className="mt-6 space-y-4">
-                <h3 className="text-lg font-semibold">My Impressions</h3>
-                <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
-                <ImpressionForm
-                    isSubmitting={isSubmittingImpression}
-                    onSubmit={async (text) => {
-                        if (!appointmentId) return
-                        setIsSubmittingImpression(true)
-                        try {
-                            const res = await impressionService.submit(appointmentId, { text })
-                            setImpressions((prev) => [...prev, res.data.impression])
-                        } catch {
-                            toast.error('Failed to submit impression. Please try again.')
-                        } finally {
-                            setIsSubmittingImpression(false)
-                        }
-                    }}
                 />
             </div>
 
