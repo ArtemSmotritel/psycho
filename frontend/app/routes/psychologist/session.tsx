@@ -16,6 +16,7 @@ import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
 import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
+import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
@@ -68,7 +69,10 @@ export default function Session() {
         const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
         return (
             <>
-                <h2 className="text-xl font-semibold mb-1">{pastFormattedDate}</h2>
+                <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-semibold">{pastFormattedDate}</h2>
+                    <AppointmentStatusBadge status={appointment.status} />
+                </div>
                 <p className="text-muted-foreground mb-4">
                     {pastFormattedStart} – {pastFormattedEnd}
                 </p>
@@ -150,7 +154,10 @@ export default function Session() {
 
     return (
         <>
-            <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
+            <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-semibold">{formattedDate}</h2>
+                <AppointmentStatusBadge status={appointment.status} />
+            </div>
             <p className="text-muted-foreground mb-4">
                 {formattedStart} – {formattedEnd}
             </p>

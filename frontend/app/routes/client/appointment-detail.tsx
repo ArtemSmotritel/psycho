@@ -15,6 +15,7 @@ import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
 import { ImpressionForm } from '~/components/ImpressionForm'
 import { toast } from 'sonner'
+import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 
 export default function ClientAppointmentDetail() {
     useRoleGuard(['client'])
@@ -85,7 +86,10 @@ export default function ClientAppointmentDetail() {
         return (
             <PageContainer>
                 <AppPageHeader text="Appointment" linkTo="/client/appointments" />
-                <h2 className="text-xl font-semibold mb-1">{pastFormattedDate}</h2>
+                <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-semibold">{pastFormattedDate}</h2>
+                    <AppointmentStatusBadge status={appointment.status} />
+                </div>
                 <p className="text-muted-foreground mb-4">
                     {pastFormattedStart} – {pastFormattedEnd}
                 </p>
@@ -215,7 +219,10 @@ export default function ClientAppointmentDetail() {
     return (
         <PageContainer>
             <AppPageHeader text="Appointment" linkTo="/client/appointments" />
-            <h2 className="text-xl font-semibold mb-1">{formattedDate}</h2>
+            <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-semibold">{formattedDate}</h2>
+                <AppointmentStatusBadge status={appointment.status} />
+            </div>
             <p className="text-muted-foreground mb-4">
                 {formattedStart} – {formattedEnd}
             </p>

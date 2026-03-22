@@ -91,10 +91,10 @@ export default function LiveSession() {
 
     if (!appointment || appointment.status !== 'active') {
         return (
-            <div>
+            <div className="space-y-4">
                 <p>No active appointment found.</p>
                 <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
-                    Back to appointment
+                    <Button variant="default">Back to appointment</Button>
                 </Link>
             </div>
         )

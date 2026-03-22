@@ -154,9 +154,11 @@ export default function LiveAppointment() {
 
     if (!appointment || (appointment.status !== 'active' && !showEndedModal)) {
         return (
-            <div>
+            <div className="space-y-4">
                 <p>No active appointment found.</p>
-                <Link to={`/client/appointments/${appointmentId}`}>Back to appointment</Link>
+                <Link to={`/client/appointments/${appointmentId}`}>
+                    <Button variant="default">Back to appointment</Button>
+                </Link>
             </div>
         )
     }
