@@ -1,12 +1,21 @@
 import { toast } from 'sonner'
-import { AttachmentForm } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { fileService } from '~/services/file.service'
-import type { CreateRecommendationDTO, UpdateRecommendationDTO } from '~/models/attachment'
+import type {
+    AttachmentFile,
+    CreateRecommendationDTO,
+    UpdateRecommendationDTO,
+} from '~/models/attachment'
 
 interface RecommendationFormProps {
     mode: 'create' | 'edit'
     trigger: React.ReactNode
-    initialData?: { name: string; text?: string }
+    initialData?: {
+        name: string
+        text?: string
+        voiceFiles?: AttachmentFile[]
+        imageFiles?: AttachmentFile[]
+    }
     isLoading: boolean
     onSubmit: (dto: CreateRecommendationDTO | UpdateRecommendationDTO) => void
 }
@@ -18,16 +27,12 @@ export function RecommendationForm({
     isLoading: _isLoading,
     onSubmit,
 }: RecommendationFormProps) {
-    const handleSubmit = async (values: {
-        name: string
-        text?: string
-        voiceFiles: (File | string)[]
-        imageFiles: (File | string)[]
-    }) => {
+    const handleSubmit = async (values: AttachmentFormSubmitValues) => {
         if (mode === 'edit') {
             const dto: UpdateRecommendationDTO = {
                 name: values.name,
                 text: values.text,
+                removeFileIds: values.removedFileIds.length > 0 ? values.removedFileIds : undefined,
             }
             onSubmit(dto)
             return

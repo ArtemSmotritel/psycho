@@ -1,4 +1,5 @@
 import { db } from 'config/db'
+import { unlink } from 'node:fs/promises'
 import type {
     Attachment,
     AttachmentType,
@@ -134,15 +135,47 @@ export async function findAttachmentById(id: string): Promise<Attachment | null>
 
 export async function updateAttachment(
     id: string,
-    params: { name?: string | null; text?: string | null },
+    params: { name?: string | null; text?: string | null; removeFileIds?: string[] },
 ): Promise<Attachment> {
-    await db`
-        UPDATE attachments
-        SET name = COALESCE(${params.name ?? null}, name),
-            text = COALESCE(${params.text ?? null}, text),
-            updated_at = NOW()
-        WHERE id = ${id}
-    `
+    await db.begin(async (tx) => {
+        await tx`
+            UPDATE attachments
+            SET name = COALESCE(${params.name ?? null}, name),
+                text = COALESCE(${params.text ?? null}, text),
+                updated_at = NOW()
+            WHERE id = ${id}
+        `
+
+        const removeFileIds = params.removeFileIds ?? []
+        if (removeFileIds.length > 0) {
+            await tx`
+                DELETE FROM attachment_files
+                WHERE attachment_id = ${id}
+                  AND file_id IN ${tx(removeFileIds)}
+            `
+
+            const files = await tx`
+                SELECT id, stored_name AS "storedName"
+                FROM files
+                WHERE id IN ${tx(removeFileIds)}
+            `
+
+            await tx`
+                DELETE FROM files
+                WHERE id IN ${tx(removeFileIds)}
+            `
+
+            for (const file of files) {
+                const filePath = `./uploads/${file.storedName}`
+                try {
+                    ;(await Bun.file(filePath).exists()) && (await unlink(filePath))
+                } catch {
+                    // file already gone from disk — not critical
+                }
+            }
+        }
+    })
+
     return (await findAttachmentById(id))!
 }
 

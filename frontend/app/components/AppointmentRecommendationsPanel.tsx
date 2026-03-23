@@ -149,6 +149,8 @@ export function AppointmentRecommendationsPanel({
                                         initialData={{
                                             name: recommendation.name ?? '',
                                             text: recommendation.text ?? '',
+                                            voiceFiles: recommendation.audioFiles,
+                                            imageFiles: recommendation.imageFiles,
                                         }}
                                         isLoading={updatingId === recommendation.id}
                                         onSubmit={(dto) => handleUpdate(recommendation.id, dto)}
@@ -217,8 +219,7 @@ export function AppointmentRecommendationsPanel({
                                     <Button
                                         size="sm"
                                         onClick={async () => {
-                                            const text =
-                                                replyTexts[recommendation.id]?.trim()
+                                            const text = replyTexts[recommendation.id]?.trim()
                                             if (!text) return
                                             await handleReply(recommendation.id, text)
                                             setReplyTexts((prev) => ({
@@ -226,9 +227,7 @@ export function AppointmentRecommendationsPanel({
                                                 [recommendation.id]: '',
                                             }))
                                         }}
-                                        disabled={
-                                            !replyTexts[recommendation.id]?.trim()
-                                        }
+                                        disabled={!replyTexts[recommendation.id]?.trim()}
                                     >
                                         Submit
                                     </Button>

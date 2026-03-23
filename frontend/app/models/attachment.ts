@@ -31,7 +31,7 @@ export interface CreateNoteDTO {
 export interface UpdateNoteDTO {
     name?: string
     text?: string
-    // no media fields — locked after creation
+    removeFileIds?: string[]
 }
 
 export interface CreateImpressionDTO {
@@ -50,7 +50,7 @@ export interface CreateRecommendationDTO {
 export interface UpdateRecommendationDTO {
     name?: string
     text?: string
-    // no media fields
+    removeFileIds?: string[]
 }
 
 export interface RecommendationReaction {

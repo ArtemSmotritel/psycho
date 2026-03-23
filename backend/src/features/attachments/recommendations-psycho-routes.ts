@@ -147,12 +147,12 @@ recommendationPsychoRoutes.patch('/:attachmentId', async (c) => {
     }
 
     const body = await c.req.json()
-    // imageFileIds / audioFileIds silently ignored
-    const { name, text } = body
+    const { name, text, removeFileIds } = body
 
     const updated = await updateAttachment(attachmentId, {
         name: name !== undefined ? name : null,
         text: text !== undefined ? text : null,
+        removeFileIds,
     })
 
     return c.json({ recommendation: updated }, 200)

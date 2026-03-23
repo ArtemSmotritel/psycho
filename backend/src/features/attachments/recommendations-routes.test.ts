@@ -527,6 +527,81 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         expect(body).toHaveProperty('error', 'AppointmentNotActive')
     })
 
+    it('happy path — removeFileIds removes linked files from the recommendation', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const file1 = await insertTestFile(psycho.id, { originalName: 'img1.png' })
+        const file2 = await insertTestFile(psycho.id, { originalName: 'img2.png' })
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec with files',
+            imageFileIds: [file1.id, file2.id],
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ removeFileIds: [file1.id] }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.recommendation.imageFiles).toHaveLength(1)
+        expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file2.id)
+    })
+
+    it('removeFileIds with non-existent ids does not fail', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: '2026-04-01T10:00:00.000Z',
+            endTime: '2026-04-01T11:00:00.000Z',
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const file = await insertTestFile(psycho.id, { originalName: 'img.png' })
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            imageFileIds: [file.id],
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ removeFileIds: ['non-existent-id'] }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.recommendation.imageFiles).toHaveLength(1)
+        expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file.id)
+    })
+
     it('returns 403 with client role header', async () => {
         const user = await insertTestUser()
 

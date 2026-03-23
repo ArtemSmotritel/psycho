@@ -26,6 +26,7 @@ import { useReactMediaRecorder } from 'react-media-recorder'
 import { getAttachmentTypeLabel, getFileUrl } from '../utils/utils'
 import { EmptyMessage } from './EmptyMessage'
 import { Separator } from './ui/separator'
+import type { AttachmentFile } from '~/models/attachment'
 
 const MAX_VOICE_FILES = 3
 const MAX_IMAGE_FILES = 9
@@ -47,12 +48,32 @@ type FormValues = z.infer<typeof formSchema>
 
 type AttachmentType = 'note' | 'recommendation' | 'impression'
 
+export type AttachmentFormSubmitValues = FormValues & {
+    removedFileIds: string[]
+}
+
+interface AttachmentFormInitialData {
+    name?: string
+    text?: string
+    voiceFiles?: (File | string | AttachmentFile)[]
+    imageFiles?: (File | string | AttachmentFile)[]
+}
+
 interface AttachmentFormProps {
     type: AttachmentType
     mode?: 'create' | 'edit'
     trigger: React.ReactNode
-    initialData?: Partial<FormValues>
-    onSubmit: (values: FormValues) => void
+    initialData?: AttachmentFormInitialData
+    onSubmit: (values: AttachmentFormSubmitValues) => void
+}
+
+function isAttachmentFile(file: File | string | AttachmentFile): file is AttachmentFile {
+    return typeof file === 'object' && !(file instanceof File) && 'id' in file && 'url' in file
+}
+
+function getDisplayUrl(file: File | string | AttachmentFile): string {
+    if (isAttachmentFile(file)) return file.url
+    return getFileUrl(file)
 }
 
 export function AttachmentForm({
@@ -63,8 +84,9 @@ export function AttachmentForm({
     onSubmit,
 }: AttachmentFormProps) {
     const [open, setOpen] = useState(false)
-    const [voiceFiles, setVoiceFiles] = useState<(File | string)[]>([])
-    const [imageFiles, setImageFiles] = useState<(File | string)[]>([])
+    const [voiceFiles, setVoiceFiles] = useState<(File | string | AttachmentFile)[]>([])
+    const [imageFiles, setImageFiles] = useState<(File | string | AttachmentFile)[]>([])
+    const [removedFileIds, setRemovedFileIds] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         if (open && initialData) {
@@ -74,6 +96,7 @@ export function AttachmentForm({
             if (initialData.imageFiles) {
                 setImageFiles(initialData.imageFiles)
             }
+            setRemovedFileIds(new Set())
         }
     }, [open, initialData])
 
@@ -115,7 +138,12 @@ export function AttachmentForm({
     })
 
     function handleSubmit(values: FormValues) {
-        onSubmit({ ...values, voiceFiles, imageFiles })
+        onSubmit({
+            ...values,
+            voiceFiles,
+            imageFiles,
+            removedFileIds: Array.from(removedFileIds),
+        })
         setOpen(false)
     }
 
@@ -140,6 +168,28 @@ export function AttachmentForm({
             return
         }
         startRecording()
+    }
+
+    const toggleFileRemoval = (file: File | string | AttachmentFile) => {
+        if (isAttachmentFile(file)) {
+            setRemovedFileIds((prev) => {
+                const next = new Set(prev)
+                if (next.has(file.id)) {
+                    next.delete(file.id)
+                } else {
+                    next.add(file.id)
+                }
+                return next
+            })
+        } else {
+            // For new files (File objects), just remove from the list
+            setVoiceFiles((prev) => prev.filter((f) => f !== file))
+            setImageFiles((prev) => prev.filter((f) => f !== file))
+        }
+    }
+
+    const isFileMarkedForRemoval = (file: File | string | AttachmentFile): boolean => {
+        return isAttachmentFile(file) && removedFileIds.has(file.id)
     }
 
     return (
@@ -247,25 +297,25 @@ export function AttachmentForm({
                                 <div className="space-y-2">
                                     <h4 className="text-sm font-medium">Voice Recordings</h4>
                                     <div className="space-y-2">
-                                        {voiceFiles.map((file, index) => (
-                                            <div key={index} className="flex items-center gap-2">
-                                                <audio controls src={getFileUrl(file)} />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setVoiceFiles(
-                                                            voiceFiles.filter(
-                                                                (_, i) => i !== index,
-                                                            ),
-                                                        )
-                                                    }}
+                                        {voiceFiles.map((file, index) => {
+                                            const markedForRemoval = isFileMarkedForRemoval(file)
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`flex items-center gap-2 ${markedForRemoval ? 'opacity-40' : ''}`}
                                                 >
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        ))}
+                                                    <audio controls src={getDisplayUrl(file)} />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => toggleFileRemoval(file)}
+                                                    >
+                                                        {markedForRemoval ? 'Restore' : 'Remove'}
+                                                    </Button>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ) : (
@@ -313,30 +363,30 @@ export function AttachmentForm({
                                 <div className="space-y-2">
                                     <h4 className="text-sm font-medium">Images</h4>
                                     <div className="grid grid-cols-3 gap-2">
-                                        {imageFiles.map((file, index) => (
-                                            <div key={index} className="relative group">
-                                                <img
-                                                    src={getFileUrl(file)}
-                                                    alt={`Uploaded image ${index + 1}`}
-                                                    className="w-full h-24 object-cover rounded-md"
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                                                    onClick={() => {
-                                                        setImageFiles(
-                                                            imageFiles.filter(
-                                                                (_, i) => i !== index,
-                                                            ),
-                                                        )
-                                                    }}
+                                        {imageFiles.map((file, index) => {
+                                            const markedForRemoval = isFileMarkedForRemoval(file)
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`relative group ${markedForRemoval ? 'opacity-40' : ''}`}
                                                 >
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        ))}
+                                                    <img
+                                                        src={getDisplayUrl(file)}
+                                                        alt={`Uploaded image ${index + 1}`}
+                                                        className="w-full h-24 object-cover rounded-md"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
+                                                        onClick={() => toggleFileRemoval(file)}
+                                                    >
+                                                        {markedForRemoval ? 'Restore' : 'Remove'}
+                                                    </Button>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ) : (

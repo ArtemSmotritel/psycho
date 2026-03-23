@@ -121,12 +121,12 @@ noteRoutes.patch('/:attachmentId', async (c) => {
     }
 
     const body = await c.req.json()
-    // imageUrls / audioUrls silently ignored
-    const { name, text } = body
+    const { name, text, removeFileIds } = body
 
     const updated = await updateAttachment(attachmentId, {
         name: name !== undefined ? name : null,
         text: text !== undefined ? text : null,
+        removeFileIds,
     })
 
     return c.json({ note: updated }, 200)

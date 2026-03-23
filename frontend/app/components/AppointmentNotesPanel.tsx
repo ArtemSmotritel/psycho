@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
-import { AttachmentForm } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { noteService } from '~/services/note.service'
 import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
@@ -36,12 +36,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         fetchNotes()
     }, [fetchNotes])
 
-    const handleCreate = async (values: {
-        name: string
-        text?: string
-        voiceFiles: (File | string)[]
-        imageFiles: (File | string)[]
-    }) => {
+    const handleCreate = async (values: AttachmentFormSubmitValues) => {
         try {
             const audioFileIds: string[] = []
             for (const f of values.voiceFiles) {
@@ -72,11 +67,18 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         }
     }
 
-    const handleUpdate = async (noteId: string, values: { name: string; text?: string }) => {
+    const handleUpdate = async (
+        noteId: string,
+        values: { name: string; text?: string; removedFileIds?: string[] },
+    ) => {
         try {
             await noteService.update(clientId, appointmentId, noteId, {
                 name: values.name,
                 text: values.text,
+                removeFileIds:
+                    values.removedFileIds && values.removedFileIds.length > 0
+                        ? values.removedFileIds
+                        : undefined,
             })
             toast.success('Note updated.')
             await fetchNotes()
@@ -142,11 +144,14 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                         initialData={{
                                             name: note.name ?? '',
                                             text: note.text ?? '',
+                                            voiceFiles: note.audioFiles,
+                                            imageFiles: note.imageFiles,
                                         }}
                                         onSubmit={(values) =>
                                             handleUpdate(note.id, {
                                                 name: values.name,
                                                 text: values.text,
+                                                removedFileIds: values.removedFileIds,
                                             })
                                         }
                                     />

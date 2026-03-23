@@ -12,9 +12,6 @@ export const clientService = {
 
     remove: (id: string) => api.delete(`/clients/${id}`),
 
-    getSessions: (clientId: string, params?: { sortBy?: string; sortOrder?: 'asc' | 'desc' }) =>
-        api.get(`/clients/${clientId}/sessions`, { params }),
-
     getProgress: (clientId: string) => api.get(`/clients/${clientId}/progress`),
 
     getMe: () => api.get<{ client: Client }>('/clients/me'),
