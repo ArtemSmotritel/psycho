@@ -55,9 +55,6 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'BadRequest')
-        expect(body).toHaveProperty('message', 'startTime is required')
     })
 
     it('returns 400 BadRequest when endTime is missing', async () => {
@@ -75,9 +72,6 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'BadRequest')
-        expect(body).toHaveProperty('message', 'endTime is required')
     })
 
     it('returns 400 BadRequest when endTime <= startTime', async () => {

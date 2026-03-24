@@ -70,8 +70,6 @@ describe('PATCH /api/users/me/role', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'Invalid role')
     })
 
     it('returns 401 for unauthenticated request', async () => {

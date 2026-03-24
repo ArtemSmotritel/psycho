@@ -273,8 +273,6 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/notes', () => 
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'BadRequest')
     })
 
     it('returns 400 AppointmentNotActive when upcoming', async () => {

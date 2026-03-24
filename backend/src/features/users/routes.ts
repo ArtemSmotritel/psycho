@@ -1,6 +1,12 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import { authorized } from '../../middlewares/auth'
 import { findUserById, setActiveRole } from './service'
+
+const setRoleSchema = z.object({
+    role: z.enum(['psycho', 'client']),
+})
 
 export const userRoutes = new Hono()
 
@@ -16,14 +22,9 @@ userRoutes.get('/me', authorized, async (c) => {
     })
 })
 
-userRoutes.patch('/me/role', authorized, async (c) => {
+userRoutes.patch('/me/role', authorized, zValidator('json', setRoleSchema), async (c) => {
     const user = c.get('user')
-    const body = await c.req.json()
-    const { role } = body
-
-    if (role !== 'psycho' && role !== 'client') {
-        return c.json({ error: 'Invalid role' }, 400)
-    }
+    const { role } = c.req.valid('json')
 
     const updated = await setActiveRole(user.id, role)
 

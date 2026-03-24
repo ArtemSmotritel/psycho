@@ -1,4 +1,6 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { findAppointmentById } from '../appointments/services'
 import {
@@ -8,6 +10,19 @@ import {
     listAttachmentsByAuthor,
     updateAttachment,
 } from './services'
+
+const createNoteSchema = z.object({
+    name: z.string().min(1),
+    text: z.string().nullable().optional(),
+    imageFileIds: z.array(z.string()).optional().default([]),
+    audioFileIds: z.array(z.string()).optional().default([]),
+})
+
+const updateNoteSchema = z.object({
+    name: z.string().optional(),
+    text: z.string().optional(),
+    removeFileIds: z.array(z.string()).optional(),
+})
 
 export const noteRoutes = new Hono()
 
@@ -54,28 +69,23 @@ noteRoutes.get('/', async (c) => {
     return c.json({ notes }, 200)
 })
 
-noteRoutes.post('/', ownsFiles, async (c) => {
+noteRoutes.post('/', zValidator('json', createNoteSchema), ownsFiles, async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const body = await c.req.json()
-    const { name, text, imageFileIds, audioFileIds } = body
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-        return c.json({ error: 'BadRequest', message: 'name is required' }, 400)
-    }
+    const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
 
     const note = await createAttachment({
         appointmentId,
         authorId: user.id,
         type: 'note',
-        name: name.trim(),
+        name,
         text: text ?? null,
-        imageFileIds: Array.isArray(imageFileIds) ? imageFileIds : [],
-        audioFileIds: Array.isArray(audioFileIds) ? audioFileIds : [],
+        imageFileIds,
+        audioFileIds,
     })
 
     return c.json({ note }, 201)
@@ -102,7 +112,7 @@ noteRoutes.get('/:attachmentId', async (c) => {
     return c.json({ note: attachment }, 200)
 })
 
-noteRoutes.patch('/:attachmentId', async (c) => {
+noteRoutes.patch('/:attachmentId', zValidator('json', updateNoteSchema), async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
@@ -120,12 +130,11 @@ noteRoutes.patch('/:attachmentId', async (c) => {
         return c.json({ error: 'NotFound' }, 404)
     }
 
-    const body = await c.req.json()
-    const { name, text, removeFileIds } = body
+    const { name, text, removeFileIds } = c.req.valid('json')
 
     const updated = await updateAttachment(attachmentId, {
-        name: name !== undefined ? name : null,
-        text: text !== undefined ? text : null,
+        name: name ?? null,
+        text: text ?? null,
         removeFileIds,
     })
 

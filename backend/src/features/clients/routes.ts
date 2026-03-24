@@ -1,4 +1,6 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import {
     authorized,
     onlyClientRequest,
@@ -16,6 +18,18 @@ import {
     updateClient,
 } from './services'
 
+const updateClientSchema = z.object({
+    name: z.string().optional(),
+    username: z.string().optional(),
+    phone: z.string().optional(),
+    telegram: z.string().optional(),
+    instagram: z.string().optional(),
+})
+
+const addClientSchema = z.object({
+    email: z.email(),
+})
+
 export const clientSelfRoutes = new Hono()
 
 clientSelfRoutes
@@ -27,13 +41,19 @@ clientSelfRoutes
         }
         return c.json({ client })
     })
-    .put('/me', authorized, onlyClientRequest, async (c) => {
-        const user = c.get('user')
-        const { name, username, phone, telegram, instagram } = await c.req.json()
-        await updateClient(user.id, { name, username, phone, telegram, instagram })
-        const client = await findClientById(user.id)
-        return c.json({ client })
-    })
+    .put(
+        '/me',
+        authorized,
+        onlyClientRequest,
+        zValidator('json', updateClientSchema),
+        async (c) => {
+            const user = c.get('user')
+            const { name, username, phone, telegram, instagram } = c.req.valid('json')
+            await updateClient(user.id, { name, username, phone, telegram, instagram })
+            const client = await findClientById(user.id)
+            return c.json({ client })
+        },
+    )
 
 export const clientRoutes = new Hono()
 
@@ -53,14 +73,9 @@ clientRoutes
         }
         return c.json({ client })
     })
-    .post('/', async (c) => {
+    .post('/', zValidator('json', addClientSchema), async (c) => {
         const user = c.get('user')
-        const body = await c.req.json()
-        const { email } = body
-
-        if (!email) {
-            return c.json({ error: 'BadRequest', message: 'email is required' }, 400)
-        }
+        const { email } = c.req.valid('json')
 
         const client = await findClientByEmail(email)
 
@@ -86,10 +101,9 @@ clientRoutes
 
         return c.json({ client }, 201)
     })
-    .put('/:clientId', onlyLinkedClient, async (c) => {
+    .put('/:clientId', onlyLinkedClient, zValidator('json', updateClientSchema), async (c) => {
         const clientId = c.req.param('clientId')
-        const body = await c.req.json()
-        const { name, username, phone, telegram, instagram } = body
+        const { name, username, phone, telegram, instagram } = c.req.valid('json')
         await updateClient(clientId, { name, username, phone, telegram, instagram })
         const client = await findClientById(clientId)
         return c.json({ client })

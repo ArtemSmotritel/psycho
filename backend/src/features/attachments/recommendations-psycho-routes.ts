@@ -1,4 +1,6 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { findAppointmentById } from '../appointments/services'
 import {
@@ -10,6 +12,23 @@ import {
     setReply,
     updateAttachment,
 } from './services'
+
+const createRecommendationSchema = z.object({
+    name: z.string().min(1),
+    text: z.string().nullable().optional(),
+    imageFileIds: z.array(z.string()).optional().default([]),
+    audioFileIds: z.array(z.string()).optional().default([]),
+})
+
+const updateRecommendationSchema = z.object({
+    name: z.string().optional(),
+    text: z.string().optional(),
+    removeFileIds: z.array(z.string()).optional(),
+})
+
+const replySchema = z.object({
+    reply: z.string().min(1),
+})
 
 export const recommendationPsychoRoutes = new Hono()
 
@@ -75,35 +94,35 @@ recommendationPsychoRoutes.get('/', async (c) => {
     return c.json({ recommendations }, 200)
 })
 
-recommendationPsychoRoutes.post('/', ownsFiles, async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
+recommendationPsychoRoutes.post(
+    '/',
+    zValidator('json', createRecommendationSchema),
+    ownsFiles,
+    async (c) => {
+        const user = c.get('user')
+        const appointmentId = c.req.param('appointmentId')
 
-    // Steps 1–2: ownership + status check
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+        // Steps 1–2: ownership + status check
+        const check = await checkAppointmentAccess(c)
+        if (!check.ok) return check.response
 
-    const body = await c.req.json()
-    const { name, text, imageFileIds, audioFileIds } = body
+        const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
 
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-        return c.json({ error: 'BadRequest', message: 'name is required' }, 400)
-    }
+        const recommendation = await createAttachment({
+            appointmentId,
+            authorId: user.id,
+            type: 'recommendation',
+            name,
+            text: text ?? null,
+            imageFileIds,
+            audioFileIds,
+        })
 
-    const recommendation = await createAttachment({
-        appointmentId,
-        authorId: user.id,
-        type: 'recommendation',
-        name: name.trim(),
-        text: text ?? null,
-        imageFileIds: Array.isArray(imageFileIds) ? imageFileIds : [],
-        audioFileIds: Array.isArray(audioFileIds) ? audioFileIds : [],
-    })
+        // TODO: EDG-56 — send recommendation email to client
 
-    // TODO: EDG-56 — send recommendation email to client
-
-    return c.json({ recommendation }, 201)
-})
+        return c.json({ recommendation }, 201)
+    },
+)
 
 recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
     const user = c.get('user')
@@ -127,36 +146,39 @@ recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
     return c.json({ recommendation: attachment }, 200)
 })
 
-recommendationPsychoRoutes.patch('/:attachmentId', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
+recommendationPsychoRoutes.patch(
+    '/:attachmentId',
+    zValidator('json', updateRecommendationSchema),
+    async (c) => {
+        const user = c.get('user')
+        const appointmentId = c.req.param('appointmentId')
+        const attachmentId = c.req.param('attachmentId')
 
-    // Steps 1–2: ownership + status check
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+        // Steps 1–2: ownership + status check
+        const check = await checkAppointmentAccess(c)
+        if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'recommendation' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
-    }
+        const attachment = await findAttachmentById(attachmentId)
+        if (
+            !attachment ||
+            attachment.appointmentId !== appointmentId ||
+            attachment.type !== 'recommendation' ||
+            attachment.authorId !== user.id
+        ) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
 
-    const body = await c.req.json()
-    const { name, text, removeFileIds } = body
+        const { name, text, removeFileIds } = c.req.valid('json')
 
-    const updated = await updateAttachment(attachmentId, {
-        name: name !== undefined ? name : null,
-        text: text !== undefined ? text : null,
-        removeFileIds,
-    })
+        const updated = await updateAttachment(attachmentId, {
+            name: name ?? null,
+            text: text ?? null,
+            removeFileIds,
+        })
 
-    return c.json({ recommendation: updated }, 200)
-})
+        return c.json({ recommendation: updated }, 200)
+    },
+)
 
 recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
     const user = c.get('user')
@@ -181,41 +203,39 @@ recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
     return c.json({ success: true }, 200)
 })
 
-recommendationPsychoRoutes.patch('/:attachmentId/reply', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
+recommendationPsychoRoutes.patch(
+    '/:attachmentId/reply',
+    zValidator('json', replySchema),
+    async (c) => {
+        const user = c.get('user')
+        const appointmentId = c.req.param('appointmentId')
+        const attachmentId = c.req.param('attachmentId')
 
-    // Step 1 — appointment ownership
-    const check = await checkAppointmentOwnership(c)
-    if (!check.ok) return check.response
+        // Step 1 — appointment ownership
+        const check = await checkAppointmentOwnership(c)
+        if (!check.ok) return check.response
 
-    // Step 2 — attachment chain
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'recommendation' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
-    }
+        // Step 2 — attachment chain
+        const attachment = await findAttachmentById(attachmentId)
+        if (
+            !attachment ||
+            attachment.appointmentId !== appointmentId ||
+            attachment.type !== 'recommendation' ||
+            attachment.authorId !== user.id
+        ) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
 
-    const body = await c.req.json()
-    const { reply } = body
+        const { reply } = c.req.valid('json')
 
-    // Body validation
-    if (!reply || typeof reply !== 'string' || reply.trim() === '') {
-        return c.json({ error: 'BadRequest', message: 'reply is required' }, 400)
-    }
+        // Step 3 — reply-once check
+        const existing = await findReaction(attachmentId)
+        if (existing && existing.psychologistReply !== null) {
+            return c.json({ error: 'ReplyAlreadySet', message: 'Reply has already been set.' }, 400)
+        }
 
-    // Step 3 — reply-once check
-    const existing = await findReaction(attachmentId)
-    if (existing && existing.psychologistReply !== null) {
-        return c.json({ error: 'ReplyAlreadySet', message: 'Reply has already been set.' }, 400)
-    }
+        const reaction = await setReply(attachmentId, reply)
 
-    const reaction = await setReply(attachmentId, reply.trim())
-
-    return c.json({ reaction }, 200)
-})
+        return c.json({ reaction }, 200)
+    },
+)

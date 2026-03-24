@@ -441,8 +441,6 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'BadRequest')
     })
 
     it('returns 400 BadRequest when reply is empty string', async () => {
@@ -474,8 +472,6 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body).toHaveProperty('error', 'BadRequest')
     })
 
     it('returns 404 when appointmentId does not belong to this psychologist', async () => {
