@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
@@ -19,8 +20,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const apt1 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt1.id)
         await endAppointment(apt1.id)
@@ -28,8 +29,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-08T10:00:00.000Z',
-            endTime: '2026-04-08T11:00:00.000Z',
+            startTime: futureDate(14),
+            endTime: futureDate(14, 11),
         })
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
@@ -80,8 +81,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -129,8 +130,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const apt1 = await createAppointment({
             psychoId: psycho1.id,
             clientId: client1.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt1.id)
         await endAppointment(apt1.id)
@@ -138,8 +139,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const apt2 = await createAppointment({
             psychoId: psycho2.id,
             clientId: client2.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)

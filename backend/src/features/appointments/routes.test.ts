@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
+import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho } from '../clients/services'
 import {
     createAppointment,
@@ -25,8 +26,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-01T10:00:00.000Z',
-                    endTime: '2026-04-01T11:00:00.000Z',
+                    startTime: futureDate(7),
+                    endTime: futureDate(7, 11),
                 }),
             }),
         )
@@ -50,7 +51,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
             await asUser(psycho.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ endTime: '2026-04-01T11:00:00.000Z' }),
+                body: JSON.stringify({ endTime: futureDate(7, 11) }),
             }),
         )
 
@@ -67,7 +68,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
             await asUser(psycho.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-01T10:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(7) }),
             }),
         )
 
@@ -85,8 +86,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-01T11:00:00.000Z',
-                    endTime: '2026-04-01T10:00:00.000Z',
+                    startTime: futureDate(7, 11),
+                    endTime: futureDate(7),
                 }),
             }),
         )
@@ -107,8 +108,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-01T10:00:00.000Z',
-                    endTime: '2026-04-01T11:00:00.000Z',
+                    startTime: futureDate(7),
+                    endTime: futureDate(7, 11),
                 }),
             }),
         )
@@ -124,8 +125,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                startTime: '2026-04-01T10:00:00.000Z',
-                endTime: '2026-04-01T11:00:00.000Z',
+                startTime: futureDate(7),
+                endTime: futureDate(7, 11),
             }),
         })
         expect(res.status).toBe(401)
@@ -140,8 +141,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-01T10:00:00.000Z',
-                    endTime: '2026-04-01T11:00:00.000Z',
+                    startTime: futureDate(7),
+                    endTime: futureDate(7, 11),
                 }),
             }),
         )
@@ -158,8 +159,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -168,8 +169,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T10:00:00.000Z',
-                    endTime: '2026-04-02T11:00:00.000Z',
+                    startTime: futureDate(8),
+                    endTime: futureDate(8, 11),
                     googleMeetLink: 'https://meet.google.com/abc',
                 }),
             }),
@@ -191,7 +192,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(8) }),
             }),
         )
 
@@ -207,8 +208,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -218,7 +219,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(8) }),
             }),
         )
 
@@ -235,8 +236,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -245,7 +246,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(8) }),
             }),
         )
 
@@ -261,8 +262,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -271,8 +272,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T12:00:00.000Z',
-                    endTime: '2026-04-02T10:00:00.000Z',
+                    startTime: futureDate(8, 12),
+                    endTime: futureDate(8),
                 }),
             }),
         )
@@ -287,7 +288,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const res = await app.request('/api/clients/some-client/appointments/some-apt', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+            body: JSON.stringify({ startTime: futureDate(8) }),
         })
         expect(res.status).toBe(401)
     })
@@ -300,7 +301,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             await asUser(user.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-02T10:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(8) }),
             }),
         )
 
@@ -314,8 +315,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -323,16 +324,16 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ startTime: '2026-04-01T09:00:00.000Z' }),
+                body: JSON.stringify({ startTime: futureDate(7, 9) }),
             }),
         )
 
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment).toHaveProperty('startTime', '2026-04-01T09:00:00.000Z')
+        expect(body.appointment).toHaveProperty('startTime', futureDate(7, 9))
         // endTime stays unchanged
-        expect(body.appointment.endTime).toContain('2026-04-01T11:00:00')
+        expect(body.appointment).toHaveProperty('endTime', futureDate(7, 11))
     })
 
     it('returns 200 with manual meet link override without reschedule flag', async () => {
@@ -342,8 +343,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
             googleMeetLink: null,
         })
 
@@ -375,8 +376,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
             googleMeetLink: 'https://meet.google.com/existing-link',
         })
 
@@ -386,8 +387,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T10:00:00.000Z',
-                    endTime: '2026-04-02T11:00:00.000Z',
+                    startTime: futureDate(8),
+                    endTime: futureDate(8, 11),
                     rescheduleGoogleMeet: false,
                 }),
             }),
@@ -396,7 +397,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body).toHaveProperty('appointment')
-        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        expect(body.appointment).toHaveProperty('startTime', futureDate(8))
         expect(body).toHaveProperty('meetRescheduleFailed', false)
         // existing google meet link is preserved unchanged
         expect(body.appointment).toHaveProperty(
@@ -412,8 +413,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
             googleMeetLink: 'https://meet.google.com/old-link',
         })
         // No googleCalendarEventId set (it's null by default), no Google OAuth account in test DB
@@ -424,8 +425,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T10:00:00.000Z',
-                    endTime: '2026-04-02T11:00:00.000Z',
+                    startTime: futureDate(8),
+                    endTime: futureDate(8, 11),
                     rescheduleGoogleMeet: true,
                 }),
             }),
@@ -435,7 +436,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const body = await res.json()
         expect(body).toHaveProperty('meetRescheduleFailed', true)
         // appointment times are still updated
-        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        expect(body.appointment).toHaveProperty('startTime', futureDate(8))
     })
 
     it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true and has googleCalendarEventId but no valid token', async () => {
@@ -445,8 +446,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
             googleMeetLink: 'https://meet.google.com/old-link',
         })
         // Directly set googleCalendarEventId via testDb
@@ -458,8 +459,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T10:00:00.000Z',
-                    endTime: '2026-04-02T11:00:00.000Z',
+                    startTime: futureDate(8),
+                    endTime: futureDate(8, 11),
                     rescheduleGoogleMeet: true,
                 }),
             }),
@@ -469,7 +470,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const body = await res.json()
         expect(body).toHaveProperty('meetRescheduleFailed', true)
         // appointment times are still updated
-        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        expect(body.appointment).toHaveProperty('startTime', futureDate(8))
         // googleCalendarEventId is preserved (not exposed to frontend, check via DB)
         const [row] =
             await testDb`SELECT google_calendar_event_id FROM appointments WHERE id = ${apt.id}`
@@ -483,8 +484,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
             googleMeetLink: null,
         })
         // No googleCalendarEventId, no meet link, no Google account
@@ -495,8 +496,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
                 body: JSON.stringify({
-                    startTime: '2026-04-02T10:00:00.000Z',
-                    endTime: '2026-04-02T11:00:00.000Z',
+                    startTime: futureDate(8),
+                    endTime: futureDate(8, 11),
                     rescheduleGoogleMeet: true,
                 }),
             }),
@@ -506,7 +507,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         const body = await res.json()
         expect(body).toHaveProperty('meetRescheduleFailed', true)
         // appointment is still updated
-        expect(body.appointment.startTime).toContain('2026-04-02T10:00:00')
+        expect(body.appointment).toHaveProperty('startTime', futureDate(8))
     })
 })
 
@@ -518,8 +519,8 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -554,8 +555,8 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -578,8 +579,8 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -620,22 +621,22 @@ describe('GET /api/clients/:clientId/appointments', () => {
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-03-01T10:00:00.000Z',
-            endTime: '2026-03-01T11:00:00.000Z',
+            startTime: pastDate(30),
+            endTime: pastDate(30, 11),
         })
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
         const apt3 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-03-10T09:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z', // future end_time so status stays 'active'
+            startTime: pastDate(14, 9),
+            endTime: futureDate(7, 11), // future end_time so status stays 'active'
         })
         await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt3.id}`
 
@@ -710,8 +711,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -749,8 +750,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -786,8 +787,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -823,8 +824,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -850,8 +851,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -874,14 +875,14 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         const apt1 = await createAppointment({
             psychoId: psycho.id,
             clientId: client1.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client2.id,
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
+            startTime: futureDate(8),
+            endTime: futureDate(8, 11),
         })
         await startAppointment(apt1.id)
 
@@ -927,14 +928,14 @@ describe('GET /api/appointments (client)', () => {
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-03-01T10:00:00.000Z',
-            endTime: '2026-03-01T11:00:00.000Z',
+            startTime: pastDate(30),
+            endTime: pastDate(30, 11),
         })
 
         const res = await app.request(
@@ -989,8 +990,8 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -1026,8 +1027,8 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client1.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -1063,8 +1064,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -1086,8 +1087,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -1117,8 +1118,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -1145,8 +1146,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -1192,8 +1193,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -1214,8 +1215,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -1257,8 +1258,8 @@ describe('GET /api/psycho/appointments', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-03-10T09:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z', // future end_time so findActiveAppointmentByPsycho finds it
+            startTime: pastDate(14, 9),
+            endTime: futureDate(7, 11), // future end_time so findActiveAppointmentByPsycho finds it
         })
         await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt.id}`
 
@@ -1312,8 +1313,8 @@ describe('findAppointmentByIdForParticipant', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const result = await findAppointmentByIdForParticipant(apt.id, psycho.id)
@@ -1331,8 +1332,8 @@ describe('findAppointmentByIdForParticipant', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const result = await findAppointmentByIdForParticipant(apt.id, client.id)
@@ -1351,8 +1352,8 @@ describe('findAppointmentByIdForParticipant', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const result = await findAppointmentByIdForParticipant(apt.id, outsider.id)
@@ -1377,8 +1378,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         // Backdate start_time to past, keep end_time in the future, started_at stays null
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
@@ -1400,8 +1401,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         // Both times in the past, started_at stays null
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
@@ -1423,8 +1424,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '30 minutes', end_time = NOW() + INTERVAL '30 minutes', started_at = NOW() - INTERVAL '25 minutes' WHERE id = ${apt.id}`
 
@@ -1445,8 +1446,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '90 minutes', end_time = NOW() - INTERVAL '30 minutes', started_at = NOW() - INTERVAL '85 minutes', ended_at = NOW() - INTERVAL '35 minutes' WHERE id = ${apt.id}`
 
@@ -1467,8 +1468,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         // started but ended_at is null; end_time is in the past
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
@@ -1490,8 +1491,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         // In warning window: start_time passed, end_time not yet, started_at null
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
@@ -1513,8 +1514,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         // Missed: both times in past, started_at null
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
@@ -1536,8 +1537,8 @@ describe('GET /:appointmentId — time-based status computation', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -1571,8 +1572,8 @@ describe('GET /api/psycho/appointments/all', () => {
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(

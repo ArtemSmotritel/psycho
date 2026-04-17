@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment, upsertReaction } from '../attachments/services'
@@ -38,15 +39,15 @@ describe('GET /api/client/dashboard', () => {
         const upcoming = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2030-04-01T10:00:00.000Z',
-            endTime: '2030-04-01T11:00:00.000Z',
+            startTime: futureDate(150),
+            endTime: futureDate(150, 11),
         })
 
         const past = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(past.id)
         await endAppointment(past.id)
@@ -92,8 +93,8 @@ describe('GET /api/client/dashboard', () => {
         const past = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(past.id)
         await endAppointment(past.id)
@@ -118,8 +119,8 @@ describe('GET /api/client/dashboard', () => {
         const past = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(past.id)
         await endAppointment(past.id)
@@ -191,8 +192,8 @@ describe('GET /api/client/dashboard', () => {
         const apt1 = await createAppointment({
             psychoId: psycho.id,
             clientId: client1.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(apt1.id)
         await endAppointment(apt1.id)
@@ -200,8 +201,8 @@ describe('GET /api/client/dashboard', () => {
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client2.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
@@ -323,22 +324,22 @@ describe('GET /api/client/dashboard', () => {
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2030-04-01T10:00:00.000Z',
-            endTime: '2030-04-01T11:00:00.000Z',
+            startTime: futureDate(150),
+            endTime: futureDate(150, 11),
         })
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2030-05-01T10:00:00.000Z',
-            endTime: '2030-05-01T11:00:00.000Z',
+            startTime: futureDate(180),
+            endTime: futureDate(180, 11),
         })
 
         // Create past
         const past = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2024-01-01T10:00:00.000Z',
-            endTime: '2024-01-01T11:00:00.000Z',
+            startTime: pastDate(365),
+            endTime: pastDate(365, 11),
         })
         await startAppointment(past.id)
         await endAppointment(past.id)
@@ -347,8 +348,8 @@ describe('GET /api/client/dashboard', () => {
         const active = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2030-06-01T10:00:00.000Z',
-            endTime: '2030-06-01T11:00:00.000Z',
+            startTime: futureDate(210),
+            endTime: futureDate(210, 11),
         })
         await startAppointment(active.id)
 

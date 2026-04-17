@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
+import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
@@ -19,8 +20,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -50,8 +51,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -85,8 +86,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -110,8 +111,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -135,8 +136,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho2.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -160,8 +161,8 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/recommendation
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
 
@@ -217,8 +218,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/recommendations
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -261,8 +262,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/recommendations
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -289,8 +290,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/recommendations
         const apt = await createAppointment({
             psychoId: psycho2.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -314,8 +315,8 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/recommendations
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -356,8 +357,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -402,14 +403,14 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt1 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
+            startTime: futureDate(8),
+            endTime: futureDate(8, 11),
         })
         await startAppointment(apt1.id)
         await endAppointment(apt1.id)
@@ -442,8 +443,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -475,8 +476,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -507,8 +508,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
 
         const res = await app.request(
@@ -532,8 +533,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -570,8 +571,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -626,8 +627,8 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/recommendati
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -659,14 +660,14 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/recommendati
         const apt1 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         const apt2 = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-02T10:00:00.000Z',
-            endTime: '2026-04-02T11:00:00.000Z',
+            startTime: futureDate(8),
+            endTime: futureDate(8, 11),
         })
         await startAppointment(apt1.id)
         await endAppointment(apt1.id)
@@ -699,8 +700,8 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/recommendati
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -748,8 +749,8 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -791,8 +792,8 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
@@ -816,8 +817,8 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: '2026-04-01T10:00:00.000Z',
-            endTime: '2026-04-01T11:00:00.000Z',
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
