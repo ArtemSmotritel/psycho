@@ -21,6 +21,7 @@ import { progressPsychoRoutes } from '../features/attachments/progress-psycho-ro
 import { attachmentRoutes } from '../features/attachments/attachment-routes'
 import { clientDashboardRoutes } from '../features/client-dashboard/routes'
 import { psychoDashboardRoutes } from '../features/dashboard/routes'
+import { invitationRoutes } from '../features/invitations/routes'
 
 export const app = new Hono<{
     Variables: {
@@ -98,9 +99,7 @@ app.route(
 )
 app.route('/api/appointments/:appointmentId/recommendations', recommendationClientRoutes)
 app.route('/api/clients/:clientId/progress/impressions', progressPsychoRoutes)
-app.route(
-    '/api/clients/:clientId/appointments/:appointmentId/attachments',
-    attachmentRoutes,
-)
+app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', attachmentRoutes)
 app.route('/api/client/dashboard', clientDashboardRoutes)
 app.route('/api/psycho/dashboard', psychoDashboardRoutes)
+app.route('/api/invitations', invitationRoutes)

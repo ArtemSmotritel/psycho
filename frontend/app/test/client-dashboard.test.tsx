@@ -20,6 +20,7 @@ import type { ClientDashboardData } from '~/models/dashboard'
 
 function makeData(overrides: Partial<ClientDashboardData> = {}): ClientDashboardData {
     return {
+        psychologists: [],
         nextAppointment: null,
         pendingRecommendations: [],
         appointmentCounts: { upcoming: 0, active: 0, past: 0 },

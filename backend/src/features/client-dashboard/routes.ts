@@ -5,6 +5,7 @@ import {
     countAppointmentsForClient,
 } from '../appointments/services'
 import { listPendingRecommendationsForClient } from '../attachments/services'
+import { findPsychologistsForClient } from '../clients/services'
 
 export const clientDashboardRoutes = new Hono()
 
@@ -13,14 +14,17 @@ clientDashboardRoutes.use(authorized, onlyClientRequest)
 clientDashboardRoutes.get('/', async (c) => {
     const user = c.get('user')
 
-    const [nextAppointment, pendingRecommendations, appointmentCounts] = await Promise.all([
-        findNextUpcomingAppointmentForClient(user.id),
-        listPendingRecommendationsForClient(user.id),
-        countAppointmentsForClient(user.id),
-    ])
+    const [psychologists, nextAppointment, pendingRecommendations, appointmentCounts] =
+        await Promise.all([
+            findPsychologistsForClient(user.id),
+            findNextUpcomingAppointmentForClient(user.id),
+            listPendingRecommendationsForClient(user.id),
+            countAppointmentsForClient(user.id),
+        ])
 
     return c.json(
         {
+            psychologists,
             nextAppointment,
             pendingRecommendations,
             appointmentCounts,

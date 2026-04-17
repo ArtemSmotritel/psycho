@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { linkClientToPsycho } from '../clients/services'
+import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment, upsertReaction } from '../attachments/services'
 
@@ -234,6 +234,84 @@ describe('GET /api/client/dashboard', () => {
         const pendingIds = body.pendingRecommendations.map((r: any) => r.id)
         expect(pendingIds).toContain(client2Rec.id)
         expect(pendingIds.length).toBe(1)
+    })
+
+    it('psychologists is returned in the happy path with correct shape', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('psychologists')
+        expect(Array.isArray(body.psychologists)).toBe(true)
+        expect(body.psychologists.length).toBe(1)
+        expect(body.psychologists[0]).toHaveProperty('id', psycho.id)
+        expect(body.psychologists[0]).toHaveProperty('name', 'Dr. Smith')
+        expect(body.psychologists[0]).toHaveProperty('email', 'psycho@test.com')
+        expect(body.psychologists[0]).toHaveProperty('image')
+    })
+
+    it('psychologists returns multiple psychologists when client has several', async () => {
+        const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho1.id)
+        await linkClientToPsycho(client.id, psycho2.id)
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.psychologists.length).toBe(2)
+        const ids = body.psychologists.map((p: any) => p.id)
+        expect(ids).toContain(psycho1.id)
+        expect(ids).toContain(psycho2.id)
+    })
+
+    it('psychologists is empty array when client has no linked psychologists', async () => {
+        const client = await insertTestUser({ email: 'client@test.com' })
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.psychologists).toEqual([])
+    })
+
+    it('psychologists excludes disconnected psychologists', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        await unlinkClientFromPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.psychologists).toEqual([])
     })
 
     it('appointmentCounts correctly reflects upcoming, active, and past counts', async () => {

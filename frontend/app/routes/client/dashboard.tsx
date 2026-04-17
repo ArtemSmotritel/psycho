@@ -54,7 +54,7 @@ export default function ClientDashboard() {
         )
     }
 
-    const { nextAppointment, pendingRecommendations, appointmentCounts } = data!
+    const { psychologists, nextAppointment, pendingRecommendations, appointmentCounts } = data!
 
     const handleToggleDoneForRec =
         (appointmentId: string) => async (attachmentId: string, done: boolean) => {
@@ -81,6 +81,42 @@ export default function ClientDashboard() {
             <AppPageHeader text="Dashboard" />
 
             <div className="grid grid-cols-1 gap-4 mb-8">
+                {/* My Psychologists */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>My Psychologists</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {psychologists.length === 0 ? (
+                            <EmptyMessage title="No psychologists linked" />
+                        ) : (
+                            <div className="space-y-3">
+                                {psychologists.map((p) => (
+                                    <div key={p.id} className="flex items-center gap-3">
+                                        {p.image ? (
+                                            <img
+                                                src={p.image}
+                                                alt={p.name}
+                                                className="h-8 w-8 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                                                {p.name?.charAt(0)?.toUpperCase() ?? '?'}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-sm font-medium">{p.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {p.email}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Next Appointment */}
                 <Card>
                     <CardHeader>

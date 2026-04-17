@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '~/contexts/auth-context'
+import { invitationService } from '~/services/invitation.service'
 
 export default function AuthCallback() {
     const { isLoading, isAuthenticated, activeRole, setActiveRole } = useAuth()
@@ -14,6 +15,23 @@ export default function AuthCallback() {
             return
         }
 
+        // Check for pending invitation token (from /invite flow)
+        const invitationToken = sessionStorage.getItem('invitation_token')
+        if (invitationToken) {
+            sessionStorage.removeItem('invitation_token')
+            sessionStorage.removeItem('intended_role')
+            invitationService
+                .accept(invitationToken)
+                .then(() => setActiveRole('client'))
+                .then(() => navigate('/client'))
+                .catch(() => {
+                    // If acceptance fails, fall through to normal flow
+                    navigate('/login')
+                })
+            return
+        }
+
+        // Existing flow: check active role or intended role
         if (activeRole === 'psycho') {
             navigate('/psycho')
         } else if (activeRole === 'client') {

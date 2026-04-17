@@ -11,7 +11,15 @@ export interface PsychoDashboard {
     recentClients: Client[]
 }
 
+export interface ClientPsychologist {
+    id: string
+    name: string
+    email: string
+    image: string | null
+}
+
 export interface ClientDashboardData {
+    psychologists: ClientPsychologist[]
     nextAppointment: AppointmentWithPsycho | null
     pendingRecommendations: AttachmentWithReaction[]
     appointmentCounts: {
