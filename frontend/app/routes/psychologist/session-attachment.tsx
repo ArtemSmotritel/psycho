@@ -8,7 +8,7 @@ import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { CompleteImpressionForm } from '@/components/CompleteImpressionForm'
 import { AttachmentForm } from '@/components/AttachmentForm'
 import { EmptyMessage } from '@/components/EmptyMessage'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
     Carousel,
     CarouselContent,
@@ -21,7 +21,8 @@ import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { noteService } from '~/services/note.service'
 import { recommendationService } from '~/services/recommendation.service'
-import type { AttachmentFile } from '~/models/attachment'
+import { impressionService } from '~/services/impression.service'
+import type { AttachmentFile, ImpressionCompletion } from '~/models/attachment'
 
 interface ImageAttachmentsProps {
     files: AttachmentFile[]
@@ -82,13 +83,27 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
         </div>
     )
 }
-// TODO add client response if present.
 export default function SessionAttachment() {
     const { attachment, isLoading, refetch } = useCurrentAttachment()
-    const { clientId, appointmentId } = useParams()
+    const { clientId, appointmentId, attachmentId } = useParams()
     const navigate = useNavigate()
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
+    const [completion, setCompletion] = useState<ImpressionCompletion | null>(null)
     const { userRole } = useRoleGuard(['psychologist', 'client'])
+
+    const fetchCompletion = useCallback(() => {
+        if (!attachment || attachment.type !== 'impression' || !appointmentId || !attachmentId)
+            return
+        const promise =
+            userRole === 'client'
+                ? impressionService.getCompletion(appointmentId, attachmentId)
+                : impressionService.getPsychoCompletion(clientId!, appointmentId, attachmentId)
+        promise.then((res) => setCompletion(res.data.completion)).catch(() => {})
+    }, [attachment, userRole, clientId, appointmentId, attachmentId])
+
+    useEffect(() => {
+        fetchCompletion()
+    }, [fetchCompletion])
 
     if (isLoading) return <p>Loading...</p>
 
@@ -113,8 +128,10 @@ export default function SessionAttachment() {
         }
     }
 
-    const handleComplete = async (_values: { response: string }) => {
-        // TODO: Implement once the backend completion endpoint is available
+    const handleComplete = async (values: { response: string }) => {
+        await impressionService.complete(appointmentId!, attachment!.id, values)
+        toast.success('Impression completed.')
+        fetchCompletion()
     }
 
     const handleEdit = async (values: {
@@ -186,7 +203,7 @@ export default function SessionAttachment() {
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
 
-                {attachment.type === 'impression' && userRole === 'client' && (
+                {attachment.type === 'impression' && userRole === 'client' && !completion && (
                     <ActionItem
                         icon={<CheckCircle className="h-6" />}
                         label="Complete"
@@ -219,6 +236,18 @@ export default function SessionAttachment() {
                         <p className="text-muted-foreground whitespace-pre-wrap">
                             {attachment.text}
                         </p>
+                    </div>
+                )}
+
+                {completion && (
+                    <div className="space-y-2">
+                        <h3 className="text-lg font-medium">Client Response</h3>
+                        <div className="rounded-lg border bg-muted/50 p-4">
+                            <p className="whitespace-pre-wrap">{completion.clientResponse}</p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Completed on {formatAppDate(completion.createdAt)}
+                            </p>
+                        </div>
                     </div>
                 )}
 

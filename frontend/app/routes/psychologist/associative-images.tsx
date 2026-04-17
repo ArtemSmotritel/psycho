@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { Input } from '@/components/ui/input'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trash2, Save, X, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyMessage } from '~/components/EmptyMessage'
@@ -10,15 +10,13 @@ import { AddImageDialog } from '~/components/AddImageDialog'
 import { ConfirmAction } from '~/components/ConfirmAction'
 import { ImagePreview } from '~/components/ImagePreview'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
-
-interface ImageCard {
-    id: string
-    name: string
-    url: string
-}
+import { toast } from 'sonner'
+import { associativeImageService } from '~/services/associative-image.service'
+import { fileService } from '~/services/file.service'
+import type { AssociativeImage } from '~/models/associative-image'
 
 interface ImageCardProps {
-    image: ImageCard
+    image: AssociativeImage
     onDelete: (id: string) => void
     onSaveEdit: (id: string, newName: string) => void
 }
@@ -51,7 +49,7 @@ function ImageCard({ image, onDelete, onSaveEdit }: ImageCardProps) {
                 />
             </CardHeader>
             <CardContent>
-                <ImagePreview src={image.url} alt={image.name} />
+                <ImagePreview src={image.imageUrl} alt={image.name} />
             </CardContent>
             <CardFooter className="flex justify-between items-center">
                 <ConfirmAction
@@ -87,25 +85,51 @@ function ImageCard({ image, onDelete, onSaveEdit }: ImageCardProps) {
 }
 
 export default function AssociativeImages() {
-    const [images, setImages] = useState<ImageCard[]>([])
+    const [images, setImages] = useState<AssociativeImage[]>([])
     const [searchQuery, setSearchQuery] = useState('')
+    const [loading, setLoading] = useState(true)
 
-    const handleAddImage = (name: string, file: File) => {
-        const newImage: ImageCard = {
-            id: Date.now().toString(),
-            name,
-            url: URL.createObjectURL(file),
+    useEffect(() => {
+        associativeImageService
+            .getList()
+            .then((res) => {
+                setImages(res.data.images)
+            })
+            .catch(() => {
+                toast.error('Failed to load images.')
+            })
+            .finally(() => {
+                setLoading(false)
+            })
+    }, [])
+
+    const handleAddImage = async (name: string, file: File) => {
+        try {
+            const uploadRes = await fileService.upload(file)
+            const fileId = uploadRes.data.id
+            const res = await associativeImageService.create({ name, fileId })
+            setImages([res.data.image, ...images])
+        } catch {
+            toast.error('Failed to add image.')
         }
-
-        setImages([...images, newImage])
     }
 
-    const handleDeleteImage = (id: string) => {
-        setImages(images.filter((image) => image.id !== id))
+    const handleDeleteImage = async (id: string) => {
+        try {
+            await associativeImageService.delete(id)
+            setImages(images.filter((image) => image.id !== id))
+        } catch {
+            toast.error('Failed to delete image.')
+        }
     }
 
-    const handleSaveEdit = (id: string, newName: string) => {
-        setImages(images.map((image) => (image.id === id ? { ...image, name: newName } : image)))
+    const handleSaveEdit = async (id: string, newName: string) => {
+        try {
+            const res = await associativeImageService.updateName(id, { name: newName })
+            setImages(images.map((img) => (img.id === id ? res.data.image : img)))
+        } catch {
+            toast.error('Failed to rename image.')
+        }
     }
 
     const filteredImages = images.filter((image) =>
@@ -130,21 +154,25 @@ export default function AssociativeImages() {
                     <AddImageDialog onAddImage={handleAddImage} />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredImages.map((image) => (
-                        <ImageCard
-                            key={image.id}
-                            image={image}
-                            onDelete={handleDeleteImage}
-                            onSaveEdit={handleSaveEdit}
-                        />
-                    ))}
-                </div>
+                {loading && <p className="text-muted-foreground">Loading...</p>}
 
-                {images.length === 0 && (
+                {!loading && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {filteredImages.map((image) => (
+                            <ImageCard
+                                key={image.id}
+                                image={image}
+                                onDelete={handleDeleteImage}
+                                onSaveEdit={handleSaveEdit}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {!loading && images.length === 0 && (
                     <EmptyMessage title="No images" description="Add a new image to see it here" />
                 )}
-                {images.length > 0 && filteredImages.length === 0 && (
+                {!loading && images.length > 0 && filteredImages.length === 0 && (
                     <EmptyMessage
                         title="No matches"
                         description="No images found matching your search"

@@ -1,0 +1,358 @@
+import { describe, expect, it } from 'bun:test'
+import { app } from 'config/app'
+import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { futureDate, pastDate } from '../../test-fixtures/dates'
+import { linkClientToPsycho } from '../clients/services'
+import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import { createAttachment } from './services'
+
+const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
+const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
+
+// ─── helpers ───────────────────��─────────────────��──────────────────────────
+
+async function setupImpressionScenario() {
+    const psycho = await insertTestUser({ email: 'psycho@test.com' })
+    const client = await insertTestUser({ email: 'client@test.com' })
+    await linkClientToPsycho(client.id, psycho.id)
+    const apt = await createAppointment({
+        psychoId: psycho.id,
+        clientId: client.id,
+        startTime: futureDate(7),
+        endTime: futureDate(7, 11),
+    })
+    await startAppointment(apt.id)
+    await endAppointment(apt.id)
+    const impression = await createAttachment({
+        appointmentId: apt.id,
+        authorId: client.id,
+        type: 'impression',
+        text: 'My impression text',
+    })
+    return { psycho, client, apt, impression }
+}
+
+// ─── PATCH /api/appointments/:appointmentId/impressions/:attachmentId/complete ──
+
+describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/complete', () => {
+    it('returns 200 with completion on success', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'My completion response' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('completion')
+        expect(body.completion).toHaveProperty('attachmentId', impression.id)
+        expect(body.completion).toHaveProperty('clientResponse', 'My completion response')
+        expect(body.completion).toHaveProperty('createdAt')
+    })
+
+    it('returns 400 AlreadyCompleted when completing twice', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'First response' }),
+            }),
+        )
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Second response' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AlreadyCompleted')
+    })
+
+    it('returns 400 when response is empty', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: '' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when response is missing', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({}),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 404 when appointment does not belong to client', async () => {
+        const { apt, impression } = await setupImpressionScenario()
+        const otherClient = await insertTestUser({ email: 'other@test.com' })
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(otherClient.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when attachment does not belong to appointment', async () => {
+        const { client, psycho, apt } = await setupImpressionScenario()
+        const apt2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(8),
+            endTime: futureDate(8, 11),
+        })
+        await startAppointment(apt2.id)
+        await endAppointment(apt2.id)
+        const impression2 = await createAttachment({
+            appointmentId: apt2.id,
+            authorId: client.id,
+            type: 'impression',
+            text: 'Another impression',
+        })
+
+        // Try to complete impression2 under the first appointment's URL
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression2.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when attachment type is not impression', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'A Note',
+        })
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${note.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when impression authored by someone else', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client1 = await insertTestUser({ email: 'client1@test.com' })
+        const client2 = await insertTestUser({ email: 'client2@test.com' })
+        await linkClientToPsycho(client1.id, psycho.id)
+        await linkClientToPsycho(client2.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client1.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client1.id,
+            type: 'impression',
+            text: 'Client1 impression',
+        })
+
+        // client2 tries to complete client1's impression
+        // client2 won't own the appointment, so this will 404 at step 1
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client2.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 for psycho role', async () => {
+        const user = await insertTestUser()
+
+        const res = await app.request(
+            '/api/appointments/some-apt/impressions/some-id/complete',
+            await asUser(user.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 unauthenticated', async () => {
+        const res = await app.request('/api/appointments/some-apt/impressions/some-id/complete', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+            body: JSON.stringify({ response: 'Test' }),
+        })
+
+        expect(res.status).toBe(401)
+    })
+})
+
+// ─── GET /api/appointments/:appointmentId/impressions/:attachmentId/completion (client) ──
+
+describe('GET /api/appointments/:appointmentId/impressions/:attachmentId/completion', () => {
+    it('returns { completion: null } when not completed', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('completion', null)
+    })
+
+    it('returns completion after completing', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+
+        await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'My response' }),
+            }),
+        )
+
+        const res = await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            await asUser(client.id, { headers: CLIENT_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.completion).toHaveProperty('clientResponse', 'My response')
+        expect(body.completion).toHaveProperty('attachmentId', impression.id)
+    })
+
+    it('returns 401 unauthenticated', async () => {
+        const res = await app.request('/api/appointments/some-apt/impressions/some-id/completion', {
+            headers: CLIENT_HEADER,
+        })
+
+        expect(res.status).toBe(401)
+    })
+})
+
+// ─── GET /api/clients/:clientId/appointments/:appointmentId/impressions/:attachmentId/completion (psycho) ──
+
+describe('GET /api/clients/:clientId/appointments/:appointmentId/impressions/:attachmentId/completion', () => {
+    it('returns { completion: null } when not completed', async () => {
+        const { psycho, client, apt, impression } = await setupImpressionScenario()
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('completion', null)
+    })
+
+    it('returns completion after client completes', async () => {
+        const { psycho, client, apt, impression } = await setupImpressionScenario()
+
+        await app.request(
+            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            await asUser(client.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Client response' }),
+            }),
+        )
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.completion).toHaveProperty('clientResponse', 'Client response')
+    })
+
+    it('returns 404 when appointment does not belong to psychologist', async () => {
+        const { client, apt, impression } = await setupImpressionScenario()
+        const otherPsycho = await insertTestUser({ email: 'other-psycho@test.com' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            await asUser(otherPsycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 401 unauthenticated', async () => {
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/impressions/some-id/completion',
+            { headers: PSYCHO_HEADER },
+        )
+
+        expect(res.status).toBe(401)
+    })
+})

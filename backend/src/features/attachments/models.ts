@@ -36,3 +36,9 @@ export interface AttachmentWithReaction extends Attachment {
 export interface AttachmentWithAppointment extends Attachment {
     appointmentStartTime: string // ISO timestamp from appointments.start_time
 }
+
+export interface ImpressionCompletion {
+    attachmentId: string
+    clientResponse: string
+    createdAt: string
+}

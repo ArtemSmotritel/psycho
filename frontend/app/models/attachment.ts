@@ -77,3 +77,13 @@ export interface UpsertReactionDTO {
 export interface SetReplyDTO {
     reply: string
 }
+
+export interface ImpressionCompletion {
+    attachmentId: string
+    clientResponse: string
+    createdAt: string
+}
+
+export interface CompleteImpressionDTO {
+    response: string
+}

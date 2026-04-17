@@ -3,7 +3,13 @@ import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
 import { findAppointmentByIdForClient } from '../appointments/services'
-import { createAttachment, listAttachmentsByAuthor } from './services'
+import {
+    createAttachment,
+    listAttachmentsByAuthor,
+    findAttachmentById,
+    findImpressionCompletion,
+    completeImpression,
+} from './services'
 
 const createImpressionSchema = z.object({
     text: z.string().optional(),
@@ -64,6 +70,73 @@ impressionClientRoutes.post(
         return c.json({ impression }, 201)
     },
 )
+
+const completeSchema = z.object({
+    response: z.string().min(1),
+})
+
+impressionClientRoutes.patch(
+    '/:attachmentId/complete',
+    zValidator('json', completeSchema),
+    async (c) => {
+        const user = c.get('user')
+        const appointmentId = c.req.param('appointmentId')
+        const attachmentId = c.req.param('attachmentId')
+
+        const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+        if (!appointment) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
+
+        const attachment = await findAttachmentById(attachmentId)
+        if (
+            !attachment ||
+            attachment.appointmentId !== appointmentId ||
+            attachment.type !== 'impression' ||
+            attachment.authorId !== user.id
+        ) {
+            return c.json({ error: 'NotFound' }, 404)
+        }
+
+        const existing = await findImpressionCompletion(attachmentId)
+        if (existing) {
+            return c.json(
+                {
+                    error: 'AlreadyCompleted',
+                    message: 'This impression has already been completed.',
+                },
+                400,
+            )
+        }
+
+        const { response } = c.req.valid('json')
+        const completion = await completeImpression(attachmentId, response)
+        return c.json({ completion }, 200)
+    },
+)
+
+impressionClientRoutes.get('/:attachmentId/completion', async (c) => {
+    const user = c.get('user')
+    const appointmentId = c.req.param('appointmentId')
+    const attachmentId = c.req.param('attachmentId')
+
+    const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+    if (!appointment) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    const attachment = await findAttachmentById(attachmentId)
+    if (
+        !attachment ||
+        attachment.appointmentId !== appointmentId ||
+        attachment.type !== 'impression'
+    ) {
+        return c.json({ error: 'NotFound' }, 404)
+    }
+
+    const completion = await findImpressionCompletion(attachmentId)
+    return c.json({ completion }, 200)
+})
 
 impressionClientRoutes.get('/', async (c) => {
     const user = c.get('user')

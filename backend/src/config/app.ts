@@ -22,6 +22,7 @@ import { attachmentRoutes } from '../features/attachments/attachment-routes'
 import { clientDashboardRoutes } from '../features/client-dashboard/routes'
 import { psychoDashboardRoutes } from '../features/dashboard/routes'
 import { invitationRoutes } from '../features/invitations/routes'
+import { associativeImageRoutes } from '../features/associative-images/routes'
 
 export const app = new Hono<{
     Variables: {
@@ -103,3 +104,4 @@ app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', atta
 app.route('/api/client/dashboard', clientDashboardRoutes)
 app.route('/api/psycho/dashboard', psychoDashboardRoutes)
 app.route('/api/invitations', invitationRoutes)
+app.route('/api/associative-images', associativeImageRoutes)

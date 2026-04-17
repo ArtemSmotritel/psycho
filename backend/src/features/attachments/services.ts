@@ -5,6 +5,7 @@ import type {
     AttachmentType,
     AttachmentWithAppointment,
     AttachmentWithReaction,
+    ImpressionCompletion,
     RecommendationReaction,
 } from './models'
 
@@ -317,6 +318,35 @@ export async function listPendingRecommendationsForClient(
         ORDER BY a.created_at DESC
     `
     return rows as AttachmentWithReaction[]
+}
+
+export async function findImpressionCompletion(
+    attachmentId: string,
+): Promise<ImpressionCompletion | null> {
+    const [row] = await db`
+        SELECT
+            attachment_id AS "attachmentId",
+            client_response AS "clientResponse",
+            created_at AS "createdAt"
+        FROM impression_completions
+        WHERE attachment_id = ${attachmentId}
+    `
+    return (row as ImpressionCompletion) ?? null
+}
+
+export async function completeImpression(
+    attachmentId: string,
+    clientResponse: string,
+): Promise<ImpressionCompletion> {
+    const [row] = await db`
+        INSERT INTO impression_completions (attachment_id, client_response)
+        VALUES (${attachmentId}, ${clientResponse})
+        RETURNING
+            attachment_id AS "attachmentId",
+            client_response AS "clientResponse",
+            created_at AS "createdAt"
+    `
+    return row as ImpressionCompletion
 }
 
 export async function listAttachmentsWithReactionsByAuthor(
