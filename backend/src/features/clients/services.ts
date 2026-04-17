@@ -109,7 +109,7 @@ export const isClientLinkedToPsycho = async (
     psychoId: string,
 ): Promise<boolean> => {
     const [row] =
-        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId}`
+        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL`
     return row !== undefined
 }
 

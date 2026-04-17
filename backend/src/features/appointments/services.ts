@@ -271,6 +271,7 @@ export async function listAllAppointmentsForPsycho(
             COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'recommendation'), 0)::int AS "recommendationsCount"
         FROM appointments a
         JOIN "user" u ON u.id = a.client_id
+        JOIN psychologist_clients pc ON pc.client_id = a.client_id AND pc.psycho_id = a.psycho_id AND pc.disconnected_at IS NULL
         WHERE a.psycho_id = ${psychoId}
         ORDER BY a.start_time DESC
     `

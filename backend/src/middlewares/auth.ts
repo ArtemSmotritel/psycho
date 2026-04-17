@@ -99,7 +99,7 @@ export const onlyLinkedClient = createMiddleware(async (c, next) => {
     }
 
     const [row] =
-        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${user.id}`
+        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${user.id} AND disconnected_at IS NULL`
 
     if (!row) {
         return c.json({ error: 'NotFound' }, 404)

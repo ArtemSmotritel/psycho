@@ -1,6 +1,14 @@
 import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { Video, LogIn, StopCircle, PanelRightOpen, StickyNote, ClipboardList } from 'lucide-react'
+import {
+    Video,
+    LogIn,
+    StopCircle,
+    PanelRightOpen,
+    StickyNote,
+    ClipboardList,
+    Image as ImageIcon,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import '@excalidraw/excalidraw/index.css'
@@ -26,6 +34,7 @@ import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
+import { WhiteboardImageInsert } from '~/components/WhiteboardImageInsert'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -201,6 +210,10 @@ export default function LiveSession() {
                                         <ClipboardList className="h-3.5 w-3.5" />
                                         Recommendations
                                     </TabsTrigger>
+                                    <TabsTrigger value="images" className="gap-1.5">
+                                        <ImageIcon className="h-3.5 w-3.5" />
+                                        Images
+                                    </TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="notes" className="mt-4">
                                     <AppointmentNotesPanel
@@ -213,6 +226,9 @@ export default function LiveSession() {
                                         clientId={clientId!}
                                         appointmentId={appointmentId!}
                                     />
+                                </TabsContent>
+                                <TabsContent value="images" className="mt-4">
+                                    <WhiteboardImageInsert excalidrawAPI={excalidrawAPIInstance} />
                                 </TabsContent>
                             </Tabs>
                         </SheetContent>

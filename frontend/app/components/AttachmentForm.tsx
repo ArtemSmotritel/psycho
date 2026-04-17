@@ -21,12 +21,14 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
-import { Mic, Image as ImageIcon, Square } from 'lucide-react'
+import { Mic, Image as ImageIcon, Square, Library } from 'lucide-react'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { getAttachmentTypeLabel, getFileUrl } from '../utils/utils'
 import { EmptyMessage } from './EmptyMessage'
 import { Separator } from './ui/separator'
+import { AssociativeImagePicker } from './AssociativeImagePicker'
 import type { AttachmentFile } from '~/models/attachment'
+import type { AssociativeImage } from '~/models/associative-image'
 
 const MAX_VOICE_FILES = 3
 const MAX_IMAGE_FILES = 9
@@ -65,9 +67,10 @@ interface AttachmentFormProps {
     trigger: React.ReactNode
     initialData?: AttachmentFormInitialData
     onSubmit: (values: AttachmentFormSubmitValues) => void
+    showLibraryPicker?: boolean
 }
 
-function isAttachmentFile(file: File | string | AttachmentFile): file is AttachmentFile {
+export function isAttachmentFile(file: File | string | AttachmentFile): file is AttachmentFile {
     return typeof file === 'object' && !(file instanceof File) && 'id' in file && 'url' in file
 }
 
@@ -82,6 +85,7 @@ export function AttachmentForm({
     trigger,
     initialData,
     onSubmit,
+    showLibraryPicker = false,
 }: AttachmentFormProps) {
     const [open, setOpen] = useState(false)
     const [voiceFiles, setVoiceFiles] = useState<(File | string | AttachmentFile)[]>([])
@@ -168,6 +172,25 @@ export function AttachmentForm({
             return
         }
         startRecording()
+    }
+
+    const handleLibraryImageSelect = (image: AssociativeImage) => {
+        if (imageFiles.length >= MAX_IMAGE_FILES) {
+            form.setError('imageFiles', {
+                type: 'manual',
+                message: `Maximum ${MAX_IMAGE_FILES} images allowed`,
+            })
+            return
+        }
+        if (imageFiles.some((f) => isAttachmentFile(f) && f.id === image.fileId)) return
+        const attachmentFile: AttachmentFile = {
+            id: image.fileId,
+            url: image.imageUrl,
+            originalName: image.name,
+            mimeType: 'image/png',
+            size: 0,
+        }
+        setImageFiles([...imageFiles, attachmentFile])
     }
 
     const toggleFileRemoval = (file: File | string | AttachmentFile) => {
@@ -328,7 +351,7 @@ export function AttachmentForm({
 
                             <Separator />
 
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 flex-wrap">
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -349,6 +372,22 @@ export function AttachmentForm({
                                         multiple
                                     />
                                 </Button>
+                                {showLibraryPicker && (
+                                    <AssociativeImagePicker
+                                        trigger={
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="flex items-center gap-2"
+                                                disabled={imageFiles.length >= MAX_IMAGE_FILES}
+                                            >
+                                                <Library className="h-4 w-4" />
+                                                From Library
+                                            </Button>
+                                        }
+                                        onSelect={handleLibraryImageSelect}
+                                    />
+                                )}
                                 <span className="text-sm text-muted-foreground">
                                     {imageFiles.length}/{MAX_IMAGE_FILES} images
                                 </span>

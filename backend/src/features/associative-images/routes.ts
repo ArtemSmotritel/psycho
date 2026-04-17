@@ -20,8 +20,11 @@ associativeImageRoutes.use(authorized, onlyPsychoRequest)
 
 associativeImageRoutes.get('/', async (c) => {
     const user = c.get('user')
-    const images = await listByPsychologist(user.id)
-    return c.json({ images }, 200)
+    const search = c.req.query('search') ?? ''
+    const limit = Math.min(Number(c.req.query('limit')) || 20, 50)
+    const offset = Math.max(Number(c.req.query('offset')) || 0, 0)
+    const result = await listByPsychologist(user.id, { search, limit, offset })
+    return c.json(result, 200)
 })
 
 associativeImageRoutes.post('/', zValidator('json', createSchema), async (c) => {

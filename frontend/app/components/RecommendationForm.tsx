@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
 import { fileService } from '~/services/file.service'
 import type {
     AttachmentFile,
@@ -52,6 +52,8 @@ export function RecommendationForm({
                 if (f instanceof File) {
                     const res = await fileService.upload(f)
                     imageFileIds.push(res.data.id)
+                } else if (isAttachmentFile(f)) {
+                    imageFileIds.push(f.id)
                 }
             }
 
@@ -74,6 +76,7 @@ export function RecommendationForm({
             trigger={trigger}
             initialData={initialData}
             onSubmit={handleSubmit}
+            showLibraryPicker
         />
     )
 }

@@ -84,16 +84,28 @@ function ImageCard({ image, onDelete, onSaveEdit }: ImageCardProps) {
     )
 }
 
+const PAGE_SIZE = 20
+
 export default function AssociativeImages() {
     const [images, setImages] = useState<AssociativeImage[]>([])
+    const [total, setTotal] = useState(0)
     const [searchQuery, setSearchQuery] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
     const [loading, setLoading] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
 
     useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
+
+    useEffect(() => {
+        setLoading(true)
         associativeImageService
-            .getList()
+            .getList({ search: debouncedSearch, limit: PAGE_SIZE, offset: 0 })
             .then((res) => {
                 setImages(res.data.images)
+                setTotal(res.data.total)
             })
             .catch(() => {
                 toast.error('Failed to load images.')
@@ -101,7 +113,24 @@ export default function AssociativeImages() {
             .finally(() => {
                 setLoading(false)
             })
-    }, [])
+    }, [debouncedSearch])
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true)
+        try {
+            const res = await associativeImageService.getList({
+                search: debouncedSearch,
+                limit: PAGE_SIZE,
+                offset: images.length,
+            })
+            setImages([...images, ...res.data.images])
+            setTotal(res.data.total)
+        } catch {
+            toast.error('Failed to load more images.')
+        } finally {
+            setLoadingMore(false)
+        }
+    }
 
     const handleAddImage = async (name: string, file: File) => {
         try {
@@ -109,6 +138,7 @@ export default function AssociativeImages() {
             const fileId = uploadRes.data.id
             const res = await associativeImageService.create({ name, fileId })
             setImages([res.data.image, ...images])
+            setTotal((t) => t + 1)
         } catch {
             toast.error('Failed to add image.')
         }
@@ -118,6 +148,7 @@ export default function AssociativeImages() {
         try {
             await associativeImageService.delete(id)
             setImages(images.filter((image) => image.id !== id))
+            setTotal((t) => t - 1)
         } catch {
             toast.error('Failed to delete image.')
         }
@@ -131,10 +162,6 @@ export default function AssociativeImages() {
             toast.error('Failed to rename image.')
         }
     }
-
-    const filteredImages = images.filter((image) =>
-        image.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
 
     return (
         <ProtectedRoute allowedRoles={['psychologist']}>
@@ -158,7 +185,7 @@ export default function AssociativeImages() {
 
                 {!loading && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {filteredImages.map((image) => (
+                        {images.map((image) => (
                             <ImageCard
                                 key={image.id}
                                 image={image}
@@ -169,10 +196,18 @@ export default function AssociativeImages() {
                     </div>
                 )}
 
-                {!loading && images.length === 0 && (
+                {!loading && images.length < total && (
+                    <div className="flex justify-center mt-6">
+                        <Button variant="outline" onClick={handleLoadMore} disabled={loadingMore}>
+                            {loadingMore ? 'Loading...' : 'Load More'}
+                        </Button>
+                    </div>
+                )}
+
+                {!loading && images.length === 0 && !debouncedSearch && (
                     <EmptyMessage title="No images" description="Add a new image to see it here" />
                 )}
-                {!loading && images.length > 0 && filteredImages.length === 0 && (
+                {!loading && images.length === 0 && debouncedSearch && (
                     <EmptyMessage
                         title="No matches"
                         description="No images found matching your search"

@@ -2,7 +2,23 @@ import { db } from 'config/db'
 import { unlink } from 'node:fs/promises'
 import type { AssociativeImage } from './models'
 
-export async function listByPsychologist(psychologistId: string): Promise<AssociativeImage[]> {
+export async function listByPsychologist(
+    psychologistId: string,
+    opts?: { search?: string; limit?: number; offset?: number },
+): Promise<{ images: AssociativeImage[]; total: number }> {
+    const search = opts?.search?.trim() ?? ''
+    const limit = opts?.limit ?? 20
+    const offset = opts?.offset ?? 0
+
+    const whereSearch = search ? db`AND ai.name ILIKE ${'%' + search + '%'}` : db``
+
+    const [{ count }] = await db`
+        SELECT COUNT(*)::int AS count
+        FROM associative_images ai
+        WHERE ai.psychologist_id = ${psychologistId}
+        ${whereSearch}
+    `
+
     const rows = await db`
         SELECT
             ai.id,
@@ -15,9 +31,11 @@ export async function listByPsychologist(psychologistId: string): Promise<Associ
         FROM associative_images ai
         JOIN files f ON f.id = ai.file_id
         WHERE ai.psychologist_id = ${psychologistId}
+        ${whereSearch}
         ORDER BY ai.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
     `
-    return rows as AssociativeImage[]
+    return { images: rows as AssociativeImage[], total: count }
 }
 
 export async function findById(id: string): Promise<AssociativeImage | null> {

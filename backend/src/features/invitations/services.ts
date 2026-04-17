@@ -107,13 +107,27 @@ export async function acceptInvitationByToken(
         )
     }
 
-    // Transaction: update invitation + create link
+    // Transaction: update invitation + create or re-activate link
     await db.begin(async (tx) => {
         await tx`UPDATE invitations SET status = 'accepted' WHERE id = ${invitation.id}`
-        await tx`
-            INSERT INTO psychologist_clients (client_id, psycho_id)
-            VALUES (${userId}, ${invitation.psychologistId})
+
+        // Check for a previously disconnected relationship
+        const [existing] = await tx`
+            SELECT 1 FROM psychologist_clients
+            WHERE client_id = ${userId} AND psycho_id = ${invitation.psychologistId}
         `
+        if (existing) {
+            await tx`
+                UPDATE psychologist_clients
+                SET disconnected_at = NULL
+                WHERE client_id = ${userId} AND psycho_id = ${invitation.psychologistId}
+            `
+        } else {
+            await tx`
+                INSERT INTO psychologist_clients (client_id, psycho_id)
+                VALUES (${userId}, ${invitation.psychologistId})
+            `
+        }
     })
 
     return { psychologistId: invitation.psychologistId, clientId: userId }

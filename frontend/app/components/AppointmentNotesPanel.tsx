@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
-import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
 import { noteService } from '~/services/note.service'
 import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
@@ -51,6 +51,8 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                 if (f instanceof File) {
                     const res = await fileService.upload(f)
                     imageFileIds.push(res.data.id)
+                } else if (isAttachmentFile(f)) {
+                    imageFileIds.push(f.id)
                 }
             }
 
@@ -114,6 +116,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                     mode="create"
                     trigger={<Button size="sm">Add Note</Button>}
                     onSubmit={handleCreate}
+                    showLibraryPicker
                 />
             </div>
 
