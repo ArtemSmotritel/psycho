@@ -12,7 +12,7 @@
 
 **Logical / Business Logic Issues**
 
-4. **Stale `dashboard.ts` model**: The existing `frontend/app/models/dashboard.ts` uses old naming (`Session`, `sessions`, `completed`, `cancelled`). These stale model types and service call must be **fully replaced**, not updated, because they reference stale concepts (`Session` instead of `Appointment`, `cancelled` state which does not exist per Decision 5).
+4. **Stale `dashboard.ts` model**: The existing `frontend/app/models/dashboard.ts` uses old naming (`Session`, `sessions`, `completed`, `cancelled`). The stale `DashboardStatistics`, `SessionDistribution`, and `ClientActivity` interfaces must be removed. However, EDG-53 has already been implemented and added `ClientDashboardData` to this same file — that interface must be preserved. The file must not be wholesale-replaced.
 
 5. **`frontend/app/models/dashboard.ts` imports `Session` from `./session`**: Changing the dashboard model will surface this dependency. The `session.ts` model must not be modified (it may still be consumed elsewhere), but the new dashboard model must not import from it.
 
@@ -75,9 +75,17 @@ Follow the existing pattern from `appointments/routes.test.ts` and `clients/rout
 
 See the Tests section below for case coverage.
 
-### 5. Frontend — Model: Replace stale dashboard types
+### 5. Frontend — Model: Update dashboard types
 
-Replace **`/Users/artem/uni/psycho/frontend/app/models/dashboard.ts`** with new types:
+**Do not replace** `/Users/artem/uni/psycho/frontend/app/models/dashboard.ts` — EDG-53 already added `ClientDashboardData` to it and that must be preserved.
+
+Instead, make the following targeted edits:
+
+1. Remove the `import type { Session } from './session'` line.
+2. Remove the `SessionDistribution` interface.
+3. Remove the `ClientActivity` interface.
+4. Remove the `DashboardStatistics` interface.
+5. Add the following imports and interface:
 
 ```typescript
 import type { AppointmentWithClient } from './appointment'
@@ -93,22 +101,20 @@ export interface PsychoDashboard {
 }
 ```
 
-Do not import from `session.ts`. The old `DashboardStatistics`, `SessionDistribution`, and `ClientActivity` interfaces are removed.
+The file already imports `AppointmentWithPsycho` and `AttachmentWithReaction` for `ClientDashboardData` — do not remove those imports.
 
-### 6. Frontend — Service: Replace stale dashboard service
+### 6. Frontend — Service: Update dashboard service
 
-Replace the body of **`/Users/artem/uni/psycho/frontend/app/services/dashboard.service.ts`**:
+**Do not replace the body** of `/Users/artem/uni/psycho/frontend/app/services/dashboard.service.ts` — EDG-53 already added `getClientDashboard` to this file and that must be preserved.
 
-```typescript
-import { api } from './api'
-import type { PsychoDashboard } from '~/models/dashboard'
+Instead, make the following targeted edits:
 
-export const dashboardService = {
-    getPsychoDashboard: () => api.get<PsychoDashboard>('/psycho/dashboard'),
-}
-```
+1. Remove the `DashboardStatistics` named import from `~/models/dashboard` (keep `ClientDashboardData`).
+2. Add `PsychoDashboard` to the import from `~/models/dashboard`.
+3. Remove the `getStatistics` method (pointing to `/dashboard/statistics` which never existed on the backend).
+4. Add `getPsychoDashboard: () => api.get<PsychoDashboard>('/psycho/dashboard')` to the `dashboardService` object.
 
-The old `getStatistics` call (pointing to `/dashboard/statistics` which never existed on the backend) is removed.
+The resulting file should export a `dashboardService` with both `getPsychoDashboard` and `getClientDashboard`.
 
 ### 7. Frontend — Route: Psychologist Dashboard
 
@@ -135,7 +141,7 @@ The component:
 - A card containing a list. Each row shows: client name and a link to their profile (`/psycho/clients/{clientId}`).
 - Empty state: "No clients yet."
 
-Follow the component patterns from `sessions.tsx` (data fetching with `useState`/`useEffect`), `clients.tsx` (error and loading state).
+Follow the component patterns from `clients.tsx` (data fetching with `useState`/`useEffect`, error and loading state). Do not reference `sessions.tsx` — it is a pre-migration file that uses legacy fake-data patterns.
 
 ---
 
@@ -155,8 +161,8 @@ Follow the component patterns from `sessions.tsx` (data fetching with `useState`
 | Path | Change |
 |------|--------|
 | `/Users/artem/uni/psycho/backend/src/config/app.ts` | Import `psychoDashboardRoutes` and mount at `/api/psycho/dashboard` |
-| `/Users/artem/uni/psycho/frontend/app/models/dashboard.ts` | Replace stale interfaces with `PsychoDashboard` |
-| `/Users/artem/uni/psycho/frontend/app/services/dashboard.service.ts` | Replace `getStatistics` with `getPsychoDashboard` pointing to `/psycho/dashboard` |
+| `/Users/artem/uni/psycho/frontend/app/models/dashboard.ts` | Remove stale `DashboardStatistics`/`SessionDistribution`/`ClientActivity`, add `PsychoDashboard` (preserve `ClientDashboardData`) |
+| `/Users/artem/uni/psycho/frontend/app/services/dashboard.service.ts` | Remove `getStatistics`, add `getPsychoDashboard` (preserve `getClientDashboard`) |
 | `/Users/artem/uni/psycho/frontend/app/routes/psychologist/dashboard.index.tsx` | Replace placeholder with fully wired dashboard component |
 
 ---
