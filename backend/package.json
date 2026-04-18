@@ -6,6 +6,9 @@
         "dev": "bun run --hot src/index.ts",
         "migrate": "bun run scripts/run-migrations.ts",
         "migration:create": "bun run scripts/create-migration.ts",
+        "seed": "bun run scripts/seed-stress.ts",
+        "snapshot:save": "bun run scripts/snapshot-save.ts",
+        "snapshot:restore": "bun run scripts/snapshot-restore.ts",
         "lint": "oxlint . -c ../oxlintrc.json",
         "prettier": "bunx prettier -w . --config /Users/artem/uni/psycho/.prettierrc.json"
     },

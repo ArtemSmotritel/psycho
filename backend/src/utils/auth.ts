@@ -5,6 +5,10 @@ import { Pool } from 'pg'
 import { createUserClient } from '../features/clients/services'
 import { createPsycho } from '../features/psycho/services'
 import { log } from './logger'
+import { devLoginPlugin } from './dev-login-plugin'
+
+const isTest = process.env.NODE_ENV === 'test'
+const isProd = process.env.ENV === 'production'
 
 export const auth = betterAuth({
     database: new Pool({
@@ -26,7 +30,10 @@ export const auth = betterAuth({
             ],
         },
     },
-    plugins: [...(process.env.NODE_ENV === 'test' ? [testUtils()] : [])],
+    plugins: [
+        ...(isTest ? [testUtils()] : []),
+        ...(!isProd && !isTest ? [devLoginPlugin()] : []),
+    ],
     databaseHooks: {
         user: {
             create: {

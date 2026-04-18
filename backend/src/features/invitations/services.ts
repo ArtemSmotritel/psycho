@@ -1,5 +1,5 @@
 import { db } from 'config/db'
-import { isClientLinkedToPsycho, linkClientToPsycho } from '../clients/services'
+import { isClientLinkedToPsycho } from '../clients/services'
 
 export interface Invitation {
     id: string
@@ -8,7 +8,12 @@ export interface Invitation {
     token: string
     status: string
     createdAt: string
-    expiresAt: string
+    inviteLink?: string
+}
+
+export function buildInviteLink(token: string): string {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    return `${frontendUrl}/invite?token=${token}`
 }
 
 export async function createInvitation(psychologistId: string, email: string): Promise<Invitation> {
@@ -23,7 +28,7 @@ export async function createInvitation(psychologistId: string, email: string): P
         }
     }
 
-    // Return existing pending non-expired invitation if one exists
+    // Return existing pending invitation if one exists
     const [existingInvitation] = await db`
         SELECT
             id,
@@ -31,13 +36,11 @@ export async function createInvitation(psychologistId: string, email: string): P
             invited_email AS "invitedEmail",
             token,
             status,
-            created_at AS "createdAt",
-            expires_at AS "expiresAt"
+            created_at AS "createdAt"
         FROM invitations
         WHERE psychologist_id = ${psychologistId}
           AND LOWER(invited_email) = ${normalizedEmail}
           AND status = 'pending'
-          AND expires_at > NOW()
     `
     if (existingInvitation) {
         return existingInvitation as Invitation
@@ -52,11 +55,53 @@ export async function createInvitation(psychologistId: string, email: string): P
             invited_email AS "invitedEmail",
             token,
             status,
-            created_at AS "createdAt",
-            expires_at AS "expiresAt"
+            created_at AS "createdAt"
     `
 
     return invitation as Invitation
+}
+
+export async function listPendingInvitationsByPsychologist(
+    psychologistId: string,
+): Promise<Invitation[]> {
+    const rows = await db`
+        SELECT
+            id,
+            psychologist_id AS "psychologistId",
+            invited_email AS "invitedEmail",
+            token,
+            status,
+            created_at AS "createdAt"
+        FROM invitations
+        WHERE psychologist_id = ${psychologistId}
+          AND status = 'pending'
+        ORDER BY created_at DESC
+    `
+    return rows.map((row: any) => ({
+        ...row,
+        inviteLink: buildInviteLink(row.token),
+    })) as Invitation[]
+}
+
+export async function deleteInvitation(
+    psychologistId: string,
+    invitationId: string,
+): Promise<void> {
+    const [invitation] = await db`
+        SELECT psychologist_id AS "psychologistId", status
+        FROM invitations
+        WHERE id = ${invitationId}
+    `
+
+    if (!invitation || invitation.psychologistId !== psychologistId) {
+        throw new InvitationError('NotFound', 'Invitation not found.')
+    }
+
+    if (invitation.status !== 'pending') {
+        throw new InvitationError('InvalidStatus', 'Only pending invitations can be deleted.')
+    }
+
+    await db`DELETE FROM invitations WHERE id = ${invitationId}`
 }
 
 export async function acceptInvitationByToken(
@@ -78,18 +123,6 @@ export async function acceptInvitationByToken(
 
     if (invitation.status === 'accepted') {
         throw new InvitationError('AlreadyAccepted', 'This invitation has already been accepted.')
-    }
-
-    // Check expiry separately from the query so we can give a specific error
-    const [expired] = await db`
-        SELECT 1 FROM invitations
-        WHERE token = ${token} AND expires_at <= NOW()
-    `
-    if (expired) {
-        throw new InvitationError(
-            'Expired',
-            'This invitation has expired. Ask your psychologist to send a new one.',
-        )
     }
 
     if (invitation.invitedEmail.toLowerCase() !== normalizedEmail) {

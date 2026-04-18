@@ -19,6 +19,7 @@ export default [
             ),
             route('appointments/:appointmentId/live', 'routes/psychologist/live-session.tsx'),
         ]),
+        route('psycho/invitations', 'routes/psychologist/invitations.tsx'),
         route('psycho/associative-images', 'routes/psychologist/associative-images.tsx'),
         route('psycho/appointments', 'routes/psychologist/sessions.tsx'),
     ]),
