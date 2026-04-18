@@ -30,10 +30,7 @@ export const auth = betterAuth({
             ],
         },
     },
-    plugins: [
-        ...(isTest ? [testUtils()] : []),
-        ...(!isProd && !isTest ? [devLoginPlugin()] : []),
-    ],
+    plugins: [...(isTest ? [testUtils()] : []), ...(!isProd && !isTest ? [devLoginPlugin()] : [])],
     databaseHooks: {
         user: {
             create: {

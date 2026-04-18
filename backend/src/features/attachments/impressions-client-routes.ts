@@ -13,8 +13,8 @@ import {
 
 const createImpressionSchema = z.object({
     text: z.string().optional(),
-    imageFileIds: z.array(z.string()).optional().default([]),
-    audioFileIds: z.array(z.string()).optional().default([]),
+    imageFileIds: z.array(z.string().min(1)).optional().default([]),
+    audioFileIds: z.array(z.string().min(1)).optional().default([]),
 })
 
 export const impressionClientRoutes = new Hono()

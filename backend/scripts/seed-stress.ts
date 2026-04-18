@@ -175,7 +175,7 @@ const ASSOCIATIVE_IMAGE_NAMES = [
     'Вулиця',
     'Знак питання',
     'Серце',
-    'Зв\'язок',
+    "Зв'язок",
     'Розгалуження',
     'Коло',
     'Спіраль',
@@ -204,9 +204,7 @@ async function seed() {
 
     // Step 1: truncate everything
     console.log('Truncating all app tables...')
-    await db.unsafe(
-        `TRUNCATE TABLE ${ALL_APP_TABLES.join(', ')} RESTART IDENTITY CASCADE`,
-    )
+    await db.unsafe(`TRUNCATE TABLE ${ALL_APP_TABLES.join(', ')} RESTART IDENTITY CASCADE`)
 
     // Step 2: create users (triggers databaseHooks → clients + psychologists rows)
     console.log('Creating users...')
@@ -439,9 +437,7 @@ async function seed() {
         const noteCount = 1 + (attachmentCounter % 2)
         for (let n = 0; n < noteCount; n++) {
             const imgIds =
-                attachmentCounter % 3 === 0
-                    ? [fileIds[attachmentCounter % fileIds.length]!]
-                    : []
+                attachmentCounter % 3 === 0 ? [fileIds[attachmentCounter % fileIds.length]!] : []
             await createAttachment({
                 appointmentId,
                 authorId: psychoId,

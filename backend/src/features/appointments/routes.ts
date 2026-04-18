@@ -17,20 +17,25 @@ import {
 import { clearWhiteboardState } from '../whiteboard/services'
 
 const createAppointmentSchema = z.object({
-    startTime: z.string(),
-    endTime: z.string(),
+    startTime: z.iso.datetime({ offset: true }),
+    endTime: z.iso.datetime({ offset: true }),
     generateGoogleMeet: z.boolean().optional(),
 })
 
 const updateAppointmentSchema = z.object({
-    startTime: z.string().optional(),
-    endTime: z.string().optional(),
-    googleMeetLink: z.string().nullable().optional(),
+    startTime: z.iso.datetime({ offset: true }).optional(),
+    endTime: z.iso.datetime({ offset: true }).optional(),
+    googleMeetLink: z.url().nullable().optional(),
     rescheduleGoogleMeet: z.boolean().optional(),
 })
 
 const endAppointmentSchema = z.object({
-    snapshotDataUrl: z.string().optional(),
+    snapshotDataUrl: z
+        .string()
+        .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/, {
+            message: 'snapshotDataUrl must be a base64-encoded image data URL',
+        })
+        .optional(),
 })
 
 export const appointmentRoutes = new Hono()

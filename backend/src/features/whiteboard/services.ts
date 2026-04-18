@@ -11,10 +11,8 @@ export async function loadWhiteboardState(
     const rawElements = row?.whiteboard_elements
     const rawFiles = row?.whiteboard_files
 
-    const elements =
-        typeof rawElements === 'string' ? JSON.parse(rawElements) : rawElements
-    const files =
-        typeof rawFiles === 'string' ? JSON.parse(rawFiles) : rawFiles
+    const elements = typeof rawElements === 'string' ? JSON.parse(rawElements) : rawElements
+    const files = typeof rawFiles === 'string' ? JSON.parse(rawFiles) : rawFiles
 
     return {
         elements: (elements as unknown[]) ?? [],

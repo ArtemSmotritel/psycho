@@ -12,7 +12,7 @@ import {
 
 const reactionSchema = z.object({
     done: z.boolean().optional(),
-    comment: z.string().optional(),
+    comment: z.string().min(1).optional(),
 })
 
 export const recommendationClientRoutes = new Hono()

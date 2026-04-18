@@ -156,7 +156,11 @@ whiteboardRoutes.get(
                 // Broadcast to all other connections in this room
                 const outgoing = JSON.stringify(
                     parsed.type === 'cursor'
-                        ? { ...parsed, userId: thisConnection.userId, userName: thisConnection.userName }
+                        ? {
+                              ...parsed,
+                              userId: thisConnection.userId,
+                              userName: thisConnection.userName,
+                          }
                         : parsed,
                 )
                 for (const conn of room.connections) {

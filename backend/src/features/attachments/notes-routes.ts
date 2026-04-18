@@ -14,14 +14,14 @@ import {
 const createNoteSchema = z.object({
     name: z.string().min(1),
     text: z.string().nullable().optional(),
-    imageFileIds: z.array(z.string()).optional().default([]),
-    audioFileIds: z.array(z.string()).optional().default([]),
+    imageFileIds: z.array(z.string().min(1)).optional().default([]),
+    audioFileIds: z.array(z.string().min(1)).optional().default([]),
 })
 
 const updateNoteSchema = z.object({
-    name: z.string().optional(),
+    name: z.string().min(1).optional(),
     text: z.string().optional(),
-    removeFileIds: z.array(z.string()).optional(),
+    removeFileIds: z.array(z.string().min(1)).optional(),
 })
 
 export const noteRoutes = new Hono()
