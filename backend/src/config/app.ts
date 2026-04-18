@@ -81,7 +81,8 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 app.use('*', setSession)
 
-app.use(setUserRole)
+// Must precede all feature routes — onlyPsychoRequest / onlyClientRequest read c.get('role').
+app.use('*', setUserRole)
 
 app.route('/api/clients', clientSelfRoutes)
 app.route('/api/clients', clientRoutes)

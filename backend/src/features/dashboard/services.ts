@@ -4,12 +4,11 @@ import type { Client } from '../clients/models'
 
 const STATUS_EXPR = `
     CASE
-        WHEN started_at IS NOT NULL
-         AND (ended_at IS NOT NULL OR end_time <= NOW()) THEN 'past'
-        WHEN started_at IS NOT NULL                      THEN 'active'
-        WHEN NOW() < start_time                          THEN 'upcoming'
-        WHEN NOW() <= end_time                           THEN 'warning'
-        ELSE                                                  'missed'
+        WHEN started_at IS NOT NULL AND ended_at IS NOT NULL THEN 'past'
+        WHEN started_at IS NOT NULL                          THEN 'active'
+        WHEN NOW() < start_time                              THEN 'upcoming'
+        WHEN NOW() <= end_time                               THEN 'warning'
+        ELSE                                                      'missed'
     END
 `
 
@@ -91,7 +90,6 @@ export async function getPsychoDashboard(psychoId: string): Promise<PsychoDashbo
         WHERE a.psycho_id = ${psychoId}
           AND a.started_at IS NOT NULL
           AND a.ended_at IS NULL
-          AND a.end_time > NOW()
         LIMIT 1
     `
     const activeAppointment = (activeRow as AppointmentWithClient) ?? null

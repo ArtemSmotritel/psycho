@@ -80,8 +80,8 @@ export async function generateGoogleMeetLink(
             conferenceDataVersion: 1,
             requestBody: {
                 summary: 'Therapy session',
-                start: { dateTime: startTime },
-                end: { dateTime: endTime },
+                start: { dateTime: startTime, timeZone: 'UTC' },
+                end: { dateTime: endTime, timeZone: 'UTC' },
                 attendees,
                 conferenceData: {
                     createRequest: {
@@ -103,6 +103,37 @@ export async function generateGoogleMeetLink(
     }
 }
 
+export async function deleteGoogleCalendarEvent(
+    psychoId: string,
+    eventId: string,
+): Promise<boolean> {
+    try {
+        const oauth2Client = await getAuthenticatedOAuth2Client(psychoId)
+        if (!oauth2Client) return false
+
+        await calendar.events.delete({
+            auth: oauth2Client,
+            calendarId: 'primary',
+            eventId,
+            sendUpdates: 'all',
+        })
+
+        return true
+    } catch (err) {
+        const code = (err as { code?: number })?.code
+        if (code === 404 || code === 410) {
+            // Event already gone on Google's side — treat as success.
+            return true
+        }
+        log.warn('[GoogleMeet] Failed to delete Google Calendar event', {
+            psychoId,
+            eventId,
+            err,
+        })
+        return false
+    }
+}
+
 export async function rescheduleGoogleCalendarEvent(
     psychoId: string,
     eventId: string,
@@ -118,8 +149,8 @@ export async function rescheduleGoogleCalendarEvent(
             calendarId: 'primary',
             eventId,
             requestBody: {
-                start: { dateTime: startTime },
-                end: { dateTime: endTime },
+                start: { dateTime: startTime, timeZone: 'UTC' },
+                end: { dateTime: endTime, timeZone: 'UTC' },
             },
         })
 

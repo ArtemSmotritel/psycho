@@ -5,6 +5,7 @@ import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho } from '../clients/services'
 import {
+    countAppointmentsForClient,
     createAppointment,
     endAppointment,
     findAppointmentByIdForParticipant,
@@ -148,6 +149,103 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(403)
+    })
+
+    it('returns 409 AppointmentConflict when psycho has an overlapping appointment with a different client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const clientA = await insertTestUser({ email: 'clientA@test.com' })
+        const clientB = await insertTestUser({ email: 'clientB@test.com' })
+        await linkClientToPsycho(clientA.id, psycho.id)
+        await linkClientToPsycho(clientB.id, psycho.id)
+        const existing = await createAppointment({
+            psychoId: psycho.id,
+            clientId: clientA.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${clientB.id}/appointments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentConflict')
+        expect(body).toHaveProperty('conflictingAppointmentId', existing.id)
+        expect(body).toHaveProperty('conflictParticipant', 'psycho')
+    })
+
+    it('returns 409 AppointmentConflict when client has an overlapping appointment with another psycho', async () => {
+        const psychoA = await insertTestUser({ email: 'psychoA@test.com' })
+        const psychoB = await insertTestUser({ email: 'psychoB@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psychoA.id)
+        await linkClientToPsycho(client.id, psychoB.id)
+        const existing = await createAppointment({
+            psychoId: psychoA.id,
+            clientId: client.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psychoB.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentConflict')
+        expect(body).toHaveProperty('conflictingAppointmentId', existing.id)
+        expect(body).toHaveProperty('conflictParticipant', 'client')
+    })
+
+    it('returns 409 AppointmentConflict when the psycho is also a client in an overlapping appointment', async () => {
+        // User X is both a psychologist (to client C) and a client (of psycho Y).
+        // If X is booked as a client with Y at 10-11, X cannot book C at the same time.
+        const userX = await insertTestUser({ email: 'userX@test.com' })
+        const userY = await insertTestUser({ email: 'userY@test.com' })
+        const clientC = await insertTestUser({ email: 'clientC@test.com' })
+        await linkClientToPsycho(clientC.id, userX.id)
+        await linkClientToPsycho(userX.id, userY.id)
+        await createAppointment({
+            psychoId: userY.id,
+            clientId: userX.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${clientC.id}/appointments`,
+            await asUser(userX.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentConflict')
+        expect(body).toHaveProperty('conflictParticipant', 'psycho')
     })
 })
 
@@ -439,14 +537,15 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         expect(body.appointment).toHaveProperty('startTime', futureDate(8))
     })
 
-    it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true and has googleCalendarEventId but no valid token', async () => {
+    it('returns 502 MeetRescheduleFailed when rescheduleGoogleMeet true and has googleCalendarEventId but no valid token', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
+        const originalStart = futureDate(7)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
-            startTime: futureDate(7),
+            startTime: originalStart,
             endTime: futureDate(7, 11),
             googleMeetLink: 'https://meet.google.com/old-link',
         })
@@ -466,15 +565,78 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
             }),
         )
 
-        expect(res.status).toBe(200)
+        expect(res.status).toBe(502)
         const body = await res.json()
-        expect(body).toHaveProperty('meetRescheduleFailed', true)
-        // appointment times are still updated
-        expect(body.appointment).toHaveProperty('startTime', futureDate(8))
-        // googleCalendarEventId is preserved (not exposed to frontend, check via DB)
+        expect(body).toHaveProperty('error', 'MeetRescheduleFailed')
+        expect(body).toHaveProperty('googleCalendarEventId', 'fake-event-id-123')
+        // appointment times must NOT have been updated — DB and Google Calendar must stay in sync
         const [row] =
-            await testDb`SELECT google_calendar_event_id FROM appointments WHERE id = ${apt.id}`
+            await testDb`SELECT start_time, google_calendar_event_id FROM appointments WHERE id = ${apt.id}`
+        expect(new Date(row.start_time).toISOString()).toBe(new Date(originalStart).toISOString())
         expect(row.google_calendar_event_id).toBe('fake-event-id-123')
+    })
+
+    it('returns 409 AppointmentConflict when PATCH moves appointment into another appointment window', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 11),
+        })
+        const apt2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7, 14),
+            endTime: futureDate(7, 15),
+        })
+
+        // Move apt2 into apt1's window
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt2.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentConflict')
+        expect(body).toHaveProperty('conflictingAppointmentId', apt1.id)
+    })
+
+    it('returns 200 when PATCH keeps appointment in its own time window (excludeAppointmentId works)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 12),
+        })
+
+        // Shrink the window — should NOT conflict with itself
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
     })
 
     it('returns 200 meetRescheduleFailed true when rescheduleGoogleMeet true on appointment with no meet link, no Google account', async () => {
@@ -611,6 +773,32 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
 
         expect(res.status).toBe(403)
     })
+
+    it('returns 200 { success: true, meetDeleteFailed: true } when googleCalendarEventId is set and no OAuth account', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await testDb`UPDATE appointments SET google_calendar_event_id = 'evt_123' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('success', true)
+        expect(body).toHaveProperty('meetDeleteFailed', true)
+        // DB row is gone regardless of calendar failure
+        const rows = await testDb`SELECT id FROM appointments WHERE id = ${apt.id}`
+        expect(rows).toHaveLength(0)
+    })
 })
 
 describe('GET /api/clients/:clientId/appointments', () => {
@@ -636,7 +824,7 @@ describe('GET /api/clients/:clientId/appointments', () => {
             psychoId: psycho.id,
             clientId: client.id,
             startTime: pastDate(14, 9),
-            endTime: futureDate(7, 11), // future end_time so status stays 'active'
+            endTime: futureDate(7, 11),
         })
         await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt3.id}`
 
@@ -1259,7 +1447,7 @@ describe('GET /api/psycho/appointments', () => {
             psychoId: psycho.id,
             clientId: client.id,
             startTime: pastDate(14, 9),
-            endTime: futureDate(7, 11), // future end_time so findActiveAppointmentByPsycho finds it
+            endTime: futureDate(7, 11),
         })
         await testDb`UPDATE appointments SET started_at = NOW() - INTERVAL '30 minutes' WHERE id = ${apt.id}`
 
@@ -1461,7 +1649,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         expect(body.appointment).toHaveProperty('status', 'past')
     })
 
-    it('returns status past when started_at is not null and end_time has elapsed (auto-past without explicit /end)', async () => {
+    it("status stays 'active' for overrun session (started, not yet ended, end_time elapsed)", async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
@@ -1471,7 +1659,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
             startTime: futureDate(7),
             endTime: futureDate(7, 11),
         })
-        // started but ended_at is null; end_time is in the past
+        // started but ended_at is null; end_time is in the past — session is overrun but still active
         await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
 
         const res = await app.request(
@@ -1481,7 +1669,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
 
         expect(res.status).toBe(200)
         const body = await res.json()
-        expect(body.appointment).toHaveProperty('status', 'past')
+        expect(body.appointment).toHaveProperty('status', 'active')
     })
 
     it('PATCH /start returns 200 when appointment status is warning', async () => {
@@ -1618,5 +1806,61 @@ describe('GET /api/psycho/appointments/all', () => {
         )
 
         expect(res.status).toBe(403)
+    })
+})
+
+describe('countAppointmentsForClient', () => {
+    it('rolls warning into upcoming', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // warning window: start_time past, end_time future, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
+
+        const counts = await countAppointmentsForClient(client.id)
+
+        expect(counts).toEqual({ upcoming: 1, past: 0, active: 0 })
+    })
+
+    it('rolls missed into past', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // missed: both times past, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
+
+        const counts = await countAppointmentsForClient(client.id)
+
+        expect(counts).toEqual({ upcoming: 0, past: 1, active: 0 })
+    })
+
+    it('counts overrun session as active', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // overrun: started_at set, ended_at null, end_time past
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
+
+        const counts = await countAppointmentsForClient(client.id)
+
+        expect(counts).toEqual({ upcoming: 0, past: 0, active: 1 })
     })
 })

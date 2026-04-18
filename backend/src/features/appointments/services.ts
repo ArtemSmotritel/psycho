@@ -3,12 +3,11 @@ import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from '
 
 const STATUS_EXPR = `
     CASE
-        WHEN started_at IS NOT NULL
-         AND (ended_at IS NOT NULL OR end_time <= NOW()) THEN 'past'
-        WHEN started_at IS NOT NULL                      THEN 'active'
-        WHEN NOW() < start_time                          THEN 'upcoming'
-        WHEN NOW() <= end_time                           THEN 'warning'
-        ELSE                                                  'missed'
+        WHEN started_at IS NOT NULL AND ended_at IS NOT NULL THEN 'past'
+        WHEN started_at IS NOT NULL                          THEN 'active'
+        WHEN NOW() < start_time                              THEN 'upcoming'
+        WHEN NOW() <= end_time                               THEN 'warning'
+        ELSE                                                      'missed'
     END
 `
 
@@ -110,6 +109,32 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
     await db`DELETE FROM appointments WHERE id = ${appointmentId}`
 }
 
+export const setAppointmentGoogleFields = async (
+    appointmentId: string,
+    params: { googleMeetLink: string | null; googleCalendarEventId: string | null },
+): Promise<Appointment> => {
+    const [row] = await db`
+        UPDATE appointments
+        SET google_meet_link = ${params.googleMeetLink},
+            google_calendar_event_id = ${params.googleCalendarEventId}
+        WHERE id = ${appointmentId}
+        RETURNING
+            id,
+            psycho_id AS "psychoId",
+            client_id AS "clientId",
+            start_time AS "startTime",
+            end_time AS "endTime",
+            started_at AS "startedAt",
+            ended_at AS "endedAt",
+            ${db.unsafe(STATUS_EXPR)} AS "status",
+            google_meet_link AS "googleMeetLink",
+            google_calendar_event_id AS "googleCalendarEventId",
+            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+            created_at AS "createdAt"
+    `
+    return row as Appointment
+}
+
 export const isClientLinkedAndActive = async (
     clientId: string,
     psychoId: string,
@@ -175,7 +200,6 @@ export async function findActiveAppointmentByPsycho(psychoId: string): Promise<A
         WHERE psycho_id = ${psychoId}
           AND started_at IS NOT NULL
           AND ended_at IS NULL
-          AND end_time > NOW()
         LIMIT 1
     `
     return (row as Appointment) ?? null
@@ -295,7 +319,7 @@ export async function findNextUpcomingAppointmentForClient(
         JOIN "user" u ON u.id = a.psycho_id
         WHERE a.client_id = ${clientId}
           AND (
-              (a.started_at IS NOT NULL AND a.ended_at IS NULL AND a.end_time > NOW())
+              (a.started_at IS NOT NULL AND a.ended_at IS NULL)
               OR
               (a.started_at IS NULL AND a.start_time > NOW())
           )
@@ -321,14 +345,87 @@ export async function countAppointmentsForClient(
     let past = 0
     let active = 0
 
+    // 'warning' rolls into 'upcoming' (scheduled, window arrived but not started).
+    // 'missed' rolls into 'past' (window elapsed without being started).
+    // Post-B2, overrun sessions remain 'active' until explicitly ended.
     for (const row of rows) {
         const count = Number(row.count)
-        if (row.status === 'upcoming') upcoming += count
-        else if (row.status === 'past') past += count
+        if (row.status === 'upcoming' || row.status === 'warning') upcoming += count
+        else if (row.status === 'past' || row.status === 'missed') past += count
         else if (row.status === 'active') active += count
     }
 
     return { upcoming, past, active }
+}
+
+export interface OverlappingAppointment {
+    id: string
+    psychoId: string
+    clientId: string
+    startTime: string
+    endTime: string
+    conflictParticipant: 'psycho' | 'client'
+}
+
+// Application-level overlap check. Guards both users in both roles: the same
+// person can be a psycho in one appointment and a client in another, so any
+// overlap on either side is a conflict. Note: this check is not transactional —
+// two concurrent POSTs can both pass it. A DB-level exclusion constraint
+// (btree_gist) would be needed for guaranteed prevention.
+export const findOverlappingAppointment = async (params: {
+    psychoId: string
+    clientId: string
+    startTime: string
+    endTime: string
+    excludeAppointmentId?: string
+}): Promise<OverlappingAppointment | null> => {
+    const { psychoId, clientId, startTime, endTime, excludeAppointmentId } = params
+
+    const rows = excludeAppointmentId
+        ? await db`
+            SELECT
+                id,
+                psycho_id AS "psychoId",
+                client_id AS "clientId",
+                start_time AS "startTime",
+                end_time AS "endTime",
+                CASE
+                    WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
+                    ELSE 'client'
+                END AS "conflictParticipant"
+            FROM appointments
+            WHERE (
+                    psycho_id = ${psychoId} OR client_id = ${psychoId}
+                 OR psycho_id = ${clientId} OR client_id = ${clientId}
+                )
+              AND start_time < ${endTime}
+              AND end_time > ${startTime}
+              AND id <> ${excludeAppointmentId}
+            LIMIT 1
+        `
+        : await db`
+            SELECT
+                id,
+                psycho_id AS "psychoId",
+                client_id AS "clientId",
+                start_time AS "startTime",
+                end_time AS "endTime",
+                CASE
+                    WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
+                    ELSE 'client'
+                END AS "conflictParticipant"
+            FROM appointments
+            WHERE (
+                    psycho_id = ${psychoId} OR client_id = ${psychoId}
+                 OR psycho_id = ${clientId} OR client_id = ${clientId}
+                )
+              AND start_time < ${endTime}
+              AND end_time > ${startTime}
+            LIMIT 1
+        `
+
+    const [row] = rows
+    return (row as OverlappingAppointment) ?? null
 }
 
 export const listAppointments = async (

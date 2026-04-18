@@ -2,15 +2,22 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { generateGoogleMeetLink, rescheduleGoogleCalendarEvent } from '../../utils/google-meet'
+import {
+    deleteGoogleCalendarEvent,
+    generateGoogleMeetLink,
+    rescheduleGoogleCalendarEvent,
+} from '../../utils/google-meet'
+import { log } from 'utils/logger'
 import {
     createAppointment,
     deleteAppointment,
     endAppointmentWithSnapshot,
     findActiveAppointmentByPsycho,
     findAppointmentById,
+    findOverlappingAppointment,
     isClientLinkedAndActive,
     listAppointments,
+    setAppointmentGoogleFields,
     startAppointment,
     updateAppointment,
 } from './services'
@@ -159,26 +166,66 @@ appointmentRoutes
             )
         }
 
-        let googleMeetLink: string | null = null
-        let googleCalendarEventId: string | null = null
-        let meetLinkGenerationFailed = false
-        if (generateGoogleMeet === true) {
-            const result = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
-            googleMeetLink = result.link
-            googleCalendarEventId = result.eventId
-            if (googleMeetLink === null) {
-                meetLinkGenerationFailed = true
-            }
-        }
-
-        const appointment = await createAppointment({
+        const conflict = await findOverlappingAppointment({
             psychoId: user.id,
             clientId,
             startTime,
             endTime,
-            googleMeetLink,
-            googleCalendarEventId,
         })
+        if (conflict) {
+            return c.json(
+                {
+                    error: 'AppointmentConflict',
+                    message: 'An appointment overlapping this time range already exists.',
+                    conflictingAppointmentId: conflict.id,
+                    conflictParticipant: conflict.conflictParticipant,
+                },
+                409,
+            )
+        }
+
+        // Insert the DB row first so the appointment exists even if the
+        // Google call fails. Then call Google and patch the row with the
+        // returned link/eventId. Not transactional on purpose — a 3rd-party
+        // call inside a DB transaction would hold locks across network I/O.
+        let appointment = await createAppointment({
+            psychoId: user.id,
+            clientId,
+            startTime,
+            endTime,
+            googleMeetLink: null,
+            googleCalendarEventId: null,
+        })
+
+        let meetLinkGenerationFailed = false
+        if (generateGoogleMeet === true) {
+            const result = await generateGoogleMeetLink(user.id, clientId, startTime, endTime)
+            if (result.link === null) {
+                meetLinkGenerationFailed = true
+            } else {
+                try {
+                    appointment = await setAppointmentGoogleFields(appointment.id, {
+                        googleMeetLink: result.link,
+                        googleCalendarEventId: result.eventId,
+                    })
+                } catch (err) {
+                    if (result.eventId) {
+                        await deleteGoogleCalendarEvent(user.id, result.eventId).catch(
+                            (cleanupErr) =>
+                                log.error(
+                                    '[Appointments] Failed to clean up orphan Calendar event after DB update failure',
+                                    {
+                                        psychoId: user.id,
+                                        googleCalendarEventId: result.eventId,
+                                        cleanupErr,
+                                    },
+                                ),
+                        )
+                    }
+                    throw err
+                }
+            }
+        }
 
         return c.json({ appointment, meetLinkGenerationFailed }, 201)
     })
@@ -217,6 +264,25 @@ appointmentRoutes
             return c.json({ error: 'BadRequest', message: 'endTime must be after startTime' }, 400)
         }
 
+        const conflict = await findOverlappingAppointment({
+            psychoId: user.id,
+            clientId: existing.clientId,
+            startTime: mergedStart,
+            endTime: mergedEnd,
+            excludeAppointmentId: appointmentId,
+        })
+        if (conflict) {
+            return c.json(
+                {
+                    error: 'AppointmentConflict',
+                    message: 'An appointment overlapping this time range already exists.',
+                    conflictingAppointmentId: conflict.id,
+                    conflictParticipant: conflict.conflictParticipant,
+                },
+                409,
+            )
+        }
+
         const { rescheduleGoogleMeet } = body
         let meetRescheduleFailed = false
 
@@ -229,7 +295,18 @@ appointmentRoutes
                     mergedEnd,
                 )
                 if (!success) {
-                    meetRescheduleFailed = true
+                    // Refuse to let DB and Google Calendar diverge: abort the
+                    // update rather than silently shipping the new times only
+                    // to our own DB while the calendar invite retains the old ones.
+                    return c.json(
+                        {
+                            error: 'MeetRescheduleFailed',
+                            message:
+                                'Could not update Google Calendar event; appointment time not changed.',
+                            googleCalendarEventId: existing.googleCalendarEventId,
+                        },
+                        502,
+                    )
                 }
             } else {
                 const result = await generateGoogleMeetLink(
@@ -278,9 +355,21 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).delete('/:appointmentId', a
         )
     }
 
+    let meetDeleteFailed = false
+    if (existing.googleCalendarEventId) {
+        const success = await deleteGoogleCalendarEvent(user.id, existing.googleCalendarEventId)
+        if (!success) {
+            meetDeleteFailed = true
+        }
+    }
+
     await deleteAppointment(appointmentId)
 
     // TODO: EDG-57 — send appointment deleted email to client
 
-    return c.json({ success: true }, 200)
+    const response: { success: true; meetDeleteFailed?: true } = { success: true }
+    if (meetDeleteFailed) {
+        response.meetDeleteFailed = true
+    }
+    return c.json(response, 200)
 })

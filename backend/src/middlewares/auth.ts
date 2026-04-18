@@ -1,6 +1,7 @@
 import { createMiddleware } from 'hono/factory'
 import { auth } from 'utils/auth'
 import { db } from 'config/db'
+import { log } from 'utils/logger'
 import { APP_ROLE_HEADER, CLIENT_ROLE, NO_ROLE, PSYCHO_ROLE } from '../constants'
 import type { MiddlewareVariable, User } from 'utils/types'
 
@@ -63,6 +64,13 @@ export const setUserRole = createMiddleware(async (c, next) => {
 export const onlyPsychoRequest = createMiddleware(async (c, next) => {
     const role = c.get('role')
 
+    if (role === undefined) {
+        log.warn('[Middleware] role is undefined — setUserRole likely not mounted', {
+            path: c.req.path,
+        })
+        return c.json({ error: 'ServerMisconfigured' }, 500)
+    }
+
     if (role !== PSYCHO_ROLE) {
         return c.json(
             {
@@ -78,6 +86,13 @@ export const onlyPsychoRequest = createMiddleware(async (c, next) => {
 
 export const onlyClientRequest = createMiddleware(async (c, next) => {
     const role = c.get('role')
+
+    if (role === undefined) {
+        log.warn('[Middleware] role is undefined — setUserRole likely not mounted', {
+            path: c.req.path,
+        })
+        return c.json({ error: 'ServerMisconfigured' }, 500)
+    }
 
     if (role !== CLIENT_ROLE) {
         return c.json({ error: 'Unauthorized' }, 403)
