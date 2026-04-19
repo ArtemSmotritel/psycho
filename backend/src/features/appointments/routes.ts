@@ -39,8 +39,11 @@ const updateAppointmentSchema = z.object({
 const endAppointmentSchema = z.object({
     snapshotDataUrl: z
         .string()
-        .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/, {
-            message: 'snapshotDataUrl must be a base64-encoded image data URL',
+        .max(2_800_000, {
+            message: 'snapshotDataUrl exceeds the 2 MB limit',
+        })
+        .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, {
+            message: 'snapshotDataUrl must be a PNG, JPEG, or WebP base64 data URL',
         })
         .optional(),
 })

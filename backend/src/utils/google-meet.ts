@@ -5,6 +5,45 @@ import { log } from 'utils/logger'
 // Module-level constant — reused across requests; auth is passed per-request
 const calendar = google.calendar('v3')
 
+type RefreshedCredentials = { accessToken: string; expiresAt: string }
+
+// Deduplicates concurrent token refreshes for the same user within this
+// process. Without this, two simultaneous Google API calls both detect
+// expiry, both hit refreshAccessToken(), and the second write may persist
+// a token Google already invalidated.
+const inflightRefreshes = new Map<string, Promise<RefreshedCredentials>>()
+
+async function refreshAndPersist(
+    psychoId: string,
+    oauth2Client: InstanceType<typeof google.auth.OAuth2>,
+): Promise<RefreshedCredentials> {
+    const existing = inflightRefreshes.get(psychoId)
+    if (existing) return existing
+
+    const promise = (async (): Promise<RefreshedCredentials> => {
+        const { credentials } = await oauth2Client.refreshAccessToken()
+        if (!credentials.access_token || !credentials.expiry_date) {
+            throw new Error('Google refresh returned incomplete credentials')
+        }
+        const expiresAt = new Date(credentials.expiry_date).toISOString()
+        await db`
+            UPDATE account
+            SET "accessToken" = ${credentials.access_token},
+                "accessTokenExpiresAt" = ${expiresAt}
+            WHERE "userId" = ${psychoId}
+              AND "providerId" = 'google'
+        `
+        return { accessToken: credentials.access_token, expiresAt }
+    })()
+
+    inflightRefreshes.set(psychoId, promise)
+    try {
+        return await promise
+    } finally {
+        inflightRefreshes.delete(psychoId)
+    }
+}
+
 async function getAuthenticatedOAuth2Client(
     psychoId: string,
 ): Promise<InstanceType<typeof google.auth.OAuth2> | null> {
@@ -41,20 +80,17 @@ async function getAuthenticatedOAuth2Client(
 
     if (isExpired && account.refreshToken) {
         log.debug(`Trying to refresh google access token for user=${psychoId}`)
-        const { credentials } = await oauth2Client.refreshAccessToken()
-        oauth2Client.setCredentials(credentials)
-        log.debug(`Google access token is successfully refreshed for user=${psychoId}`)
-
-        await db`
-            UPDATE account
-            SET "accessToken" = ${credentials.access_token},
-                "accessTokenExpiresAt" = ${new Date(credentials.expiry_date!).toISOString()}
-            WHERE "userId" = ${psychoId}
-              AND "providerId" = 'google'
-        `
-        log.debug(
-            `Refreshed Google access token is successfully saved in the db for user=${psychoId}`,
-        )
+        try {
+            const { accessToken } = await refreshAndPersist(psychoId, oauth2Client)
+            oauth2Client.setCredentials({
+                access_token: accessToken,
+                refresh_token: account.refreshToken,
+            })
+            log.debug(`Google access token is successfully refreshed for user=${psychoId}`)
+        } catch (err) {
+            log.warn('[GoogleMeet] Token refresh failed', { psychoId, err })
+            return null
+        }
     }
 
     return oauth2Client

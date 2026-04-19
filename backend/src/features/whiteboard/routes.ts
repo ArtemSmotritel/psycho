@@ -4,6 +4,7 @@ import { upgradeWebSocket } from 'config/websocket'
 import { findAppointmentByIdForParticipant } from '../appointments/services'
 import { loadWhiteboardState, saveWhiteboardState } from './services'
 import { log } from 'utils/logger'
+import type { ServerWebSocket } from 'bun'
 
 interface RoomConnection {
     ws: ServerWebSocket<unknown>

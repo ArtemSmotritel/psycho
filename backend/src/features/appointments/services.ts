@@ -72,21 +72,16 @@ export const updateAppointment = async (
         startTime: string
         endTime: string
         googleMeetLink: string | null
-        googleCalendarEventId?: string | null
+        googleCalendarEventId: string | null
     },
 ): Promise<Appointment> => {
-    const calendarEventId =
-        params.googleCalendarEventId !== undefined ? params.googleCalendarEventId : null
     const [row] = await db`
         UPDATE appointments
         SET
             start_time = ${params.startTime},
             end_time = ${params.endTime},
             google_meet_link = ${params.googleMeetLink},
-            google_calendar_event_id = CASE
-                WHEN ${params.googleCalendarEventId !== undefined} THEN ${calendarEventId}
-                ELSE google_calendar_event_id
-            END
+            google_calendar_event_id = ${params.googleCalendarEventId}
         WHERE id = ${appointmentId}
         RETURNING
             id,

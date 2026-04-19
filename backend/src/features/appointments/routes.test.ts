@@ -1299,6 +1299,59 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', snapshotDataUrl)
     })
 
+    it('returns 400 when snapshotDataUrl exceeds 2 MB', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const snapshotDataUrl = 'data:image/png;base64,' + 'A'.repeat(2_800_001)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ snapshotDataUrl }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        // Handler must not have reached endAppointmentWithSnapshot — ended_at stays NULL
+        const [row] = await testDb`SELECT ended_at FROM appointments WHERE id = ${apt.id}`
+        expect(row.ended_at).toBeNull()
+    })
+
+    it('returns 400 when snapshotDataUrl uses a disallowed mime type', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ snapshotDataUrl: 'data:image/svg+xml;base64,AAAA' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
     it('returns 200 with whiteboardSnapshotUrl null when body is empty', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
