@@ -6,6 +6,7 @@ import type {
     AttachmentWithAppointment,
     AttachmentWithReaction,
     ImpressionCompletion,
+    ProgressSession,
     RecommendationReaction,
 } from './models'
 
@@ -291,6 +292,50 @@ export async function listImpressionsForClientByPsycho(
         ORDER BY a.created_at ASC
     `
     return rows as AttachmentWithAppointment[]
+}
+
+export async function listClientProgressByPsycho(
+    clientId: string,
+    psychoId: string,
+): Promise<ProgressSession[]> {
+    // started_at is set only when the session actually began — covers both 'active' and 'past'.
+    const appointments = (await db`
+        SELECT
+            id,
+            start_time AS "startTime",
+            end_time AS "endTime",
+            CASE
+                WHEN ended_at IS NOT NULL THEN 'past'
+                ELSE 'active'
+            END AS status
+        FROM appointments
+        WHERE client_id = ${clientId}
+          AND psycho_id = ${psychoId}
+          AND started_at IS NOT NULL
+        ORDER BY start_time ASC
+    `) as Array<{
+        id: string
+        startTime: string
+        endTime: string
+        status: 'active' | 'past'
+    }>
+
+    return Promise.all(
+        appointments.map(async (apt) => {
+            const [impressions, recommendations] = await Promise.all([
+                listAttachmentsByAuthor(apt.id, 'impression', clientId),
+                listAttachmentsWithReactions(apt.id, 'recommendation'),
+            ])
+            return {
+                id: apt.id,
+                startTime: apt.startTime,
+                endTime: apt.endTime,
+                status: apt.status,
+                impressions,
+                recommendations,
+            }
+        }),
+    )
 }
 
 export async function listPendingRecommendationsForClient(

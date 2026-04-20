@@ -42,3 +42,12 @@ export interface ImpressionCompletion {
     clientResponse: string
     createdAt: string
 }
+
+export interface ProgressSession {
+    id: string
+    startTime: string
+    endTime: string
+    status: 'active' | 'past'
+    impressions: Attachment[]
+    recommendations: AttachmentWithReaction[]
+}

@@ -1,4 +1,12 @@
-import { HomeIcon, UsersIcon, CalendarIcon, ImageIcon, UserIcon, MailIcon } from 'lucide-react'
+import {
+    HomeIcon,
+    UsersIcon,
+    CalendarIcon,
+    ImageIcon,
+    UserIcon,
+    MailIcon,
+    ActivityIcon,
+} from 'lucide-react'
 import { useRoleGuard } from './useRoleGuard'
 
 export type SidebarItem = {
@@ -58,6 +66,12 @@ export function useSidebarItems(): SidebarItem[] {
             title: 'Appointments',
             icon: CalendarIcon,
             href: '/client/appointments',
+            availableTo: 'client',
+        },
+        {
+            title: 'Progress',
+            icon: ActivityIcon,
+            href: '/client/progress',
             availableTo: 'client',
         },
     ]
