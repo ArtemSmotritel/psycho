@@ -51,7 +51,7 @@ describe('AddClientByEmailDialog', () => {
         fireEvent.click(screen.getByRole('button', { name: /add client/i }))
 
         await waitFor(() => {
-            expect(screen.getByText(/no account found for this email/i)).toBeInTheDocument()
+            expect(screen.getByText(/send them an invitation link/i)).toBeInTheDocument()
         })
     })
 

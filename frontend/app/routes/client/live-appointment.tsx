@@ -4,14 +4,6 @@ import { Video, PanelRightOpen, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '~/components/ui/dialog'
 import { Button } from '~/components/ui/button'
 import {
     Sheet,
@@ -32,6 +24,7 @@ import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 import { ImpressionForm } from '~/components/ImpressionForm'
 import { ImpressionList } from '~/components/ImpressionList'
+import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
 
 const Excalidraw = lazy(() =>
@@ -136,17 +129,6 @@ export default function LiveAppointment() {
 
         return () => clearInterval(interval)
     }, [appointment?.status, appointmentId])
-
-    // Auto-dismiss effect
-    useEffect(() => {
-        if (!showEndedModal) return
-
-        const timeout = setTimeout(() => {
-            navigate(`/client/appointments/${appointmentId}`)
-        }, 5000)
-
-        return () => clearTimeout(timeout)
-    }, [showEndedModal, appointmentId, navigate])
 
     if (isLoading) {
         return <p>Loading appointment...</p>
@@ -269,21 +251,14 @@ export default function LiveAppointment() {
                 />
             </div>
 
-            <Dialog open={showEndedModal} onOpenChange={() => {}}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Session Ended</DialogTitle>
-                        <DialogDescription>
-                            Your psychologist has ended the session.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button onClick={() => navigate(`/client/appointments/${appointmentId}`)}>
-                            Go to summary
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {appointmentId && (
+                <PostSessionImpressionDialog
+                    open={showEndedModal}
+                    appointmentId={appointmentId}
+                    onSubmitted={() => navigate(`/client/appointments/${appointmentId}`)}
+                    onSkip={() => navigate(`/client/appointments/${appointmentId}`)}
+                />
+            )}
         </PageContainer>
     )
 }

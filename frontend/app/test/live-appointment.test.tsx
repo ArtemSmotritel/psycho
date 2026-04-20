@@ -1,14 +1,30 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
+const mockImpressionSubmit = vi.fn()
+const mockImpressionGetClientList = vi.fn()
 const mockNavigate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
         getClientAppointmentById: (...args: any[]) => mockGetClientAppointmentById(...args),
+    },
+}))
+
+vi.mock('~/services/impression.service', () => ({
+    impressionService: {
+        submit: (...args: any[]) => mockImpressionSubmit(...args),
+        getClientList: (...args: any[]) => mockImpressionGetClientList(...args),
+    },
+}))
+
+vi.mock('sonner', () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn(),
     },
 }))
 
@@ -110,6 +126,9 @@ function renderLiveAppointment(path = '/client/appointments/apt-001/live') {
 describe('LiveAppointment page', () => {
     beforeEach(() => {
         mockGetClientAppointmentById.mockReset()
+        mockImpressionSubmit.mockReset()
+        mockImpressionGetClientList.mockReset()
+        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
         mockNavigate.mockReset()
     })
 
@@ -231,30 +250,72 @@ describe('LiveAppointment page', () => {
             expect(screen.getByText('Session Ended')).toBeInTheDocument()
         })
 
-        it('"Go to summary" button in modal calls navigate immediately', async () => {
+        it('"Skip for now" button in modal calls navigate without submitting', async () => {
             await triggerPollAndModal()
 
             expect(screen.getByText('Session Ended')).toBeInTheDocument()
 
-            const goToSummaryBtn = screen.getByRole('button', { name: /go to summary/i })
+            const skipBtn = screen.getByRole('button', { name: /skip for now/i })
             await act(async () => {
-                goToSummaryBtn.click()
+                skipBtn.click()
             })
 
+            expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
+            expect(mockImpressionSubmit).not.toHaveBeenCalled()
+        })
+
+        it('submitting impression from modal calls submit then navigates to summary', async () => {
+            mockImpressionSubmit.mockResolvedValue({
+                data: {
+                    impression: {
+                        id: 'imp-new',
+                        appointmentId: 'apt-001',
+                        authorId: 'client-456',
+                        type: 'impression',
+                        name: null,
+                        text: 'Felt good today.',
+                        imageFiles: [],
+                        audioFiles: [],
+                        createdAt: '2026-04-01T11:01:00.000Z',
+                        updatedAt: '2026-04-01T11:01:00.000Z',
+                    },
+                },
+            })
+
+            await triggerPollAndModal()
+
+            const textarea = screen.getByPlaceholderText(/write your impression/i)
+            fireEvent.change(textarea, { target: { value: 'Felt good today.' } })
+
+            // The post-session modal renders an ImpressionForm; its Submit button is the only
+            // one visible (the Sheet is closed), so a simple role query is unambiguous here.
+            const submitBtn = screen.getByRole('button', { name: /^submit$/i })
+            await act(async () => {
+                fireEvent.click(submitBtn)
+                await Promise.resolve()
+                await Promise.resolve()
+            })
+
+            expect(mockImpressionSubmit).toHaveBeenCalledWith('apt-001', {
+                text: 'Felt good today.',
+            })
             expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
         })
 
-        it('auto-dismisses modal after 5 seconds by calling navigate', async () => {
+        it('does not auto-dismiss the modal after 5 seconds', async () => {
             await triggerPollAndModal()
 
             expect(screen.getByText('Session Ended')).toBeInTheDocument()
+            // mockNavigate was not called yet — only the poll ran
+            mockNavigate.mockClear()
 
-            // Advance 5 more seconds for auto-dismiss timeout
+            // Advance 10 seconds — no auto-dismiss timer should fire
             await act(async () => {
-                vi.advanceTimersByTime(5000)
+                vi.advanceTimersByTime(10000)
             })
 
-            expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
+            expect(mockNavigate).not.toHaveBeenCalled()
+            expect(screen.getByText('Session Ended')).toBeInTheDocument()
         })
     })
 })
