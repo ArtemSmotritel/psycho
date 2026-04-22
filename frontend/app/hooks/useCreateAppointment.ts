@@ -1,19 +1,29 @@
 import { useState } from 'react'
 import { formatISO } from 'date-fns'
 import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
 import { appointmentService } from '~/services/appointment.service'
+import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
 
 interface CreateAppointmentValues {
     clientId: string
     startTime: Date
     endTime: Date
     generateGoogleMeet?: boolean
+    fromRequestId?: string
+}
+
+interface CreateAppointmentOptions {
+    acknowledgePingConflict?: boolean
 }
 
 export function useCreateAppointment(onSuccess?: () => void) {
     const [isCreating, setIsCreating] = useState(false)
 
-    const handleCreate = async (values: CreateAppointmentValues) => {
+    const handleCreate = async (
+        values: CreateAppointmentValues,
+        options?: CreateAppointmentOptions,
+    ) => {
         if (!values.clientId) return
         setIsCreating(true)
         try {
@@ -21,6 +31,8 @@ export function useCreateAppointment(onSuccess?: () => void) {
                 startTime: formatISO(values.startTime),
                 endTime: formatISO(values.endTime),
                 generateGoogleMeet: values.generateGoogleMeet ?? false,
+                ...(values.fromRequestId ? { fromRequestId: values.fromRequestId } : {}),
+                ...(options?.acknowledgePingConflict ? { acknowledgePingConflict: true } : {}),
             })
             if (data.meetLinkGenerationFailed) {
                 toast.warning(
@@ -30,7 +42,15 @@ export function useCreateAppointment(onSuccess?: () => void) {
                 toast.success('Appointment scheduled.')
             }
             onSuccess?.()
-        } catch {
+        } catch (err) {
+            if (
+                isAxiosError(err) &&
+                err.response?.status === 409 &&
+                err.response.data?.error === 'PingConflict'
+            ) {
+                const conflictingPings: PingConflict[] = err.response.data.conflictingPings ?? []
+                throw new PingConflictError(conflictingPings)
+            }
             toast.error('Failed to schedule appointment. Please try again.')
         } finally {
             setIsCreating(false)

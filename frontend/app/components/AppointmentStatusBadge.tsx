@@ -2,7 +2,10 @@ import { Badge } from '~/components/ui/badge'
 
 type AppointmentStatus = 'upcoming' | 'active' | 'past' | 'warning' | 'missed'
 
-const statusConfig: Record<AppointmentStatus, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+const statusConfig: Record<
+    AppointmentStatus,
+    { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }
+> = {
     upcoming: { label: 'Upcoming', variant: 'secondary' },
     active: { label: 'Active', variant: 'default' },
     past: { label: 'Past', variant: 'outline' },

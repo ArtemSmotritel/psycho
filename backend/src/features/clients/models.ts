@@ -11,6 +11,6 @@ export interface Client {
     sessionsCount: number
     impressionsCount: number
     recommendationsCount: number
-    lastAppointment: { id: string; startTime: string } | null
+    lastAppointment: { id: string; startTime: string; endTime: string } | null
     nextAppointment: { id: string; startTime: string } | null
 }

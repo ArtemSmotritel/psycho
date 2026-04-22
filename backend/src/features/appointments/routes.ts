@@ -27,6 +27,8 @@ const createAppointmentSchema = z.object({
     startTime: z.iso.datetime({ offset: true }),
     endTime: z.iso.datetime({ offset: true }),
     generateGoogleMeet: z.boolean().optional(),
+    fromRequestId: z.string().optional(),
+    acknowledgePingConflict: z.boolean().optional(),
 })
 
 const updateAppointmentSchema = z.object({
@@ -34,6 +36,7 @@ const updateAppointmentSchema = z.object({
     endTime: z.iso.datetime({ offset: true }).optional(),
     googleMeetLink: z.url().nullable().optional(),
     rescheduleGoogleMeet: z.boolean().optional(),
+    acknowledgePingConflict: z.boolean().optional(),
 })
 
 const endAppointmentSchema = z.object({

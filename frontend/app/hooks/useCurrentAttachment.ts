@@ -8,8 +8,11 @@ export function useCurrentAttachment(): {
     isLoading: boolean
     refetch: () => void
 } {
-    const { clientId, appointmentId, attachmentId } =
-        useParams<{ clientId: string; appointmentId: string; attachmentId: string }>()
+    const { clientId, appointmentId, attachmentId } = useParams<{
+        clientId: string
+        appointmentId: string
+        attachmentId: string
+    }>()
     const [attachment, setAttachment] = useState<Attachment | null>(null)
     const [isLoading, setIsLoading] = useState(false)
 

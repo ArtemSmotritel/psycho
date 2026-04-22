@@ -11,6 +11,8 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { impressionService } from '~/services/impression.service'
 import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
+import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
 import { format } from 'date-fns'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
@@ -89,7 +91,11 @@ export default function Session() {
                 )}
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
-                    <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} clientId={clientId!} />
+                    <ImpressionList
+                        impressions={impressions}
+                        isLoading={isLoadingImpressions}
+                        clientId={clientId!}
+                    />
                 </div>
                 <div className="mt-6">
                     <AppointmentRecommendationsPanel
@@ -225,7 +231,7 @@ export default function Session() {
                             googleMeetLink: appointment.googleMeetLink ?? undefined,
                         }}
                         isLoading={isUpdating}
-                        onSubmit={async (values) => {
+                        onSubmit={async (values, options) => {
                             setIsUpdating(true)
                             try {
                                 const dto = {
@@ -233,6 +239,9 @@ export default function Session() {
                                     endTime: values.endTime.toISOString(),
                                     googleMeetLink: values.googleMeetLink || null,
                                     rescheduleGoogleMeet: values.rescheduleGoogleMeet ?? false,
+                                    ...(options?.acknowledgePingConflict
+                                        ? { acknowledgePingConflict: true }
+                                        : {}),
                                 }
                                 const { data } = await appointmentService.update(
                                     appointment.clientId,
@@ -246,7 +255,16 @@ export default function Session() {
                                 } else {
                                     toast.success('Appointment updated.')
                                 }
-                            } catch {
+                            } catch (err) {
+                                if (
+                                    isAxiosError(err) &&
+                                    err.response?.status === 409 &&
+                                    err.response.data?.error === 'PingConflict'
+                                ) {
+                                    const conflictingPings: PingConflict[] =
+                                        err.response.data.conflictingPings ?? []
+                                    throw new PingConflictError(conflictingPings)
+                                }
                                 toast.error('Failed to update appointment. Please try again.')
                             } finally {
                                 setIsUpdating(false)

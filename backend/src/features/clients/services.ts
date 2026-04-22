@@ -27,7 +27,11 @@ export const findClientById = async (id: string): Promise<Client | null> => {
                 WHERE ap.client_id = c.user_id AND a.type = 'recommendation'
             ) AS "recommendationsCount",
             (
-                SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
+                SELECT json_build_object(
+                    'id', ap.id,
+                    'startTime', ap.start_time,
+                    'endTime', ap.end_time
+                )
                 FROM appointments ap
                 WHERE ap.client_id = c.user_id
                   AND ap.ended_at IS NOT NULL

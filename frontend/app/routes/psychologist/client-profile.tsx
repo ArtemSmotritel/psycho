@@ -164,9 +164,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                             label="Phone"
                             value={client.phone}
                             type="phone"
-                            onCopy={() =>
-                                copyToClipboard(client.phone ?? '', 'Phone number')
-                            }
+                            onCopy={() => copyToClipboard(client.phone ?? '', 'Phone number')}
                         />
 
                         <ContactItem

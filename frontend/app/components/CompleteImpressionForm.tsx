@@ -76,7 +76,12 @@ export function CompleteImpressionForm({ isOpen, onClose, onSubmit }: CompleteIm
                         )}
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                        >
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>

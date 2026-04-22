@@ -209,7 +209,11 @@ describe('useWhiteboardSync', () => {
             })
 
             expect(result.current.remoteCursors.has('user-999')).toBe(true)
-            expect(result.current.remoteCursors.get('user-999')).toEqual({ x: 100, y: 200, name: 'Anonymous' })
+            expect(result.current.remoteCursors.get('user-999')).toEqual({
+                x: 100,
+                y: 200,
+                name: 'Anonymous',
+            })
         })
     })
 

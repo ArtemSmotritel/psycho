@@ -27,6 +27,8 @@ export interface CreateAppointmentDTO {
     startTime: string
     endTime: string
     generateGoogleMeet: boolean
+    fromRequestId?: string
+    acknowledgePingConflict?: boolean
 }
 
 export interface UpdateAppointmentDTO {
@@ -34,4 +36,5 @@ export interface UpdateAppointmentDTO {
     endTime?: string
     googleMeetLink?: string | null
     rescheduleGoogleMeet?: boolean
+    acknowledgePingConflict?: boolean
 }

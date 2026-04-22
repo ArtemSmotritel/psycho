@@ -16,6 +16,7 @@ export const clientService = {
 
     getMe: () => api.get<{ client: Client }>('/clients/me'),
 
-    updateMe: (data: Partial<Pick<Client, 'name' | 'username' | 'phone' | 'telegram' | 'instagram'>>) =>
-        api.put<{ client: Client }>('/clients/me', data),
+    updateMe: (
+        data: Partial<Pick<Client, 'name' | 'username' | 'phone' | 'telegram' | 'instagram'>>,
+    ) => api.put<{ client: Client }>('/clients/me', data),
 }
