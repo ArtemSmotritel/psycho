@@ -35,6 +35,10 @@ import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
 import { WhiteboardImageInsert } from '~/components/WhiteboardImageInsert'
+import { PostSessionFollowUpDialog } from '~/components/PostSessionFollowUpDialog'
+import type { Appointment } from '~/models/appointment'
+import { useCurrentClient } from '~/hooks/useCurrentClient'
+import { isPostSessionPromptDone } from '~/utils/post-session-prompt'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -55,6 +59,8 @@ export default function LiveSession() {
         useWhiteboardSync(appointmentId!)
     const [excalidrawAPIInstance, setExcalidrawAPIInstance] =
         useState<ExcalidrawImperativeAPI | null>(null)
+    const [followUpAppointment, setFollowUpAppointment] = useState<Appointment | null>(null)
+    const client = useCurrentClient()
     const appointmentStatus = appointment?.status
 
     const handleExcalidrawAPI = useCallback(
@@ -134,14 +140,32 @@ export default function LiveSession() {
                     snapshotDataUrl = null
                 }
             }
-            await appointmentService.end(clientId!, appointmentId!, snapshotDataUrl)
+            const { data } = await appointmentService.end(
+                clientId!,
+                appointmentId!,
+                snapshotDataUrl,
+            )
             toast.success('Appointment ended.')
-            navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+
+            const ended = data.appointment
+            const hasUpcoming =
+                client?.nextAppointment !== null && client?.nextAppointment !== undefined
+            const alreadyDone = isPostSessionPromptDone(ended.id)
+            if (!hasUpcoming && !alreadyDone) {
+                setFollowUpAppointment(ended)
+            } else {
+                navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+            }
         } catch {
             toast.error('Failed to end appointment. Please try again.')
         } finally {
             setIsEnding(false)
         }
+    }
+
+    const handleFollowUpClose = () => {
+        setFollowUpAppointment(null)
+        navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
     }
 
     return (
@@ -262,6 +286,13 @@ export default function LiveSession() {
                     excalidrawAPI={excalidrawAPIInstance}
                 />
             </div>
+            {followUpAppointment && (
+                <PostSessionFollowUpDialog
+                    endedAppointment={followUpAppointment}
+                    open={true}
+                    onClose={handleFollowUpClose}
+                />
+            )}
         </div>
     )
 }

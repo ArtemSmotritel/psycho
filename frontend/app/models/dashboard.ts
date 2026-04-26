@@ -20,6 +20,7 @@ export interface ClientPsychologist {
 
 export interface ClientDashboardData {
     psychologists: ClientPsychologist[]
+    activeAppointment: AppointmentWithPsycho | null
     nextAppointment: AppointmentWithPsycho | null
     pendingRecommendations: AttachmentWithReaction[]
     appointmentCounts: {

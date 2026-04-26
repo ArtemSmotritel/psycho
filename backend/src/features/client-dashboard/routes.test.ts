@@ -31,7 +31,7 @@ describe('GET /api/client/dashboard', () => {
         expect(res.status).toBe(403)
     })
 
-    it('happy path: returns nextAppointment, pendingRecommendations, and appointmentCounts', async () => {
+    it('happy path: returns nextAppointment, activeAppointment, pendingRecommendations, and appointmentCounts', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
@@ -74,6 +74,9 @@ describe('GET /api/client/dashboard', () => {
         expect(body.nextAppointment).toHaveProperty('status', 'upcoming')
         expect(body.nextAppointment).toHaveProperty('psychoName')
 
+        expect(body).toHaveProperty('activeAppointment')
+        expect(body.activeAppointment).toBeNull()
+
         expect(body).toHaveProperty('pendingRecommendations')
         expect(Array.isArray(body.pendingRecommendations)).toBe(true)
         expect(body.pendingRecommendations.length).toBe(1)
@@ -85,7 +88,7 @@ describe('GET /api/client/dashboard', () => {
         expect(body.appointmentCounts).toHaveProperty('active', 0)
     })
 
-    it('nextAppointment is null when client has no upcoming or active appointments', async () => {
+    it('nextAppointment and activeAppointment are null when client has only past appointments', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await linkClientToPsycho(client.id, psycho.id)
@@ -109,6 +112,93 @@ describe('GET /api/client/dashboard', () => {
         expect(res.status).toBe(200)
         const body = await res.json()
         expect(body.nextAppointment).toBeNull()
+        expect(body.activeAppointment).toBeNull()
+    })
+
+    it('activeAppointment is returned when client has a started but not ended appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Active' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const active = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(1),
+            endTime: pastDate(1, 11),
+        })
+        await startAppointment(active.id)
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.activeAppointment).toHaveProperty('id', active.id)
+        expect(body.activeAppointment).toHaveProperty('status', 'active')
+        expect(body.activeAppointment).toHaveProperty('psychoName', 'Dr. Active')
+    })
+
+    it('separates activeAppointment from nextAppointment when both exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const active = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(1),
+            endTime: pastDate(1, 11),
+        })
+        await startAppointment(active.id)
+
+        const upcoming = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.activeAppointment).toHaveProperty('id', active.id)
+        expect(body.nextAppointment).toHaveProperty('id', upcoming.id)
+    })
+
+    it('nextAppointment is null when client only has an active appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+
+        const active = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(1),
+            endTime: pastDate(1, 11),
+        })
+        await startAppointment(active.id)
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, {
+                headers: { ...CLIENT_HEADER },
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.nextAppointment).toBeNull()
+        expect(body.activeAppointment).toHaveProperty('id', active.id)
     })
 
     it('pendingRecommendations contains only recommendations with done=false or no reaction', async () => {

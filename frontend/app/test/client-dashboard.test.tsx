@@ -21,6 +21,7 @@ import type { ClientDashboardData } from '~/models/dashboard'
 function makeData(overrides: Partial<ClientDashboardData> = {}): ClientDashboardData {
     return {
         psychologists: [],
+        activeAppointment: null,
         nextAppointment: null,
         pendingRecommendations: [],
         appointmentCounts: { upcoming: 0, active: 0, past: 0 },
@@ -106,10 +107,10 @@ describe('ClientDashboard route', () => {
         })
     })
 
-    it('renders "Join Now" link when next appointment status is active', async () => {
+    it('renders Active Appointment card with Join now link when activeAppointment is present', async () => {
         mockGetClientDashboard.mockResolvedValue({
             data: makeData({
-                nextAppointment: {
+                activeAppointment: {
                     id: 'apt-active',
                     clientId: 'client-001',
                     psychoId: 'psycho-001',
@@ -121,7 +122,7 @@ describe('ClientDashboard route', () => {
                     googleMeetLink: null,
                     whiteboardSnapshotUrl: null,
                     createdAt: '2030-01-01T00:00:00.000Z',
-                    psychoName: 'Dr. Smith',
+                    psychoName: 'Dr. Active',
                 },
             }),
         })
@@ -129,8 +130,23 @@ describe('ClientDashboard route', () => {
         renderWithRouter()
 
         await waitFor(() => {
-            expect(screen.getByText(/join now/i)).toBeInTheDocument()
+            expect(screen.getByText(/active appointment/i)).toBeInTheDocument()
         })
+        expect(screen.getByText('Dr. Active')).toBeInTheDocument()
+        const joinLink = screen.getByRole('link', { name: /join now/i })
+        expect(joinLink).toHaveAttribute('href', '/client/appointments/apt-active/live')
+    })
+
+    it('does not render Active Appointment banner when activeAppointment is null', async () => {
+        mockGetClientDashboard.mockResolvedValue({ data: makeData({ activeAppointment: null }) })
+
+        renderWithRouter()
+
+        await waitFor(() => {
+            expect(mockGetClientDashboard).toHaveBeenCalled()
+        })
+        expect(screen.queryByText(/active appointment/i)).not.toBeInTheDocument()
+        expect(screen.queryByRole('link', { name: /join now/i })).not.toBeInTheDocument()
     })
 
     it('renders "No pending recommendations" when array is empty', async () => {

@@ -86,6 +86,14 @@ vi.mock('~/hooks/useWhiteboardSync', () => ({
     }),
 }))
 
+let mockCurrentClient: any = null
+
+vi.mock('~/hooks/useCurrentClient', () => ({
+    get useCurrentClient() {
+        return () => mockCurrentClient
+    },
+}))
+
 // Controlled mock for useCurrentAppointment
 let mockUseCurrentAppointment: () => { appointment: any; isLoading: boolean }
 
@@ -140,6 +148,24 @@ describe('LiveSession page', () => {
         mockNavigate.mockReset()
         mockExportToBlob.mockReset()
         mockExcalidrawAPI = null
+        // Default: client has an upcoming appointment so the post-session
+        // follow-up prompt is suppressed and navigation happens right away.
+        mockCurrentClient = {
+            id: 'client-456',
+            name: 'Test Client',
+            email: 'client@example.com',
+            image: null,
+            username: null,
+            phone: null,
+            telegram: null,
+            instagram: null,
+            registrationDate: '2026-01-01T00:00:00.000Z',
+            sessionsCount: 1,
+            impressionsCount: 0,
+            recommendationsCount: 0,
+            lastAppointment: null,
+            nextAppointment: { id: 'next-apt', startTime: '2026-05-01T10:00:00.000Z' },
+        }
         vi.mocked(toast.success).mockReset?.()
         vi.mocked(toast.error).mockReset?.()
     })

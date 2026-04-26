@@ -18,66 +18,24 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import * as z from 'zod'
 import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
-import { Mic, Image as ImageIcon, Square, Library } from 'lucide-react'
+import { useState } from 'react'
 import { useReactMediaRecorder } from 'react-media-recorder'
-import { getAttachmentTypeLabel, getFileUrl } from '../utils/utils'
-import { EmptyMessage } from './EmptyMessage'
+import { getAttachmentTypeLabel } from '../utils/utils'
 import { Separator } from './ui/separator'
-import { AssociativeImagePicker } from './AssociativeImagePicker'
-import type { AttachmentFile } from '~/models/attachment'
-import type { AssociativeImage } from '~/models/associative-image'
+import { useAttachmentFiles } from '~/hooks/useAttachmentFiles'
+import {
+    attachmentFormSchema,
+    isAttachmentFile,
+    type AttachmentFormProps,
+    type AttachmentFormSubmitValues,
+    type AttachmentFormValues,
+} from './attachment-form/schema'
+import { VoiceRecordingSection } from './attachment-form/VoiceRecordingSection'
+import { ImageSection } from './attachment-form/ImageSection'
 
-const MAX_VOICE_FILES = 3
-const MAX_IMAGE_FILES = 9
-
-const formSchema = z.object({
-    name: z.string().min(1, {
-        message: 'Name is required',
-    }),
-    text: z.string().optional(),
-    voiceFiles: z.array(z.any()).max(MAX_VOICE_FILES, {
-        message: `Maximum ${MAX_VOICE_FILES} voice recordings allowed`,
-    }),
-    imageFiles: z.array(z.any()).max(MAX_IMAGE_FILES, {
-        message: `Maximum ${MAX_IMAGE_FILES} images allowed`,
-    }),
-})
-
-type FormValues = z.infer<typeof formSchema>
-
-type AttachmentType = 'note' | 'recommendation' | 'impression'
-
-export type AttachmentFormSubmitValues = FormValues & {
-    removedFileIds: string[]
-}
-
-interface AttachmentFormInitialData {
-    name?: string
-    text?: string
-    voiceFiles?: (File | string | AttachmentFile)[]
-    imageFiles?: (File | string | AttachmentFile)[]
-}
-
-interface AttachmentFormProps {
-    type: AttachmentType
-    mode?: 'create' | 'edit'
-    trigger: React.ReactNode
-    initialData?: AttachmentFormInitialData
-    onSubmit: (values: AttachmentFormSubmitValues) => void
-    showLibraryPicker?: boolean
-}
-
-export function isAttachmentFile(file: File | string | AttachmentFile): file is AttachmentFile {
-    return typeof file === 'object' && !(file instanceof File) && 'id' in file && 'url' in file
-}
-
-function getDisplayUrl(file: File | string | AttachmentFile): string {
-    if (isAttachmentFile(file)) return file.url
-    return getFileUrl(file)
-}
+export { isAttachmentFile }
+export type { AttachmentFormSubmitValues }
 
 export function AttachmentForm({
     type,
@@ -88,50 +46,9 @@ export function AttachmentForm({
     showLibraryPicker = false,
 }: AttachmentFormProps) {
     const [open, setOpen] = useState(false)
-    const [voiceFiles, setVoiceFiles] = useState<(File | string | AttachmentFile)[]>([])
-    const [imageFiles, setImageFiles] = useState<(File | string | AttachmentFile)[]>([])
-    const [removedFileIds, setRemovedFileIds] = useState<Set<string>>(new Set())
 
-    useEffect(() => {
-        if (open && initialData) {
-            if (initialData.voiceFiles) {
-                setVoiceFiles(initialData.voiceFiles)
-            }
-            if (initialData.imageFiles) {
-                setImageFiles(initialData.imageFiles)
-            }
-            setRemovedFileIds(new Set())
-        }
-    }, [open, initialData])
-
-    useEffect(() => {
-        return () => {
-            voiceFiles.forEach((file) => {
-                if (file instanceof File) {
-                    URL.revokeObjectURL(URL.createObjectURL(file))
-                }
-            })
-            imageFiles.forEach((file) => {
-                if (file instanceof File) {
-                    URL.revokeObjectURL(URL.createObjectURL(file))
-                }
-            })
-        }
-    }, [voiceFiles, imageFiles])
-
-    const { status, startRecording, stopRecording, clearBlobUrl } = useReactMediaRecorder({
-        audio: true,
-        onStop: (blobUrl, blob) => {
-            if (blob) {
-                const file = new File([blob], `recording-${Date.now()}.wav`, { type: 'audio/wav' })
-                setVoiceFiles([...voiceFiles, file])
-                clearBlobUrl()
-            }
-        },
-    })
-
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<AttachmentFormValues>({
+        resolver: zodResolver(attachmentFormSchema),
         defaultValues: {
             name: '',
             text: '',
@@ -141,78 +58,50 @@ export function AttachmentForm({
         },
     })
 
-    function handleSubmit(values: FormValues) {
+    const {
+        voiceFiles,
+        imageFiles,
+        removedFileIds,
+        requestVoiceRecordingSlot,
+        appendVoiceFile,
+        addImageFiles,
+        addLibraryImage,
+        toggleFileRemoval,
+        isFileMarkedForRemoval,
+    } = useAttachmentFiles({
+        open,
+        initialData,
+        onError: (section, message) => form.setError(section, { type: 'manual', message }),
+    })
+
+    const { status, startRecording, stopRecording, clearBlobUrl } = useReactMediaRecorder({
+        audio: true,
+        onStop: (blobUrl, blob) => {
+            if (blob) {
+                const file = new File([blob], `recording-${Date.now()}.wav`, { type: 'audio/wav' })
+                appendVoiceFile(file)
+                clearBlobUrl()
+            }
+        },
+    })
+
+    function handleSubmit(values: AttachmentFormValues) {
         onSubmit({
             ...values,
             voiceFiles,
             imageFiles,
-            removedFileIds: Array.from(removedFileIds),
+            removedFileIds,
         })
         setOpen(false)
     }
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || [])
-        if (files.length + imageFiles.length > MAX_IMAGE_FILES) {
-            form.setError('imageFiles', {
-                type: 'manual',
-                message: `Maximum ${MAX_IMAGE_FILES} images allowed`,
-            })
-            return
-        }
-        setImageFiles([...imageFiles, ...files])
+        addImageFiles(Array.from(e.target.files || []))
     }
 
     const handleStartRecording = () => {
-        if (voiceFiles.length >= MAX_VOICE_FILES) {
-            form.setError('voiceFiles', {
-                type: 'manual',
-                message: `Maximum ${MAX_VOICE_FILES} voice recordings allowed`,
-            })
-            return
-        }
+        if (!requestVoiceRecordingSlot()) return
         startRecording()
-    }
-
-    const handleLibraryImageSelect = (image: AssociativeImage) => {
-        if (imageFiles.length >= MAX_IMAGE_FILES) {
-            form.setError('imageFiles', {
-                type: 'manual',
-                message: `Maximum ${MAX_IMAGE_FILES} images allowed`,
-            })
-            return
-        }
-        if (imageFiles.some((f) => isAttachmentFile(f) && f.id === image.fileId)) return
-        const attachmentFile: AttachmentFile = {
-            id: image.fileId,
-            url: image.imageUrl,
-            originalName: image.name,
-            mimeType: 'image/png',
-            size: 0,
-        }
-        setImageFiles([...imageFiles, attachmentFile])
-    }
-
-    const toggleFileRemoval = (file: File | string | AttachmentFile) => {
-        if (isAttachmentFile(file)) {
-            setRemovedFileIds((prev) => {
-                const next = new Set(prev)
-                if (next.has(file.id)) {
-                    next.delete(file.id)
-                } else {
-                    next.add(file.id)
-                }
-                return next
-            })
-        } else {
-            // For new files (File objects), just remove from the list
-            setVoiceFiles((prev) => prev.filter((f) => f !== file))
-            setImageFiles((prev) => prev.filter((f) => f !== file))
-        }
-    }
-
-    const isFileMarkedForRemoval = (file: File | string | AttachmentFile): boolean => {
-        return isAttachmentFile(file) && removedFileIds.has(file.id)
     }
 
     return (
@@ -268,173 +157,29 @@ export function AttachmentForm({
                         <Separator />
 
                         <div className="space-y-4">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant={status === 'recording' ? 'destructive' : 'outline'}
-                                        className="flex items-center gap-2"
-                                        onClick={
-                                            status === 'recording'
-                                                ? stopRecording
-                                                : handleStartRecording
-                                        }
-                                        disabled={
-                                            mode === 'edit' ||
-                                            (voiceFiles.length >= MAX_VOICE_FILES &&
-                                                status !== 'recording')
-                                        }
-                                    >
-                                        {status === 'recording' ? (
-                                            <>
-                                                <Square className="h-4 w-4" />
-                                                Stop Recording
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Mic className="h-4 w-4" />
-                                                Start Recording
-                                            </>
-                                        )}
-                                    </Button>
-                                    {status === 'recording' && (
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                                            <span className="text-sm text-muted-foreground">
-                                                Recording...
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <span className="text-sm text-muted-foreground">
-                                    {voiceFiles.length}/{MAX_VOICE_FILES} recordings
-                                </span>
-                            </div>
-                            {form.formState.errors.voiceFiles && (
-                                <p className="text-sm text-destructive">
-                                    {form.formState.errors.voiceFiles.message}
-                                </p>
-                            )}
-
-                            {voiceFiles.length > 0 ? (
-                                <div className="space-y-2">
-                                    <h4 className="text-sm font-medium">Voice Recordings</h4>
-                                    <div className="space-y-2">
-                                        {voiceFiles.map((file, index) => {
-                                            const markedForRemoval = isFileMarkedForRemoval(file)
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className={`flex items-center gap-2 ${markedForRemoval ? 'opacity-40' : ''}`}
-                                                >
-                                                    <audio controls src={getDisplayUrl(file)} />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => toggleFileRemoval(file)}
-                                                    >
-                                                        {markedForRemoval ? 'Restore' : 'Remove'}
-                                                    </Button>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            ) : (
-                                <EmptyMessage
-                                    title="No Voice Recordings"
-                                    description="Start recording or upload voice files to add them here."
-                                    className="py-4"
-                                />
-                            )}
+                            <VoiceRecordingSection
+                                mode={mode}
+                                status={status}
+                                voiceFiles={voiceFiles}
+                                errorMessage={form.formState.errors.voiceFiles?.message}
+                                onStartRecording={handleStartRecording}
+                                onStopRecording={stopRecording}
+                                onToggleFileRemoval={toggleFileRemoval}
+                                isFileMarkedForRemoval={isFileMarkedForRemoval}
+                            />
 
                             <Separator />
 
-                            <div className="flex items-center gap-4 flex-wrap">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="flex items-center gap-2"
-                                    onClick={() => document.getElementById('image-input')?.click()}
-                                    disabled={
-                                        mode === 'edit' || imageFiles.length >= MAX_IMAGE_FILES
-                                    }
-                                >
-                                    <ImageIcon className="h-4 w-4" />
-                                    Upload Images
-                                    <input
-                                        id="image-input"
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={handleImageFileChange}
-                                        multiple
-                                    />
-                                </Button>
-                                {showLibraryPicker && (
-                                    <AssociativeImagePicker
-                                        trigger={
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="flex items-center gap-2"
-                                                disabled={imageFiles.length >= MAX_IMAGE_FILES}
-                                            >
-                                                <Library className="h-4 w-4" />
-                                                From Library
-                                            </Button>
-                                        }
-                                        onSelect={handleLibraryImageSelect}
-                                    />
-                                )}
-                                <span className="text-sm text-muted-foreground">
-                                    {imageFiles.length}/{MAX_IMAGE_FILES} images
-                                </span>
-                            </div>
-                            {form.formState.errors.imageFiles && (
-                                <p className="text-sm text-destructive">
-                                    {form.formState.errors.imageFiles.message}
-                                </p>
-                            )}
-
-                            {imageFiles.length > 0 ? (
-                                <div className="space-y-2">
-                                    <h4 className="text-sm font-medium">Images</h4>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {imageFiles.map((file, index) => {
-                                            const markedForRemoval = isFileMarkedForRemoval(file)
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className={`relative group ${markedForRemoval ? 'opacity-40' : ''}`}
-                                                >
-                                                    <img
-                                                        src={getDisplayUrl(file)}
-                                                        alt={`Uploaded image ${index + 1}`}
-                                                        className="w-full h-24 object-cover rounded-md"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                                                        onClick={() => toggleFileRemoval(file)}
-                                                    >
-                                                        {markedForRemoval ? 'Restore' : 'Remove'}
-                                                    </Button>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            ) : (
-                                <EmptyMessage
-                                    title="No Images"
-                                    description="Upload images to add them here."
-                                    className="py-4"
-                                />
-                            )}
+                            <ImageSection
+                                mode={mode}
+                                imageFiles={imageFiles}
+                                showLibraryPicker={showLibraryPicker}
+                                errorMessage={form.formState.errors.imageFiles?.message}
+                                onImageFileChange={handleImageFileChange}
+                                onLibraryImageSelect={addLibraryImage}
+                                onToggleFileRemoval={toggleFileRemoval}
+                                isFileMarkedForRemoval={isFileMarkedForRemoval}
+                            />
                         </div>
 
                         <div className="flex justify-end space-x-2 pt-4 border-t">

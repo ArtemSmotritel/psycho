@@ -54,7 +54,13 @@ export default function ClientDashboard() {
         )
     }
 
-    const { psychologists, nextAppointment, pendingRecommendations, appointmentCounts } = data!
+    const {
+        psychologists,
+        activeAppointment,
+        nextAppointment,
+        pendingRecommendations,
+        appointmentCounts,
+    } = data!
 
     const handleToggleDoneForRec =
         (appointmentId: string) => async (attachmentId: string, done: boolean) => {
@@ -79,6 +85,23 @@ export default function ClientDashboard() {
     return (
         <PageContainer>
             <AppPageHeader text="Dashboard" />
+
+            {activeAppointment !== null && (
+                <div className="mb-6 rounded-lg border border-primary bg-primary/5 p-4">
+                    <p className="text-sm font-medium text-muted-foreground">Active Appointment</p>
+                    <p className="mt-1 text-lg font-semibold">{activeAppointment.psychoName}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {format(new Date(activeAppointment.startTime), 'PPp')} —{' '}
+                        {format(new Date(activeAppointment.endTime), 'p')}
+                    </p>
+                    <Link
+                        to={`/client/appointments/${activeAppointment.id}/live`}
+                        className="mt-2 inline-block text-sm font-medium text-primary underline underline-offset-2"
+                    >
+                        Join now
+                    </Link>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4 mb-8">
                 {/* My Psychologists */}
@@ -133,22 +156,12 @@ export default function ClientDashboard() {
                                 </p>
                                 <p className="font-medium">{nextAppointment.psychoName}</p>
                                 <p className="text-sm capitalize">{nextAppointment.status}</p>
-                                <div className="flex gap-2">
-                                    <Link
-                                        to={`/client/appointments/${nextAppointment.id}`}
-                                        className="text-sm underline"
-                                    >
-                                        View appointment
-                                    </Link>
-                                    {nextAppointment.status === 'active' && (
-                                        <Link
-                                            to={`/client/appointments/${nextAppointment.id}/live`}
-                                            className="text-sm font-semibold underline"
-                                        >
-                                            Join Now
-                                        </Link>
-                                    )}
-                                </div>
+                                <Link
+                                    to={`/client/appointments/${nextAppointment.id}`}
+                                    className="text-sm underline"
+                                >
+                                    View appointment
+                                </Link>
                             </div>
                         )}
                     </CardContent>

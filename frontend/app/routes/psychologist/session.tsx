@@ -19,12 +19,16 @@ import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecomme
 import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
+import { PostSessionFollowUpDialog } from '~/components/PostSessionFollowUpDialog'
+import { useCurrentClient } from '~/hooks/useCurrentClient'
+import { isPostSessionPromptDone, isRecentlyEnded } from '~/utils/post-session-prompt'
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
     const { userRole } = useRoleGuard(['psychologist', 'client'])
     const navigate = useNavigate()
     const { clientId } = useParams<{ clientId: string }>()
+    const client = useCurrentClient()
 
     const [isStarting, setIsStarting] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -35,6 +39,22 @@ export default function Session() {
     } | null>(null)
     const [impressions, setImpressions] = useState<Attachment[]>([])
     const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
+    const [showFollowUp, setShowFollowUp] = useState(false)
+
+    useEffect(() => {
+        if (
+            userRole !== 'psychologist' ||
+            !appointment ||
+            appointment.status !== 'past' ||
+            !client
+        ) {
+            return
+        }
+        if (!isRecentlyEnded(appointment.endedAt)) return
+        if (isPostSessionPromptDone(appointment.id)) return
+        if (client.nextAppointment !== null) return
+        setShowFollowUp(true)
+    }, [userRole, appointment, client])
 
     useEffect(() => {
         if (
@@ -103,6 +123,13 @@ export default function Session() {
                         appointmentId={appointment.id}
                     />
                 </div>
+                {showFollowUp && (
+                    <PostSessionFollowUpDialog
+                        endedAppointment={appointment}
+                        open={true}
+                        onClose={() => setShowFollowUp(false)}
+                    />
+                )}
             </>
         )
     }

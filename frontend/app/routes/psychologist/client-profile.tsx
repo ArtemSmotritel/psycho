@@ -25,6 +25,7 @@ import { ProtectedComponent } from '~/components/ProtectedComponent'
 import { clientService } from '~/services/client.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
+import { nextSameWeekdayOccurrence } from '~/utils/next-occurrence'
 
 type ClientProfileProps = {
     params: {
@@ -256,7 +257,12 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                                 label="Schedule Session"
                             />
                         }
-                        initialData={{ clientId: params.clientId }}
+                        initialData={{
+                            clientId: params.clientId,
+                            ...(client.lastAppointment
+                                ? nextSameWeekdayOccurrence(client.lastAppointment)
+                                : {}),
+                        }}
                         isLoading={isCreatingAppointment}
                         onSubmit={handleAddSession}
                     />
