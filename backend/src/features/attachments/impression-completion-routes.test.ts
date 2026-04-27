@@ -32,14 +32,14 @@ async function setupImpressionScenario() {
     return { psycho, client, apt, impression }
 }
 
-// ─── PATCH /api/appointments/:appointmentId/impressions/:attachmentId/complete ──
+// ─── PATCH /api/client/appointments/:appointmentId/impressions/:attachmentId/complete ──
 
-describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/complete', () => {
+describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentId/complete', () => {
     it('returns 200 with completion on success', async () => {
         const { client, apt, impression } = await setupImpressionScenario()
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -59,7 +59,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         const { client, apt, impression } = await setupImpressionScenario()
 
         await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -68,7 +68,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         )
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -85,7 +85,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         const { client, apt, impression } = await setupImpressionScenario()
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -100,7 +100,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         const { client, apt, impression } = await setupImpressionScenario()
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -116,7 +116,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         const otherClient = await insertTestUser({ email: 'other@test.com' })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(otherClient.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -146,7 +146,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
 
         // Try to complete impression2 under the first appointment's URL
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression2.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression2.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -177,7 +177,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${note.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${note.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -212,7 +212,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         // client2 tries to complete client1's impression
         // client2 won't own the appointment, so this will 404 at step 1
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client2.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -227,7 +227,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments/some-apt/impressions/some-id/complete',
+            '/api/client/appointments/some-apt/impressions/some-id/complete',
             await asUser(user.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -239,7 +239,7 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/appointments/some-apt/impressions/some-id/complete', {
+        const res = await app.request('/api/client/appointments/some-apt/impressions/some-id/complete', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
             body: JSON.stringify({ response: 'Test' }),
@@ -249,14 +249,14 @@ describe('PATCH /api/appointments/:appointmentId/impressions/:attachmentId/compl
     })
 })
 
-// ─── GET /api/appointments/:appointmentId/impressions/:attachmentId/completion (client) ──
+// ─── GET /api/client/appointments/:appointmentId/impressions/:attachmentId/completion (client) ──
 
-describe('GET /api/appointments/:appointmentId/impressions/:attachmentId/completion', () => {
+describe('GET /api/client/appointments/:appointmentId/impressions/:attachmentId/completion', () => {
     it('returns { completion: null } when not completed', async () => {
         const { client, apt, impression } = await setupImpressionScenario()
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/completion`,
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -269,7 +269,7 @@ describe('GET /api/appointments/:appointmentId/impressions/:attachmentId/complet
         const { client, apt, impression } = await setupImpressionScenario()
 
         await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -278,7 +278,7 @@ describe('GET /api/appointments/:appointmentId/impressions/:attachmentId/complet
         )
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/completion`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/completion`,
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -289,7 +289,7 @@ describe('GET /api/appointments/:appointmentId/impressions/:attachmentId/complet
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/appointments/some-apt/impressions/some-id/completion', {
+        const res = await app.request('/api/client/appointments/some-apt/impressions/some-id/completion', {
             headers: CLIENT_HEADER,
         })
 
@@ -317,7 +317,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/impressions/:at
         const { psycho, client, apt, impression } = await setupImpressionScenario()
 
         await app.request(
-            `/api/appointments/${apt.id}/impressions/${impression.id}/complete`,
+            `/api/client/appointments/${apt.id}/impressions/${impression.id}/complete`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },

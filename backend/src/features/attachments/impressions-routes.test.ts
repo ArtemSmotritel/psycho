@@ -9,9 +9,9 @@ import { createAttachment } from './services'
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
-// ─── POST /api/appointments/:appointmentId/impressions ────────────────────────
+// ─── POST /api/client/appointments/:appointmentId/impressions ────────────────────────
 
-describe('POST /api/appointments/:appointmentId/impressions', () => {
+describe('POST /api/client/appointments/:appointmentId/impressions', () => {
     it('returns 201 with type impression when appointment is active', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -25,7 +25,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         await startAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -56,7 +56,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         await endAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -82,7 +82,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -108,7 +108,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         await startAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -136,7 +136,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
 
         // otherClient tries to post impression on client's appointment
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(otherClient.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -161,7 +161,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         await startAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(attacker.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -173,7 +173,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/appointments/some-apt/impressions', {
+        const res = await app.request('/api/client/appointments/some-apt/impressions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
             body: JSON.stringify({ text: 'Hello' }),
@@ -186,7 +186,7 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments/some-apt/impressions',
+            '/api/client/appointments/some-apt/impressions',
             await asUser(user.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -198,9 +198,9 @@ describe('POST /api/appointments/:appointmentId/impressions', () => {
     })
 })
 
-// ─── GET /api/appointments/:appointmentId/impressions ─────────────────────────
+// ─── GET /api/client/appointments/:appointmentId/impressions ─────────────────────────
 
-describe('GET /api/appointments/:appointmentId/impressions', () => {
+describe('GET /api/client/appointments/:appointmentId/impressions', () => {
     it("returns 200 with only this client's impressions", async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -233,7 +233,7 @@ describe('GET /api/appointments/:appointmentId/impressions', () => {
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -262,7 +262,7 @@ describe('GET /api/appointments/:appointmentId/impressions', () => {
         await endAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(client.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -290,7 +290,7 @@ describe('GET /api/appointments/:appointmentId/impressions', () => {
         await endAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/impressions`,
+            `/api/client/appointments/${apt.id}/impressions`,
             await asUser(otherClient.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -301,7 +301,7 @@ describe('GET /api/appointments/:appointmentId/impressions', () => {
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/appointments/some-apt/impressions', {
+        const res = await app.request('/api/client/appointments/some-apt/impressions', {
             method: 'GET',
             headers: { ...CLIENT_HEADER },
         })
@@ -313,7 +313,7 @@ describe('GET /api/appointments/:appointmentId/impressions', () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments/some-apt/impressions',
+            '/api/client/appointments/some-apt/impressions',
             await asUser(user.id, {
                 method: 'GET',
                 headers: { ...PSYCHO_HEADER },

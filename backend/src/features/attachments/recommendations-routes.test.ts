@@ -739,9 +739,9 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/recommendati
     })
 })
 
-// ─── GET /api/appointments/:appointmentId/recommendations ─────────────────────
+// ─── GET /api/client/appointments/:appointmentId/recommendations ─────────────────────
 
-describe('GET /api/appointments/:appointmentId/recommendations', () => {
+describe('GET /api/client/appointments/:appointmentId/recommendations', () => {
     it('returns 200 with all recommendations for this appointment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -771,7 +771,7 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/recommendations`,
+            `/api/client/appointments/${apt.id}/recommendations`,
             await asUser(client.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -799,7 +799,7 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         await endAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/recommendations`,
+            `/api/client/appointments/${apt.id}/recommendations`,
             await asUser(otherClient.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -824,7 +824,7 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         await endAppointment(apt.id)
 
         const res = await app.request(
-            `/api/appointments/${apt.id}/recommendations`,
+            `/api/client/appointments/${apt.id}/recommendations`,
             await asUser(attacker.id, {
                 method: 'GET',
                 headers: { ...CLIENT_HEADER },
@@ -838,7 +838,7 @@ describe('GET /api/appointments/:appointmentId/recommendations', () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments/some-apt/recommendations',
+            '/api/client/appointments/some-apt/recommendations',
             await asUser(user.id, {
                 method: 'GET',
                 headers: { ...PSYCHO_HEADER },

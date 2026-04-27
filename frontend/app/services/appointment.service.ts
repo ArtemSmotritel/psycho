@@ -36,7 +36,8 @@ export const appointmentService = {
     getActiveForPsycho: () => api.get<{ appointment: Appointment | null }>('/psycho/appointments'),
     getAllForPsycho: () =>
         api.get<{ appointments: AppointmentWithClient[] }>('/psycho/appointments/all'),
-    getClientGlobalList: () => api.get<{ appointments: AppointmentWithPsycho[] }>('/appointments'),
+    getClientGlobalList: () =>
+        api.get<{ appointments: AppointmentWithPsycho[] }>('/client/appointments'),
     getClientAppointmentById: (appointmentId: string) =>
-        api.get<{ appointment: AppointmentWithPsycho }>(`/appointments/${appointmentId}`),
+        api.get<{ appointment: AppointmentWithPsycho }>(`/client/appointments/${appointmentId}`),
 }

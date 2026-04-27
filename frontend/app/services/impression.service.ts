@@ -9,10 +9,13 @@ import type {
 
 export const impressionService = {
     submit: (appointmentId: string, data: CreateImpressionDTO) =>
-        api.post<{ impression: Attachment }>(`/appointments/${appointmentId}/impressions`, data),
+        api.post<{ impression: Attachment }>(
+            `/client/appointments/${appointmentId}/impressions`,
+            data,
+        ),
 
     getClientList: (appointmentId: string) =>
-        api.get<{ impressions: Attachment[] }>(`/appointments/${appointmentId}/impressions`),
+        api.get<{ impressions: Attachment[] }>(`/client/appointments/${appointmentId}/impressions`),
 
     getPsychoList: (clientId: string, appointmentId: string) =>
         api.get<{ impressions: Attachment[] }>(
@@ -26,13 +29,13 @@ export const impressionService = {
 
     complete: (appointmentId: string, attachmentId: string, data: CompleteImpressionDTO) =>
         api.patch<{ completion: ImpressionCompletion }>(
-            `/appointments/${appointmentId}/impressions/${attachmentId}/complete`,
+            `/client/appointments/${appointmentId}/impressions/${attachmentId}/complete`,
             data,
         ),
 
     getCompletion: (appointmentId: string, attachmentId: string) =>
         api.get<{ completion: ImpressionCompletion | null }>(
-            `/appointments/${appointmentId}/impressions/${attachmentId}/completion`,
+            `/client/appointments/${appointmentId}/impressions/${attachmentId}/completion`,
         ),
 
     getPsychoCompletion: (clientId: string, appointmentId: string, attachmentId: string) =>

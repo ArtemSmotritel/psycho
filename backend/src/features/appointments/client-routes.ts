@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { NotFoundError } from 'errors/index'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { findAppointmentByIdForClient, listAppointmentsForClient } from './services'
 
@@ -15,7 +16,7 @@ clientAppointmentRoutes.use(authorized, onlyClientRequest).get('/:appointmentId'
     const appointmentId = c.req.param('appointmentId')
     const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
     if (!appointment) {
-        return c.json({ error: 'NotFound' }, 404)
+        throw new NotFoundError()
     }
     return c.json({ appointment }, 200)
 })

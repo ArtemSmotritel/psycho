@@ -1107,7 +1107,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
     })
 })
 
-describe('GET /api/appointments (client)', () => {
+describe('GET /api/client/appointments (client)', () => {
     it('returns 200 with appointments including psychoName on happy path', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -1126,7 +1126,7 @@ describe('GET /api/appointments (client)', () => {
         })
 
         const res = await app.request(
-            '/api/appointments',
+            '/api/client/appointments',
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -1142,7 +1142,7 @@ describe('GET /api/appointments (client)', () => {
         const client = await insertTestUser({ email: 'client@test.com' })
 
         const res = await app.request(
-            '/api/appointments',
+            '/api/client/appointments',
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -1153,7 +1153,7 @@ describe('GET /api/appointments (client)', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const res = await app.request('/api/appointments')
+        const res = await app.request('/api/client/appointments')
         expect(res.status).toBe(401)
     })
 
@@ -1161,7 +1161,7 @@ describe('GET /api/appointments (client)', () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments',
+            '/api/client/appointments',
             await asUser(user.id, { headers: PSYCHO_HEADER }),
         )
 
@@ -1169,7 +1169,7 @@ describe('GET /api/appointments (client)', () => {
     })
 })
 
-describe('GET /api/appointments/:appointmentId (client)', () => {
+describe('GET /api/client/appointments/:appointmentId (client)', () => {
     it('returns 200 with appointment including psychoName on happy path', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -1182,7 +1182,7 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}`,
+            `/api/client/appointments/${apt.id}`,
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -1197,7 +1197,7 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         const client = await insertTestUser({ email: 'client@test.com' })
 
         const res = await app.request(
-            '/api/appointments/nonexistent',
+            '/api/client/appointments/nonexistent',
             await asUser(client.id, { headers: CLIENT_HEADER }),
         )
 
@@ -1219,7 +1219,7 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         })
 
         const res = await app.request(
-            `/api/appointments/${apt.id}`,
+            `/api/client/appointments/${apt.id}`,
             await asUser(client2.id, { headers: CLIENT_HEADER }),
         )
 
@@ -1227,7 +1227,7 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
     })
 
     it('returns 401 for unauthenticated request', async () => {
-        const res = await app.request('/api/appointments/some-apt')
+        const res = await app.request('/api/client/appointments/some-apt')
         expect(res.status).toBe(401)
     })
 
@@ -1235,7 +1235,7 @@ describe('GET /api/appointments/:appointmentId (client)', () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/appointments/some-apt',
+            '/api/client/appointments/some-apt',
             await asUser(user.id, { headers: PSYCHO_HEADER }),
         )
 

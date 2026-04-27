@@ -31,12 +31,12 @@ export const recommendationService = {
 
     getClientList: (appointmentId: string) =>
         api.get<{ recommendations: AttachmentWithReaction[] }>(
-            `/appointments/${appointmentId}/recommendations`,
+            `/client/appointments/${appointmentId}/recommendations`,
         ),
 
     react: (appointmentId: string, attachmentId: string, data: UpsertReactionDTO) =>
         api.patch<{ reaction: RecommendationReaction }>(
-            `/appointments/${appointmentId}/recommendations/${attachmentId}/reaction`,
+            `/client/appointments/${appointmentId}/recommendations/${attachmentId}/reaction`,
             data,
         ),
 
