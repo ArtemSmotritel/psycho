@@ -21,8 +21,7 @@ import { recommendationClientRoutes } from '../features/attachments/recommendati
 import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
 import { progressClientRoutes } from '../features/attachments/progress-client-routes'
 import { attachmentRoutes } from '../features/attachments/attachment-routes'
-import { clientDashboardRoutes } from '../features/client-dashboard/routes'
-import { psychoDashboardRoutes } from '../features/dashboard/routes'
+import { clientDashboardRoutes, psychoDashboardRoutes } from '../features/dashboard/routes'
 import { invitationRoutes } from '../features/invitations/routes'
 import { associativeImageRoutes } from '../features/associative-images/routes'
 

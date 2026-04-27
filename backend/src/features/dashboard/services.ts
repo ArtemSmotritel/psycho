@@ -1,16 +1,10 @@
 import { db } from 'config/db'
-import type { AppointmentWithClient } from '../appointments/models'
+import type { AppointmentWithClient, AppointmentWithPsycho } from '../appointments/models'
 import type { Client } from '../clients/models'
-
-const STATUS_EXPR = `
-    CASE
-        WHEN started_at IS NOT NULL AND ended_at IS NOT NULL THEN 'past'
-        WHEN started_at IS NOT NULL                          THEN 'active'
-        WHEN NOW() < start_time                              THEN 'upcoming'
-        WHEN NOW() <= end_time                               THEN 'warning'
-        ELSE                                                      'missed'
-    END
-`
+import type { AttachmentWithReaction } from '../attachments/models'
+import { findPsychologistsForClient } from '../clients/services'
+import { APPOINTMENT_STATUS_EXPR, appointmentColumns } from '../appointments/services'
+import { ATTACHMENT_SELECT } from '../attachments/services'
 
 export interface PsychoDashboardData {
     totalClients: number
@@ -56,7 +50,7 @@ export async function getPsychoDashboard(psychoId: string): Promise<PsychoDashbo
             a.end_time AS "endTime",
             a.started_at AS "startedAt",
             a.ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
+            ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "status",
             a.google_meet_link AS "googleMeetLink",
             a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             a.created_at AS "createdAt",
@@ -80,7 +74,7 @@ export async function getPsychoDashboard(psychoId: string): Promise<PsychoDashbo
             a.end_time AS "endTime",
             a.started_at AS "startedAt",
             a.ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
+            ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "status",
             a.google_meet_link AS "googleMeetLink",
             a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
             a.created_at AS "createdAt",
@@ -121,5 +115,89 @@ export async function getPsychoDashboard(psychoId: string): Promise<PsychoDashbo
         activeAppointment,
         upcomingAppointments,
         recentClients,
+    }
+}
+
+export async function getClientDashboard(clientId: string) {
+    const [psychologists, activeRow, nextRow, pendingRecommendationRows, countRows] =
+        await Promise.all([
+            findPsychologistsForClient(clientId),
+            db`
+                SELECT ${db.unsafe(appointmentColumns('a.'))},
+                       u.name AS "psychoName"
+                FROM appointments a
+                JOIN "user" u ON u.id = a.psycho_id
+                WHERE a.client_id = ${clientId}
+                  AND a.started_at IS NOT NULL
+                  AND a.ended_at IS NULL
+                LIMIT 1
+            `,
+            db`
+                SELECT ${db.unsafe(appointmentColumns('a.'))},
+                       u.name AS "psychoName"
+                FROM appointments a
+                JOIN "user" u ON u.id = a.psycho_id
+                WHERE a.client_id = ${clientId}
+                  AND a.started_at IS NULL
+                  AND a.start_time > NOW()
+                ORDER BY a.start_time ASC
+                LIMIT 1
+            `,
+            db`
+                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                  CASE
+                      WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                          'attachmentId', rr.attachment_id,
+                          'done', rr.done,
+                          'clientComment', rr.client_comment,
+                          'psychologistReply', rr.psychologist_reply,
+                          'updatedAt', rr.updated_at
+                      )
+                      ELSE NULL
+                  END AS reaction
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                WHERE ap.client_id = ${clientId}
+                  AND a.type = 'recommendation'
+                  AND (rr.attachment_id IS NULL OR rr.done = false)
+                ORDER BY a.created_at DESC
+            `,
+            db`
+                SELECT
+                    ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "status",
+                    COUNT(*) AS "count"
+                FROM appointments
+                WHERE client_id = ${clientId}
+                GROUP BY ${db.unsafe(APPOINTMENT_STATUS_EXPR)}
+            `,
+        ])
+
+    const activeAppointment = ((activeRow as AppointmentWithPsycho[])[0] ??
+        null) as AppointmentWithPsycho | null
+    const nextAppointment = ((nextRow as AppointmentWithPsycho[])[0] ??
+        null) as AppointmentWithPsycho | null
+    const pendingRecommendations = pendingRecommendationRows as AttachmentWithReaction[]
+
+    // 'warning' rolls into 'upcoming' (scheduled, window arrived but not started).
+    // 'missed' rolls into 'past' (window elapsed without being started).
+    // Post-B2, overrun sessions remain 'active' until explicitly ended.
+    let upcoming = 0
+    let past = 0
+    let active = 0
+    for (const row of countRows) {
+        const count = Number(row.count)
+        if (row.status === 'upcoming' || row.status === 'warning') upcoming += count
+        else if (row.status === 'past' || row.status === 'missed') past += count
+        else if (row.status === 'active') active += count
+    }
+    const appointmentCounts = { upcoming, past, active }
+
+    return {
+        psychologists,
+        activeAppointment,
+        nextAppointment,
+        pendingRecommendations,
+        appointmentCounts,
     }
 }

@@ -5,7 +5,6 @@ import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho } from '../clients/services'
 import {
-    countAppointmentsForClient,
     createAppointment,
     endAppointment,
     findAppointmentByIdForParticipant,
@@ -1859,61 +1858,5 @@ describe('GET /api/psycho/appointments/all', () => {
         )
 
         expect(res.status).toBe(403)
-    })
-})
-
-describe('countAppointmentsForClient', () => {
-    it('rolls warning into upcoming', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: futureDate(7),
-            endTime: futureDate(7, 11),
-        })
-        // warning window: start_time past, end_time future, started_at null
-        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
-
-        const counts = await countAppointmentsForClient(client.id)
-
-        expect(counts).toEqual({ upcoming: 1, past: 0, active: 0 })
-    })
-
-    it('rolls missed into past', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: futureDate(7),
-            endTime: futureDate(7, 11),
-        })
-        // missed: both times past, started_at null
-        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
-
-        const counts = await countAppointmentsForClient(client.id)
-
-        expect(counts).toEqual({ upcoming: 0, past: 1, active: 0 })
-    })
-
-    it('counts overrun session as active', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: futureDate(7),
-            endTime: futureDate(7, 11),
-        })
-        // overrun: started_at set, ended_at null, end_time past
-        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
-
-        const counts = await countAppointmentsForClient(client.id)
-
-        expect(counts).toEqual({ upcoming: 0, past: 0, active: 1 })
     })
 })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
@@ -455,5 +456,74 @@ describe('GET /api/client/dashboard', () => {
         expect(body.appointmentCounts.upcoming).toBe(2)
         expect(body.appointmentCounts.past).toBe(1)
         expect(body.appointmentCounts.active).toBe(1)
+    })
+
+    it('appointmentCounts rolls warning into upcoming', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // warning window: start_time past, end_time future, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '10 minutes', end_time = NOW() + INTERVAL '50 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, { headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointmentCounts).toEqual({ upcoming: 1, past: 0, active: 0 })
+    })
+
+    it('appointmentCounts rolls missed into past', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // missed: both times past, started_at null
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, { headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointmentCounts).toEqual({ upcoming: 0, past: 1, active: 0 })
+    })
+
+    it('appointmentCounts counts overrun session as active', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        // overrun: started_at set, ended_at null, end_time past
+        await testDb`UPDATE appointments SET start_time = NOW() - INTERVAL '2 hours', end_time = NOW() - INTERVAL '1 hour', started_at = NOW() - INTERVAL '115 minutes' WHERE id = ${apt.id}`
+
+        const res = await app.request(
+            '/api/client/dashboard',
+            await asUser(client.id, { headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.appointmentCounts).toEqual({ upcoming: 0, past: 0, active: 1 })
     })
 })
