@@ -11,6 +11,21 @@ const STATUS_EXPR = `
     END
 `
 
+const appointmentColumns = (prefix = '') => `
+    ${prefix}id,
+    ${prefix}psycho_id AS "psychoId",
+    ${prefix}client_id AS "clientId",
+    ${prefix}start_time AS "startTime",
+    ${prefix}end_time AS "endTime",
+    ${prefix}started_at AS "startedAt",
+    ${prefix}ended_at AS "endedAt",
+    ${STATUS_EXPR} AS "status",
+    ${prefix}google_meet_link AS "googleMeetLink",
+    ${prefix}google_calendar_event_id AS "googleCalendarEventId",
+    ${prefix}whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+    ${prefix}created_at AS "createdAt"
+`
+
 export const createAppointment = async (params: {
     psychoId: string
     clientId: string
@@ -22,19 +37,7 @@ export const createAppointment = async (params: {
     const [row] = await db`
         INSERT INTO appointments (psycho_id, client_id, start_time, end_time, google_meet_link, google_calendar_event_id)
         VALUES (${params.psychoId}, ${params.clientId}, ${params.startTime}, ${params.endTime}, ${params.googleMeetLink ?? null}, ${params.googleCalendarEventId ?? null})
-        RETURNING
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        RETURNING ${db.unsafe(appointmentColumns())}
     `
     return row as Appointment
 }
@@ -45,19 +48,7 @@ export const findAppointmentById = async (
     clientId: string,
 ): Promise<Appointment | null> => {
     const [row] = await db`
-        SELECT
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        SELECT ${db.unsafe(appointmentColumns())}
         FROM appointments
         WHERE id = ${appointmentId}
           AND psycho_id = ${psychoId}
@@ -83,19 +74,7 @@ export const updateAppointment = async (
             google_meet_link = ${params.googleMeetLink},
             google_calendar_event_id = ${params.googleCalendarEventId}
         WHERE id = ${appointmentId}
-        RETURNING
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        RETURNING ${db.unsafe(appointmentColumns())}
     `
     return row as Appointment
 }
@@ -113,30 +92,9 @@ export const setAppointmentGoogleFields = async (
         SET google_meet_link = ${params.googleMeetLink},
             google_calendar_event_id = ${params.googleCalendarEventId}
         WHERE id = ${appointmentId}
-        RETURNING
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        RETURNING ${db.unsafe(appointmentColumns())}
     `
     return row as Appointment
-}
-
-export const isClientLinkedAndActive = async (
-    clientId: string,
-    psychoId: string,
-): Promise<boolean> => {
-    const [row] =
-        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL`
-    return row !== undefined
 }
 
 export async function startAppointment(appointmentId: string): Promise<Appointment> {
@@ -144,14 +102,7 @@ export async function startAppointment(appointmentId: string): Promise<Appointme
         UPDATE appointments
         SET started_at = NOW()
         WHERE id = ${appointmentId}
-        RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
-                  start_time AS "startTime", end_time AS "endTime",
-                  started_at AS "startedAt", ended_at AS "endedAt",
-                  ${db.unsafe(STATUS_EXPR)} AS "status",
-                  google_meet_link AS "googleMeetLink",
-                  google_calendar_event_id AS "googleCalendarEventId",
-                  whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-                  created_at AS "createdAt"
+        RETURNING ${db.unsafe(appointmentColumns())}
     `
     return row as Appointment
 }
@@ -169,28 +120,14 @@ export async function endAppointmentWithSnapshot(
         SET ended_at = NOW(),
             whiteboard_snapshot_url = ${snapshotDataUrl}
         WHERE id = ${appointmentId}
-        RETURNING id, psycho_id AS "psychoId", client_id AS "clientId",
-                  start_time AS "startTime", end_time AS "endTime",
-                  started_at AS "startedAt", ended_at AS "endedAt",
-                  ${db.unsafe(STATUS_EXPR)} AS "status",
-                  google_meet_link AS "googleMeetLink",
-                  google_calendar_event_id AS "googleCalendarEventId",
-                  whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-                  created_at AS "createdAt"
+        RETURNING ${db.unsafe(appointmentColumns())}
     `
     return row as Appointment
 }
 
 export async function findActiveAppointmentByPsycho(psychoId: string): Promise<Appointment | null> {
     const [row] = await db`
-        SELECT id, psycho_id AS "psychoId", client_id AS "clientId",
-               start_time AS "startTime", end_time AS "endTime",
-               started_at AS "startedAt", ended_at AS "endedAt",
-               ${db.unsafe(STATUS_EXPR)} AS "status",
-               google_meet_link AS "googleMeetLink",
-               google_calendar_event_id AS "googleCalendarEventId",
-               whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-               created_at AS "createdAt"
+        SELECT ${db.unsafe(appointmentColumns())}
         FROM appointments
         WHERE psycho_id = ${psychoId}
           AND started_at IS NOT NULL
@@ -205,14 +142,7 @@ export async function findAppointmentByIdForClient(
     clientId: string,
 ): Promise<AppointmentWithPsycho | null> {
     const [row] = await db`
-        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
-               a.start_time AS "startTime", a.end_time AS "endTime",
-               a.started_at AS "startedAt", a.ended_at AS "endedAt",
-               ${db.unsafe(STATUS_EXPR)} AS "status",
-               a.google_meet_link AS "googleMeetLink",
-               a.google_calendar_event_id AS "googleCalendarEventId",
-               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-               a.created_at AS "createdAt",
+        SELECT ${db.unsafe(appointmentColumns('a.'))},
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -226,19 +156,7 @@ export async function findAppointmentByIdForParticipant(
     userId: string,
 ): Promise<Appointment | null> {
     const [row] = await db`
-        SELECT
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        SELECT ${db.unsafe(appointmentColumns())}
         FROM appointments
         WHERE id = ${appointmentId}
           AND (psycho_id = ${userId} OR client_id = ${userId})
@@ -250,14 +168,7 @@ export async function listAppointmentsForClient(
     clientId: string,
 ): Promise<AppointmentWithPsycho[]> {
     const rows = await db`
-        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
-               a.start_time AS "startTime", a.end_time AS "endTime",
-               a.started_at AS "startedAt", a.ended_at AS "endedAt",
-               ${db.unsafe(STATUS_EXPR)} AS "status",
-               a.google_meet_link AS "googleMeetLink",
-               a.google_calendar_event_id AS "googleCalendarEventId",
-               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-               a.created_at AS "createdAt",
+        SELECT ${db.unsafe(appointmentColumns('a.'))},
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -271,19 +182,7 @@ export async function listAllAppointmentsForPsycho(
     psychoId: string,
 ): Promise<AppointmentWithClient[]> {
     const rows = await db`
-        SELECT
-            a.id,
-            a.psycho_id AS "psychoId",
-            a.client_id AS "clientId",
-            a.start_time AS "startTime",
-            a.end_time AS "endTime",
-            a.started_at AS "startedAt",
-            a.ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            a.google_meet_link AS "googleMeetLink",
-            a.google_calendar_event_id AS "googleCalendarEventId",
-            a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            a.created_at AS "createdAt",
+        SELECT ${db.unsafe(appointmentColumns('a.'))},
             u.name AS "clientName",
             COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'note'), 0)::int AS "notesCount",
             COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'impression'), 0)::int AS "impressionsCount",
@@ -301,14 +200,7 @@ export async function findNextUpcomingAppointmentForClient(
     clientId: string,
 ): Promise<AppointmentWithPsycho | null> {
     const [row] = await db`
-        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
-               a.start_time AS "startTime", a.end_time AS "endTime",
-               a.started_at AS "startedAt", a.ended_at AS "endedAt",
-               ${db.unsafe(STATUS_EXPR)} AS "status",
-               a.google_meet_link AS "googleMeetLink",
-               a.google_calendar_event_id AS "googleCalendarEventId",
-               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-               a.created_at AS "createdAt",
+        SELECT ${db.unsafe(appointmentColumns('a.'))},
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -325,14 +217,7 @@ export async function findActiveAppointmentForClient(
     clientId: string,
 ): Promise<AppointmentWithPsycho | null> {
     const [row] = await db`
-        SELECT a.id, a.psycho_id AS "psychoId", a.client_id AS "clientId",
-               a.start_time AS "startTime", a.end_time AS "endTime",
-               a.started_at AS "startedAt", a.ended_at AS "endedAt",
-               ${db.unsafe(STATUS_EXPR)} AS "status",
-               a.google_meet_link AS "googleMeetLink",
-               a.google_calendar_event_id AS "googleCalendarEventId",
-               a.whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-               a.created_at AS "createdAt",
+        SELECT ${db.unsafe(appointmentColumns('a.'))},
                u.name AS "psychoName"
         FROM appointments a
         JOIN "user" u ON u.id = a.psycho_id
@@ -448,19 +333,7 @@ export const listAppointments = async (
     clientId: string,
 ): Promise<Appointment[]> => {
     const rows = await db`
-        SELECT
-            id,
-            psycho_id AS "psychoId",
-            client_id AS "clientId",
-            start_time AS "startTime",
-            end_time AS "endTime",
-            started_at AS "startedAt",
-            ended_at AS "endedAt",
-            ${db.unsafe(STATUS_EXPR)} AS "status",
-            google_meet_link AS "googleMeetLink",
-            google_calendar_event_id AS "googleCalendarEventId",
-            whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-            created_at AS "createdAt"
+        SELECT ${db.unsafe(appointmentColumns())}
         FROM appointments
         WHERE psycho_id = ${psychoId}
           AND client_id = ${clientId}

@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { findAppointmentById } from '../appointments/services'
-import { listAttachments, findAttachmentById, findImpressionCompletion } from './services'
+import { notFoundResponse } from './route-helpers'
+import { listAttachments, findAndValidateAttachment, findImpressionCompletion } from './services'
 
 export const impressionPsychoRoutes = new Hono()
 
@@ -15,16 +16,12 @@ impressionPsychoRoutes.get('/:attachmentId/completion', async (c) => {
 
     const appointment = await findAppointmentById(appointmentId, user.id, clientId)
     if (!appointment) {
-        return c.json({ error: 'NotFound' }, 404)
+        return notFoundResponse(c)
     }
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'impression'
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'impression')
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     const completion = await findImpressionCompletion(attachmentId)
@@ -38,7 +35,7 @@ impressionPsychoRoutes.get('/', async (c) => {
 
     const appointment = await findAppointmentById(appointmentId, user.id, clientId)
     if (!appointment) {
-        return c.json({ error: 'NotFound' }, 404)
+        return notFoundResponse(c)
     }
 
     const impressions = await listAttachments(appointmentId, 'impression')

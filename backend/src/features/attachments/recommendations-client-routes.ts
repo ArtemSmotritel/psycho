@@ -3,8 +3,9 @@ import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { findAppointmentByIdForClient } from '../appointments/services'
+import { notFoundResponse } from './route-helpers'
 import {
-    findAttachmentById,
+    findAndValidateAttachment,
     findReaction,
     listAttachmentsWithReactions,
     upsertReaction,
@@ -25,7 +26,7 @@ recommendationClientRoutes.get('/', async (c) => {
 
     const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
     if (!appointment) {
-        return c.json({ error: 'NotFound' }, 404)
+        return notFoundResponse(c)
     }
 
     const recommendations = await listAttachmentsWithReactions(appointmentId, 'recommendation')
@@ -43,17 +44,17 @@ recommendationClientRoutes.patch(
         // Step 1 — appointment ownership
         const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
         if (!appointment) {
-            return c.json({ error: 'NotFound' }, 404)
+            return notFoundResponse(c)
         }
 
         // Step 2 — attachment chain
-        const attachment = await findAttachmentById(attachmentId)
-        if (
-            !attachment ||
-            attachment.appointmentId !== appointmentId ||
-            attachment.type !== 'recommendation'
-        ) {
-            return c.json({ error: 'NotFound' }, 404)
+        const attachment = await findAndValidateAttachment(
+            attachmentId,
+            appointmentId,
+            'recommendation',
+        )
+        if (!attachment) {
+            return notFoundResponse(c)
         }
 
         const { done, comment } = c.req.valid('json')

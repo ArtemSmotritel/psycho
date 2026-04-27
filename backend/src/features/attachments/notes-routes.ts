@@ -2,11 +2,12 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
-import { findAppointmentById } from '../appointments/services'
+import { checkAppointmentAccess, notFoundResponse } from './route-helpers'
+import { fileArraySchema } from './schemas'
 import {
     createAttachment,
     deleteAttachment,
-    findAttachmentById,
+    findAndValidateAttachment,
     listAttachmentsByAuthor,
     updateAttachment,
 } from './services'
@@ -14,8 +15,8 @@ import {
 const createNoteSchema = z.object({
     name: z.string().min(1),
     text: z.string().nullable().optional(),
-    imageFileIds: z.array(z.string().min(1)).optional().default([]),
-    audioFileIds: z.array(z.string().min(1)).optional().default([]),
+    imageFileIds: fileArraySchema,
+    audioFileIds: fileArraySchema,
 })
 
 const updateNoteSchema = z.object({
@@ -27,36 +28,6 @@ const updateNoteSchema = z.object({
 export const noteRoutes = new Hono()
 
 noteRoutes.use(authorized, onlyPsychoRequest)
-
-/**
- * Steps 1–2: appointment ownership + status check.
- * Returns 404 if not found / ownership fails.
- * Returns 400 AppointmentNotActive if upcoming.
- */
-async function checkAppointmentAccess(
-    c: any,
-): Promise<{ ok: true; appointment: any } | { ok: false; response: Response }> {
-    const user = c.get('user')
-    const clientId = c.req.param('clientId')
-    const appointmentId = c.req.param('appointmentId')
-
-    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return { ok: false, response: c.json({ error: 'NotFound' }, 404) }
-    }
-
-    if (appointment.status === 'upcoming') {
-        return {
-            ok: false,
-            response: c.json(
-                { error: 'AppointmentNotActive', message: 'Appointment is not active or past.' },
-                400,
-            ),
-        }
-    }
-
-    return { ok: true, appointment }
-}
 
 noteRoutes.get('/', async (c) => {
     const user = c.get('user')
@@ -99,14 +70,9 @@ noteRoutes.get('/:attachmentId', async (c) => {
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'note' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     return c.json({ note: attachment }, 200)
@@ -120,14 +86,9 @@ noteRoutes.patch('/:attachmentId', zValidator('json', updateNoteSchema), async (
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'note' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     const { name, text, removeFileIds } = c.req.valid('json')
@@ -149,14 +110,9 @@ noteRoutes.delete('/:attachmentId', async (c) => {
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'note' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     await deleteAttachment(attachmentId)

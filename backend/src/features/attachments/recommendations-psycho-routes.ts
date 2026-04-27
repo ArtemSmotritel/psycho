@@ -2,13 +2,18 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
-import { findAppointmentById } from '../appointments/services'
+import {
+    checkAppointmentAccess,
+    checkAppointmentOwnership,
+    notFoundResponse,
+} from './route-helpers'
+import { fileArraySchema } from './schemas'
 import {
     createAttachment,
     deleteAttachment,
-    findAttachmentById,
+    findAndValidateAttachment,
     findReaction,
-    listAttachmentsWithReactionsByAuthor,
+    listAttachmentsWithReactions,
     setReply,
     updateAttachment,
 } from './services'
@@ -16,8 +21,8 @@ import {
 const createRecommendationSchema = z.object({
     name: z.string().min(1),
     text: z.string().nullable().optional(),
-    imageFileIds: z.array(z.string().min(1)).optional().default([]),
-    audioFileIds: z.array(z.string().min(1)).optional().default([]),
+    imageFileIds: fileArraySchema,
+    audioFileIds: fileArraySchema,
 })
 
 const updateRecommendationSchema = z.object({
@@ -34,50 +39,6 @@ export const recommendationPsychoRoutes = new Hono()
 
 recommendationPsychoRoutes.use(authorized, onlyPsychoRequest)
 
-/**
- * Step 1: appointment ownership only (no status check for GET /).
- * Returns 404 if not found / ownership fails.
- */
-async function checkAppointmentOwnership(
-    c: any,
-): Promise<{ ok: true; appointment: any } | { ok: false; response: Response }> {
-    const user = c.get('user')
-    const clientId = c.req.param('clientId')
-    const appointmentId = c.req.param('appointmentId')
-
-    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return { ok: false, response: c.json({ error: 'NotFound' }, 404) }
-    }
-
-    return { ok: true, appointment }
-}
-
-/**
- * Steps 1–2: appointment ownership + status check.
- * Returns 404 if not found / ownership fails.
- * Returns 400 AppointmentNotActive if upcoming.
- */
-async function checkAppointmentAccess(
-    c: any,
-): Promise<{ ok: true; appointment: any } | { ok: false; response: Response }> {
-    const ownership = await checkAppointmentOwnership(c)
-    if (!ownership.ok) return ownership
-
-    const { appointment } = ownership
-    if (appointment.status === 'upcoming') {
-        return {
-            ok: false,
-            response: c.json(
-                { error: 'AppointmentNotActive', message: 'Appointment is not active or past.' },
-                400,
-            ),
-        }
-    }
-
-    return { ok: true, appointment }
-}
-
 recommendationPsychoRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
@@ -86,7 +47,7 @@ recommendationPsychoRoutes.get('/', async (c) => {
     const check = await checkAppointmentOwnership(c)
     if (!check.ok) return check.response
 
-    const recommendations = await listAttachmentsWithReactionsByAuthor(
+    const recommendations = await listAttachmentsWithReactions(
         appointmentId,
         'recommendation',
         user.id,
@@ -133,14 +94,14 @@ recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'recommendation' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(
+        attachmentId,
+        appointmentId,
+        'recommendation',
+        user.id,
+    )
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     return c.json({ recommendation: attachment }, 200)
@@ -158,14 +119,14 @@ recommendationPsychoRoutes.patch(
         const check = await checkAppointmentAccess(c)
         if (!check.ok) return check.response
 
-        const attachment = await findAttachmentById(attachmentId)
-        if (
-            !attachment ||
-            attachment.appointmentId !== appointmentId ||
-            attachment.type !== 'recommendation' ||
-            attachment.authorId !== user.id
-        ) {
-            return c.json({ error: 'NotFound' }, 404)
+        const attachment = await findAndValidateAttachment(
+            attachmentId,
+            appointmentId,
+            'recommendation',
+            user.id,
+        )
+        if (!attachment) {
+            return notFoundResponse(c)
         }
 
         const { name, text, removeFileIds } = c.req.valid('json')
@@ -189,14 +150,14 @@ recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
     const check = await checkAppointmentAccess(c)
     if (!check.ok) return check.response
 
-    const attachment = await findAttachmentById(attachmentId)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== 'recommendation' ||
-        attachment.authorId !== user.id
-    ) {
-        return c.json({ error: 'NotFound' }, 404)
+    const attachment = await findAndValidateAttachment(
+        attachmentId,
+        appointmentId,
+        'recommendation',
+        user.id,
+    )
+    if (!attachment) {
+        return notFoundResponse(c)
     }
 
     await deleteAttachment(attachmentId)
@@ -216,14 +177,14 @@ recommendationPsychoRoutes.patch(
         if (!check.ok) return check.response
 
         // Step 2 — attachment chain
-        const attachment = await findAttachmentById(attachmentId)
-        if (
-            !attachment ||
-            attachment.appointmentId !== appointmentId ||
-            attachment.type !== 'recommendation' ||
-            attachment.authorId !== user.id
-        ) {
-            return c.json({ error: 'NotFound' }, 404)
+        const attachment = await findAndValidateAttachment(
+            attachmentId,
+            appointmentId,
+            'recommendation',
+            user.id,
+        )
+        if (!attachment) {
+            return notFoundResponse(c)
         }
 
         const { reply } = c.req.valid('json')

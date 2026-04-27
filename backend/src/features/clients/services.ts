@@ -95,11 +95,6 @@ export const linkClientToPsycho = async (clientId: string, psychoId: string) => 
     return await db`INSERT INTO psychologist_clients (client_id, psycho_id) VALUES (${clientId}, ${psychoId})`
 }
 
-export const createClientForPsycho = async (psychoId: string) => {
-    const res = await db`INSERT INTO clients (user_id) VALUES (${psychoId})`
-    return res
-}
-
 export const findClientByEmail = async (email: string): Promise<Client | null> => {
     const [client] = await db`SELECT c.user_id AS id, u.email, u.name, u.image
           FROM clients c

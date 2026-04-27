@@ -15,12 +15,12 @@ import {
     findActiveAppointmentByPsycho,
     findAppointmentById,
     findOverlappingAppointment,
-    isClientLinkedAndActive,
     listAppointments,
     setAppointmentGoogleFields,
     startAppointment,
     updateAppointment,
 } from './services'
+import { isClientLinkedToPsycho } from '../clients/services'
 import { clearWhiteboardState } from '../whiteboard/services'
 
 const createAppointmentSchema = z.object({
@@ -57,7 +57,7 @@ appointmentRoutes.use(authorized, onlyPsychoRequest).get('/', async (c) => {
     const user = c.get('user')
     const clientId = c.req.param('clientId')
 
-    const linked = await isClientLinkedAndActive(clientId, user.id)
+    const linked = await isClientLinkedToPsycho(clientId, user.id)
     if (!linked) {
         return c.json(
             { error: 'ClientNotLinked', message: 'This client is not in your list.' },
@@ -164,7 +164,7 @@ appointmentRoutes
             return c.json({ error: 'BadRequest', message: 'endTime must be after startTime' }, 400)
         }
 
-        const linked = await isClientLinkedAndActive(clientId, user.id)
+        const linked = await isClientLinkedToPsycho(clientId, user.id)
         if (!linked) {
             return c.json(
                 { error: 'ClientNotLinked', message: 'This client is not in your list.' },

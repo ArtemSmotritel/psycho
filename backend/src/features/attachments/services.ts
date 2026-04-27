@@ -135,6 +135,29 @@ export async function findAttachmentById(id: string): Promise<Attachment | null>
     return (row as Attachment) ?? null
 }
 
+/**
+ * Looks up an attachment by id and verifies it belongs to the given appointment
+ * and is of the expected type. If `authorId` is provided, also verifies the author.
+ * Returns null on any mismatch — callers can collapse all failures to a single 404.
+ */
+export async function findAndValidateAttachment(
+    id: string,
+    appointmentId: string,
+    type: AttachmentType,
+    authorId?: string,
+): Promise<Attachment | null> {
+    const attachment = await findAttachmentById(id)
+    if (
+        !attachment ||
+        attachment.appointmentId !== appointmentId ||
+        attachment.type !== type ||
+        (authorId !== undefined && attachment.authorId !== authorId)
+    ) {
+        return null
+    }
+    return attachment
+}
+
 export async function updateAttachment(
     id: string,
     params: { name?: string | null; text?: string | null; removeFileIds?: string[] },
@@ -253,26 +276,48 @@ export async function setReply(
 export async function listAttachmentsWithReactions(
     appointmentId: string,
     type: AttachmentType,
+    authorId?: string,
 ): Promise<AttachmentWithReaction[]> {
-    const rows = await db`
-        SELECT
-            ${db.unsafe(ATTACHMENT_SELECT)},
-            CASE
-                WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-                    'attachmentId', rr.attachment_id,
-                    'done', rr.done,
-                    'clientComment', rr.client_comment,
-                    'psychologistReply', rr.psychologist_reply,
-                    'updatedAt', rr.updated_at
-                )
-                ELSE NULL
-            END AS reaction
-        FROM attachments a
-        LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-        WHERE a.appointment_id = ${appointmentId}
-          AND a.type = ${type}
-        ORDER BY a.created_at ASC
-    `
+    const rows = authorId
+        ? await db`
+            SELECT
+                ${db.unsafe(ATTACHMENT_SELECT)},
+                CASE
+                    WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                        'attachmentId', rr.attachment_id,
+                        'done', rr.done,
+                        'clientComment', rr.client_comment,
+                        'psychologistReply', rr.psychologist_reply,
+                        'updatedAt', rr.updated_at
+                    )
+                    ELSE NULL
+                END AS reaction
+            FROM attachments a
+            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+            WHERE a.appointment_id = ${appointmentId}
+              AND a.type = ${type}
+              AND a.author_id = ${authorId}
+            ORDER BY a.created_at ASC
+        `
+        : await db`
+            SELECT
+                ${db.unsafe(ATTACHMENT_SELECT)},
+                CASE
+                    WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+                        'attachmentId', rr.attachment_id,
+                        'done', rr.done,
+                        'clientComment', rr.client_comment,
+                        'psychologistReply', rr.psychologist_reply,
+                        'updatedAt', rr.updated_at
+                    )
+                    ELSE NULL
+                END AS reaction
+            FROM attachments a
+            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+            WHERE a.appointment_id = ${appointmentId}
+              AND a.type = ${type}
+            ORDER BY a.created_at ASC
+        `
     return rows as AttachmentWithReaction[]
 }
 
@@ -392,32 +437,4 @@ export async function completeImpression(
             created_at AS "createdAt"
     `
     return row as ImpressionCompletion
-}
-
-export async function listAttachmentsWithReactionsByAuthor(
-    appointmentId: string,
-    type: AttachmentType,
-    authorId: string,
-): Promise<AttachmentWithReaction[]> {
-    const rows = await db`
-        SELECT
-            ${db.unsafe(ATTACHMENT_SELECT)},
-            CASE
-                WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-                    'attachmentId', rr.attachment_id,
-                    'done', rr.done,
-                    'clientComment', rr.client_comment,
-                    'psychologistReply', rr.psychologist_reply,
-                    'updatedAt', rr.updated_at
-                )
-                ELSE NULL
-            END AS reaction
-        FROM attachments a
-        LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-        WHERE a.appointment_id = ${appointmentId}
-          AND a.type = ${type}
-          AND a.author_id = ${authorId}
-        ORDER BY a.created_at ASC
-    `
-    return rows as AttachmentWithReaction[]
 }
