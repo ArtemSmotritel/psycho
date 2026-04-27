@@ -343,26 +343,22 @@ export async function listClientProgressByPsycho(
     clientId: string,
     psychoId: string,
 ): Promise<ProgressSession[]> {
-    // started_at is set only when the session actually began — covers both 'active' and 'past'.
     const appointments = (await db`
         SELECT
             id,
             start_time AS "startTime",
             end_time AS "endTime",
-            CASE
-                WHEN ended_at IS NOT NULL THEN 'past'
-                ELSE 'active'
-            END AS status
+            'past' AS status
         FROM appointments
         WHERE client_id = ${clientId}
           AND psycho_id = ${psychoId}
-          AND started_at IS NOT NULL
+          AND ended_at IS NOT NULL
         ORDER BY start_time ASC
     `) as Array<{
         id: string
         startTime: string
         endTime: string
-        status: 'active' | 'past'
+        status: 'past'
     }>
 
     return Promise.all(

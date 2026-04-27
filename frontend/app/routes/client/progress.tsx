@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { format } from 'date-fns'
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
     Select,
     SelectContent,
@@ -12,114 +8,269 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-} from '@/components/ui/pagination'
 import { PageContainer } from '~/components/PageContainer'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { EmptyMessage } from '~/components/EmptyMessage'
-import { RecommendationCard } from '~/components/RecommendationCard'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { progressService } from '~/services/progress.service'
+import { cn } from '~/lib/utils'
 import type { ClientPsychologist } from '~/models/dashboard'
 import type { ProgressSession } from '~/models/progress'
+import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 
-const ITEMS_PER_PAGE = 3
+const COLUMN_WIDTH = 200
+const RECS_AREA_HEIGHT = 144
+const IMPRESSIONS_AREA_HEIGHT = 144
+const DOT_RADIUS = 6
+const COLLAPSE_DURATION_MS = 300
 
-interface SessionInTimelineProps {
-    session: ProgressSession
-    displayIndex: number
-    isLast: boolean
+function useDelayedUnmount(visible: boolean, durationMs: number): boolean {
+    const [mounted, setMounted] = useState(visible)
+    useEffect(() => {
+        if (visible) {
+            setMounted(true)
+            return
+        }
+        const id = setTimeout(() => setMounted(false), durationMs)
+        return () => clearTimeout(id)
+    }, [visible, durationMs])
+    return mounted
 }
 
-function SessionInTimeline({ session, displayIndex, isLast }: SessionInTimelineProps) {
+function attachmentLabel(a: Attachment | AttachmentWithReaction, fallback: string): string {
+    if (a.name && a.name.trim().length > 0) return a.name
+    if (a.text && a.text.trim().length > 0) {
+        const t = a.text.trim()
+        return t.length > 36 ? t.slice(0, 36) + '…' : t
+    }
+    return fallback
+}
+
+interface AttachmentNodeProps {
+    label: string
+    to: string
+    direction: 'up' | 'down'
+    delayMs: number
+    closing: boolean
+}
+
+function AttachmentNode({ label, to, direction, delayMs, closing }: AttachmentNodeProps) {
+    const enterSlide = direction === 'up' ? 'slide-in-from-bottom-2' : 'slide-in-from-top-2'
+    const exitSlide = direction === 'up' ? 'slide-out-to-bottom-2' : 'slide-out-to-top-2'
     return (
-        <div className="relative">
-            {!isLast && <div className="absolute left-4 top-8 h-full w-0.5 bg-border" />}
+        <Link
+            to={to}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+                'duration-300 max-w-[180px] truncate rounded-full border bg-card px-3 py-1 text-xs hover:bg-accent hover:underline',
+                closing
+                    ? cn('animate-out fade-out-0', exitSlide)
+                    : cn('animate-in fade-in-0', enterSlide),
+            )}
+            style={{
+                animationDelay: `${delayMs}ms`,
+                animationFillMode: closing ? 'forwards' : 'backwards',
+            }}
+            title={label}
+        >
+            {label}
+        </Link>
+    )
+}
 
-            <div className="relative flex gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                    <Calendar className="h-4 w-4 text-primary-foreground" />
-                </div>
+interface SessionColumnProps {
+    session: ProgressSession
+    expanded: boolean
+    onToggle: () => void
+    enterDelayMs: number
+}
 
-                <Card className="flex-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <Link
-                            to={`/client/appointments/${session.id}`}
-                            className="text-sm font-medium hover:underline"
-                        >
-                            Session {displayIndex}
-                        </Link>
-                        <div className="text-sm text-muted-foreground">
-                            {format(new Date(session.startTime), 'PPP HH:mm')}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <h3 className="mb-2 font-medium">Impressions</h3>
-                            {session.impressions.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    No impressions submitted for this session.
-                                </p>
-                            ) : (
-                                <ul className="space-y-1">
-                                    {session.impressions.map((impression) => (
-                                        <li
-                                            key={impression.id}
-                                            className="flex items-start gap-2 text-sm"
-                                        >
-                                            <span className="text-muted-foreground">
-                                                {format(
-                                                    new Date(impression.createdAt),
-                                                    'PPP HH:mm',
-                                                )}
-                                            </span>
-                                            {impression.text && <span>{impression.text}</span>}
-                                        </li>
-                                    ))}
-                                </ul>
+function SessionColumn({ session, expanded, onToggle, enterDelayMs }: SessionColumnProps) {
+    const dateStr = format(new Date(session.startTime), 'MMM d, yyyy')
+    const recs = session.recommendations
+    const imps = session.impressions
+    const mounted = useDelayedUnmount(expanded, COLLAPSE_DURATION_MS)
+    const closing = mounted && !expanded
+
+    return (
+        <div
+            className="animate-in fade-in-0 slide-in-from-bottom-4 flex flex-shrink-0 flex-col items-center px-2 duration-500 snap-center"
+            style={{
+                width: `${COLUMN_WIDTH}px`,
+                animationDelay: `${enterDelayMs}ms`,
+                animationFillMode: 'backwards',
+            }}
+        >
+            {/* recommendations area (above) */}
+            <div
+                className="flex w-full flex-col-reverse items-center justify-start gap-2 overflow-hidden"
+                style={{ height: `${RECS_AREA_HEIGHT}px` }}
+            >
+                {mounted && (
+                    <>
+                        <div
+                            className={cn(
+                                'h-3 w-px bg-border duration-300',
+                                closing ? 'animate-out fade-out-0' : 'animate-in fade-in-0',
                             )}
-                        </div>
+                            style={{ animationFillMode: closing ? 'forwards' : 'backwards' }}
+                        />
+                        {recs.length === 0 ? (
+                            <span
+                                className={cn(
+                                    'text-xs italic text-muted-foreground duration-300',
+                                    closing ? 'animate-out fade-out-0' : 'animate-in fade-in-0',
+                                )}
+                                style={{ animationFillMode: closing ? 'forwards' : 'backwards' }}
+                            >
+                                No recommendations
+                            </span>
+                        ) : (
+                            recs.map((rec, i) => (
+                                <AttachmentNode
+                                    key={rec.id}
+                                    label={attachmentLabel(rec, 'Recommendation')}
+                                    to={`/client/appointments/${session.id}`}
+                                    direction="up"
+                                    delayMs={i * 60}
+                                    closing={closing}
+                                />
+                            ))
+                        )}
+                    </>
+                )}
+            </div>
 
-                        <div>
-                            <h3 className="mb-2 font-medium">Recommendations</h3>
-                            {session.recommendations.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    No recommendations for this session.
-                                </p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {session.recommendations.map((rec) => (
-                                        <RecommendationCard
-                                            key={rec.id}
-                                            recommendation={rec}
-                                            role="client"
-                                        />
-                                    ))}
-                                </div>
+            {/* session node */}
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={expanded}
+                className="group flex flex-col items-center gap-2 focus:outline-none"
+            >
+                <span
+                    className={cn(
+                        'block rounded-full bg-primary ring-4 ring-background transition-transform group-hover:scale-110',
+                        expanded && 'scale-125',
+                    )}
+                    style={{ width: `${DOT_RADIUS * 2}px`, height: `${DOT_RADIUS * 2}px` }}
+                />
+                <Link
+                    to={`/client/appointments/${session.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                        'rounded-md border bg-card px-3 py-2 text-sm font-medium hover:bg-accent hover:underline',
+                        expanded && 'border-primary',
+                    )}
+                >
+                    {dateStr}
+                </Link>
+            </button>
+
+            {/* impressions area (below) */}
+            <div
+                className="flex w-full flex-col items-center justify-start gap-2"
+                style={{ minHeight: `${IMPRESSIONS_AREA_HEIGHT}px` }}
+            >
+                {mounted && (
+                    <>
+                        <div
+                            className={cn(
+                                'h-3 w-px bg-border duration-300',
+                                closing ? 'animate-out fade-out-0' : 'animate-in fade-in-0',
                             )}
-                        </div>
-                    </CardContent>
-                </Card>
+                            style={{ animationFillMode: closing ? 'forwards' : 'backwards' }}
+                        />
+                        {imps.length === 0 ? (
+                            <span
+                                className={cn(
+                                    'text-xs italic text-muted-foreground duration-300',
+                                    closing ? 'animate-out fade-out-0' : 'animate-in fade-in-0',
+                                )}
+                                style={{ animationFillMode: closing ? 'forwards' : 'backwards' }}
+                            >
+                                No impressions
+                            </span>
+                        ) : (
+                            imps.map((imp, i) => (
+                                <AttachmentNode
+                                    key={imp.id}
+                                    label={attachmentLabel(imp, 'Impression')}
+                                    to={`/client/appointments/${session.id}`}
+                                    direction="down"
+                                    delayMs={i * 60}
+                                    closing={closing}
+                                />
+                            ))
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    )
+}
+
+interface TimelineProps {
+    sessions: ProgressSession[]
+}
+
+function Timeline({ sessions }: TimelineProps) {
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+    // Reset expansion when the underlying list changes (e.g., switching psychologists).
+    useEffect(() => {
+        setExpandedIds(new Set())
+    }, [sessions])
+
+    const toggle = (id: string) => {
+        setExpandedIds((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }
+
+    if (sessions.length === 0) {
+        return (
+            <EmptyMessage
+                title="No completed sessions yet"
+                description="Once you complete a session, it will appear here."
+            />
+        )
+    }
+
+    // Center of dot relative to the column = RECS_AREA_HEIGHT + DOT_RADIUS
+    const lineTop = RECS_AREA_HEIGHT + DOT_RADIUS
+
+    return (
+        <div className="overflow-x-auto pb-6">
+            <div className="relative inline-flex snap-x snap-mandatory items-stretch px-4">
+                {/* horizontal timeline line, anchored to dot center */}
+                <div
+                    className="pointer-events-none absolute left-4 right-4 h-0.5 bg-border"
+                    style={{ top: `${lineTop - 1}px` }}
+                />
+                {sessions.map((session, i) => (
+                    <SessionColumn
+                        key={session.id}
+                        session={session}
+                        expanded={expandedIds.has(session.id)}
+                        onToggle={() => toggle(session.id)}
+                        enterDelayMs={i * 70}
+                    />
+                ))}
             </div>
         </div>
     )
 }
 
 export default function ClientProgress() {
-    useRoleGuard(['client'])
-
     const [psychologists, setPsychologists] = useState<ClientPsychologist[]>([])
     const [selectedPsychoId, setSelectedPsychoId] = useState<string | null>(null)
     const [sessions, setSessions] = useState<ProgressSession[]>([])
     const [isLoadingPsychos, setIsLoadingPsychos] = useState(true)
     const [isLoadingSessions, setIsLoadingSessions] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [currentPage, setCurrentPage] = useState(0)
-    const [isAscending, setIsAscending] = useState(true)
 
     useEffect(() => {
         setIsLoadingPsychos(true)
@@ -147,7 +298,6 @@ export default function ClientProgress() {
         }
         setIsLoadingSessions(true)
         setError(null)
-        setCurrentPage(0)
         progressService
             .getProgress(selectedPsychoId)
             .then((res) => {
@@ -160,6 +310,14 @@ export default function ClientProgress() {
                 setIsLoadingSessions(false)
             })
     }, [selectedPsychoId])
+
+    const sortedSessions = useMemo(
+        () =>
+            [...sessions].sort(
+                (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+            ),
+        [sessions],
+    )
 
     if (isLoadingPsychos) {
         return (
@@ -189,22 +347,6 @@ export default function ClientProgress() {
                 />
             </PageContainer>
         )
-    }
-
-    const sortedSessions = [...sessions].sort((a, b) => {
-        const aTime = new Date(a.startTime).getTime()
-        const bTime = new Date(b.startTime).getTime()
-        return isAscending ? aTime - bTime : bTime - aTime
-    })
-
-    const totalPages = Math.max(1, Math.ceil(sortedSessions.length / ITEMS_PER_PAGE))
-    const startIndex = currentPage * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-    const currentSessions = sortedSessions.slice(startIndex, endIndex)
-
-    const handleOrderChange = (checked: boolean) => {
-        setIsAscending(checked)
-        setCurrentPage(0)
     }
 
     return (
@@ -237,85 +379,7 @@ export default function ClientProgress() {
             ) : error ? (
                 <p className="text-destructive">{error}</p>
             ) : (
-                <>
-                    <div className="mb-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="session-order"
-                                checked={isAscending}
-                                onCheckedChange={handleOrderChange}
-                            />
-                            <label
-                                htmlFor="session-order"
-                                className="text-sm text-muted-foreground"
-                            >
-                                {isAscending ? 'Oldest First' : 'Newest First'}
-                            </label>
-                        </div>
-                        {sortedSessions.length > ITEMS_PER_PAGE && (
-                            <Pagination className="justify-end">
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() =>
-                                                setCurrentPage((prev) => Math.max(0, prev - 1))
-                                            }
-                                            disabled={currentPage === 0}
-                                        >
-                                            <ChevronLeft className="h-4 w-4" />
-                                        </Button>
-                                    </PaginationItem>
-                                    <PaginationItem>
-                                        <PaginationLink>
-                                            {currentPage + 1} / {totalPages}
-                                        </PaginationLink>
-                                    </PaginationItem>
-                                    <PaginationItem>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            onClick={() =>
-                                                setCurrentPage((prev) =>
-                                                    Math.min(totalPages - 1, prev + 1),
-                                                )
-                                            }
-                                            disabled={currentPage === totalPages - 1}
-                                        >
-                                            <ChevronRight className="h-4 w-4" />
-                                        </Button>
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        )}
-                    </div>
-
-                    <div className="mt-6 space-y-8">
-                        {currentSessions.map((session, index) => {
-                            const absoluteIndex = startIndex + index
-                            const isLast = absoluteIndex + 1 >= sortedSessions.length
-                            // Session display number follows timeline order (1 = earliest shown first).
-                            const displayIndex = isAscending
-                                ? absoluteIndex + 1
-                                : sortedSessions.length - absoluteIndex
-                            return (
-                                <SessionInTimeline
-                                    key={session.id}
-                                    session={session}
-                                    displayIndex={displayIndex}
-                                    isLast={isLast}
-                                />
-                            )
-                        })}
-                        {sortedSessions.length === 0 && (
-                            <EmptyMessage
-                                title="No sessions yet"
-                                description="Your past sessions with this psychologist will appear here."
-                            />
-                        )}
-                    </div>
-                </>
+                <Timeline sessions={sortedSessions} />
             )}
         </PageContainer>
     )
