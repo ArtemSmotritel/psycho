@@ -20,3 +20,9 @@ export class BadRequestError extends AppError {
         super(400, code, message)
     }
 }
+
+export class ForbiddenError extends AppError {
+    constructor(message = 'Forbidden', code = 'Forbidden') {
+        super(403, code, message)
+    }
+}

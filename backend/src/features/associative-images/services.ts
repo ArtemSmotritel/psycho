@@ -1,4 +1,5 @@
 import { db } from 'config/db'
+import { ForbiddenError, NotFoundError } from 'errors/index'
 import { unlink } from 'node:fs/promises'
 import type { AssociativeImage } from './models'
 
@@ -60,6 +61,13 @@ export async function create(params: {
     name: string
     fileId: string
 }): Promise<AssociativeImage> {
+    const [file] = await db`
+        SELECT 1 FROM files WHERE id = ${params.fileId} AND uploaded_by = ${params.psychologistId}
+    `
+    if (!file) {
+        throw new ForbiddenError('File not found or not owned by you.', 'FileNotOwned')
+    }
+
     const [row] = await db`
         INSERT INTO associative_images (psychologist_id, name, file_id)
         VALUES (${params.psychologistId}, ${params.name}, ${params.fileId})
@@ -72,25 +80,29 @@ export async function updateName(
     id: string,
     psychologistId: string,
     name: string,
-): Promise<AssociativeImage | null> {
+): Promise<AssociativeImage> {
     const [row] = await db`
         UPDATE associative_images
         SET name = ${name}, updated_at = NOW()
         WHERE id = ${id} AND psychologist_id = ${psychologistId}
         RETURNING id
     `
-    if (!row) return null
-    return findById(id)
+    if (!row) {
+        throw new NotFoundError()
+    }
+    return (await findById(id))!
 }
 
-export async function deleteImage(id: string, psychologistId: string): Promise<boolean> {
+export async function deleteImage(id: string, psychologistId: string): Promise<void> {
     const [image] = await db`
         SELECT ai.id, ai.file_id AS "fileId", f.stored_name AS "storedName"
         FROM associative_images ai
         JOIN files f ON f.id = ai.file_id
         WHERE ai.id = ${id} AND ai.psychologist_id = ${psychologistId}
     `
-    if (!image) return false
+    if (!image) {
+        throw new NotFoundError()
+    }
 
     await db.begin(async (tx) => {
         await tx`DELETE FROM associative_images WHERE id = ${id}`
@@ -103,6 +115,4 @@ export async function deleteImage(id: string, psychologistId: string): Promise<b
     } catch {
         // file already gone from disk — not critical
     }
-
-    return true
 }
