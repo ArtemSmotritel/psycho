@@ -1,4 +1,5 @@
 import { db } from 'config/db'
+import { BadRequestError } from 'errors/index'
 import type { Client } from './models'
 
 export const findClientById = async (id: string): Promise<Client | null> => {
@@ -123,6 +124,27 @@ export const findClientPsychoRelationship = async (
 
 export const unlinkClientFromPsycho = async (clientId: string, psychoId: string): Promise<void> => {
     await db`UPDATE psychologist_clients SET disconnected_at = NOW() WHERE client_id = ${clientId} AND psycho_id = ${psychoId} AND disconnected_at IS NULL`
+}
+
+export const linkClientByEmailToPsycho = async (
+    psychoId: string,
+    email: string,
+): Promise<Client> => {
+    const client = await findClientByEmail(email)
+    if (!client) {
+        throw new BadRequestError(
+            'No account found for this email. Ask your client to register first.',
+            'ClientNotFound',
+        )
+    }
+
+    const alreadyLinked = await isClientLinkedToPsycho(client.id, psychoId)
+    if (alreadyLinked) {
+        throw new BadRequestError('This client is already in your list.', 'AlreadyLinked')
+    }
+
+    await linkClientToPsycho(client.id, psychoId)
+    return client
 }
 
 export const findPsychologistsForClient = async (

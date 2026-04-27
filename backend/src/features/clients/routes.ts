@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { NotFoundError } from 'errors/index'
 import {
     authorized,
     onlyClientRequest,
@@ -8,12 +9,10 @@ import {
     onlyPsychoRequest,
 } from '../../middlewares/auth'
 import {
-    findClientByEmail,
     findClientById,
     findClientPsychoRelationship,
     findClients,
-    isClientLinkedToPsycho,
-    linkClientToPsycho,
+    linkClientByEmailToPsycho,
     unlinkClientFromPsycho,
     updateClient,
 } from './services'
@@ -37,7 +36,7 @@ clientSelfRoutes
         const user = c.get('user')
         const client = await findClientById(user.id)
         if (!client) {
-            return c.json({ error: 'NotFound' }, 404)
+            throw new NotFoundError()
         }
         return c.json({ client })
     })
@@ -69,7 +68,7 @@ clientRoutes
     .get(':clientId', onlyLinkedClient, async (c) => {
         const client = await findClientById(c.req.param('clientId'))
         if (!client) {
-            return c.json({ error: 'NotFound' }, 404)
+            throw new NotFoundError()
         }
         return c.json({ client })
     })
@@ -77,27 +76,7 @@ clientRoutes
         const user = c.get('user')
         const { email } = c.req.valid('json')
 
-        const client = await findClientByEmail(email)
-
-        if (!client) {
-            return c.json(
-                {
-                    error: 'ClientNotFound',
-                    message: 'No account found for this email. Ask your client to register first.',
-                },
-                400,
-            )
-        }
-
-        const alreadyLinked = await isClientLinkedToPsycho(client.id, user.id)
-        if (alreadyLinked) {
-            return c.json(
-                { error: 'AlreadyLinked', message: 'This client is already in your list.' },
-                400,
-            )
-        }
-
-        await linkClientToPsycho(client.id, user.id)
+        const client = await linkClientByEmailToPsycho(user.id, email)
 
         return c.json({ client }, 201)
     })
@@ -113,7 +92,7 @@ clientRoutes
         const clientId = c.req.param('clientId')
         const relationship = await findClientPsychoRelationship(clientId, user.id)
         if (!relationship) {
-            return c.json({ error: 'NotFound' }, 404)
+            throw new NotFoundError()
         }
         await unlinkClientFromPsycho(clientId, user.id)
         return c.json({ success: true })

@@ -9,7 +9,7 @@ psychoDashboardRoutes.use(authorized, onlyPsychoRequest)
 psychoDashboardRoutes.get('/', async (c) => {
     const user = c.get('user')
 
-    const dashboard = await getPsychoDashboard(user.id)
+    const dashboard = await getPsychoDashboard(user!.id)
 
     return c.json(dashboard, 200)
 })
