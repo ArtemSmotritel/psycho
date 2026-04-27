@@ -7,7 +7,6 @@ import {
     buildInviteLink,
     createInvitation,
     deleteInvitation,
-    InvitationError,
     listPendingInvitationsByPsychologist,
 } from './services'
 
@@ -36,54 +35,27 @@ invitationRoutes
             const user = c.get('user')
             const { email } = c.req.valid('json')
 
-            try {
-                const invitation = await createInvitation(user.id, email)
-                return c.json(
-                    {
-                        ...invitation,
-                        inviteLink: buildInviteLink(invitation.token),
-                    },
-                    201,
-                )
-            } catch (err) {
-                if (err instanceof InvitationError) {
-                    return c.json({ error: err.code, message: err.message }, 400)
-                }
-                throw err
-            }
+            const invitation = await createInvitation(user.id, email)
+            return c.json(
+                {
+                    ...invitation,
+                    inviteLink: buildInviteLink(invitation.token),
+                },
+                201,
+            )
         },
     )
     .delete('/:id', authorized, onlyPsychoRequest, async (c) => {
         const user = c.get('user')
         const id = c.req.param('id')
 
-        try {
-            await deleteInvitation(user.id, id)
-            return c.body(null, 204)
-        } catch (err) {
-            if (err instanceof InvitationError) {
-                if (err.code === 'NotFound') {
-                    return c.json({ error: err.code, message: err.message }, 404)
-                }
-                return c.json({ error: err.code, message: err.message }, 400)
-            }
-            throw err
-        }
+        await deleteInvitation(user.id, id)
+        return c.body(null, 204)
     })
     .post('/accept', authorized, zValidator('json', acceptInvitationSchema), async (c) => {
         const user = c.get('user')
         const { token } = c.req.valid('json')
 
-        try {
-            const result = await acceptInvitationByToken(token, user.email, user.id)
-            return c.json(result, 200)
-        } catch (err) {
-            if (err instanceof InvitationError) {
-                if (err.code === 'NotFound') {
-                    return c.json({ error: err.code, message: err.message }, 404)
-                }
-                return c.json({ error: err.code, message: err.message }, 400)
-            }
-            throw err
-        }
+        const result = await acceptInvitationByToken(token, user.email, user.id)
+        return c.json(result, 200)
     })

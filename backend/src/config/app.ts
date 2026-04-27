@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
 import { logger } from 'hono/logger'
+import { AppError } from 'errors/index'
 import { auth } from 'utils/auth'
 import { log } from 'utils/logger'
 import { setSession, setUserRole } from '../middlewares/auth'
@@ -48,6 +49,10 @@ app.use(logger())
 app.onError((err, c) => {
     log.error(`[Error] ${c.req.method} ${c.req.url}:`, err)
 
+    if (err instanceof AppError) {
+        return c.json({ error: err.code, message: err.message }, err.status)
+    }
+
     if (err instanceof HTTPException) {
         return err.getResponse()
     }
@@ -81,8 +86,6 @@ app.notFound((c) => {
 app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 app.use('*', setSession)
-
-// Must precede all feature routes — onlyPsychoRequest / onlyClientRequest read c.get('role').
 app.use('*', setUserRole)
 
 app.route('/api/clients', clientSelfRoutes)

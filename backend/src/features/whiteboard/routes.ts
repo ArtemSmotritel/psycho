@@ -104,7 +104,6 @@ whiteboardRoutes.get(
                 } catch {
                     return
                 }
-                log.info('new n', msg)
 
                 const parsed = msg as {
                     type: string

@@ -1,4 +1,5 @@
 import { db } from 'config/db'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import { isClientLinkedToPsycho } from '../clients/services'
 
 export interface Invitation {
@@ -24,7 +25,7 @@ export async function createInvitation(psychologistId: string, email: string): P
     if (existingUser) {
         const alreadyLinked = await isClientLinkedToPsycho(existingUser.id, psychologistId)
         if (alreadyLinked) {
-            throw new InvitationError('AlreadyLinked', 'This person is already your client.')
+            throw new BadRequestError('This person is already your client.', 'AlreadyLinked')
         }
     }
 
@@ -94,11 +95,11 @@ export async function deleteInvitation(
     `
 
     if (!invitation || invitation.psychologistId !== psychologistId) {
-        throw new InvitationError('NotFound', 'Invitation not found.')
+        throw new NotFoundError('Invitation not found.')
     }
 
     if (invitation.status !== 'pending') {
-        throw new InvitationError('InvalidStatus', 'Only pending invitations can be deleted.')
+        throw new BadRequestError('Only pending invitations can be deleted.', 'InvalidStatus')
     }
 
     await db`DELETE FROM invitations WHERE id = ${invitationId}`
@@ -118,25 +119,25 @@ export async function acceptInvitationByToken(
     `
 
     if (!invitation) {
-        throw new InvitationError('NotFound', 'Invitation not found.')
+        throw new NotFoundError('Invitation not found.')
     }
 
     if (invitation.status === 'accepted') {
-        throw new InvitationError('AlreadyAccepted', 'This invitation has already been accepted.')
+        throw new BadRequestError('This invitation has already been accepted.', 'AlreadyAccepted')
     }
 
     if (invitation.invitedEmail.toLowerCase() !== normalizedEmail) {
-        throw new InvitationError(
-            'EmailMismatch',
+        throw new BadRequestError(
             'Please sign in with the email this invitation was sent to.',
+            'EmailMismatch',
         )
     }
 
     const alreadyLinked = await isClientLinkedToPsycho(userId, invitation.psychologistId)
     if (alreadyLinked) {
-        throw new InvitationError(
-            'AlreadyLinked',
+        throw new BadRequestError(
             'You are already connected to this psychologist.',
+            'AlreadyLinked',
         )
     }
 
@@ -164,12 +165,4 @@ export async function acceptInvitationByToken(
     })
 
     return { psychologistId: invitation.psychologistId, clientId: userId }
-}
-
-export class InvitationError extends Error {
-    code: string
-    constructor(code: string, message: string) {
-        super(message)
-        this.code = code
-    }
 }
