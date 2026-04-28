@@ -1,73 +1,44 @@
-import { db } from 'config/db'
-import { NotFoundError } from 'errors/index'
+import type { BunFile } from 'bun'
 import { randomUUID } from 'crypto'
 import { extname } from 'path'
-import type { BunFile } from 'bun'
+import { NotFoundError } from 'errors/index'
+import type { UploadedFile } from './models'
+import { FilesRepo } from './repo'
 
-export interface UploadedFile {
-    id: string
-    url: string
-    originalName: string
-    mimeType: string
-    size: number
-    uploadedAt: string
-}
+const UPLOAD_DIR = './uploads'
 
-export async function uploadFile(userId: string, file: File): Promise<UploadedFile> {
-    const ext = extname(file.name) || ''
-    const storedName = `${randomUUID()}${ext}`
-    const filePath = `./uploads/${storedName}`
+export const FilesService = {
+    async uploadForUser(userId: string, file: File): Promise<UploadedFile> {
+        const ext = extname(file.name) || ''
+        const storedName = `${randomUUID()}${ext}`
 
-    await Bun.write(filePath, await file.arrayBuffer())
+        await Bun.write(`${UPLOAD_DIR}/${storedName}`, await file.arrayBuffer())
 
-    const [row] = await db`
-        INSERT INTO files (original_name, stored_name, mime_type, size, uploaded_by)
-        VALUES (${file.name}, ${storedName}, ${file.type}, ${file.size}, ${userId})
-        RETURNING
-            id,
-            original_name AS "originalName",
-            stored_name AS "storedName",
-            mime_type AS "mimeType",
-            size,
-            uploaded_by AS "uploadedBy",
-            created_at AS "createdAt"
-    `
+        const row = await FilesRepo.insert({
+            originalName: file.name,
+            storedName,
+            mimeType: file.type,
+            size: file.size,
+            uploadedBy: userId,
+        })
 
-    return {
-        id: row.id,
-        url: `/api/files/${storedName}`,
-        originalName: row.originalName,
-        mimeType: row.mimeType,
-        size: row.size,
-        uploadedAt: row.createdAt,
-    }
-}
+        return {
+            id: row.id,
+            url: `/api/files/${row.storedName}`,
+            originalName: row.originalName,
+            mimeType: row.mimeType,
+            size: row.size,
+            uploadedAt: row.createdAt,
+        }
+    },
 
-export async function findAccessibleFile(userId: string, filename: string): Promise<BunFile> {
-    const [allowed] = await db`
-        SELECT 1 FROM files f
-        WHERE f.stored_name = ${filename}
-          AND (
-            f.uploaded_by = ${userId}
-            OR EXISTS (
-              SELECT 1
-              FROM attachment_files af
-              JOIN attachments a ON a.id = af.attachment_id
-              JOIN appointments ap ON ap.id = a.appointment_id
-              WHERE af.file_id = f.id
-                AND (ap.psycho_id = ${userId} OR ap.client_id = ${userId})
-            )
-          )
-    `
+    async findAccessibleForUser(userId: string, storedName: string): Promise<BunFile> {
+        const row = await FilesRepo.findAccessibleByStoredName(storedName, userId)
+        if (!row) throw new NotFoundError()
 
-    if (!allowed) {
-        throw new NotFoundError()
-    }
+        const bunFile = Bun.file(`${UPLOAD_DIR}/${row.storedName}`)
+        if (!(await bunFile.exists())) throw new NotFoundError()
 
-    const bunFile = Bun.file(`./uploads/${filename}`)
-    if (!(await bunFile.exists())) {
-        throw new NotFoundError()
-    }
-
-    return bunFile
-}
+        return bunFile
+    },
+} as const
