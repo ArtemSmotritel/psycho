@@ -1,118 +1,59 @@
 import { db } from 'config/db'
 import { ForbiddenError, NotFoundError } from 'errors/index'
-import { unlink } from 'node:fs/promises'
-import type { AssociativeImage } from './models'
+import { FilesRepo } from '../files/repo'
+import { FilesService } from '../files/services'
+import type { AssociativeImage, AssociativeImagesList } from './models'
+import { AssociativeImagesRepo } from './repo'
 
-export async function listByPsychologist(
-    psychologistId: string,
-    opts?: { search?: string; limit?: number; offset?: number },
-): Promise<{ images: AssociativeImage[]; total: number }> {
-    const search = opts?.search?.trim() ?? ''
-    const limit = opts?.limit ?? 20
-    const offset = opts?.offset ?? 0
+export const AssociativeImagesService = {
+    async listForPsycho(
+        psychoId: string,
+        opts: { search: string; limit: number; offset: number },
+    ): Promise<AssociativeImagesList> {
+        const search = opts.search?.trim()
+        const limit = opts.limit
+        const offset = opts.offset
+        const [images, total] = await Promise.all([
+            AssociativeImagesRepo.listByPsychologist(psychoId, { search, limit, offset }),
+            AssociativeImagesRepo.countByPsychologist(psychoId, search),
+        ])
+        return { images, total }
+    },
 
-    const whereSearch = search ? db`AND ai.name ILIKE ${'%' + search + '%'}` : db``
+    async createForPsycho(params: {
+        psychoId: string
+        name: string
+        fileId: string
+    }): Promise<AssociativeImage> {
+        const file = await FilesRepo.findById(params.fileId)
+        if (!file || file.uploadedBy !== params.psychoId) {
+            throw new ForbiddenError('File not found or not owned by you.', 'FileNotOwned')
+        }
+        return AssociativeImagesRepo.insert({
+            psychologistId: params.psychoId,
+            name: params.name,
+            fileId: params.fileId,
+        })
+    },
 
-    const [{ count }] = await db`
-        SELECT COUNT(*)::int AS count
-        FROM associative_images ai
-        WHERE ai.psychologist_id = ${psychologistId}
-        ${whereSearch}
-    `
+    async renameForPsycho(id: string, psychoId: string, name: string): Promise<AssociativeImage> {
+        const existing = await AssociativeImagesRepo.findByIdForPsycho(id, psychoId)
+        if (!existing) throw new NotFoundError()
+        await AssociativeImagesRepo.updateName(id, name)
+        const updated = await AssociativeImagesRepo.findById(id)
+        return updated as AssociativeImage
+    },
 
-    const rows = await db`
-        SELECT
-            ai.id,
-            ai.psychologist_id AS "psychologistId",
-            ai.name,
-            ai.file_id AS "fileId",
-            '/api/files/' || f.stored_name AS "imageUrl",
-            ai.created_at AS "createdAt",
-            ai.updated_at AS "updatedAt"
-        FROM associative_images ai
-        JOIN files f ON f.id = ai.file_id
-        WHERE ai.psychologist_id = ${psychologistId}
-        ${whereSearch}
-        ORDER BY ai.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-    `
-    return { images: rows as AssociativeImage[], total: count }
-}
-
-export async function findById(id: string): Promise<AssociativeImage | null> {
-    const [row] = await db`
-        SELECT
-            ai.id,
-            ai.psychologist_id AS "psychologistId",
-            ai.name,
-            ai.file_id AS "fileId",
-            '/api/files/' || f.stored_name AS "imageUrl",
-            ai.created_at AS "createdAt",
-            ai.updated_at AS "updatedAt"
-        FROM associative_images ai
-        JOIN files f ON f.id = ai.file_id
-        WHERE ai.id = ${id}
-    `
-    return (row as AssociativeImage) ?? null
-}
-
-export async function create(params: {
-    psychologistId: string
-    name: string
-    fileId: string
-}): Promise<AssociativeImage> {
-    const [file] = await db`
-        SELECT 1 FROM files WHERE id = ${params.fileId} AND uploaded_by = ${params.psychologistId}
-    `
-    if (!file) {
-        throw new ForbiddenError('File not found or not owned by you.', 'FileNotOwned')
-    }
-
-    const [row] = await db`
-        INSERT INTO associative_images (psychologist_id, name, file_id)
-        VALUES (${params.psychologistId}, ${params.name}, ${params.fileId})
-        RETURNING id
-    `
-    return (await findById(row.id))!
-}
-
-export async function updateName(
-    id: string,
-    psychologistId: string,
-    name: string,
-): Promise<AssociativeImage> {
-    const [row] = await db`
-        UPDATE associative_images
-        SET name = ${name}, updated_at = NOW()
-        WHERE id = ${id} AND psychologist_id = ${psychologistId}
-        RETURNING id
-    `
-    if (!row) {
-        throw new NotFoundError()
-    }
-    return (await findById(id))!
-}
-
-export async function deleteImage(id: string, psychologistId: string): Promise<void> {
-    const [image] = await db`
-        SELECT ai.id, ai.file_id AS "fileId", f.stored_name AS "storedName"
-        FROM associative_images ai
-        JOIN files f ON f.id = ai.file_id
-        WHERE ai.id = ${id} AND ai.psychologist_id = ${psychologistId}
-    `
-    if (!image) {
-        throw new NotFoundError()
-    }
-
-    await db.begin(async (tx) => {
-        await tx`DELETE FROM associative_images WHERE id = ${id}`
-        await tx`DELETE FROM files WHERE id = ${image.fileId}`
-    })
-
-    const filePath = `./uploads/${image.storedName}`
-    try {
-        ;(await Bun.file(filePath).exists()) && (await unlink(filePath))
-    } catch {
-        // file already gone from disk — not critical
-    }
-}
+    async deleteForPsycho(id: string, psychoId: string): Promise<void> {
+        const image = await AssociativeImagesRepo.findByIdForPsycho(id, psychoId)
+        if (!image) throw new NotFoundError()
+        const file = await FilesRepo.findById(image.fileId)
+        await db.begin(async (tx) => {
+            await AssociativeImagesRepo.deleteById(id, tx)
+            await FilesService.deleteById(image.fileId, tx)
+        })
+        if (file) {
+            await FilesService.removeFromDisk(file.storedName)
+        }
+    },
+} as const

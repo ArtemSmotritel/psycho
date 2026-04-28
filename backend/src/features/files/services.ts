@@ -1,5 +1,6 @@
-import type { BunFile } from 'bun'
+import type { BunFile, SQL } from 'bun'
 import { randomUUID } from 'crypto'
+import { unlink } from 'node:fs/promises'
 import { extname } from 'path'
 import { NotFoundError } from 'errors/index'
 import type { UploadedFile } from './models'
@@ -40,5 +41,20 @@ export const FilesService = {
         if (!(await bunFile.exists())) throw new NotFoundError()
 
         return bunFile
+    },
+
+    async deleteById(id: string, executor?: SQL): Promise<void> {
+        await FilesRepo.deleteById(id, executor)
+    },
+
+    async removeFromDisk(storedName: string): Promise<void> {
+        const filePath = `${UPLOAD_DIR}/${storedName}`
+        try {
+            if (await Bun.file(filePath).exists()) {
+                await unlink(filePath)
+            }
+        } catch {
+            // file already gone — not critical
+        }
     },
 } as const

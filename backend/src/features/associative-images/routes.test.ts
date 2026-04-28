@@ -3,7 +3,7 @@ import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { testDb } from '../../test-fixtures/db'
-import { create } from './services'
+import { AssociativeImagesService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -12,7 +12,11 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 async function createImage(psychoId: string, name: string = 'Test Image') {
     const file = await insertTestFile(psychoId)
-    return create({ psychologistId: psychoId, name, fileId: file.id })
+    return AssociativeImagesService.createForPsycho({
+        psychoId,
+        name,
+        fileId: file.id,
+    })
 }
 
 // ─── GET / ──────────────────────────────────────────────────────────────────
@@ -286,7 +290,7 @@ describe('PATCH /api/associative-images/:id', () => {
 // ─── DELETE /:id ────────────────────────────────────────────────────────────
 
 describe('DELETE /api/associative-images/:id', () => {
-    it('returns 200 on successful deletion', async () => {
+    it('returns 204 on successful deletion', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const image = await createImage(psycho.id)
 
@@ -298,9 +302,7 @@ describe('DELETE /api/associative-images/:id', () => {
             }),
         )
 
-        expect(res.status).toBe(200)
-        const body = await res.json()
-        expect(body).toHaveProperty('success', true)
+        expect(res.status).toBe(204)
     })
 
     it('deleted image no longer appears in GET list', async () => {

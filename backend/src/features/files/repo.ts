@@ -1,3 +1,4 @@
+import type { SQL } from 'bun'
 import { db } from 'config/db'
 import type { FileEntity } from './models'
 
@@ -23,6 +24,19 @@ export const FilesRepo = {
             RETURNING ${db.unsafe(columns)}
         `
         return row as FileEntity
+    },
+
+    async findById(id: string): Promise<FileEntity | null> {
+        const [row] = await db`
+            SELECT ${db.unsafe(columns)}
+            FROM files
+            WHERE id = ${id}
+        `
+        return (row as FileEntity) ?? null
+    },
+
+    async deleteById(id: string, executor: SQL = db): Promise<void> {
+        await executor`DELETE FROM files WHERE id = ${id}`
     },
 
     async findAccessibleByStoredName(

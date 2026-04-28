@@ -7,3 +7,8 @@ export interface AssociativeImage {
     createdAt: string
     updatedAt: string
 }
+
+export interface AssociativeImagesList {
+    images: AssociativeImage[]
+    total: number
+}
