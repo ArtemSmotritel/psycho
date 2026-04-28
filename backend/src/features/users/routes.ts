@@ -16,8 +16,7 @@ const toApiShape = (user: User) => ({
     active_role: user.activeRole,
 })
 
-export const userRoutes = new Hono()
-userRoutes.use(authorized)
+export const userRoutes = new Hono().use(authorized)
 
 userRoutes.get('/me', async (c) => {
     const user = c.get('user')

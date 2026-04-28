@@ -2,13 +2,7 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import {
-    acceptInvitationByToken,
-    buildInviteLink,
-    createInvitation,
-    deleteInvitation,
-    listPendingInvitationsByPsychologist,
-} from './services'
+import { InvitationsService } from './services'
 
 const createInvitationSchema = z.object({
     email: z.email(),
@@ -18,44 +12,36 @@ const acceptInvitationSchema = z.object({
     token: z.string().min(1),
 })
 
-export const invitationRoutes = new Hono()
+export const invitationRoutes = new Hono().use(authorized)
 
-invitationRoutes
-    .get('/', authorized, onlyPsychoRequest, async (c) => {
+invitationRoutes.get('/', onlyPsychoRequest, async (c) => {
+    const user = c.get('user')
+    const invitations = await InvitationsService.listPendingForPsycho(user.id)
+    return c.json({ invitations }, 200)
+})
+
+invitationRoutes.post(
+    '/',
+    onlyPsychoRequest,
+    zValidator('json', createInvitationSchema),
+    async (c) => {
         const user = c.get('user')
-        const invitations = await listPendingInvitationsByPsychologist(user.id)
-        return c.json({ invitations }, 200)
-    })
-    .post(
-        '/',
-        authorized,
-        onlyPsychoRequest,
-        zValidator('json', createInvitationSchema),
-        async (c) => {
-            const user = c.get('user')
-            const { email } = c.req.valid('json')
+        const { email } = c.req.valid('json')
+        const invitation = await InvitationsService.createForPsycho(user.id, email)
+        return c.json(invitation, 201)
+    },
+)
 
-            const invitation = await createInvitation(user.id, email)
-            return c.json(
-                {
-                    ...invitation,
-                    inviteLink: buildInviteLink(invitation.token),
-                },
-                201,
-            )
-        },
-    )
-    .delete('/:id', authorized, onlyPsychoRequest, async (c) => {
-        const user = c.get('user')
-        const id = c.req.param('id')
+invitationRoutes.delete('/:id', onlyPsychoRequest, async (c) => {
+    const user = c.get('user')
+    const id = c.req.param('id')
+    await InvitationsService.deleteForPsycho(user.id, id)
+    return c.body(null, 204)
+})
 
-        await deleteInvitation(user.id, id)
-        return c.body(null, 204)
-    })
-    .post('/accept', authorized, zValidator('json', acceptInvitationSchema), async (c) => {
-        const user = c.get('user')
-        const { token } = c.req.valid('json')
-
-        const result = await acceptInvitationByToken(token, user.email, user.id)
-        return c.json(result, 200)
-    })
+invitationRoutes.post('/accept', zValidator('json', acceptInvitationSchema), async (c) => {
+    const user = c.get('user')
+    const { token } = c.req.valid('json')
+    const result = await InvitationsService.acceptByToken(token, user.email, user.id)
+    return c.json(result, 200)
+})

@@ -13,7 +13,7 @@ import { UsersService } from '../src/features/users/services'
 import { linkClientToPsycho } from '../src/features/clients/services'
 import { createAppointment } from '../src/features/appointments/services'
 import { createAttachment, upsertReaction, setReply } from '../src/features/attachments/services'
-import { createInvitation } from '../src/features/invitations/services'
+import { InvitationsService } from '../src/features/invitations/services'
 import { join, extname } from 'node:path'
 
 // ─── Static image list (pre-copied to backend/uploads/) ────────────────────
@@ -297,10 +297,10 @@ async function seed() {
 
     // Step 6: invitations (4 pending)
     console.log('Inserting invitations...')
-    await createInvitation(psychos[0]!.id, 'invitee1@seed.local')
-    await createInvitation(psychos[0]!.id, 'invitee2@seed.local')
-    await createInvitation(psychos[1]!.id, 'invitee3@seed.local')
-    await createInvitation(psychos[1]!.id, 'invitee4@seed.local')
+    await InvitationsService.createForPsycho(psychos[0]!.id, 'invitee1@seed.local')
+    await InvitationsService.createForPsycho(psychos[0]!.id, 'invitee2@seed.local')
+    await InvitationsService.createForPsycho(psychos[1]!.id, 'invitee3@seed.local')
+    await InvitationsService.createForPsycho(psychos[1]!.id, 'invitee4@seed.local')
 
     // Step 7: appointments — 36 total across all statuses
     // Psycho1 takes 22, psycho2 takes 14

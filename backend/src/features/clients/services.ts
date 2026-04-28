@@ -1,3 +1,4 @@
+import type { SQL } from 'bun'
 import { db } from 'config/db'
 import { BadRequestError } from 'errors/index'
 import type { Client } from './models'
@@ -94,6 +95,18 @@ export const createUserClient = async (userId: string) => {
 
 export const linkClientToPsycho = async (clientId: string, psychoId: string) => {
     return await db`INSERT INTO psychologist_clients (client_id, psycho_id) VALUES (${clientId}, ${psychoId})`
+}
+
+export const linkOrReactivateClient = async (
+    clientId: string,
+    psychoId: string,
+    executor: SQL = db,
+): Promise<void> => {
+    await executor`
+        INSERT INTO psychologist_clients (client_id, psycho_id, disconnected_at)
+        VALUES (${clientId}, ${psychoId}, NULL)
+        ON CONFLICT (client_id, psycho_id) DO UPDATE SET disconnected_at = NULL
+    `
 }
 
 export const findClientByEmail = async (email: string): Promise<Client | null> => {

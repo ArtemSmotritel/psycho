@@ -9,6 +9,11 @@ export const UsersRepo = {
         return (row as User) ?? null
     },
 
+    async findIdByEmail(normalizedEmail: string): Promise<string | null> {
+        const [row] = await db`SELECT id FROM "user" WHERE LOWER(email) = ${normalizedEmail}`
+        return row?.id ?? null
+    },
+
     async updateActiveRole(id: string, role: 'psycho' | 'client'): Promise<User | null> {
         const [row] = await db`
             UPDATE "user"

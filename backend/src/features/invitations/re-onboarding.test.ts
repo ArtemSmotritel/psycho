@@ -3,7 +3,10 @@ import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
-import { createInvitation } from './services'
+import { InvitationsService } from './services'
+
+const createInvitation = (psychoId: string, email: string) =>
+    InvitationsService.createForPsycho(psychoId, email)
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
