@@ -2,7 +2,7 @@ import { db } from 'config/db'
 import type { AppointmentWithClient, AppointmentWithPsycho } from '../appointments/models'
 import type { Client } from '../clients/models'
 import type { AttachmentWithReaction } from '../attachments/models'
-import { findPsychologistsForClient } from '../clients/services'
+import { ClientsRepo } from '../clients/repo'
 import { APPOINTMENT_STATUS_EXPR, appointmentColumns } from '../appointments/services'
 import { ATTACHMENT_SELECT } from '../attachments/services'
 
@@ -121,7 +121,7 @@ export async function getPsychoDashboard(psychoId: string): Promise<PsychoDashbo
 export async function getClientDashboard(clientId: string) {
     const [psychologists, activeRow, nextRow, pendingRecommendationRows, countRows] =
         await Promise.all([
-            findPsychologistsForClient(clientId),
+            ClientsRepo.listPsychologistsForClient(clientId),
             db`
                 SELECT ${db.unsafe(appointmentColumns('a.'))},
                        u.name AS "psychoName"

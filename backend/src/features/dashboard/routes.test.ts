@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
@@ -57,7 +57,7 @@ describe('GET /api/psycho/dashboard', () => {
     it('happy path: returns correct shape when psychologist has clients, upcoming, past, and active appointments', async () => {
         const psycho = await insertTestUser({ email: 'psycho-happy@test.com' })
         const client = await insertTestUser({ email: 'client-happy@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         // Past appointment
         const past = await createAppointment({
@@ -108,7 +108,7 @@ describe('GET /api/psycho/dashboard', () => {
     it('activeAppointment is null when no appointment has been started but not ended', async () => {
         const psycho = await insertTestUser({ email: 'psycho-noactive@test.com' })
         const client = await insertTestUser({ email: 'client-noactive@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         await createAppointment({
             psychoId: psycho.id,
@@ -132,7 +132,7 @@ describe('GET /api/psycho/dashboard', () => {
     it('activeAppointment is populated with clientName when exactly one appointment is active', async () => {
         const psycho = await insertTestUser({ email: 'psycho-active@test.com' })
         const client = await insertTestUser({ email: 'client-active@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const active = await createAppointment({
             psychoId: psycho.id,
@@ -160,7 +160,7 @@ describe('GET /api/psycho/dashboard', () => {
     it('upcomingAppointments is limited to 5 and ordered ascending by start_time', async () => {
         const psycho = await insertTestUser({ email: 'psycho-limit@test.com' })
         const client = await insertTestUser({ email: 'client-limit@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const startTimes = [
             futureDate(60),
@@ -204,7 +204,7 @@ describe('GET /api/psycho/dashboard', () => {
 
         for (let i = 1; i <= 6; i++) {
             const client = await insertTestUser({ email: `recent-client-${i}@test.com` })
-            await linkClientToPsycho(client.id, psycho.id)
+            await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
             const apt = await createAppointment({
                 psychoId: psycho.id,

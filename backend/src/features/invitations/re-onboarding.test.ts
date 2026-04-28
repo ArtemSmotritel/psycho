@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
-import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { InvitationsService } from './services'
 
 const createInvitation = (psychoId: string, email: string) =>
@@ -20,8 +20,8 @@ describe('Client re-onboarding after disconnect', () => {
     it('psychologist can create invitation for a disconnected client', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/invitations',
@@ -40,8 +40,8 @@ describe('Client re-onboarding after disconnect', () => {
     it('disconnected client can accept a new invitation and re-link', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
@@ -69,8 +69,8 @@ describe('Client re-onboarding after disconnect', () => {
     it('re-linked client appears in psychologist client list', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const invitation = await createInvitation(psycho.id, 'client@test.com')
         await app.request(
@@ -96,7 +96,7 @@ describe('Client re-onboarding after disconnect', () => {
     it('old appointments become visible again after re-linking', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         // Create an appointment before disconnecting
         const apt = await createAppointment({
@@ -106,7 +106,7 @@ describe('Client re-onboarding after disconnect', () => {
             endTime: futureDate(7, 11),
         })
 
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         // Verify appointment is hidden while disconnected
         const hiddenRes = await app.request(
@@ -144,8 +144,8 @@ describe('Disconnected client data is hidden from psychologist', () => {
     it('disconnected client does not appear in GET /api/clients', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/clients',
@@ -160,8 +160,8 @@ describe('Disconnected client data is hidden from psychologist', () => {
     it('psychologist cannot access disconnected client profile via GET /api/clients/:clientId', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -174,14 +174,14 @@ describe('Disconnected client data is hidden from psychologist', () => {
     it('psychologist cannot list appointments for a disconnected client', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
             startTime: futureDate(7),
             endTime: futureDate(7, 11),
         })
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments`,
@@ -197,8 +197,8 @@ describe('Disconnected client data is hidden from psychologist', () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client1 = await insertTestUser({ email: 'client1@test.com' })
         const client2 = await insertTestUser({ email: 'client2@test.com' })
-        await linkClientToPsycho(client1.id, psycho.id)
-        await linkClientToPsycho(client2.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
         await createAppointment({
             psychoId: psycho.id,
@@ -214,7 +214,7 @@ describe('Disconnected client data is hidden from psychologist', () => {
         })
 
         // Disconnect client1
-        await unlinkClientFromPsycho(client1.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client1.id, psycho.id)
 
         const res = await app.request(
             '/api/psycho/appointments/all',
@@ -230,8 +230,8 @@ describe('Disconnected client data is hidden from psychologist', () => {
     it('psychologist cannot update a disconnected client profile', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,

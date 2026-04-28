@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment, upsertReaction } from './services'
 
@@ -18,8 +18,8 @@ describe('GET /api/client/progress/psychologists', () => {
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
         const unlinkedPsycho = await insertTestUser({ email: 'unlinked@test.com' })
 
-        await linkClientToPsycho(client.id, psycho1.id)
-        await linkClientToPsycho(client.id, psycho2.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho1.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
         // unlinkedPsycho intentionally not linked
 
         const res = await app.request(
@@ -85,7 +85,7 @@ describe('GET /api/client/progress/:psychoId', () => {
     it('happy path — returns sessions with impressions and recommendations ordered by startTime ASC', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const apt1 = await createAppointment({
             psychoId: psycho.id,
@@ -167,7 +167,7 @@ describe('GET /api/client/progress/:psychoId', () => {
     it('excludes upcoming appointments', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         // past (active → past)
         const pastApt = await createAppointment({
@@ -223,8 +223,8 @@ describe('GET /api/client/progress/:psychoId', () => {
         const client1 = await insertTestUser({ email: 'client1@test.com' })
         const client2 = await insertTestUser({ email: 'client2@test.com' })
 
-        await linkClientToPsycho(client1.id, psycho.id)
-        await linkClientToPsycho(client2.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
         const apt1 = await createAppointment({
             psychoId: psycho.id,

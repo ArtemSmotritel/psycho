@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
 
@@ -13,7 +13,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
     it('returns 200 with attachment for a note belonging to this psycho', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -49,7 +49,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
     it('returns 200 with attachment for a recommendation belonging to this psycho', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -85,7 +85,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
     it('returns 200 with attachment for an impression authored by the client', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -122,7 +122,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
     it('returns 404 when attachmentId does not exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -146,7 +146,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
     it('returns 404 when attachment belongs to a different appointment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const aptA = await createAppointment({
             psychoId: psycho.id,
@@ -189,7 +189,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho2.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
 
         const apt = await createAppointment({
             psychoId: psycho2.id,

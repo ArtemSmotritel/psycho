@@ -10,11 +10,11 @@ import { db } from 'config/db'
 import { ALL_APP_TABLES } from '../src/test-fixtures/db'
 import { insertTestUser } from '../src/test-fixtures/users'
 import { UsersService } from '../src/features/users/services'
-import { linkClientToPsycho } from '../src/features/clients/services'
 import { createAppointment } from '../src/features/appointments/services'
 import { createAttachment, upsertReaction, setReply } from '../src/features/attachments/services'
 import { InvitationsService } from '../src/features/invitations/services'
 import { join, extname } from 'node:path'
+import { ClientsService } from '../src/features/clients/services'
 
 // ─── Static image list (pre-copied to backend/uploads/) ────────────────────
 const SEED_IMAGES = [
@@ -242,18 +242,20 @@ async function seed() {
     // Step 3: link clients ↔ psychologists
     //  psycho1 ↔ clients 1-7, psycho2 ↔ clients 6-10 (6,7 overlap)
     console.log('Linking clients to psychologists...')
-    for (let i = 0; i <= 6; i++) await linkClientToPsycho(clients[i]!.id, psychos[0]!.id)
-    for (let i = 5; i <= 9; i++) await linkClientToPsycho(clients[i]!.id, psychos[1]!.id)
+    for (let i = 0; i <= 6; i++)
+        await ClientsService.linkClientToPsycho(clients[i]!.id, psychos[0]!.id)
+    for (let i = 5; i <= 9; i++)
+        await ClientsService.linkClientToPsycho(clients[i]!.id, psychos[1]!.id)
 
     // Two disconnected links (retain history):
     //  client8 → psycho1 disconnected, client9 → psycho2 disconnected
-    await linkClientToPsycho(clients[7]!.id, psychos[0]!.id)
+    await ClientsService.linkClientToPsycho(clients[7]!.id, psychos[0]!.id)
     await db`
         UPDATE psychologist_clients
         SET disconnected_at = NOW() - INTERVAL '30 days'
         WHERE client_id = ${clients[7]!.id} AND psycho_id = ${psychos[0]!.id}
     `
-    await linkClientToPsycho(clients[8]!.id, psychos[1]!.id)
+    await ClientsService.linkClientToPsycho(clients[8]!.id, psychos[1]!.id)
     await db`
         UPDATE psychologist_clients
         SET disconnected_at = NOW() - INTERVAL '14 days'

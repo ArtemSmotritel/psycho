@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { findPsychologistsForClient, isClientLinkedToPsycho } from '../clients/services'
+import { ClientsRepo } from '../clients/repo'
 import { listClientProgressByPsycho } from './services'
 
 export const progressClientRoutes = new Hono()
@@ -9,7 +9,7 @@ progressClientRoutes.use(authorized, onlyClientRequest)
 
 progressClientRoutes.get('/psychologists', async (c) => {
     const user = c.get('user')
-    const psychologists = await findPsychologistsForClient(user.id)
+    const psychologists = await ClientsRepo.listPsychologistsForClient(user.id)
     return c.json({ psychologists }, 200)
 })
 
@@ -17,7 +17,7 @@ progressClientRoutes.get('/:psychoId', async (c) => {
     const user = c.get('user')
     const psychoId = c.req.param('psychoId')
 
-    const linked = await isClientLinkedToPsycho(user.id, psychoId)
+    const linked = await ClientsRepo.isLinkedToPsycho(user.id, psychoId)
     if (!linked) {
         return c.json(
             { error: 'PsychoNotLinked', message: 'This psychologist is not in your list.' },

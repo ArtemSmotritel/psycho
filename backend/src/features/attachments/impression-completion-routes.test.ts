@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
 
@@ -14,7 +14,7 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 async function setupImpressionScenario() {
     const psycho = await insertTestUser({ email: 'psycho@test.com' })
     const client = await insertTestUser({ email: 'client@test.com' })
-    await linkClientToPsycho(client.id, psycho.id)
+    await ClientsService.linkClientToPsycho(client.id, psycho.id)
     const apt = await createAppointment({
         psychoId: psycho.id,
         clientId: client.id,
@@ -160,7 +160,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
     it('returns 404 when attachment type is not impression', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -192,8 +192,8 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client1 = await insertTestUser({ email: 'client1@test.com' })
         const client2 = await insertTestUser({ email: 'client2@test.com' })
-        await linkClientToPsycho(client1.id, psycho.id)
-        await linkClientToPsycho(client2.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client1.id,
@@ -239,11 +239,14 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/client/appointments/some-apt/impressions/some-id/complete', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-            body: JSON.stringify({ response: 'Test' }),
-        })
+        const res = await app.request(
+            '/api/client/appointments/some-apt/impressions/some-id/complete',
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ response: 'Test' }),
+            },
+        )
 
         expect(res.status).toBe(401)
     })
@@ -289,9 +292,12 @@ describe('GET /api/client/appointments/:appointmentId/impressions/:attachmentId/
     })
 
     it('returns 401 unauthenticated', async () => {
-        const res = await app.request('/api/client/appointments/some-apt/impressions/some-id/completion', {
-            headers: CLIENT_HEADER,
-        })
+        const res = await app.request(
+            '/api/client/appointments/some-apt/impressions/some-id/completion',
+            {
+                headers: CLIENT_HEADER,
+            },
+        )
 
         expect(res.status).toBe(401)
     })

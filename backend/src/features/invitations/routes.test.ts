@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { InvitationsService } from './services'
 
 const createInvitation = (psychoId: string, email: string) =>
@@ -87,7 +87,7 @@ describe('POST /api/invitations', () => {
     it('returns 400 with AlreadyLinked when client is already linked', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/invitations',
@@ -467,7 +467,7 @@ describe('POST /api/invitations/accept', () => {
         const client = await insertTestUser({ email: 'client@test.com' })
         // Create invitation first, then link — otherwise createInvitation throws AlreadyLinked
         const invitation = await createInvitation(psycho.id, 'client@test.com')
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/invitations/accept',

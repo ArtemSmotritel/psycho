@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { linkClientToPsycho, unlinkClientFromPsycho } from './services'
+import { ClientsService } from './services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from '../attachments/services'
 
@@ -48,7 +48,7 @@ describe('POST /api/clients', () => {
     it('returns 400 with AlreadyLinked when client is already in the psychologist list', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/clients',
@@ -115,8 +115,8 @@ describe('GET /api/clients', () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client1 = await insertTestUser({ email: 'a@test.com', name: 'Alice' })
         const client2 = await insertTestUser({ email: 'b@test.com', name: 'Bob' })
-        await linkClientToPsycho(client1.id, psycho.id)
-        await linkClientToPsycho(client2.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
         const res = await app.request(
             '/api/clients',
@@ -155,7 +155,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns 200 with client object for known clientId', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com', name: 'Jane Doe' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -207,7 +207,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns correct sessionsCount when appointments exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
             psychoId: psycho.id,
@@ -239,7 +239,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns correct lastAppointment (most recent past appointment)', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
             psychoId: psycho.id,
@@ -272,7 +272,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns correct nextAppointment (earliest upcoming appointment)', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
             psychoId: psycho.id,
@@ -301,7 +301,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns lastAppointment null and nextAppointment null when no appointments exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -317,7 +317,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns correct impressionsCount', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const appt = await createAppointment({
             psychoId: psycho.id,
@@ -345,7 +345,7 @@ describe('GET /api/clients/:clientId', () => {
     it('returns correct recommendationsCount', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const appt = await createAppointment({
             psychoId: psycho.id,
@@ -379,19 +379,17 @@ describe('GET /api/clients/:clientId', () => {
 })
 
 describe('DELETE /api/clients/:clientId', () => {
-    it('returns 200 with { success: true } on happy path', async () => {
+    it('returns 204 on happy path', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
             await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
         )
 
-        expect(res.status).toBe(200)
-        const body = await res.json()
-        expect(body).toHaveProperty('success', true)
+        expect(res.status).toBe(204)
     })
 
     it('returns 404 when relationship does not exist', async () => {
@@ -411,8 +409,8 @@ describe('DELETE /api/clients/:clientId', () => {
     it('returns 404 when relationship is already disconnected', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -443,7 +441,7 @@ describe('PUT /api/clients/:clientId', () => {
     it('returns 200 and updates username, phone, telegram, instagram', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -471,7 +469,7 @@ describe('PUT /api/clients/:clientId', () => {
     it('updates name (in user table)', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com', name: 'Old Name' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -490,7 +488,7 @@ describe('PUT /api/clients/:clientId', () => {
     it('does not update email even if sent in body', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -509,7 +507,7 @@ describe('PUT /api/clients/:clientId', () => {
     it('returns full enriched client object after update', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             `/api/clients/${client.id}`,

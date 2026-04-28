@@ -4,7 +4,7 @@ import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { testDb } from '../../test-fixtures/db'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
@@ -159,7 +159,7 @@ describe('GET /api/files/:filename', () => {
     it('returns 200 to the psycho when the file is linked to their appointment attachment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -195,7 +195,7 @@ describe('GET /api/files/:filename', () => {
     it('returns 200 to the client when the file is linked to their appointment attachment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,

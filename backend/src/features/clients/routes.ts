@@ -1,21 +1,13 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
-import { NotFoundError } from 'errors/index'
 import {
     authorized,
     onlyClientRequest,
     onlyLinkedClient,
     onlyPsychoRequest,
 } from '../../middlewares/auth'
-import {
-    findClientById,
-    findClientPsychoRelationship,
-    findClients,
-    linkClientByEmailToPsycho,
-    unlinkClientFromPsycho,
-    updateClient,
-} from './services'
+import { ClientsService } from './services'
 
 const updateClientSchema = z.object({
     name: z.string().optional(),
@@ -29,71 +21,57 @@ const addClientSchema = z.object({
     email: z.email(),
 })
 
-export const clientSelfRoutes = new Hono()
+export const clientSelfRoutes = new Hono().use('/me', authorized, onlyClientRequest)
 
-clientSelfRoutes
-    .get('/me', authorized, onlyClientRequest, async (c) => {
-        const user = c.get('user')
-        const client = await findClientById(user.id)
-        if (!client) {
-            throw new NotFoundError()
-        }
-        return c.json({ client })
-    })
-    .put(
-        '/me',
-        authorized,
-        onlyClientRequest,
-        zValidator('json', updateClientSchema),
-        async (c) => {
-            const user = c.get('user')
-            const { name, username, phone, telegram, instagram } = c.req.valid('json')
-            await updateClient(user.id, { name, username, phone, telegram, instagram })
-            const client = await findClientById(user.id)
-            return c.json({ client })
-        },
-    )
+clientSelfRoutes.get('/me', async (c) => {
+    const user = c.get('user')
+    const client = await ClientsService.getById(user.id)
+    return c.json({ client }, 200)
+})
 
-export const clientRoutes = new Hono()
+clientSelfRoutes.put('/me', zValidator('json', updateClientSchema), async (c) => {
+    const user = c.get('user')
+    const params = c.req.valid('json')
+    const client = await ClientsService.updateProfile(user.id, params)
+    return c.json({ client }, 200)
+})
 
-clientRoutes
-    .use(authorized, onlyPsychoRequest)
-    .get('/', async (c) => {
-        const user = c.get('user')
+export const clientRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
-        const clients = await findClients({ psychoId: user.id })
+clientRoutes.get('/', async (c) => {
+    const user = c.get('user')
+    const clients = await ClientsService.listForPsycho(user.id)
+    return c.json({ clients }, 200)
+})
 
-        return c.json({ clients })
-    })
-    .get(':clientId', onlyLinkedClient, async (c) => {
-        const client = await findClientById(c.req.param('clientId'))
-        if (!client) {
-            throw new NotFoundError()
-        }
-        return c.json({ client })
-    })
-    .post('/', zValidator('json', addClientSchema), async (c) => {
-        const user = c.get('user')
-        const { email } = c.req.valid('json')
+clientRoutes.get('/:clientId', onlyLinkedClient, async (c) => {
+    const clientId = c.req.param('clientId')
+    const client = await ClientsService.getById(clientId)
+    return c.json({ client }, 200)
+})
 
-        const client = await linkClientByEmailToPsycho(user.id, email)
+clientRoutes.post('/', zValidator('json', addClientSchema), async (c) => {
+    const user = c.get('user')
+    const { email } = c.req.valid('json')
+    const client = await ClientsService.linkByEmailToPsycho(user.id, email)
+    return c.json({ client }, 201)
+})
 
-        return c.json({ client }, 201)
-    })
-    .put('/:clientId', onlyLinkedClient, zValidator('json', updateClientSchema), async (c) => {
+clientRoutes.put(
+    '/:clientId',
+    onlyLinkedClient,
+    zValidator('json', updateClientSchema),
+    async (c) => {
         const clientId = c.req.param('clientId')
-        const { name, username, phone, telegram, instagram } = c.req.valid('json')
-        await updateClient(clientId, { name, username, phone, telegram, instagram })
-        const client = await findClientById(clientId)
-        return c.json({ client })
-    })
-    .delete('/:clientId', async (c) => {
-        const user = c.get('user')
-        const clientId = c.req.param('clientId')
-        const relationship = await findClientPsychoRelationship(clientId, user.id)
-        if (!relationship) {
-            throw new NotFoundError()
-        }
-        await unlinkClientFromPsycho(clientId, user.id)
-        return c.json({ success: true })
-    })
+        const params = c.req.valid('json')
+        const client = await ClientsService.updateProfile(clientId, params)
+        return c.json({ client }, 200)
+    },
+)
+
+clientRoutes.delete('/:clientId', async (c) => {
+    const user = c.get('user')
+    const clientId = c.req.param('clientId')
+    await ClientsService.unlinkForPsycho(clientId, user.id)
+    return c.body(null, 204)
+})

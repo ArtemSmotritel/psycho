@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { testUtils } from 'better-auth/plugins'
 import { DB_URL } from 'config/index'
 import { Pool } from 'pg'
-import { createUserClient } from '../features/clients/services'
+import { ClientsService } from '../features/clients/services'
 import { createPsycho } from '../features/psycho/services'
 import { log } from './logger'
 import { devLoginPlugin } from './dev-login-plugin'
@@ -35,7 +35,7 @@ export const auth = betterAuth({
         user: {
             create: {
                 after: async (user) => {
-                    await createUserClient(user.id)
+                    await ClientsService.createUserClient(user.id)
                     await createPsycho(user.id)
                 },
             },

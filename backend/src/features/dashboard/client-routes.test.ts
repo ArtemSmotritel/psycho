@@ -3,7 +3,7 @@ import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho, unlinkClientFromPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment, upsertReaction } from '../attachments/services'
 
@@ -35,7 +35,7 @@ describe('GET /api/client/dashboard', () => {
     it('happy path: returns nextAppointment, activeAppointment, pendingRecommendations, and appointmentCounts', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const upcoming = await createAppointment({
             psychoId: psycho.id,
@@ -92,7 +92,7 @@ describe('GET /api/client/dashboard', () => {
     it('nextAppointment and activeAppointment are null when client has only past appointments', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const past = await createAppointment({
             psychoId: psycho.id,
@@ -119,7 +119,7 @@ describe('GET /api/client/dashboard', () => {
     it('activeAppointment is returned when client has a started but not ended appointment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Active' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const active = await createAppointment({
             psychoId: psycho.id,
@@ -146,7 +146,7 @@ describe('GET /api/client/dashboard', () => {
     it('separates activeAppointment from nextAppointment when both exist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const active = await createAppointment({
             psychoId: psycho.id,
@@ -179,7 +179,7 @@ describe('GET /api/client/dashboard', () => {
     it('nextAppointment is null when client only has an active appointment', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const active = await createAppointment({
             psychoId: psycho.id,
@@ -205,7 +205,7 @@ describe('GET /api/client/dashboard', () => {
     it('pendingRecommendations contains only recommendations with done=false or no reaction', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const past = await createAppointment({
             psychoId: psycho.id,
@@ -277,8 +277,8 @@ describe('GET /api/client/dashboard', () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client1 = await insertTestUser({ email: 'client1@test.com' })
         const client2 = await insertTestUser({ email: 'client2@test.com' })
-        await linkClientToPsycho(client1.id, psycho.id)
-        await linkClientToPsycho(client2.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
         const apt1 = await createAppointment({
             psychoId: psycho.id,
@@ -331,7 +331,7 @@ describe('GET /api/client/dashboard', () => {
     it('psychologists is returned in the happy path with correct shape', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/client/dashboard',
@@ -355,8 +355,8 @@ describe('GET /api/client/dashboard', () => {
         const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho1.id)
-        await linkClientToPsycho(client.id, psycho2.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho1.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
 
         const res = await app.request(
             '/api/client/dashboard',
@@ -391,8 +391,8 @@ describe('GET /api/client/dashboard', () => {
     it('psychologists excludes disconnected psychologists', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
-        await unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
         const res = await app.request(
             '/api/client/dashboard',
@@ -409,7 +409,7 @@ describe('GET /api/client/dashboard', () => {
     it('appointmentCounts correctly reflects upcoming, active, and past counts', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         // Create upcoming
         await createAppointment({
@@ -461,7 +461,7 @@ describe('GET /api/client/dashboard', () => {
     it('appointmentCounts rolls warning into upcoming', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -484,7 +484,7 @@ describe('GET /api/client/dashboard', () => {
     it('appointmentCounts rolls missed into past', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -507,7 +507,7 @@ describe('GET /api/client/dashboard', () => {
     it('appointmentCounts counts overrun session as active', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,

@@ -1,6 +1,7 @@
 import { db } from 'config/db'
 import { BadRequestError, NotFoundError } from 'errors/index'
-import { isClientLinkedToPsycho, linkOrReactivateClient } from '../clients/services'
+import { ClientsRepo } from '../clients/repo'
+import { ClientsService } from '../clients/services'
 import { UsersRepo } from '../users/repo'
 import type { Invitation } from './models'
 import { InvitationsRepo } from './repo'
@@ -26,7 +27,7 @@ export const InvitationsService = {
 
         const existingUserId = await UsersRepo.findIdByEmail(normalizedEmail)
         if (existingUserId) {
-            const alreadyLinked = await isClientLinkedToPsycho(existingUserId, psychoId)
+            const alreadyLinked = await ClientsRepo.isLinkedToPsycho(existingUserId, psychoId)
             if (alreadyLinked) {
                 throw new BadRequestError('This person is already your client.', 'AlreadyLinked')
             }
@@ -79,7 +80,7 @@ export const InvitationsService = {
             )
         }
 
-        const alreadyLinked = await isClientLinkedToPsycho(userId, invitation.psychologistId)
+        const alreadyLinked = await ClientsRepo.isLinkedToPsycho(userId, invitation.psychologistId)
         if (alreadyLinked) {
             throw new BadRequestError(
                 'You are already connected to this psychologist.',
@@ -89,7 +90,7 @@ export const InvitationsService = {
 
         await db.begin(async (tx) => {
             await InvitationsRepo.markAccepted(invitation.id, tx)
-            await linkOrReactivateClient(userId, invitation.psychologistId, tx)
+            await ClientsService.linkClientToPsycho(userId, invitation.psychologistId, tx)
         })
 
         return { psychologistId: invitation.psychologistId, clientId: userId }

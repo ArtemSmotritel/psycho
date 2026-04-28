@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { linkClientToPsycho } from '../clients/services'
+import { ClientsService } from '../clients/services'
 import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
 import { createAttachment } from './services'
 
@@ -15,7 +15,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     it('happy path — returns all impressions across all appointments, each with appointmentStartTime', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const apt1 = await createAppointment({
             psychoId: psycho.id,
@@ -76,7 +76,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     it('returns 200 with empty array when client has appointments but no impressions', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
-        await linkClientToPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -124,8 +124,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         const client1 = await insertTestUser({ email: 'client1@test.com' })
         const client2 = await insertTestUser({ email: 'client2@test.com' })
 
-        await linkClientToPsycho(client1.id, psycho1.id)
-        await linkClientToPsycho(client2.id, psycho2.id)
+        await ClientsService.linkClientToPsycho(client1.id, psycho1.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho2.id)
 
         const apt1 = await createAppointment({
             psychoId: psycho1.id,
