@@ -9,7 +9,7 @@
 import { db } from 'config/db'
 import { ALL_APP_TABLES } from '../src/test-fixtures/db'
 import { insertTestUser } from '../src/test-fixtures/users'
-import { setActiveRole } from '../src/features/users/service'
+import { UsersService } from '../src/features/users/services'
 import { linkClientToPsycho } from '../src/features/clients/services'
 import { createAppointment } from '../src/features/appointments/services'
 import { createAttachment, upsertReaction, setReply } from '../src/features/attachments/services'
@@ -213,7 +213,7 @@ async function seed() {
         const name = `${PSYCHO_FIRST_NAMES[i]} ${PSYCHO_LAST_NAMES[i]}`
         const email = `psycho${i + 1}@seed.local`
         const u = await insertTestUser({ email, name })
-        await setActiveRole(u.id, 'psycho')
+        await UsersService.setActiveRole(u.id, 'psycho')
         psychos.push({ id: u.id, email, name })
     }
 
@@ -222,7 +222,7 @@ async function seed() {
         const name = CLIENT_NAMES[i]!
         const email = `client${i + 1}@seed.local`
         const u = await insertTestUser({ email, name })
-        await setActiveRole(u.id, 'client')
+        await UsersService.setActiveRole(u.id, 'client')
         clients.push({ id: u.id, email, name })
     }
 

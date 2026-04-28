@@ -2,36 +2,32 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized } from '../../middlewares/auth'
-import { findUserById, setActiveRole } from './service'
+import type { User } from './models'
+import { UsersService } from './services'
 
 const setRoleSchema = z.object({
     role: z.enum(['psycho', 'client']),
 })
 
-export const userRoutes = new Hono()
-
-userRoutes.get('/me', authorized, async (c) => {
-    const user = c.get('user')
-    const fullUser = await findUserById(user.id)
-
-    return c.json({
-        id: (fullUser as any).id,
-        email: (fullUser as any).email,
-        name: (fullUser as any).name,
-        active_role: (fullUser as any).active_role ?? null,
-    })
+const toApiShape = (user: User) => ({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    active_role: user.activeRole,
 })
 
-userRoutes.patch('/me/role', authorized, zValidator('json', setRoleSchema), async (c) => {
+export const userRoutes = new Hono()
+userRoutes.use(authorized)
+
+userRoutes.get('/me', async (c) => {
+    const user = c.get('user')
+    const me = await UsersService.getById(user.id)
+    return c.json(toApiShape(me), 200)
+})
+
+userRoutes.patch('/me/role', zValidator('json', setRoleSchema), async (c) => {
     const user = c.get('user')
     const { role } = c.req.valid('json')
-
-    const updated = await setActiveRole(user.id, role)
-
-    return c.json({
-        id: (updated as any).id,
-        email: (updated as any).email,
-        name: (updated as any).name,
-        active_role: (updated as any).active_role,
-    })
+    const updated = await UsersService.setActiveRole(user.id, role)
+    return c.json(toApiShape(updated), 200)
 })
