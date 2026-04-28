@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { findAppointmentById } from '../appointments/services'
+import { AppointmentsRepo } from '../appointments/repo'
 import { notFoundResponse } from './route-helpers'
 import { listAttachments, findAndValidateAttachment, findImpressionCompletion } from './services'
 
@@ -14,7 +14,7 @@ impressionPsychoRoutes.get('/:attachmentId/completion', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
+    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
     if (!appointment) {
         return notFoundResponse(c)
     }
@@ -33,7 +33,7 @@ impressionPsychoRoutes.get('/', async (c) => {
     const clientId = c.req.param('clientId')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
+    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
     if (!appointment) {
         return notFoundResponse(c)
     }

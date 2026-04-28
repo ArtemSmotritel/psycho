@@ -3,7 +3,7 @@ import type { AppointmentWithClient, AppointmentWithPsycho } from '../appointmen
 import type { Client } from '../clients/models'
 import type { AttachmentWithReaction } from '../attachments/models'
 import { ClientsRepo } from '../clients/repo'
-import { APPOINTMENT_STATUS_EXPR, appointmentColumns } from '../appointments/services'
+import { APPOINTMENT_STATUS_EXPR, appointmentColumns } from '../appointments/repo'
 import { ATTACHMENT_SELECT } from '../attachments/services'
 
 export interface PsychoDashboardData {

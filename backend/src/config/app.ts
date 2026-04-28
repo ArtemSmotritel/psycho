@@ -49,7 +49,7 @@ app.onError((err, c) => {
     log.error(`[Error] ${c.req.method} ${c.req.url}:`, err)
 
     if (err instanceof AppError) {
-        return c.json({ error: err.code, message: err.message }, err.status)
+        return c.json({ error: err.code, message: err.message, ...(err.details ?? {}) }, err.status)
     }
 
     if (err instanceof HTTPException) {

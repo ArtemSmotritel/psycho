@@ -1,281 +1,334 @@
-import { db } from 'config/db'
+import { BadGatewayError, BadRequestError, ConflictError, NotFoundError } from 'errors/index'
+import { log } from 'utils/logger'
+import {
+    deleteGoogleCalendarEvent,
+    generateGoogleMeetLink,
+    rescheduleGoogleCalendarEvent,
+} from 'utils/google-meet'
+import { ClientsRepo } from '../clients/repo'
+import { clearWhiteboardState } from '../whiteboard/services'
 import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from './models'
+import { AppointmentsRepo } from './repo'
 
-export const APPOINTMENT_STATUS_EXPR = `
-    CASE
-        WHEN started_at IS NOT NULL AND ended_at IS NOT NULL THEN 'past'
-        WHEN started_at IS NOT NULL                          THEN 'active'
-        WHEN NOW() < start_time                              THEN 'upcoming'
-        WHEN NOW() <= end_time                               THEN 'warning'
-        ELSE                                                      'missed'
-    END
-`
-
-export const appointmentColumns = (prefix = '') => `
-    ${prefix}id,
-    ${prefix}psycho_id AS "psychoId",
-    ${prefix}client_id AS "clientId",
-    ${prefix}start_time AS "startTime",
-    ${prefix}end_time AS "endTime",
-    ${prefix}started_at AS "startedAt",
-    ${prefix}ended_at AS "endedAt",
-    ${APPOINTMENT_STATUS_EXPR} AS "status",
-    ${prefix}google_meet_link AS "googleMeetLink",
-    ${prefix}google_calendar_event_id AS "googleCalendarEventId",
-    ${prefix}whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
-    ${prefix}created_at AS "createdAt"
-`
-
-export const createAppointment = async (params: {
+export interface CreateAppointmentInput {
     psychoId: string
     clientId: string
     startTime: string
     endTime: string
+    generateGoogleMeet?: boolean
+}
+
+export interface UpdateAppointmentInput {
+    startTime?: string
+    endTime?: string
     googleMeetLink?: string | null
-    googleCalendarEventId?: string | null
-}): Promise<Appointment> => {
-    const [row] = await db`
-        INSERT INTO appointments (psycho_id, client_id, start_time, end_time, google_meet_link, google_calendar_event_id)
-        VALUES (${params.psychoId}, ${params.clientId}, ${params.startTime}, ${params.endTime}, ${params.googleMeetLink ?? null}, ${params.googleCalendarEventId ?? null})
-        RETURNING ${db.unsafe(appointmentColumns())}
-    `
-    return row as Appointment
+    rescheduleGoogleMeet?: boolean
 }
 
-export const findAppointmentById = async (
-    appointmentId: string,
-    psychoId: string,
-    clientId: string,
-): Promise<Appointment | null> => {
-    const [row] = await db`
-        SELECT ${db.unsafe(appointmentColumns())}
-        FROM appointments
-        WHERE id = ${appointmentId}
-          AND psycho_id = ${psychoId}
-          AND client_id = ${clientId}
-    `
-    return (row as Appointment) ?? null
+export interface CreateAppointmentResult {
+    appointment: Appointment
+    meetLinkGenerationFailed: boolean
 }
 
-export const updateAppointment = async (
-    appointmentId: string,
-    params: {
-        startTime: string
-        endTime: string
-        googleMeetLink: string | null
-        googleCalendarEventId: string | null
-    },
-): Promise<Appointment> => {
-    const [row] = await db`
-        UPDATE appointments
-        SET
-            start_time = ${params.startTime},
-            end_time = ${params.endTime},
-            google_meet_link = ${params.googleMeetLink},
-            google_calendar_event_id = ${params.googleCalendarEventId}
-        WHERE id = ${appointmentId}
-        RETURNING ${db.unsafe(appointmentColumns())}
-    `
-    return row as Appointment
+export interface UpdateAppointmentResult {
+    appointment: Appointment
+    meetRescheduleFailed: boolean
 }
 
-export async function deleteAppointment(appointmentId: string): Promise<void> {
-    await db`DELETE FROM appointments WHERE id = ${appointmentId}`
+export interface DeleteAppointmentResult {
+    success: true
+    meetDeleteFailed?: true
 }
 
-export const setAppointmentGoogleFields = async (
-    appointmentId: string,
-    params: { googleMeetLink: string | null; googleCalendarEventId: string | null },
-): Promise<Appointment> => {
-    const [row] = await db`
-        UPDATE appointments
-        SET google_meet_link = ${params.googleMeetLink},
-            google_calendar_event_id = ${params.googleCalendarEventId}
-        WHERE id = ${appointmentId}
-        RETURNING ${db.unsafe(appointmentColumns())}
-    `
-    return row as Appointment
+const ensureEndAfterStart = (startTime: string, endTime: string) => {
+    if (new Date(endTime) <= new Date(startTime)) {
+        throw new BadRequestError('endTime must be after startTime')
+    }
 }
 
-export async function startAppointment(appointmentId: string): Promise<Appointment> {
-    const [row] = await db`
-        UPDATE appointments
-        SET started_at = NOW()
-        WHERE id = ${appointmentId}
-        RETURNING ${db.unsafe(appointmentColumns())}
-    `
-    return row as Appointment
+const ensureLinked = async (psychoId: string, clientId: string) => {
+    const linked = await ClientsRepo.isLinkedToPsycho(clientId, psychoId)
+    if (!linked) {
+        throw new BadRequestError('This client is not in your list.', 'ClientNotLinked')
+    }
 }
 
-export async function endAppointment(appointmentId: string): Promise<Appointment> {
-    return endAppointmentWithSnapshot(appointmentId, null)
-}
-
-export async function endAppointmentWithSnapshot(
-    appointmentId: string,
-    snapshotDataUrl: string | null,
-): Promise<Appointment> {
-    const [row] = await db`
-        UPDATE appointments
-        SET ended_at = NOW(),
-            whiteboard_snapshot_url = ${snapshotDataUrl}
-        WHERE id = ${appointmentId}
-        RETURNING ${db.unsafe(appointmentColumns())}
-    `
-    return row as Appointment
-}
-
-export async function findActiveAppointmentByPsycho(psychoId: string): Promise<Appointment | null> {
-    const [row] = await db`
-        SELECT ${db.unsafe(appointmentColumns())}
-        FROM appointments
-        WHERE psycho_id = ${psychoId}
-          AND started_at IS NOT NULL
-          AND ended_at IS NULL
-        LIMIT 1
-    `
-    return (row as Appointment) ?? null
-}
-
-export async function findAppointmentByIdForClient(
-    appointmentId: string,
-    clientId: string,
-): Promise<AppointmentWithPsycho | null> {
-    const [row] = await db`
-        SELECT ${db.unsafe(appointmentColumns('a.'))},
-               u.name AS "psychoName"
-        FROM appointments a
-        JOIN "user" u ON u.id = a.psycho_id
-        WHERE a.id = ${appointmentId} AND a.client_id = ${clientId}
-    `
-    return (row as AppointmentWithPsycho) ?? null
-}
-
-export async function findAppointmentByIdForParticipant(
-    appointmentId: string,
-    userId: string,
-): Promise<Appointment | null> {
-    const [row] = await db`
-        SELECT ${db.unsafe(appointmentColumns())}
-        FROM appointments
-        WHERE id = ${appointmentId}
-          AND (psycho_id = ${userId} OR client_id = ${userId})
-    `
-    return (row as Appointment) ?? null
-}
-
-export async function listAppointmentsForClient(
-    clientId: string,
-): Promise<AppointmentWithPsycho[]> {
-    const rows = await db`
-        SELECT ${db.unsafe(appointmentColumns('a.'))},
-               u.name AS "psychoName"
-        FROM appointments a
-        JOIN "user" u ON u.id = a.psycho_id
-        WHERE a.client_id = ${clientId}
-        ORDER BY a.start_time DESC
-    `
-    return rows as AppointmentWithPsycho[]
-}
-
-export async function listAllAppointmentsForPsycho(
-    psychoId: string,
-): Promise<AppointmentWithClient[]> {
-    const rows = await db`
-        SELECT ${db.unsafe(appointmentColumns('a.'))},
-            u.name AS "clientName",
-            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'note'), 0)::int AS "notesCount",
-            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'impression'), 0)::int AS "impressionsCount",
-            COALESCE((SELECT COUNT(*) FROM attachments att WHERE att.appointment_id = a.id AND att.type = 'recommendation'), 0)::int AS "recommendationsCount"
-        FROM appointments a
-        JOIN "user" u ON u.id = a.client_id
-        JOIN psychologist_clients pc ON pc.client_id = a.client_id AND pc.psycho_id = a.psycho_id AND pc.disconnected_at IS NULL
-        WHERE a.psycho_id = ${psychoId}
-        ORDER BY a.start_time DESC
-    `
-    return rows as AppointmentWithClient[]
-}
-
-export interface OverlappingAppointment {
-    id: string
-    psychoId: string
-    clientId: string
-    startTime: string
-    endTime: string
-    conflictParticipant: 'psycho' | 'client'
-}
-
-// Application-level overlap check. Guards both users in both roles: the same
-// person can be a psycho in one appointment and a client in another, so any
-// overlap on either side is a conflict. Note: this check is not transactional —
-// two concurrent POSTs can both pass it. A DB-level exclusion constraint
-// (btree_gist) would be needed for guaranteed prevention.
-export const findOverlappingAppointment = async (params: {
+const throwIfOverlapping = async (params: {
     psychoId: string
     clientId: string
     startTime: string
     endTime: string
     excludeAppointmentId?: string
-}): Promise<OverlappingAppointment | null> => {
-    const { psychoId, clientId, startTime, endTime, excludeAppointmentId } = params
-
-    const rows = excludeAppointmentId
-        ? await db`
-            SELECT
-                id,
-                psycho_id AS "psychoId",
-                client_id AS "clientId",
-                start_time AS "startTime",
-                end_time AS "endTime",
-                CASE
-                    WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
-                    ELSE 'client'
-                END AS "conflictParticipant"
-            FROM appointments
-            WHERE (
-                    psycho_id = ${psychoId} OR client_id = ${psychoId}
-                 OR psycho_id = ${clientId} OR client_id = ${clientId}
-                )
-              AND start_time < ${endTime}
-              AND end_time > ${startTime}
-              AND id <> ${excludeAppointmentId}
-            LIMIT 1
-        `
-        : await db`
-            SELECT
-                id,
-                psycho_id AS "psychoId",
-                client_id AS "clientId",
-                start_time AS "startTime",
-                end_time AS "endTime",
-                CASE
-                    WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
-                    ELSE 'client'
-                END AS "conflictParticipant"
-            FROM appointments
-            WHERE (
-                    psycho_id = ${psychoId} OR client_id = ${psychoId}
-                 OR psycho_id = ${clientId} OR client_id = ${clientId}
-                )
-              AND start_time < ${endTime}
-              AND end_time > ${startTime}
-            LIMIT 1
-        `
-
-    const [row] = rows
-    return (row as OverlappingAppointment) ?? null
+}) => {
+    const conflict = await AppointmentsRepo.findOverlapping(params)
+    if (conflict) {
+        throw new ConflictError(
+            'An appointment overlapping this time range already exists.',
+            'AppointmentConflict',
+            {
+                conflictingAppointmentId: conflict.id,
+                conflictParticipant: conflict.conflictParticipant,
+            },
+        )
+    }
 }
 
-export const listAppointments = async (
-    psychoId: string,
-    clientId: string,
-): Promise<Appointment[]> => {
-    const rows = await db`
-        SELECT ${db.unsafe(appointmentColumns())}
-        FROM appointments
-        WHERE psycho_id = ${psychoId}
-          AND client_id = ${clientId}
-        ORDER BY start_time DESC
-    `
-    return rows as Appointment[]
-}
+export const AppointmentsService = {
+    async listForPsycho(psychoId: string, clientId: string): Promise<Appointment[]> {
+        await ensureLinked(psychoId, clientId)
+        return AppointmentsRepo.listForPsychoClient(psychoId, clientId)
+    },
+
+    async listForClient(clientId: string): Promise<AppointmentWithPsycho[]> {
+        return AppointmentsRepo.listForClient(clientId)
+    },
+
+    async listAllForPsycho(psychoId: string): Promise<AppointmentWithClient[]> {
+        return AppointmentsRepo.listAllForPsycho(psychoId)
+    },
+
+    async getActiveForPsycho(psychoId: string): Promise<Appointment | null> {
+        return AppointmentsRepo.findActiveByPsycho(psychoId)
+    },
+
+    async getForPsycho(
+        appointmentId: string,
+        psychoId: string,
+        clientId: string,
+    ): Promise<Appointment> {
+        const appointment = await AppointmentsRepo.findByIdForPsycho(
+            appointmentId,
+            psychoId,
+            clientId,
+        )
+        if (!appointment) throw new NotFoundError()
+        return appointment
+    },
+
+    async getForClient(appointmentId: string, clientId: string): Promise<AppointmentWithPsycho> {
+        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, clientId)
+        if (!appointment) throw new NotFoundError()
+        return appointment
+    },
+
+    async startForPsycho(
+        appointmentId: string,
+        psychoId: string,
+        clientId: string,
+    ): Promise<Appointment> {
+        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
+        if (!existing) throw new NotFoundError()
+
+        if (existing.status !== 'upcoming' && existing.status !== 'warning') {
+            throw new BadRequestError(
+                'Only upcoming or warning appointments can be started.',
+                'AppointmentNotStartable',
+            )
+        }
+
+        const active = await AppointmentsRepo.findActiveByPsycho(psychoId)
+        if (active) {
+            throw new BadRequestError(
+                'End your active appointment before starting a new one.',
+                'AnotherAppointmentActive',
+                { activeAppointmentId: active.id },
+            )
+        }
+
+        return AppointmentsRepo.markStarted(appointmentId)
+    },
+
+    async endForPsycho(
+        appointmentId: string,
+        psychoId: string,
+        clientId: string,
+        snapshotDataUrl: string | null,
+    ): Promise<Appointment> {
+        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
+        if (!existing) throw new NotFoundError()
+
+        if (existing.startedAt === null || existing.endedAt !== null) {
+            throw new BadRequestError(
+                'Only active appointments can be ended.',
+                'AppointmentNotEndable',
+            )
+        }
+
+        const appointment = await AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl)
+
+        // Clearing whiteboard state is best-effort: if it fails, the appointment
+        // is still ended. Log and move on.
+        await clearWhiteboardState(appointmentId).catch((err) => {
+            log.warn('[Appointments] Failed to clear whiteboard state', { appointmentId, err })
+        })
+
+        return appointment
+    },
+
+    async createForPsycho(input: CreateAppointmentInput): Promise<CreateAppointmentResult> {
+        const { psychoId, clientId, startTime, endTime, generateGoogleMeet } = input
+
+        ensureEndAfterStart(startTime, endTime)
+        await ensureLinked(psychoId, clientId)
+        await throwIfOverlapping({ psychoId, clientId, startTime, endTime })
+
+        // Insert the DB row first so the appointment exists even if the
+        // Google call fails. Then call Google and patch the row with the
+        // returned link/eventId. Not transactional on purpose — a 3rd-party
+        // call inside a DB transaction would hold locks across network I/O.
+        let appointment = await AppointmentsRepo.insert({
+            psychoId,
+            clientId,
+            startTime,
+            endTime,
+            googleMeetLink: null,
+            googleCalendarEventId: null,
+        })
+
+        let meetLinkGenerationFailed = false
+        if (generateGoogleMeet === true) {
+            const result = await generateGoogleMeetLink(psychoId, clientId, startTime, endTime)
+            if (result.link === null) {
+                meetLinkGenerationFailed = true
+            } else {
+                try {
+                    appointment = await AppointmentsRepo.updateGoogleFields(appointment.id, {
+                        googleMeetLink: result.link,
+                        googleCalendarEventId: result.eventId,
+                    })
+                } catch (err) {
+                    if (result.eventId) {
+                        await deleteGoogleCalendarEvent(psychoId, result.eventId).catch(
+                            (cleanupErr) =>
+                                log.error(
+                                    '[Appointments] Failed to clean up orphan Calendar event after DB update failure',
+                                    {
+                                        psychoId,
+                                        googleCalendarEventId: result.eventId,
+                                        cleanupErr,
+                                    },
+                                ),
+                        )
+                    }
+                    throw err
+                }
+            }
+        }
+
+        return { appointment, meetLinkGenerationFailed }
+    },
+
+    async updateForPsycho(
+        appointmentId: string,
+        psychoId: string,
+        clientId: string,
+        input: UpdateAppointmentInput,
+    ): Promise<UpdateAppointmentResult> {
+        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
+        if (!existing) throw new NotFoundError()
+
+        if (existing.status !== 'upcoming') {
+            throw new BadRequestError(
+                'Only upcoming appointments can be edited.',
+                'AppointmentNotEditable',
+            )
+        }
+
+        const mergedStart = input.startTime ?? existing.startTime
+        const mergedEnd = input.endTime ?? existing.endTime
+        let mergedLink =
+            input.googleMeetLink !== undefined ? input.googleMeetLink : existing.googleMeetLink
+        let mergedCalendarEventId = existing.googleCalendarEventId
+
+        ensureEndAfterStart(mergedStart, mergedEnd)
+        await throwIfOverlapping({
+            psychoId,
+            clientId: existing.clientId,
+            startTime: mergedStart,
+            endTime: mergedEnd,
+            excludeAppointmentId: appointmentId,
+        })
+
+        let meetRescheduleFailed = false
+        if (input.rescheduleGoogleMeet === true) {
+            if (existing.googleCalendarEventId) {
+                const success = await rescheduleGoogleCalendarEvent(
+                    psychoId,
+                    existing.googleCalendarEventId,
+                    mergedStart,
+                    mergedEnd,
+                )
+                if (!success) {
+                    // Refuse to let DB and Google Calendar diverge: abort the
+                    // update rather than silently shipping the new times only
+                    // to our own DB while the calendar invite retains the old ones.
+                    throw new BadGatewayError(
+                        'Could not update Google Calendar event; appointment time not changed.',
+                        'MeetRescheduleFailed',
+                        { googleCalendarEventId: existing.googleCalendarEventId },
+                    )
+                }
+            } else {
+                const result = await generateGoogleMeetLink(
+                    psychoId,
+                    clientId,
+                    mergedStart,
+                    mergedEnd,
+                )
+                mergedLink = result.link ?? mergedLink
+                mergedCalendarEventId = result.eventId
+                if (result.link === null) {
+                    meetRescheduleFailed = true
+                }
+            }
+        }
+
+        const appointment = await AppointmentsRepo.update(appointmentId, {
+            startTime: mergedStart,
+            endTime: mergedEnd,
+            googleMeetLink: mergedLink,
+            googleCalendarEventId: mergedCalendarEventId,
+        })
+
+        // TODO: EDG-58 — send rescheduled email to client if startTime or endTime changed
+
+        return { appointment, meetRescheduleFailed }
+    },
+
+    async deleteForPsycho(
+        appointmentId: string,
+        psychoId: string,
+        clientId: string,
+    ): Promise<DeleteAppointmentResult> {
+        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
+        if (!existing) throw new NotFoundError()
+
+        if (existing.status !== 'upcoming') {
+            throw new BadRequestError(
+                'Only upcoming appointments can be deleted.',
+                'AppointmentNotDeletable',
+            )
+        }
+
+        let meetDeleteFailed = false
+        if (existing.googleCalendarEventId) {
+            const success = await deleteGoogleCalendarEvent(
+                psychoId,
+                existing.googleCalendarEventId,
+            )
+            if (!success) {
+                meetDeleteFailed = true
+            }
+        }
+
+        await AppointmentsRepo.deleteById(appointmentId)
+
+        // TODO: EDG-57 — send appointment deleted email to client
+
+        const response: DeleteAppointmentResult = { success: true }
+        if (meetDeleteFailed) {
+            response.meetDeleteFailed = true
+        }
+        return response
+    },
+} as const

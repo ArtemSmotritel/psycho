@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { findAppointmentByIdForClient } from '../appointments/services'
+import { AppointmentsRepo } from '../appointments/repo'
 import { notFoundResponse } from './route-helpers'
 import {
     findAndValidateAttachment,
@@ -24,7 +24,7 @@ recommendationClientRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
     if (!appointment) {
         return notFoundResponse(c)
     }
@@ -42,7 +42,7 @@ recommendationClientRoutes.patch(
         const attachmentId = c.req.param('attachmentId')
 
         // Step 1 — appointment ownership
-        const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
         if (!appointment) {
             return notFoundResponse(c)
         }

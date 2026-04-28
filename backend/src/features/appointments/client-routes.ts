@@ -1,22 +1,18 @@
 import { Hono } from 'hono'
-import { NotFoundError } from 'errors/index'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { findAppointmentByIdForClient, listAppointmentsForClient } from './services'
+import { AppointmentsService } from './services'
 
-export const clientAppointmentRoutes = new Hono()
+export const clientAppointmentRoutes = new Hono().use(authorized, onlyClientRequest)
 
-clientAppointmentRoutes.use(authorized, onlyClientRequest).get('/', async (c) => {
+clientAppointmentRoutes.get('/', async (c) => {
     const user = c.get('user')
-    const appointments = await listAppointmentsForClient(user.id)
+    const appointments = await AppointmentsService.listForClient(user.id)
     return c.json({ appointments }, 200)
 })
 
-clientAppointmentRoutes.use(authorized, onlyClientRequest).get('/:appointmentId', async (c) => {
+clientAppointmentRoutes.get('/:appointmentId', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
-    const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
-    if (!appointment) {
-        throw new NotFoundError()
-    }
+    const appointment = await AppointmentsService.getForClient(appointmentId, user.id)
     return c.json({ appointment }, 200)
 })

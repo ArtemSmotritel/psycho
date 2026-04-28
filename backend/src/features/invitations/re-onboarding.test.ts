@@ -7,7 +7,7 @@ import { InvitationsService } from './services'
 
 const createInvitation = (psychoId: string, email: string) =>
     InvitationsService.createForPsycho(psychoId, email)
-import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import { createAppointment } from '../../test-fixtures/appointments'
 import { createAttachment } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
 

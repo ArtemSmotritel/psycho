@@ -3,7 +3,11 @@ import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
-import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import {
+    createAppointment,
+    startAppointment,
+    endAppointment,
+} from '../../test-fixtures/appointments'
 import { createAttachment } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }

@@ -9,7 +9,7 @@ import {
     endAppointment,
     findAppointmentByIdForParticipant,
     startAppointment,
-} from './services'
+} from '../../test-fixtures/appointments'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }

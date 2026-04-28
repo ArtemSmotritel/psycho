@@ -10,7 +10,7 @@ import { db } from 'config/db'
 import { ALL_APP_TABLES } from '../src/test-fixtures/db'
 import { insertTestUser } from '../src/test-fixtures/users'
 import { UsersService } from '../src/features/users/services'
-import { createAppointment } from '../src/features/appointments/services'
+import { AppointmentsRepo } from '../src/features/appointments/repo'
 import { createAttachment, upsertReaction, setReply } from '../src/features/attachments/services'
 import { InvitationsService } from '../src/features/invitations/services'
 import { join, extname } from 'node:path'
@@ -410,13 +410,13 @@ async function seed() {
     // Insert appointments
     const appointments: Array<{ id: string; slot: Slot }> = []
     for (const slot of slots) {
-        const appt = await createAppointment({
+        const appt = await AppointmentsRepo.insert({
             psychoId: psychos[slot.psychoIdx]!.id,
             clientId: clients[slot.clientIdx]!.id,
             startTime: slot.startTime,
             endTime: slot.endTime,
         })
-        // Backfill started_at / ended_at that createAppointment doesn't set
+        // Backfill started_at / ended_at that AppointmentsRepo.insert doesn't set
         if (slot.startedAt) {
             await db`UPDATE appointments SET started_at = ${slot.startedAt.toISOString()} WHERE id = ${appt.id}`
         }

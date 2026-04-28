@@ -1,17 +1,17 @@
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { findActiveAppointmentByPsycho, listAllAppointmentsForPsycho } from './services'
+import { AppointmentsService } from './services'
 
-export const psychoAppointmentRoutes = new Hono()
+export const psychoAppointmentRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
-psychoAppointmentRoutes.use(authorized, onlyPsychoRequest).get('/all', async (c) => {
+psychoAppointmentRoutes.get('/all', async (c) => {
     const user = c.get('user')
-    const appointments = await listAllAppointmentsForPsycho(user.id)
+    const appointments = await AppointmentsService.listAllForPsycho(user.id)
     return c.json({ appointments }, 200)
 })
 
-psychoAppointmentRoutes.use(authorized, onlyPsychoRequest).get('/', async (c) => {
+psychoAppointmentRoutes.get('/', async (c) => {
     const user = c.get('user')
-    const appointment = await findActiveAppointmentByPsycho(user.id)
+    const appointment = await AppointmentsService.getActiveForPsycho(user.id)
     return c.json({ appointment }, 200)
 })

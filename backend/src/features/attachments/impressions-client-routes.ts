@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
-import { findAppointmentByIdForClient } from '../appointments/services'
+import { AppointmentsRepo } from '../appointments/repo'
 import { notFoundResponse } from './route-helpers'
 import { fileArraySchema } from './schemas'
 import {
@@ -31,7 +31,7 @@ impressionClientRoutes.post(
         const user = c.get('user')
         const appointmentId = c.req.param('appointmentId')
 
-        const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
         if (!appointment) {
             return notFoundResponse(c)
         }
@@ -85,7 +85,7 @@ impressionClientRoutes.patch(
         const appointmentId = c.req.param('appointmentId')
         const attachmentId = c.req.param('attachmentId')
 
-        const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
         if (!appointment) {
             return notFoundResponse(c)
         }
@@ -122,7 +122,7 @@ impressionClientRoutes.get('/:attachmentId/completion', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
     if (!appointment) {
         return notFoundResponse(c)
     }
@@ -140,7 +140,7 @@ impressionClientRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await findAppointmentByIdForClient(appointmentId, user.id)
+    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
     if (!appointment) {
         return notFoundResponse(c)
     }

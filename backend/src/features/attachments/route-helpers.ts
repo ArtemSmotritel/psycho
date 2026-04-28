@@ -1,5 +1,5 @@
 import type { Context } from 'hono'
-import { findAppointmentById } from '../appointments/services'
+import { AppointmentsRepo } from '../appointments/repo'
 import type { Appointment } from '../appointments/models'
 
 type AppointmentCheck = { ok: true; appointment: Appointment } | { ok: false; response: Response }
@@ -9,7 +9,7 @@ export async function checkAppointmentOwnership(c: Context): Promise<Appointment
     const clientId = c.req.param('clientId')!
     const appointmentId = c.req.param('appointmentId')!
 
-    const appointment = await findAppointmentById(appointmentId, user.id, clientId)
+    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
     if (!appointment) {
         return { ok: false, response: c.json({ error: 'NotFound' }, 404) }
     }

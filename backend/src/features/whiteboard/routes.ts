@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { auth } from 'utils/auth'
 import { upgradeWebSocket } from 'config/websocket'
-import { findAppointmentByIdForParticipant } from '../appointments/services'
+import { AppointmentsRepo } from '../appointments/repo'
 import { loadWhiteboardState, saveWhiteboardState } from './services'
 import { log } from 'utils/logger'
 import type { ServerWebSocket } from 'bun'
@@ -44,7 +44,7 @@ whiteboardRoutes.get(
 
         const userId = session.user.id
         const userName = session.user.name ?? 'Anonymous'
-        const appointment = await findAppointmentByIdForParticipant(appointmentId, userId)
+        const appointment = await AppointmentsRepo.findByIdForParticipant(appointmentId, userId)
 
         if (!appointment || appointment.status !== 'active') {
             return {

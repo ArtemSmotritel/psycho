@@ -5,7 +5,11 @@ import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from '../clients/services'
-import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import {
+    createAppointment,
+    startAppointment,
+    endAppointment,
+} from '../../test-fixtures/appointments'
 import { createAttachment } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
 

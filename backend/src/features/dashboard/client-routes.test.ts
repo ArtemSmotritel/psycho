@@ -4,7 +4,11 @@ import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
-import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import {
+    createAppointment,
+    startAppointment,
+    endAppointment,
+} from '../../test-fixtures/appointments'
 import { createAttachment, upsertReaction } from '../attachments/services'
 
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }

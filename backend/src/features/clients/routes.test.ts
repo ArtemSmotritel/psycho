@@ -2,7 +2,11 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { ClientsService } from './services'
-import { createAppointment, startAppointment, endAppointment } from '../appointments/services'
+import {
+    createAppointment,
+    startAppointment,
+    endAppointment,
+} from '../../test-fixtures/appointments'
 import { createAttachment } from '../attachments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
