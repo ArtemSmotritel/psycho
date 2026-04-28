@@ -1,6 +1,12 @@
 import type { SQL } from 'bun'
 import { db } from 'config/db'
-import type { Client } from './models'
+import type {
+    Client,
+    ClientContactFieldsUpdate,
+    ClientSummary,
+    PsychologistClientLink,
+    PsychologistSummary,
+} from './models'
 
 const clientFullColumns = `
     c.user_id AS id,
@@ -61,17 +67,17 @@ export const ClientsRepo = {
         return (row as Client) ?? null
     },
 
-    async findByEmail(email: string): Promise<Client | null> {
+    async findByEmail(email: string): Promise<ClientSummary | null> {
         const [row] = await db`
             SELECT ${db.unsafe(clientBasicColumns)}
             FROM clients c
             INNER JOIN "user" u ON u.id = c.user_id
             WHERE u.email = ${email}
         `
-        return (row as Client) ?? null
+        return (row as ClientSummary) ?? null
     },
 
-    async listForPsycho(psychoId: string): Promise<Client[]> {
+    async listForPsycho(psychoId: string): Promise<ClientSummary[]> {
         const rows = await db`
             SELECT u.id, u.name, u.email, u.image
             FROM clients c
@@ -81,30 +87,20 @@ export const ClientsRepo = {
              AND pc.disconnected_at IS NULL
             INNER JOIN "user" u ON u.id = c.user_id
         `
-        return rows as Client[]
+        return rows as ClientSummary[]
     },
 
-    async listPsychologistsForClient(
-        clientId: string,
-    ): Promise<{ id: string; name: string; email: string; image: string | null }[]> {
+    async listPsychologistsForClient(clientId: string): Promise<PsychologistSummary[]> {
         const rows = await db`
             SELECT u.id, u.name, u.email, u.image
             FROM psychologist_clients pc
             INNER JOIN "user" u ON u.id = pc.psycho_id
             WHERE pc.client_id = ${clientId} AND pc.disconnected_at IS NULL
         `
-        return rows as { id: string; name: string; email: string; image: string | null }[]
+        return rows as PsychologistSummary[]
     },
 
-    async updateProfileFields(
-        id: string,
-        params: {
-            username?: string | null
-            phone?: string | null
-            telegram?: string | null
-            instagram?: string | null
-        },
-    ): Promise<void> {
+    async updateProfileFields(id: string, params: ClientContactFieldsUpdate): Promise<void> {
         await db`
             UPDATE clients
             SET
@@ -139,16 +135,19 @@ export const ClientsRepo = {
     async findActiveLink(
         clientId: string,
         psychoId: string,
-    ): Promise<Record<string, unknown> | null> {
+    ): Promise<PsychologistClientLink | null> {
         const [row] = await db`
-            SELECT *
+            SELECT
+                client_id        AS "clientId",
+                psycho_id        AS "psychoId",
+                disconnected_at  AS "disconnectedAt"
             FROM psychologist_clients
             WHERE client_id = ${clientId}
               AND psycho_id = ${psychoId}
               AND disconnected_at IS NULL
             LIMIT 1
         `
-        return row ?? null
+        return (row as PsychologistClientLink) ?? null
     },
 
     async isLinkedToPsycho(clientId: string, psychoId: string): Promise<boolean> {

@@ -1,10 +1,10 @@
 import { api } from './api'
-import type { Client } from '~/models/client'
+import type { Client, ClientSummary } from '~/models/client'
 
 export const clientService = {
-    addByEmail: (email: string) => api.post<{ client: Client }>('/clients', { email }),
+    addByEmail: (email: string) => api.post<{ client: ClientSummary }>('/clients', { email }),
 
-    getList: () => api.get<{ clients: Client[] }>('/clients'),
+    getList: () => api.get<{ clients: ClientSummary[] }>('/clients'),
 
     getById: (id: string) => api.get<{ client: Client }>(`/clients/${id}`),
 

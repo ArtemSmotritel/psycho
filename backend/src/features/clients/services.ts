@@ -1,6 +1,6 @@
 import type { SQL } from 'bun'
 import { BadRequestError, NotFoundError } from 'errors/index'
-import type { Client } from './models'
+import type { Client, ClientProfileUpdate, ClientSummary } from './models'
 import { ClientsRepo } from './repo'
 
 export const ClientsService = {
@@ -10,30 +10,22 @@ export const ClientsService = {
         return client
     },
 
-    async listForPsycho(psychoId: string): Promise<Client[]> {
+    async listForPsycho(psychoId: string): Promise<ClientSummary[]> {
         return ClientsRepo.listForPsycho(psychoId)
     },
 
-    async updateProfile(
-        id: string,
-        params: {
-            name?: string
-            username?: string | null
-            phone?: string | null
-            telegram?: string | null
-            instagram?: string | null
-        },
-    ): Promise<Client> {
-        await ClientsRepo.updateProfileFields(id, params)
-        if (params.name !== undefined) {
-            await ClientsRepo.updateUserName(id, params.name)
+    async updateProfile(id: string, params: ClientProfileUpdate): Promise<Client> {
+        const { name, ...contactFields } = params
+        await ClientsRepo.updateProfileFields(id, contactFields)
+        if (name !== undefined) {
+            await ClientsRepo.updateUserName(id, name)
         }
         const client = await ClientsRepo.findById(id)
         if (!client) throw new NotFoundError()
         return client
     },
 
-    async linkByEmailToPsycho(psychoId: string, email: string): Promise<Client> {
+    async linkByEmailToPsycho(psychoId: string, email: string): Promise<ClientSummary> {
         const client = await ClientsRepo.findByEmail(email)
         if (!client) {
             throw new BadRequestError(

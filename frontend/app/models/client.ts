@@ -14,3 +14,5 @@ export interface Client {
     lastAppointment: { id: string; startTime: string; endTime: string } | null
     nextAppointment: { id: string; startTime: string } | null
 }
+
+export type ClientSummary = Pick<Client, 'id' | 'name' | 'email' | 'image'>

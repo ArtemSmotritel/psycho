@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { clientService } from '~/services/client.service'
-import type { Client } from '~/models/client'
+import type { ClientSummary } from '~/models/client'
 
-export function useClientList(): Client[] {
-    const [clients, setClients] = useState<Client[]>([])
+export function useClientList(): ClientSummary[] {
+    const [clients, setClients] = useState<ClientSummary[]>([])
 
     useEffect(() => {
         clientService

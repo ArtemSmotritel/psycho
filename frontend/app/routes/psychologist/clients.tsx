@@ -32,10 +32,10 @@ import { useNavigate } from 'react-router'
 import { DataTablePagination } from '@/components/DataTablePagination'
 import { AddClientByEmailDialog } from '@/components/AddClientByEmailDialog'
 import { clientService } from '~/services/client.service'
-import type { Client } from '~/models/client'
+import type { ClientSummary } from '~/models/client'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 
-const columns: ColumnDef<Client>[] = [
+const columns: ColumnDef<ClientSummary>[] = [
     {
         id: 'index',
         header: '#',
@@ -137,7 +137,7 @@ const columns: ColumnDef<Client>[] = [
 
 export default function Clients() {
     const navigate = useNavigate()
-    const [data, setData] = useState<Client[]>([])
+    const [data, setData] = useState<ClientSummary[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [sorting, setSorting] = useState<SortingState>([])

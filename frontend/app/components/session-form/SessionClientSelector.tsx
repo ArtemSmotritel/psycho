@@ -13,12 +13,12 @@ import {
 } from '@/components/ui/command'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { Client } from '~/models/client'
+import type { ClientSummary } from '~/models/client'
 import type { SessionFormValues } from './schema'
 
 interface SessionClientSelectorProps {
     form: UseFormReturn<SessionFormValues>
-    clients: Client[]
+    clients: ClientSummary[]
 }
 
 export function SessionClientSelector({ form, clients }: SessionClientSelectorProps) {
