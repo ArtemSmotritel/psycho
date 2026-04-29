@@ -23,4 +23,12 @@ export const UsersRepo = {
         `
         return (row as User) ?? null
     },
+
+    async createPsychoUser(userId: string) {
+        return await db`INSERT INTO psychologists (user_id) VALUES (${userId})`
+    },
+
+    async createClientUser(userId: string): Promise<void> {
+        await db`INSERT INTO clients (user_id) VALUES (${userId})`
+    },
 } as const

@@ -18,6 +18,12 @@ export class AppError extends HTTPException {
     }
 }
 
+export class UnauthorizedError extends AppError {
+    constructor(message = 'Unauthorized', code = 'Unauthorized', details?: AppErrorDetails) {
+        super(401, code, message, details)
+    }
+}
+
 export class NotFoundError extends AppError {
     constructor(message = 'Not found', code = 'NotFound', details?: AppErrorDetails) {
         super(404, code, message, details)

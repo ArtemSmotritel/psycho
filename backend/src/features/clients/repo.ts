@@ -116,10 +116,6 @@ export const ClientsRepo = {
         await db`UPDATE "user" SET name = ${name} WHERE id = ${id}`
     },
 
-    async insertClientRow(userId: string): Promise<void> {
-        await db`INSERT INTO clients (user_id) VALUES (${userId})`
-    },
-
     async linkClientToPsycho(
         clientId: string,
         psychoId: string,

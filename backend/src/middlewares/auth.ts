@@ -1,7 +1,10 @@
 import { createMiddleware } from 'hono/factory'
 import { auth } from 'utils/auth'
-import { db } from 'config/db'
 import { log } from 'utils/logger'
+import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError } from 'errors/index'
+import { ClientsRepo } from '../features/clients/repo'
+import { FilesRepo } from '../features/files/repo'
+import { UsersRepo } from '../features/users/repo'
 import { APP_ROLE_HEADER, CLIENT_ROLE, NO_ROLE, PSYCHO_ROLE } from '../constants'
 import type { MiddlewareVariable, User } from 'utils/types'
 
@@ -22,7 +25,7 @@ export const authorized = createMiddleware<MiddlewareVariable<'user', User>>(asy
     const session = c.get('session')
 
     if (!user || !session) {
-        return c.json({ error: 'Unauthorized' }, 401)
+        throw new UnauthorizedError()
     }
 
     await next()
@@ -43,18 +46,14 @@ export const setUserRole = createMiddleware(async (c, next) => {
     } else if (!role) {
         c.set('role', NO_ROLE)
     } else {
-        return c.json({ error: 'Invalid role' }, 400)
+        throw new BadRequestError('Invalid role', 'InvalidRole')
     }
 
-    // Validate claimed role against DB for authenticated users
     const user = c.get('user')
     if (user && role) {
-        const [row] = await db`SELECT active_role FROM "user" WHERE id = ${user.id}`
-        if (row?.active_role && row.active_role !== role) {
-            return c.json(
-                { error: 'Forbidden', message: 'Role header does not match your active role.' },
-                403,
-            )
+        const dbUser = await UsersRepo.findById(user.id)
+        if (dbUser?.activeRole && dbUser.activeRole !== role) {
+            throw new ForbiddenError('Role header does not match your active role.', 'RoleMismatch')
         }
     }
 
@@ -68,17 +67,11 @@ export const onlyPsychoRequest = createMiddleware(async (c, next) => {
         log.warn('[Middleware] role is undefined — setUserRole likely not mounted', {
             path: c.req.path,
         })
-        return c.json({ error: 'ServerMisconfigured' }, 500)
+        throw new Error('Server misconfigured: setUserRole is not mounted')
     }
 
     if (role !== PSYCHO_ROLE) {
-        return c.json(
-            {
-                error: 'Unauthorized',
-                message: 'Only a psychologist can make this request',
-            },
-            403,
-        )
+        throw new ForbiddenError('Only a psychologist can make this request')
     }
 
     await next()
@@ -91,11 +84,11 @@ export const onlyClientRequest = createMiddleware(async (c, next) => {
         log.warn('[Middleware] role is undefined — setUserRole likely not mounted', {
             path: c.req.path,
         })
-        return c.json({ error: 'ServerMisconfigured' }, 500)
+        throw new Error('Server misconfigured: setUserRole is not mounted')
     }
 
     if (role !== CLIENT_ROLE) {
-        return c.json({ error: 'Unauthorized' }, 403)
+        throw new ForbiddenError('Only a client can make this request')
     }
 
     await next()
@@ -105,29 +98,30 @@ export const onlyClientRequest = createMiddleware(async (c, next) => {
  * Verifies the authenticated psychologist is linked to the :clientId in the URL path.
  * Must be used after `authorized` and `onlyPsychoRequest`.
  */
-export const onlyLinkedClient = createMiddleware(async (c, next) => {
-    const user = c.get('user')
-    const clientId = c.req.param('clientId')
+export const onlyLinkedClient = createMiddleware<MiddlewareVariable<'user', User>>(
+    async (c, next) => {
+        const user = c.get('user')
+        const clientId = c.req.param('clientId')
 
-    if (!clientId) {
-        return c.json({ error: 'BadRequest', message: 'clientId is required' }, 400)
-    }
+        if (!clientId) {
+            throw new BadRequestError('clientId is required')
+        }
 
-    const [row] =
-        await db`SELECT 1 FROM psychologist_clients WHERE client_id = ${clientId} AND psycho_id = ${user.id} AND disconnected_at IS NULL`
+        const linked = await ClientsRepo.isLinkedToPsycho(clientId, user.id)
 
-    if (!row) {
-        return c.json({ error: 'NotFound' }, 404)
-    }
+        if (!linked) {
+            throw new NotFoundError()
+        }
 
-    await next()
-})
+        await next()
+    },
+)
 
 /**
  * Verifies all file IDs in the request body (imageFileIds, audioFileIds) were uploaded by the current user.
  * Must be used after `authorized`.
  */
-export const ownsFiles = createMiddleware(async (c, next) => {
+export const ownsFiles = createMiddleware<MiddlewareVariable<'user', User>>(async (c, next) => {
     const user = c.get('user')
 
     let body: Record<string, unknown>
@@ -151,14 +145,10 @@ export const ownsFiles = createMiddleware(async (c, next) => {
         return
     }
 
-    const rows = await db`
-        SELECT id FROM files
-        WHERE id IN ${db(fileIds)}
-          AND uploaded_by != ${user.id}
-    `
+    const unowned = await FilesRepo.findIdsNotOwnedBy(fileIds, user.id)
 
-    if (rows.length > 0) {
-        return c.json({ error: 'Forbidden', message: 'You do not own all referenced files.' }, 403)
+    if (unowned.length > 0) {
+        throw new ForbiddenError('You do not own all referenced files.')
     }
 
     await next()

@@ -49,10 +49,6 @@ export const ClientsService = {
         await ClientsRepo.unlink(clientId, psychoId)
     },
 
-    async createUserClient(userId: string): Promise<void> {
-        await ClientsRepo.insertClientRow(userId)
-    },
-
     async linkClientToPsycho(clientId: string, psychoId: string, executor?: SQL): Promise<void> {
         await ClientsRepo.linkClientToPsycho(clientId, psychoId, executor)
     },

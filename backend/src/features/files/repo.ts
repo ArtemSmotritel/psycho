@@ -39,6 +39,17 @@ export const FilesRepo = {
         await executor`DELETE FROM files WHERE id = ${id}`
     },
 
+    async findIdsNotOwnedBy(fileIds: string[], userId: string): Promise<string[]> {
+        if (fileIds.length === 0) return []
+        const rows = (await db`
+            SELECT id
+            FROM files
+            WHERE id IN ${db(fileIds)}
+              AND uploaded_by != ${userId}
+        `) as { id: string }[]
+        return rows.map((r) => r.id)
+    },
+
     async findAccessibleByStoredName(
         storedName: string,
         userId: string,
