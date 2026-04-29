@@ -1,43 +1,19 @@
-import { db } from 'config/db'
+import type { WhiteboardState } from './models'
+import { WhiteboardRepo } from './repo'
 
-export async function loadWhiteboardState(
-    appointmentId: string,
-): Promise<{ elements: unknown[]; files: Record<string, unknown> }> {
-    const [row] = await db`
-        SELECT whiteboard_elements, whiteboard_files
-        FROM appointments
-        WHERE id = ${appointmentId}
-    `
-    const rawElements = row?.whiteboard_elements
-    const rawFiles = row?.whiteboard_files
+const emptyState = (): WhiteboardState => ({ elements: [], files: {} })
 
-    const elements = typeof rawElements === 'string' ? JSON.parse(rawElements) : rawElements
-    const files = typeof rawFiles === 'string' ? JSON.parse(rawFiles) : rawFiles
+export const WhiteboardService = {
+    async loadState(appointmentId: string): Promise<WhiteboardState> {
+        const state = await WhiteboardRepo.findStateByAppointmentId(appointmentId)
+        return state ?? emptyState()
+    },
 
-    return {
-        elements: (elements as unknown[]) ?? [],
-        files: (files as Record<string, unknown>) ?? {},
-    }
-}
+    async saveState(appointmentId: string, state: WhiteboardState): Promise<void> {
+        await WhiteboardRepo.updateState(appointmentId, state)
+    },
 
-export async function saveWhiteboardState(
-    appointmentId: string,
-    elements: unknown[],
-    files: Record<string, unknown>,
-): Promise<void> {
-    await db`
-        UPDATE appointments
-        SET whiteboard_elements = ${JSON.stringify(elements)}::jsonb,
-            whiteboard_files = ${JSON.stringify(files)}::jsonb
-        WHERE id = ${appointmentId}
-    `
-}
-
-export async function clearWhiteboardState(appointmentId: string): Promise<void> {
-    await db`
-        UPDATE appointments
-        SET whiteboard_elements = NULL,
-            whiteboard_files = NULL
-        WHERE id = ${appointmentId}
-    `
-}
+    async clearState(appointmentId: string): Promise<void> {
+        await WhiteboardRepo.clearState(appointmentId)
+    },
+} as const

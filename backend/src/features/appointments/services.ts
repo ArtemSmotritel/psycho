@@ -6,7 +6,7 @@ import {
     rescheduleGoogleCalendarEvent,
 } from 'utils/google-meet'
 import { ClientsRepo } from '../clients/repo'
-import { clearWhiteboardState } from '../whiteboard/services'
+import { WhiteboardService } from '../whiteboard/services'
 import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from './models'
 import { AppointmentsRepo } from './repo'
 
@@ -158,7 +158,7 @@ export const AppointmentsService = {
 
         // Clearing whiteboard state is best-effort: if it fails, the appointment
         // is still ended. Log and move on.
-        await clearWhiteboardState(appointmentId).catch((err) => {
+        await WhiteboardService.clearState(appointmentId).catch((err) => {
             log.warn('[Appointments] Failed to clear whiteboard state', { appointmentId, err })
         })
 

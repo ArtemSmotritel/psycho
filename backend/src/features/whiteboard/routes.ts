@@ -1,10 +1,16 @@
-import { Hono } from 'hono'
-import { auth } from 'utils/auth'
-import { upgradeWebSocket } from 'config/websocket'
-import { AppointmentsRepo } from '../appointments/repo'
-import { loadWhiteboardState, saveWhiteboardState } from './services'
-import { log } from 'utils/logger'
 import type { ServerWebSocket } from 'bun'
+import { Hono } from 'hono'
+import { upgradeWebSocket } from 'config/websocket'
+import { auth } from 'utils/auth'
+import { log } from 'utils/logger'
+import { AppointmentsRepo } from '../appointments/repo'
+import type {
+    IncomingWhiteboardMessage,
+    OutgoingWhiteboardMessage,
+    WhiteboardElement,
+    WhiteboardState,
+} from './models'
+import { WhiteboardService } from './services'
 
 interface RoomConnection {
     ws: ServerWebSocket<unknown>
@@ -14,12 +20,81 @@ interface RoomConnection {
 
 interface Room {
     connections: Set<RoomConnection>
-    lastElements: unknown[]
-    lastFiles: Record<string, unknown>
+    state: WhiteboardState
 }
+
+const SAVE_DEBOUNCE_MS = 3000
 
 const rooms = new Map<string, Room>()
 const saveTimers = new Map<string, Timer>()
+
+const scheduleSave = (appointmentId: string, room: Room) => {
+    const existing = saveTimers.get(appointmentId)
+    if (existing) clearTimeout(existing)
+    saveTimers.set(
+        appointmentId,
+        setTimeout(() => {
+            saveTimers.delete(appointmentId)
+            WhiteboardService.saveState(appointmentId, room.state).catch((err) => {
+                log.error('[Whiteboard] Failed to save state', { appointmentId, err })
+            })
+        }, SAVE_DEBOUNCE_MS),
+    )
+}
+
+const flushPendingSave = (appointmentId: string, room: Room) => {
+    const pending = saveTimers.get(appointmentId)
+    if (!pending) return
+    clearTimeout(pending)
+    saveTimers.delete(appointmentId)
+    WhiteboardService.saveState(appointmentId, room.state).catch((err) => {
+        log.error('[Whiteboard] Failed to save state on close', { appointmentId, err })
+    })
+}
+
+const parseMessage = (raw: string): IncomingWhiteboardMessage | null => {
+    let parsed: unknown
+    try {
+        parsed = JSON.parse(raw)
+    } catch {
+        return null
+    }
+    if (!parsed || typeof parsed !== 'object') return null
+    const msg = parsed as { type?: unknown }
+    switch (msg.type) {
+        case 'elements': {
+            const m = parsed as { elements?: unknown }
+            return Array.isArray(m.elements)
+                ? { type: 'elements', elements: m.elements as WhiteboardElement[] }
+                : null
+        }
+        case 'files': {
+            const m = parsed as { files?: unknown }
+            return m.files && typeof m.files === 'object'
+                ? { type: 'files', files: m.files as Record<string, unknown> }
+                : null
+        }
+        case 'cursor': {
+            const m = parsed as { x?: unknown; y?: unknown }
+            return typeof m.x === 'number' && typeof m.y === 'number'
+                ? { type: 'cursor', x: m.x, y: m.y }
+                : null
+        }
+        default:
+            return null
+    }
+}
+
+const broadcast = (
+    room: Room,
+    sender: RoomConnection,
+    message: OutgoingWhiteboardMessage,
+): void => {
+    const payload = JSON.stringify(message)
+    for (const conn of room.connections) {
+        if (conn !== sender) conn.ws.send(payload)
+    }
+}
 
 export const whiteboardRoutes = new Hono()
 
@@ -28,11 +103,8 @@ whiteboardRoutes.get(
     upgradeWebSocket(async (c) => {
         const appointmentId = c.req.param('appointmentId')!
 
-        // Auth: read session from cookie headers
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session) {
-            // Cannot reject here with a status code in Hono WS factory;
-            // rejection is done in onOpen by closing the socket.
             return {
                 onOpen(_, ws) {
                     ws.close(1008, 'Unauthorized')
@@ -56,39 +128,32 @@ whiteboardRoutes.get(
             }
         }
 
-        // Return valid handlers
         let thisConnection: RoomConnection | null = null
 
         return {
             onOpen(_, ws) {
-                // Ensure raw Bun WS is used for broadcast
                 const rawWs = ws.raw as ServerWebSocket<unknown>
                 thisConnection = { ws: rawWs, userId, userName }
 
                 const initRoom = async () => {
-                    if (!rooms.has(appointmentId)) {
-                        // Load persisted state from DB
-                        const state = await loadWhiteboardState(appointmentId)
-                        rooms.set(appointmentId, {
-                            connections: new Set(),
-                            lastElements: state.elements,
-                            lastFiles: state.files,
-                        })
+                    let room = rooms.get(appointmentId)
+                    if (!room) {
+                        const state = await WhiteboardService.loadState(appointmentId)
+                        room = { connections: new Set(), state }
+                        rooms.set(appointmentId, room)
                     }
-                    const room = rooms.get(appointmentId)!
                     room.connections.add(thisConnection!)
 
-                    // Replay last known scene to the new connection
-                    const initMsg = JSON.stringify({
+                    const initMessage: OutgoingWhiteboardMessage = {
                         type: 'scene_init',
-                        elements: room.lastElements,
-                        files: room.lastFiles,
-                    })
-                    rawWs.send(initMsg)
+                        elements: room.state.elements,
+                        files: room.state.files,
+                    }
+                    rawWs.send(JSON.stringify(initMessage))
                 }
 
                 initRoom().catch((err) => {
-                    console.error('whiteboard: failed to init room', err)
+                    log.error('[Whiteboard] Failed to init room', { appointmentId, err })
                     rawWs.close(1011, 'InternalError')
                 })
             },
@@ -98,76 +163,30 @@ whiteboardRoutes.get(
                 const room = rooms.get(appointmentId)
                 if (!room) return
 
-                let msg: unknown
-                try {
-                    msg = JSON.parse(event.data.toString())
-                } catch {
+                const msg = parseMessage(event.data.toString())
+                if (!msg) return
+
+                if (msg.type === 'elements') {
+                    room.state.elements = msg.elements
+                    scheduleSave(appointmentId, room)
+                    broadcast(room, thisConnection, msg)
                     return
                 }
 
-                const parsed = msg as {
-                    type: string
-                    elements?: unknown[]
-                    files?: Record<string, unknown>
-                    x?: number
-                    y?: number
+                if (msg.type === 'files') {
+                    room.state.files = { ...room.state.files, ...msg.files }
+                    scheduleSave(appointmentId, room)
+                    broadcast(room, thisConnection, msg)
+                    return
                 }
 
-                // Update cached state and schedule debounced DB save
-                if (parsed.type === 'elements' && Array.isArray(parsed.elements)) {
-                    room.lastElements = parsed.elements
-
-                    const existing = saveTimers.get(appointmentId)
-                    if (existing) clearTimeout(existing)
-                    saveTimers.set(
-                        appointmentId,
-                        setTimeout(() => {
-                            saveTimers.delete(appointmentId)
-                            saveWhiteboardState(
-                                appointmentId,
-                                room.lastElements,
-                                room.lastFiles,
-                            ).catch((err) => {
-                                console.error('whiteboard: failed to save elements', err)
-                            })
-                        }, 3000),
-                    )
-                }
-                if (parsed.type === 'files' && parsed.files) {
-                    room.lastFiles = { ...room.lastFiles, ...parsed.files }
-
-                    const existing = saveTimers.get(appointmentId)
-                    if (existing) clearTimeout(existing)
-                    saveTimers.set(
-                        appointmentId,
-                        setTimeout(() => {
-                            saveTimers.delete(appointmentId)
-                            saveWhiteboardState(
-                                appointmentId,
-                                room.lastElements,
-                                room.lastFiles,
-                            ).catch((err) => {
-                                console.error('whiteboard: failed to save files', err)
-                            })
-                        }, 3000),
-                    )
-                }
-
-                // Broadcast to all other connections in this room
-                const outgoing = JSON.stringify(
-                    parsed.type === 'cursor'
-                        ? {
-                              ...parsed,
-                              userId: thisConnection.userId,
-                              userName: thisConnection.userName,
-                          }
-                        : parsed,
-                )
-                for (const conn of room.connections) {
-                    if (conn !== thisConnection) {
-                        conn.ws.send(outgoing)
-                    }
-                }
+                broadcast(room, thisConnection, {
+                    type: 'cursor',
+                    x: msg.x,
+                    y: msg.y,
+                    userId: thisConnection.userId,
+                    userName: thisConnection.userName,
+                })
             },
 
             onClose() {
@@ -176,17 +195,7 @@ whiteboardRoutes.get(
                 if (!room) return
                 room.connections.delete(thisConnection)
                 if (room.connections.size === 0) {
-                    // Flush any pending debounced save before discarding the room
-                    const pendingTimer = saveTimers.get(appointmentId)
-                    if (pendingTimer) {
-                        clearTimeout(pendingTimer)
-                        saveTimers.delete(appointmentId)
-                        saveWhiteboardState(appointmentId, room.lastElements, room.lastFiles).catch(
-                            (err) => {
-                                console.error('whiteboard: failed to save on close', err)
-                            },
-                        )
-                    }
+                    flushPendingSave(appointmentId, room)
                     rooms.delete(appointmentId)
                 }
             },
