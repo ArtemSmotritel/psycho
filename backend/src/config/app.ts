@@ -20,7 +20,8 @@ import { recommendationPsychoRoutes } from '../features/attachments/recommendati
 import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
 import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
 import { progressClientRoutes } from '../features/attachments/progress-client-routes'
-import { attachmentRoutes } from '../features/attachments/attachment-routes'
+import { attachmentPsychoRoutes } from '../features/attachments/attachment-psycho-routes'
+import { attachmentClientRoutes } from '../features/attachments/attachment-client-routes'
 import { clientDashboardRoutes, psychoDashboardRoutes } from '../features/dashboard/routes'
 import { invitationRoutes } from '../features/invitations/routes'
 import { associativeImageRoutes } from '../features/associative-images/routes'
@@ -103,7 +104,8 @@ app.route(
 app.route('/api/client/appointments/:appointmentId/recommendations', recommendationClientRoutes)
 app.route('/api/clients/:clientId/progress/impressions', progressPsychoRoutes)
 app.route('/api/client/progress', progressClientRoutes)
-app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', attachmentRoutes)
+app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', attachmentPsychoRoutes)
+app.route('/api/client/appointments/:appointmentId/attachments', attachmentClientRoutes)
 
 app.route('/api/client/dashboard', clientDashboardRoutes)
 app.route('/api/psycho/dashboard', psychoDashboardRoutes)
