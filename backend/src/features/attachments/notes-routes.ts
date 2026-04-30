@@ -1,10 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { z } from 'zod/v4'
 import { NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { checkAppointmentAccess } from './route-helpers'
-import { fileArraySchema } from './schemas'
+import { createAttachmentSchema, updateAttachmentSchema } from './schemas'
 import {
     createAttachment,
     deleteAttachment,
@@ -12,19 +11,6 @@ import {
     listAttachmentsByAuthor,
     updateAttachment,
 } from './services'
-
-const createNoteSchema = z.object({
-    name: z.string().min(1),
-    text: z.string().nullable().optional(),
-    imageFileIds: fileArraySchema,
-    audioFileIds: fileArraySchema,
-})
-
-const updateNoteSchema = z.object({
-    name: z.string().min(1).optional(),
-    text: z.string().optional(),
-    removeFileIds: z.array(z.string().min(1)).optional(),
-})
 
 export const noteRoutes = new Hono()
 
@@ -40,7 +26,7 @@ noteRoutes.get('/', async (c) => {
     return c.json({ notes }, 200)
 })
 
-noteRoutes.post('/', zValidator('json', createNoteSchema), ownsFiles, async (c) => {
+noteRoutes.post('/', zValidator('json', createAttachmentSchema), ownsFiles, async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
@@ -76,7 +62,7 @@ noteRoutes.get('/:attachmentId', async (c) => {
     return c.json({ note: attachment }, 200)
 })
 
-noteRoutes.patch('/:attachmentId', zValidator('json', updateNoteSchema), async (c) => {
+noteRoutes.patch('/:attachmentId', zValidator('json', updateAttachmentSchema), async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')

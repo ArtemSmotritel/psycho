@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { checkAppointmentAccess, checkAppointmentOwnership } from './route-helpers'
-import { fileArraySchema } from './schemas'
+import { createAttachmentSchema, updateAttachmentSchema } from './schemas'
 import {
     createAttachment,
     deleteAttachment,
@@ -14,19 +14,6 @@ import {
     setReply,
     updateAttachment,
 } from './services'
-
-const createRecommendationSchema = z.object({
-    name: z.string().min(1),
-    text: z.string().nullable().optional(),
-    imageFileIds: fileArraySchema,
-    audioFileIds: fileArraySchema,
-})
-
-const updateRecommendationSchema = z.object({
-    name: z.string().min(1).optional(),
-    text: z.string().optional(),
-    removeFileIds: z.array(z.string().min(1)).optional(),
-})
 
 const replySchema = z.object({
     reply: z.string().min(1),
@@ -53,7 +40,7 @@ recommendationPsychoRoutes.get('/', async (c) => {
 
 recommendationPsychoRoutes.post(
     '/',
-    zValidator('json', createRecommendationSchema),
+    zValidator('json', createAttachmentSchema),
     ownsFiles,
     async (c) => {
         const user = c.get('user')
@@ -103,7 +90,7 @@ recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
 
 recommendationPsychoRoutes.patch(
     '/:attachmentId',
-    zValidator('json', updateRecommendationSchema),
+    zValidator('json', updateAttachmentSchema),
     async (c) => {
         const user = c.get('user')
         const appointmentId = c.req.param('appointmentId')

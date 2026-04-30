@@ -4,7 +4,7 @@ import type { Client } from '../clients/models'
 import type { AttachmentWithReaction } from '../attachments/models'
 import { ClientsRepo } from '../clients/repo'
 import { APPOINTMENT_STATUS_EXPR, appointmentColumns } from '../appointments/repo'
-import { ATTACHMENT_SELECT } from '../attachments/services'
+import { ATTACHMENT_SELECT, REACTION_JSON_EXPR } from '../attachments/services'
 
 export interface PsychoDashboardData {
     totalClients: number
@@ -145,16 +145,7 @@ export async function getClientDashboard(clientId: string) {
             `,
             db`
                 SELECT ${db.unsafe(ATTACHMENT_SELECT)},
-                  CASE
-                      WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-                          'attachmentId', rr.attachment_id,
-                          'done', rr.done,
-                          'clientComment', rr.client_comment,
-                          'psychologistReply', rr.psychologist_reply,
-                          'updatedAt', rr.updated_at
-                      )
-                      ELSE NULL
-                  END AS reaction
+                  ${db.unsafe(REACTION_JSON_EXPR)}
                 FROM attachments a
                 JOIN appointments ap ON ap.id = a.appointment_id
                 LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id

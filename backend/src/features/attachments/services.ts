@@ -1,5 +1,5 @@
 import { db } from 'config/db'
-import { unlink } from 'node:fs/promises'
+import { FilesService } from '../files/services'
 import type {
     Attachment,
     AttachmentType,
@@ -191,12 +191,7 @@ export async function updateAttachment(
             `
 
             for (const file of files) {
-                const filePath = `./uploads/${file.storedName}`
-                try {
-                    ;(await Bun.file(filePath).exists()) && (await unlink(filePath))
-                } catch {
-                    // file already gone from disk — not critical
-                }
+                await FilesService.removeFromDisk(file.storedName)
             }
         }
     })
@@ -208,19 +203,32 @@ export async function deleteAttachment(id: string): Promise<void> {
     await db`DELETE FROM attachments WHERE id = ${id}`
 }
 
-const REACTION_SELECT = `
-    rr.attachment_id AS "attachmentId",
-    rr.done,
-    rr.client_comment AS "clientComment",
-    rr.psychologist_reply AS "psychologistReply",
-    rr.updated_at AS "updatedAt"
+const REACTION_COLUMNS = `
+    attachment_id AS "attachmentId",
+    done,
+    client_comment AS "clientComment",
+    psychologist_reply AS "psychologistReply",
+    updated_at AS "updatedAt"
+`
+
+export const REACTION_JSON_EXPR = `
+    CASE
+        WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
+            'attachmentId', rr.attachment_id,
+            'done', rr.done,
+            'clientComment', rr.client_comment,
+            'psychologistReply', rr.psychologist_reply,
+            'updatedAt', rr.updated_at
+        )
+        ELSE NULL
+    END AS reaction
 `
 
 export async function findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
     const [row] = await db`
-        SELECT ${db.unsafe(REACTION_SELECT)}
-        FROM recommendation_reactions rr
-        WHERE rr.attachment_id = ${attachmentId}
+        SELECT ${db.unsafe(REACTION_COLUMNS)}
+        FROM recommendation_reactions
+        WHERE attachment_id = ${attachmentId}
     `
     return (row as RecommendationReaction) ?? null
 }
@@ -243,12 +251,7 @@ export async function upsertReaction(
                 ELSE recommendation_reactions.client_comment
             END,
             updated_at = NOW()
-        RETURNING
-            attachment_id AS "attachmentId",
-            done,
-            client_comment AS "clientComment",
-            psychologist_reply AS "psychologistReply",
-            updated_at AS "updatedAt"
+        RETURNING ${db.unsafe(REACTION_COLUMNS)}
     `
     return row as RecommendationReaction
 }
@@ -263,12 +266,7 @@ export async function setReply(
         ON CONFLICT (attachment_id) DO UPDATE SET
             psychologist_reply = EXCLUDED.psychologist_reply,
             updated_at = NOW()
-        RETURNING
-            attachment_id AS "attachmentId",
-            done,
-            client_comment AS "clientComment",
-            psychologist_reply AS "psychologistReply",
-            updated_at AS "updatedAt"
+        RETURNING ${db.unsafe(REACTION_COLUMNS)}
     `
     return row as RecommendationReaction
 }
@@ -282,16 +280,7 @@ export async function listAttachmentsWithReactions(
         ? await db`
             SELECT
                 ${db.unsafe(ATTACHMENT_SELECT)},
-                CASE
-                    WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-                        'attachmentId', rr.attachment_id,
-                        'done', rr.done,
-                        'clientComment', rr.client_comment,
-                        'psychologistReply', rr.psychologist_reply,
-                        'updatedAt', rr.updated_at
-                    )
-                    ELSE NULL
-                END AS reaction
+                ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
             WHERE a.appointment_id = ${appointmentId}
@@ -302,16 +291,7 @@ export async function listAttachmentsWithReactions(
         : await db`
             SELECT
                 ${db.unsafe(ATTACHMENT_SELECT)},
-                CASE
-                    WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-                        'attachmentId', rr.attachment_id,
-                        'done', rr.done,
-                        'clientComment', rr.client_comment,
-                        'psychologistReply', rr.psychologist_reply,
-                        'updatedAt', rr.updated_at
-                    )
-                    ELSE NULL
-                END AS reaction
+                ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
             WHERE a.appointment_id = ${appointmentId}
