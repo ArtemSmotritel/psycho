@@ -1,9 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { AppointmentsRepo } from '../appointments/repo'
-import { notFoundResponse } from './route-helpers'
+import { AppointmentsService } from '../appointments/services'
 import {
     findAndValidateAttachment,
     findReaction,
@@ -24,10 +24,7 @@ recommendationClientRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForClient(appointmentId, user.id)
 
     const recommendations = await listAttachmentsWithReactions(appointmentId, 'recommendation')
     return c.json({ recommendations }, 200)
@@ -42,10 +39,7 @@ recommendationClientRoutes.patch(
         const attachmentId = c.req.param('attachmentId')
 
         // Step 1 — appointment ownership
-        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-        if (!appointment) {
-            return notFoundResponse(c)
-        }
+        await AppointmentsService.getForClient(appointmentId, user.id)
 
         // Step 2 — attachment chain
         const attachment = await findAndValidateAttachment(
@@ -54,24 +48,21 @@ recommendationClientRoutes.patch(
             'recommendation',
         )
         if (!attachment) {
-            return notFoundResponse(c)
+            throw new NotFoundError()
         }
 
         const { done, comment } = c.req.valid('json')
 
         // Body must have at least one of done or comment
         if (done === undefined && comment === undefined) {
-            return c.json({ error: 'BadRequest', message: 'done or comment is required' }, 400)
+            throw new BadRequestError('done or comment is required')
         }
 
         // Step 3 — comment-once check
         if (comment !== undefined) {
             const existing = await findReaction(attachmentId)
             if (existing && existing.clientComment !== null) {
-                return c.json(
-                    { error: 'CommentAlreadySet', message: 'Comment has already been set.' },
-                    400,
-                )
+                throw new BadRequestError('Comment has already been set.', 'CommentAlreadySet')
             }
         }
 

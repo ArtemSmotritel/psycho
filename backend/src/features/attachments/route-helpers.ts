@@ -1,43 +1,19 @@
 import type { Context } from 'hono'
-import { AppointmentsRepo } from '../appointments/repo'
+import { BadRequestError } from 'errors/index'
+import { AppointmentsService } from '../appointments/services'
 import type { Appointment } from '../appointments/models'
 
-type AppointmentCheck = { ok: true; appointment: Appointment } | { ok: false; response: Response }
-
-export async function checkAppointmentOwnership(c: Context): Promise<AppointmentCheck> {
+export async function checkAppointmentOwnership(c: Context): Promise<Appointment> {
     const user = c.get('user')!
     const clientId = c.req.param('clientId')!
     const appointmentId = c.req.param('appointmentId')!
-
-    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return { ok: false, response: c.json({ error: 'NotFound' }, 404) }
-    }
-
-    return { ok: true, appointment }
+    return AppointmentsService.getForPsycho(appointmentId, user.id, clientId)
 }
 
-/**
- * Steps 1–2: appointment ownership + status check.
- * Returns 404 if not found / ownership fails.
- * Returns 400 AppointmentNotActive if upcoming.
- */
-export async function checkAppointmentAccess(c: Context): Promise<AppointmentCheck> {
-    const ownership = await checkAppointmentOwnership(c)
-    if (!ownership.ok) return ownership
-
-    const { appointment } = ownership
+export async function checkAppointmentAccess(c: Context): Promise<Appointment> {
+    const appointment = await checkAppointmentOwnership(c)
     if (appointment.status === 'upcoming') {
-        return {
-            ok: false,
-            response: c.json(
-                { error: 'AppointmentNotActive', message: 'Appointment is not active or past.' },
-                400,
-            ),
-        }
+        throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
     }
-
-    return { ok: true, appointment }
+    return appointment
 }
-
-export const notFoundResponse = (c: Context) => c.json({ error: 'NotFound' }, 404)

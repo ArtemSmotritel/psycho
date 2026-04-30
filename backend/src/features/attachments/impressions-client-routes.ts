@@ -1,9 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
-import { AppointmentsRepo } from '../appointments/repo'
-import { notFoundResponse } from './route-helpers'
+import { AppointmentsService } from '../appointments/services'
 import { fileArraySchema } from './schemas'
 import {
     createAttachment,
@@ -31,15 +31,12 @@ impressionClientRoutes.post(
         const user = c.get('user')
         const appointmentId = c.req.param('appointmentId')
 
-        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-        if (!appointment) {
-            return notFoundResponse(c)
-        }
+        const appointment = await AppointmentsService.getForClient(appointmentId, user.id)
 
         if (appointment.status === 'upcoming') {
-            return c.json(
-                { error: 'AppointmentNotStarted', message: 'Appointment has not started yet.' },
-                400,
+            throw new BadRequestError(
+                'Appointment has not started yet.',
+                'AppointmentNotStarted',
             )
         }
 
@@ -50,12 +47,8 @@ impressionClientRoutes.post(
         const hasAudio = audioFileIds.length > 0
 
         if (!hasText && !hasImages && !hasAudio) {
-            return c.json(
-                {
-                    error: 'BadRequest',
-                    message: 'At least one of text, imageFileIds, or audioFileIds is required.',
-                },
-                400,
+            throw new BadRequestError(
+                'At least one of text, imageFileIds, or audioFileIds is required.',
             )
         }
 
@@ -85,10 +78,7 @@ impressionClientRoutes.patch(
         const appointmentId = c.req.param('appointmentId')
         const attachmentId = c.req.param('attachmentId')
 
-        const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-        if (!appointment) {
-            return notFoundResponse(c)
-        }
+        await AppointmentsService.getForClient(appointmentId, user.id)
 
         const attachment = await findAndValidateAttachment(
             attachmentId,
@@ -97,17 +87,14 @@ impressionClientRoutes.patch(
             user.id,
         )
         if (!attachment) {
-            return notFoundResponse(c)
+            throw new NotFoundError()
         }
 
         const existing = await findImpressionCompletion(attachmentId)
         if (existing) {
-            return c.json(
-                {
-                    error: 'AlreadyCompleted',
-                    message: 'This impression has already been completed.',
-                },
-                400,
+            throw new BadRequestError(
+                'This impression has already been completed.',
+                'AlreadyCompleted',
             )
         }
 
@@ -118,18 +105,15 @@ impressionClientRoutes.patch(
 )
 
 impressionClientRoutes.get('/:attachmentId/completion', async (c) => {
-    const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
+    const user = c.get('user')
 
-    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForClient(appointmentId, user.id)
 
     const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'impression')
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     const completion = await findImpressionCompletion(attachmentId)
@@ -140,10 +124,7 @@ impressionClientRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await AppointmentsRepo.findByIdForClient(appointmentId, user.id)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForClient(appointmentId, user.id)
 
     const impressions = await listAttachmentsByAuthor(appointmentId, 'impression', user.id)
     return c.json({ impressions }, 200)

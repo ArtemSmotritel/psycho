@@ -1,8 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
-import { checkAppointmentAccess, notFoundResponse } from './route-helpers'
+import { checkAppointmentAccess } from './route-helpers'
 import { fileArraySchema } from './schemas'
 import {
     createAttachment,
@@ -33,8 +34,7 @@ noteRoutes.get('/', async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const notes = await listAttachmentsByAuthor(appointmentId, 'note', user.id)
     return c.json({ notes }, 200)
@@ -44,8 +44,7 @@ noteRoutes.post('/', zValidator('json', createNoteSchema), ownsFiles, async (c) 
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')
 
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
 
@@ -67,12 +66,11 @@ noteRoutes.get('/:attachmentId', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     return c.json({ note: attachment }, 200)
@@ -83,12 +81,11 @@ noteRoutes.patch('/:attachmentId', zValidator('json', updateNoteSchema), async (
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     const { name, text, removeFileIds } = c.req.valid('json')
@@ -107,12 +104,11 @@ noteRoutes.delete('/:attachmentId', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     await deleteAttachment(attachmentId)

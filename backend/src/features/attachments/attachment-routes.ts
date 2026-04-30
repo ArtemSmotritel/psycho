@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
+import { NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { AppointmentsRepo } from '../appointments/repo'
-import { notFoundResponse } from './route-helpers'
+import { AppointmentsService } from '../appointments/services'
 import { findAttachmentById } from './services'
 
 export const attachmentRoutes = new Hono()
@@ -14,14 +14,11 @@ attachmentRoutes.get('/:attachmentId', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForPsycho(appointmentId, user.id, clientId)
 
     const attachment = await findAttachmentById(attachmentId)
     if (!attachment || attachment.appointmentId !== appointmentId) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     return c.json({ attachment }, 200)

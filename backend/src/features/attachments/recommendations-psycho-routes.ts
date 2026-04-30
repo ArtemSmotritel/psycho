@@ -1,12 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
-import {
-    checkAppointmentAccess,
-    checkAppointmentOwnership,
-    notFoundResponse,
-} from './route-helpers'
+import { checkAppointmentAccess, checkAppointmentOwnership } from './route-helpers'
 import { fileArraySchema } from './schemas'
 import {
     createAttachment,
@@ -44,8 +41,7 @@ recommendationPsychoRoutes.get('/', async (c) => {
     const appointmentId = c.req.param('appointmentId')
 
     // Step 1 only — status check intentionally not applied for listing
-    const check = await checkAppointmentOwnership(c)
-    if (!check.ok) return check.response
+    await checkAppointmentOwnership(c)
 
     const recommendations = await listAttachmentsWithReactions(
         appointmentId,
@@ -64,8 +60,7 @@ recommendationPsychoRoutes.post(
         const appointmentId = c.req.param('appointmentId')
 
         // Steps 1–2: ownership + status check
-        const check = await checkAppointmentAccess(c)
-        if (!check.ok) return check.response
+        await checkAppointmentAccess(c)
 
         const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
 
@@ -91,8 +86,7 @@ recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
     const attachmentId = c.req.param('attachmentId')
 
     // Steps 1–2: ownership + status check
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const attachment = await findAndValidateAttachment(
         attachmentId,
@@ -101,7 +95,7 @@ recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
         user.id,
     )
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     return c.json({ recommendation: attachment }, 200)
@@ -116,8 +110,7 @@ recommendationPsychoRoutes.patch(
         const attachmentId = c.req.param('attachmentId')
 
         // Steps 1–2: ownership + status check
-        const check = await checkAppointmentAccess(c)
-        if (!check.ok) return check.response
+        await checkAppointmentAccess(c)
 
         const attachment = await findAndValidateAttachment(
             attachmentId,
@@ -126,7 +119,7 @@ recommendationPsychoRoutes.patch(
             user.id,
         )
         if (!attachment) {
-            return notFoundResponse(c)
+            throw new NotFoundError()
         }
 
         const { name, text, removeFileIds } = c.req.valid('json')
@@ -147,8 +140,7 @@ recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
     const attachmentId = c.req.param('attachmentId')
 
     // Steps 1–2: ownership + status check
-    const check = await checkAppointmentAccess(c)
-    if (!check.ok) return check.response
+    await checkAppointmentAccess(c)
 
     const attachment = await findAndValidateAttachment(
         attachmentId,
@@ -157,7 +149,7 @@ recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
         user.id,
     )
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     await deleteAttachment(attachmentId)
@@ -173,8 +165,7 @@ recommendationPsychoRoutes.patch(
         const attachmentId = c.req.param('attachmentId')
 
         // Step 1 — appointment ownership
-        const check = await checkAppointmentOwnership(c)
-        if (!check.ok) return check.response
+        await checkAppointmentOwnership(c)
 
         // Step 2 — attachment chain
         const attachment = await findAndValidateAttachment(
@@ -184,7 +175,7 @@ recommendationPsychoRoutes.patch(
             user.id,
         )
         if (!attachment) {
-            return notFoundResponse(c)
+            throw new NotFoundError()
         }
 
         const { reply } = c.req.valid('json')
@@ -192,7 +183,7 @@ recommendationPsychoRoutes.patch(
         // Step 3 — reply-once check
         const existing = await findReaction(attachmentId)
         if (existing && existing.psychologistReply !== null) {
-            return c.json({ error: 'ReplyAlreadySet', message: 'Reply has already been set.' }, 400)
+            throw new BadRequestError('Reply has already been set.', 'ReplyAlreadySet')
         }
 
         const reaction = await setReply(attachmentId, reply)

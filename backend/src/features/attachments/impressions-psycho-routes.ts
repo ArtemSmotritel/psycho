@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
+import { NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { AppointmentsRepo } from '../appointments/repo'
-import { notFoundResponse } from './route-helpers'
+import { AppointmentsService } from '../appointments/services'
 import { listAttachments, findAndValidateAttachment, findImpressionCompletion } from './services'
 
 export const impressionPsychoRoutes = new Hono()
@@ -14,14 +14,11 @@ impressionPsychoRoutes.get('/:attachmentId/completion', async (c) => {
     const appointmentId = c.req.param('appointmentId')
     const attachmentId = c.req.param('attachmentId')
 
-    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForPsycho(appointmentId, user.id, clientId)
 
     const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'impression')
     if (!attachment) {
-        return notFoundResponse(c)
+        throw new NotFoundError()
     }
 
     const completion = await findImpressionCompletion(attachmentId)
@@ -33,10 +30,7 @@ impressionPsychoRoutes.get('/', async (c) => {
     const clientId = c.req.param('clientId')
     const appointmentId = c.req.param('appointmentId')
 
-    const appointment = await AppointmentsRepo.findByIdForPsycho(appointmentId, user.id, clientId)
-    if (!appointment) {
-        return notFoundResponse(c)
-    }
+    await AppointmentsService.getForPsycho(appointmentId, user.id, clientId)
 
     const impressions = await listAttachments(appointmentId, 'impression')
     return c.json({ impressions }, 200)
