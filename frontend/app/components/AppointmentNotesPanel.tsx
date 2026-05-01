@@ -57,7 +57,8 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                 }
             }
 
-            await noteService.create(clientId, appointmentId, {
+            await attachmentService.createForPsycho(clientId, appointmentId, {
+                type: 'note',
                 name: values.name,
                 text: values.text,
                 audioFileIds,

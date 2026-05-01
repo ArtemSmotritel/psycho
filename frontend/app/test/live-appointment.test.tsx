@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
-const mockImpressionSubmit = vi.fn()
+const mockCreateForClient = vi.fn()
 const mockListForClient = vi.fn()
 const mockNavigate = vi.fn()
 
@@ -14,15 +14,10 @@ vi.mock('~/services/appointment.service', () => ({
     },
 }))
 
-vi.mock('~/services/impression.service', () => ({
-    impressionService: {
-        submit: (...args: any[]) => mockImpressionSubmit(...args),
-    },
-}))
-
 vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForClient: (...args: any[]) => mockListForClient(...args),
+        createForClient: (...args: any[]) => mockCreateForClient(...args),
     },
 }))
 
@@ -131,7 +126,7 @@ function renderLiveAppointment(path = '/client/appointments/apt-001/live') {
 describe('LiveAppointment page', () => {
     beforeEach(() => {
         mockGetClientAppointmentById.mockReset()
-        mockImpressionSubmit.mockReset()
+        mockCreateForClient.mockReset()
         mockListForClient.mockReset()
         mockListForClient.mockResolvedValue({ data: { impressions: [] } })
         mockNavigate.mockReset()
@@ -266,13 +261,13 @@ describe('LiveAppointment page', () => {
             })
 
             expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
-            expect(mockImpressionSubmit).not.toHaveBeenCalled()
+            expect(mockCreateForClient).not.toHaveBeenCalled()
         })
 
         it('submitting impression from modal calls submit then navigates to summary', async () => {
-            mockImpressionSubmit.mockResolvedValue({
+            mockCreateForClient.mockResolvedValue({
                 data: {
-                    impression: {
+                    attachment: {
                         id: 'imp-new',
                         appointmentId: 'apt-001',
                         authorId: 'client-456',
@@ -301,8 +296,11 @@ describe('LiveAppointment page', () => {
                 await Promise.resolve()
             })
 
-            expect(mockImpressionSubmit).toHaveBeenCalledWith('apt-001', {
+            expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
+                type: 'impression',
                 text: 'Felt good today.',
+                imageFileIds: [],
+                audioFileIds: [],
             })
             expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
         })

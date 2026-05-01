@@ -1,5 +1,5 @@
 import { db } from 'config/db'
-import { NotFoundError } from 'errors/index'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import type { User } from 'utils/types'
 import { AppointmentsService } from '../appointments/services'
 import { FilesService } from '../files/services'
@@ -67,6 +67,65 @@ export async function createAttachment(params: {
     })
 
     return (await findAttachmentById(attachmentId))!
+}
+
+export async function createAttachmentForPsychoView(input: {
+    psychoId: string
+    clientId: string
+    appointmentId: string
+    type: 'note' | 'recommendation'
+    name: string
+    text?: string | null
+    imageFileIds: string[]
+    audioFileIds: string[]
+}): Promise<Attachment> {
+    const appointment = await AppointmentsService.getForPsycho(
+        input.appointmentId,
+        input.psychoId,
+        input.clientId,
+    )
+    if (appointment.status === 'upcoming') {
+        throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
+    }
+    const text = input.text?.trim() || null
+    return createAttachment({
+        appointmentId: input.appointmentId,
+        authorId: input.psychoId,
+        type: input.type,
+        name: input.name,
+        text,
+        imageFileIds: input.imageFileIds,
+        audioFileIds: input.audioFileIds,
+    })
+}
+
+export async function createAttachmentForClientView(input: {
+    clientId: string
+    appointmentId: string
+    name?: string
+    text?: string
+    imageFileIds: string[]
+    audioFileIds: string[]
+}): Promise<Attachment> {
+    const appointment = await AppointmentsService.getForClient(input.appointmentId, input.clientId)
+    if (appointment.status === 'upcoming') {
+        throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
+    }
+    const text = input.text?.trim() || null
+    if (!text && input.imageFileIds.length === 0 && input.audioFileIds.length === 0) {
+        throw new BadRequestError(
+            'At least one of text, imageFileIds, or audioFileIds is required.',
+        )
+    }
+    return createAttachment({
+        appointmentId: input.appointmentId,
+        authorId: input.clientId,
+        type: 'impression',
+        name: input.name ?? null,
+        text,
+        imageFileIds: input.imageFileIds,
+        audioFileIds: input.audioFileIds,
+    })
 }
 
 export async function listAttachmentsByAuthor(

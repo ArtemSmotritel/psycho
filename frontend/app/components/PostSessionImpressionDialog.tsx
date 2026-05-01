@@ -10,7 +10,7 @@ import {
     DialogTitle,
 } from '~/components/ui/dialog'
 import { ImpressionForm } from '~/components/ImpressionForm'
-import { impressionService } from '~/services/impression.service'
+import { attachmentService } from '~/services/attachment.service'
 import type { Attachment } from '~/models/attachment'
 
 interface PostSessionImpressionDialogProps {
@@ -31,9 +31,14 @@ export function PostSessionImpressionDialog({
     const handleSubmit = async (text: string) => {
         setIsSubmitting(true)
         try {
-            const res = await impressionService.submit(appointmentId, { text })
+            const res = await attachmentService.createForClient(appointmentId, {
+                type: 'impression',
+                text,
+                imageFileIds: [],
+                audioFileIds: [],
+            })
             toast.success('Impression saved.')
-            onSubmitted(res.data.impression)
+            onSubmitted(res.data.attachment)
         } catch {
             toast.error('Failed to submit impression. Please try again.')
         } finally {

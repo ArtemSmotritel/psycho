@@ -1,8 +1,12 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
-import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
-import { listQuerySchemaPsycho } from './schemas'
-import { getAttachmentForPsychoView, listAttachmentsForPsychoView } from './services'
+import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
+import { createAttachmentPsychoSchema, listQuerySchemaPsycho } from './schemas'
+import {
+    createAttachmentForPsychoView,
+    getAttachmentForPsychoView,
+    listAttachmentsForPsychoView,
+} from './services'
 
 export const attachmentPsychoRoutes = new Hono()
 
@@ -19,6 +23,23 @@ attachmentPsychoRoutes.get('/', zValidator('query', listQuerySchemaPsycho), asyn
     )
     return c.json(result, 200)
 })
+
+attachmentPsychoRoutes.post(
+    '/',
+    zValidator('json', createAttachmentPsychoSchema),
+    ownsFiles,
+    async (c) => {
+        const user = c.get('user')!
+        const body = c.req.valid('json')
+        const attachment = await createAttachmentForPsychoView({
+            psychoId: user.id,
+            clientId: c.req.param('clientId')!,
+            appointmentId: c.req.param('appointmentId')!,
+            ...body,
+        })
+        return c.json({ attachment }, 201)
+    },
+)
 
 attachmentPsychoRoutes.get('/:attachmentId', async (c) => {
     const user = c.get('user')!

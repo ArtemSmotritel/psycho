@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { insertTestFile } from '../../test-fixtures/files'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
 import {
@@ -1169,6 +1170,452 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         const res = await app.request('/api/client/appointments/some-apt/attachments', {
             method: 'GET',
             headers: { ...CLIENT_HEADER },
+        })
+        expect(res.status).toBe(401)
+    })
+})
+
+describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', () => {
+    it('creates a note on an active appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'My Note', text: 'Body' }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const body = await res.json()
+        expect(body).toHaveProperty('attachment')
+        expect(body.attachment).toMatchObject({
+            type: 'note',
+            name: 'My Note',
+            text: 'Body',
+            authorId: psycho.id,
+            appointmentId: apt.id,
+        })
+    })
+
+    it('creates a recommendation on a past appointment with image files', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const file = await insertTestFile(psycho.id, { originalName: 'photo.png' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    type: 'recommendation',
+                    name: 'Read this',
+                    imageFileIds: [file.id],
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const body = await res.json()
+        expect(body.attachment.type).toBe('recommendation')
+        expect(body.attachment.imageFiles).toHaveLength(1)
+        expect(body.attachment.imageFiles[0]).toHaveProperty('id', file.id)
+    })
+
+    it('returns 400 AppointmentNotActive when the appointment is upcoming', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'X' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotActive')
+    })
+
+    it('returns 400 when name is missing', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when type is impression (not allowed for psycho)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'impression', name: 'X' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 403 when referencing files owned by another user', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const otherUser = await insertTestUser({ email: 'other@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const foreignFile = await insertTestFile(otherUser.id, { originalName: 'foreign.png' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    type: 'note',
+                    name: 'X',
+                    imageFileIds: [foreignFile.id],
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 404 when the appointment does not belong to this psycho', async () => {
+        const psycho1 = await insertTestUser({ email: 'p1@test.com' })
+        const psycho2 = await insertTestUser({ email: 'p2@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
+        const apt = await createAppointment({
+            psychoId: psycho2.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho1.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'X' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 with client role header', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments',
+            await asUser(user.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'X' }),
+            }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'X' }),
+            },
+        )
+        expect(res.status).toBe(401)
+    })
+})
+
+describe('POST /api/client/appointments/:appointmentId/attachments', () => {
+    it('creates an impression on a past appointment with text', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression', text: 'My reflection' }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const body = await res.json()
+        expect(body).toHaveProperty('attachment')
+        expect(body.attachment).toMatchObject({
+            type: 'impression',
+            text: 'My reflection',
+            name: null,
+            authorId: client.id,
+            appointmentId: apt.id,
+        })
+    })
+
+    it('accepts an optional name on impression', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({
+                    type: 'impression',
+                    name: 'Session 1',
+                    text: 'Notes',
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const body = await res.json()
+        expect(body.attachment.name).toBe('Session 1')
+    })
+
+    it('returns 400 AppointmentNotActive when the appointment is upcoming', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression', text: 'x' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'AppointmentNotActive')
+    })
+
+    it('returns 400 when text/images/audio are all empty', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 400 when type is not impression', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'X' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 403 when referencing files owned by another user', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const otherUser = await insertTestUser({ email: 'other@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const foreignFile = await insertTestFile(otherUser.id, { originalName: 'foreign.png' })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({
+                    type: 'impression',
+                    text: 'x',
+                    imageFileIds: [foreignFile.id],
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 404 when the appointment does not belong to the client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const owner = await insertTestUser({ email: 'owner@test.com' })
+        const stranger = await insertTestUser({ email: 'stranger@test.com' })
+        await ClientsService.linkClientToPsycho(owner.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: owner.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(stranger.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression', text: 'x' }),
+            }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 with psycho role header', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/client/appointments/some-apt/attachments',
+            await asUser(user.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'impression', text: 'x' }),
+            }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request('/api/client/appointments/some-apt/attachments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+            body: JSON.stringify({ type: 'impression', text: 'x' }),
         })
         expect(res.status).toBe(401)
     })

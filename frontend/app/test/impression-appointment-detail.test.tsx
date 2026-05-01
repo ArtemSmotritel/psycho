@@ -4,18 +4,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
-const mockImpressionSubmit = vi.fn()
+const mockCreateForClient = vi.fn()
 const mockListForClient = vi.fn()
-
-vi.mock('~/services/impression.service', () => ({
-    impressionService: {
-        submit: (...args: any[]) => mockImpressionSubmit(...args),
-    },
-}))
 
 vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForClient: (...args: any[]) => mockListForClient(...args),
+        createForClient: (...args: any[]) => mockCreateForClient(...args),
     },
 }))
 
@@ -87,7 +82,7 @@ function renderDetail(path = '/client/appointments/apt-001') {
 
 describe('ClientAppointmentDetail — past appointment with impressions', () => {
     beforeEach(() => {
-        mockImpressionSubmit.mockReset()
+        mockCreateForClient.mockReset()
         mockListForClient.mockReset()
         vi.mocked(toast.error).mockReset?.()
     })
@@ -122,7 +117,7 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
         })
     })
 
-    it('submit form calls impressionService.submit for past appointment', async () => {
+    it('submit form calls attachmentService.createForClient for past appointment', async () => {
         const user = userEvent.setup()
         mockUseCurrentClientAppointment = () => ({
             appointment: pastAppointment,
@@ -130,7 +125,7 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
         })
         mockListForClient.mockResolvedValue({ data: { impressions: [], recommendations: [] } })
         const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New reflection' }
-        mockImpressionSubmit.mockResolvedValue({ data: { impression: newImpression } })
+        mockCreateForClient.mockResolvedValue({ data: { attachment: newImpression } })
 
         renderDetail()
 
@@ -142,7 +137,12 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
         await user.click(screen.getByRole('button', { name: /submit/i }))
 
         await waitFor(() => {
-            expect(mockImpressionSubmit).toHaveBeenCalledWith('apt-001', { text: 'New reflection' })
+            expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
+                type: 'impression',
+                text: 'New reflection',
+                imageFileIds: [],
+                audioFileIds: [],
+            })
         })
     })
 })

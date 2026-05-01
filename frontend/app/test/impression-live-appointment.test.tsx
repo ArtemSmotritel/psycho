@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
-const mockImpressionSubmit = vi.fn()
+const mockCreateForClient = vi.fn()
 const mockListForClient = vi.fn()
 const mockNavigate = vi.fn()
 
@@ -15,15 +15,10 @@ vi.mock('~/services/appointment.service', () => ({
     },
 }))
 
-vi.mock('~/services/impression.service', () => ({
-    impressionService: {
-        submit: (...args: any[]) => mockImpressionSubmit(...args),
-    },
-}))
-
 vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForClient: (...args: any[]) => mockListForClient(...args),
+        createForClient: (...args: any[]) => mockCreateForClient(...args),
     },
 }))
 
@@ -134,7 +129,7 @@ function renderLiveAppointment(path = '/client/appointments/apt-001/live') {
 describe('LiveAppointment — impressions section', () => {
     beforeEach(() => {
         mockGetClientAppointmentById.mockReset()
-        mockImpressionSubmit.mockReset()
+        mockCreateForClient.mockReset()
         mockListForClient.mockReset()
         mockNavigate.mockReset()
         vi.mocked(toast.error).mockReset?.()
@@ -176,7 +171,7 @@ describe('LiveAppointment — impressions section', () => {
         mockListForClient.mockResolvedValue({ data: { impressions: [] } })
 
         const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New impression text' }
-        mockImpressionSubmit.mockResolvedValue({ data: { impression: newImpression } })
+        mockCreateForClient.mockResolvedValue({ data: { attachment: newImpression } })
 
         renderLiveAppointment()
 
@@ -198,7 +193,7 @@ describe('LiveAppointment — impressions section', () => {
             data: { appointment: activeAppointment },
         })
         mockListForClient.mockResolvedValue({ data: { impressions: [] } })
-        mockImpressionSubmit.mockRejectedValue(new Error('Network error'))
+        mockCreateForClient.mockRejectedValue(new Error('Network error'))
 
         renderLiveAppointment()
 

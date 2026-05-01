@@ -21,36 +21,40 @@ export interface Attachment {
     updatedAt: string
 }
 
-export interface CreateNoteDTO {
-    name: string
-    text?: string
-    imageFileIds?: string[]
-    audioFileIds?: string[]
-}
-
 export interface UpdateNoteDTO {
     name?: string
     text?: string
     removeFileIds?: string[]
 }
 
-export interface CreateImpressionDTO {
-    text?: string
-    imageFileIds?: string[]
-    audioFileIds?: string[]
-}
-
-export interface CreateRecommendationDTO {
-    name: string
-    text?: string
-    imageFileIds?: string[]
-    audioFileIds?: string[]
-}
-
 export interface UpdateRecommendationDTO {
     name?: string
     text?: string
     removeFileIds?: string[]
+}
+
+export type CreateAttachmentPsychoDTO =
+    | {
+          type: 'note'
+          name: string
+          text?: string
+          imageFileIds: string[]
+          audioFileIds: string[]
+      }
+    | {
+          type: 'recommendation'
+          name: string
+          text?: string
+          imageFileIds: string[]
+          audioFileIds: string[]
+      }
+
+export interface CreateAttachmentClientDTO {
+    type: 'impression'
+    name?: string
+    text?: string
+    imageFileIds: string[]
+    audioFileIds: string[]
 }
 
 export interface RecommendationReaction {

@@ -5,14 +5,10 @@ import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
 import { ConfirmAction } from './ConfirmAction'
-import { RecommendationForm } from './RecommendationForm'
+import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService } from '~/services/attachment.service'
-import type {
-    AttachmentWithReaction,
-    CreateRecommendationDTO,
-    UpdateRecommendationDTO,
-} from '~/models/attachment'
+import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
 
 interface AppointmentRecommendationsPanelProps {
     clientId: string
@@ -51,14 +47,17 @@ export function AppointmentRecommendationsPanel({
         fetchRecommendations()
     }, [fetchRecommendations])
 
-    const handleCreate = async (dto: CreateRecommendationDTO | UpdateRecommendationDTO) => {
+    const handleCreate = async (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => {
         setIsCreating(true)
         try {
-            await recommendationService.create(
-                clientId,
-                appointmentId,
-                dto as CreateRecommendationDTO,
-            )
+            const create = dto as RecommendationFormCreateDTO
+            await attachmentService.createForPsycho(clientId, appointmentId, {
+                type: 'recommendation',
+                name: create.name,
+                text: create.text,
+                imageFileIds: create.imageFileIds,
+                audioFileIds: create.audioFileIds,
+            })
             toast.success('Recommendation created.')
             await fetchRecommendations()
         } catch {
@@ -70,7 +69,7 @@ export function AppointmentRecommendationsPanel({
 
     const handleUpdate = async (
         recommendationId: string,
-        dto: CreateRecommendationDTO | UpdateRecommendationDTO,
+        dto: RecommendationFormCreateDTO | UpdateRecommendationDTO,
     ) => {
         setUpdatingId(recommendationId)
         try {

@@ -1,11 +1,14 @@
 import { toast } from 'sonner'
 import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
 import { fileService } from '~/services/file.service'
-import type {
-    AttachmentFile,
-    CreateRecommendationDTO,
-    UpdateRecommendationDTO,
-} from '~/models/attachment'
+import type { AttachmentFile, UpdateRecommendationDTO } from '~/models/attachment'
+
+export interface RecommendationFormCreateDTO {
+    name: string
+    text?: string
+    imageFileIds: string[]
+    audioFileIds: string[]
+}
 
 interface RecommendationFormProps {
     mode: 'create' | 'edit'
@@ -17,7 +20,7 @@ interface RecommendationFormProps {
         imageFiles?: AttachmentFile[]
     }
     isLoading: boolean
-    onSubmit: (dto: CreateRecommendationDTO | UpdateRecommendationDTO) => void
+    onSubmit: (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => void
 }
 
 export function RecommendationForm({
@@ -57,7 +60,7 @@ export function RecommendationForm({
                 }
             }
 
-            const dto: CreateRecommendationDTO = {
+            const dto: RecommendationFormCreateDTO = {
                 name: values.name,
                 text: values.text,
                 audioFileIds,

@@ -3,6 +3,8 @@ import type {
     Attachment,
     AttachmentType,
     ClientAttachmentList,
+    CreateAttachmentClientDTO,
+    CreateAttachmentPsychoDTO,
     ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
@@ -30,4 +32,16 @@ export const attachmentService = {
         api.get<ClientAttachmentList>(`/client/appointments/${appointmentId}/attachments`, {
             params: type ? { type } : undefined,
         }),
+
+    createForPsycho: (clientId: string, appointmentId: string, data: CreateAttachmentPsychoDTO) =>
+        api.post<{ attachment: Attachment }>(
+            `/clients/${clientId}/appointments/${appointmentId}/attachments`,
+            data,
+        ),
+
+    createForClient: (appointmentId: string, data: CreateAttachmentClientDTO) =>
+        api.post<{ attachment: Attachment }>(
+            `/client/appointments/${appointmentId}/attachments`,
+            data,
+        ),
 }

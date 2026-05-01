@@ -17,7 +17,6 @@ import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
-import { impressionService } from '~/services/impression.service'
 import { attachmentService } from '~/services/attachment.service'
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
@@ -203,10 +202,16 @@ export default function LiveAppointment() {
                                     if (!appointmentId) return
                                     setIsSubmittingImpression(true)
                                     try {
-                                        const res = await impressionService.submit(appointmentId, {
-                                            text,
-                                        })
-                                        setImpressions((prev) => [...prev, res.data.impression])
+                                        const res = await attachmentService.createForClient(
+                                            appointmentId,
+                                            {
+                                                type: 'impression',
+                                                text,
+                                                imageFileIds: [],
+                                                audioFileIds: [],
+                                            },
+                                        )
+                                        setImpressions((prev) => [...prev, res.data.attachment])
                                     } catch {
                                         toast.error(
                                             'Failed to submit impression. Please try again.',

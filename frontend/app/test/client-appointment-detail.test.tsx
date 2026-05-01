@@ -7,12 +7,6 @@ vi.mock('~/hooks/useRoleGuard', () => ({
     useRoleGuard: () => ({ userRole: 'client' }),
 }))
 
-vi.mock('~/services/impression.service', () => ({
-    impressionService: {
-        submit: vi.fn(),
-    },
-}))
-
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
         react: vi.fn(),
@@ -24,6 +18,7 @@ vi.mock('~/services/attachment.service', () => ({
         listForClient: vi
             .fn()
             .mockResolvedValue({ data: { impressions: [], recommendations: [] } }),
+        createForClient: vi.fn(),
     },
 }))
 

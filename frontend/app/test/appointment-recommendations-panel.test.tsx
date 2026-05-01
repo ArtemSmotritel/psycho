@@ -8,7 +8,6 @@ const mockListForPsycho = vi.fn()
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
         reply: (...args: any[]) => mockReply(...args),
@@ -18,6 +17,7 @@ vi.mock('~/services/recommendation.service', () => ({
 vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForPsycho: (...args: any[]) => mockListForPsycho(...args),
+        createForPsycho: vi.fn(),
     },
 }))
 

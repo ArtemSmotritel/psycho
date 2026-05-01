@@ -1,7 +1,6 @@
 import { api } from './api'
 import type {
     AttachmentWithReaction,
-    CreateRecommendationDTO,
     RecommendationReaction,
     SetReplyDTO,
     UpdateRecommendationDTO,
@@ -9,12 +8,6 @@ import type {
 } from '~/models/attachment'
 
 export const recommendationService = {
-    create: (clientId: string, appointmentId: string, data: CreateRecommendationDTO) =>
-        api.post<{ recommendation: AttachmentWithReaction }>(
-            `/clients/${clientId}/appointments/${appointmentId}/recommendations`,
-            data,
-        ),
-
     update: (clientId: string, appointmentId: string, id: string, data: UpdateRecommendationDTO) =>
         api.patch<{ recommendation: AttachmentWithReaction }>(
             `/clients/${clientId}/appointments/${appointmentId}/recommendations/${id}`,

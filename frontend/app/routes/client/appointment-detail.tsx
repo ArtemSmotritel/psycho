@@ -8,7 +8,6 @@ import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
-import { impressionService } from '~/services/impression.service'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService } from '~/services/attachment.service'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
@@ -121,8 +120,13 @@ export default function ClientAppointmentDetail() {
                             if (!appointmentId) return
                             setIsSubmittingImpression(true)
                             try {
-                                const res = await impressionService.submit(appointmentId, { text })
-                                setImpressions((prev) => [...prev, res.data.impression])
+                                const res = await attachmentService.createForClient(appointmentId, {
+                                    type: 'impression',
+                                    text,
+                                    imageFileIds: [],
+                                    audioFileIds: [],
+                                })
+                                setImpressions((prev) => [...prev, res.data.attachment])
                             } catch {
                                 toast.error('Failed to submit impression. Please try again.')
                             } finally {
