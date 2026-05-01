@@ -5,7 +5,7 @@ import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
 const mockImpressionSubmit = vi.fn()
-const mockImpressionGetClientList = vi.fn()
+const mockListForClient = vi.fn()
 const mockNavigate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
@@ -17,7 +17,12 @@ vi.mock('~/services/appointment.service', () => ({
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
         submit: (...args: any[]) => mockImpressionSubmit(...args),
-        getClientList: (...args: any[]) => mockImpressionGetClientList(...args),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForClient: (...args: any[]) => mockListForClient(...args),
     },
 }))
 
@@ -127,8 +132,8 @@ describe('LiveAppointment page', () => {
     beforeEach(() => {
         mockGetClientAppointmentById.mockReset()
         mockImpressionSubmit.mockReset()
-        mockImpressionGetClientList.mockReset()
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockReset()
+        mockListForClient.mockResolvedValue({ data: { impressions: [] } })
         mockNavigate.mockReset()
     })
 

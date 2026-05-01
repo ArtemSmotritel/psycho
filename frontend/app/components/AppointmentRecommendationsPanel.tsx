@@ -7,6 +7,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { ConfirmAction } from './ConfirmAction'
 import { RecommendationForm } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
+import { attachmentService } from '~/services/attachment.service'
 import type {
     AttachmentWithReaction,
     CreateRecommendationDTO,
@@ -33,7 +34,11 @@ export function AppointmentRecommendationsPanel({
         setIsLoading(true)
         setError(null)
         try {
-            const res = await recommendationService.getList(clientId, appointmentId)
+            const res = await attachmentService.listForPsycho(
+                clientId,
+                appointmentId,
+                'recommendation',
+            )
             setRecommendations(res.data.recommendations)
         } catch {
             setError('Failed to load recommendations.')

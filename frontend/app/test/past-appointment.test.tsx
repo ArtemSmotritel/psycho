@@ -2,11 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
 
-const mockGetPsychoList = vi.fn()
+const mockListForPsycho = vi.fn()
 
-vi.mock('~/services/impression.service', () => ({
-    impressionService: {
-        getPsychoList: (...args: any[]) => mockGetPsychoList(...args),
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForPsycho: (...args: any[]) => mockListForPsycho(...args),
     },
 }))
 
@@ -123,12 +123,12 @@ function renderSession(path = '/psycho/clients/client-456/appointments/apt-001')
 
 describe('past appointment detail view', () => {
     beforeEach(() => {
-        mockGetPsychoList.mockReset()
+        mockListForPsycho.mockReset()
     })
 
     it('renders date and time range heading for a past appointment', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -140,7 +140,7 @@ describe('past appointment detail view', () => {
 
     it('renders the AppointmentNotesPanel component', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -151,7 +151,7 @@ describe('past appointment detail view', () => {
 
     it('renders the AppointmentRecommendationsPanel component', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -160,20 +160,20 @@ describe('past appointment detail view', () => {
         })
     })
 
-    it('calls impressionService.getPsychoList with correct clientId and appointmentId on mount for past status', async () => {
+    it('calls attachmentService.listForPsycho with correct clientId, appointmentId, and impression filter on mount for past status', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
         await waitFor(() => {
-            expect(mockGetPsychoList).toHaveBeenCalledWith('client-456', 'apt-001')
+            expect(mockListForPsycho).toHaveBeenCalledWith('client-456', 'apt-001', 'impression')
         })
     })
 
-    it('renders impression text returned by impressionService.getPsychoList', async () => {
+    it('renders impression text returned by attachmentService.listForPsycho', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [sampleImpression] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [sampleImpression] } })
 
         renderSession()
 
@@ -185,7 +185,7 @@ describe('past appointment detail view', () => {
     it('shows loading spinner (via ImpressionList) while impression fetch is in progress', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
         // never resolves during the test
-        mockGetPsychoList.mockReturnValue(new Promise(() => {}))
+        mockListForPsycho.mockReturnValue(new Promise(() => {}))
 
         renderSession()
 
@@ -194,9 +194,9 @@ describe('past appointment detail view', () => {
         })
     })
 
-    it('shows "No impressions yet." when getPsychoList returns an empty array', async () => {
+    it('shows "No impressions yet." when listForPsycho returns an empty array', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -214,7 +214,7 @@ describe('past appointment detail view', () => {
             appointment: appointmentWithSnapshot,
             isLoading: false,
         })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -227,7 +227,7 @@ describe('past appointment detail view', () => {
 
     it('does not render whiteboard snapshot section when whiteboardSnapshotUrl is null', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 
@@ -236,17 +236,17 @@ describe('past appointment detail view', () => {
         })
     })
 
-    it('does not call impressionService.getPsychoList when appointment status is upcoming', () => {
+    it('does not call attachmentService.listForPsycho when appointment status is upcoming', () => {
         mockUseCurrentAppointment = () => ({ appointment: upcomingAppointment, isLoading: false })
 
         renderSession()
 
-        expect(mockGetPsychoList).not.toHaveBeenCalled()
+        expect(mockListForPsycho).not.toHaveBeenCalled()
     })
 
     it('renders missed status through the same past branch (no "Start Appointment" button)', async () => {
         mockUseCurrentAppointment = () => ({ appointment: missedAppointment, isLoading: false })
-        mockGetPsychoList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForPsycho.mockResolvedValue({ data: { impressions: [] } })
 
         renderSession()
 

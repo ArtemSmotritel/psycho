@@ -9,7 +9,7 @@ import { Button } from '~/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
-import { impressionService } from '~/services/impression.service'
+import { attachmentService } from '~/services/attachment.service'
 import { toast } from 'sonner'
 import { isAxiosError } from 'axios'
 import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
@@ -64,8 +64,8 @@ export default function Session() {
         )
             return
         setIsLoadingImpressions(true)
-        impressionService
-            .getPsychoList(clientId, appointment.id)
+        attachmentService
+            .listForPsycho(clientId, appointment.id, 'impression')
             .then((res) => {
                 setImpressions(res.data.impressions)
             })

@@ -5,12 +5,17 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockImpressionSubmit = vi.fn()
-const mockImpressionGetClientList = vi.fn()
+const mockListForClient = vi.fn()
 
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
         submit: (...args: any[]) => mockImpressionSubmit(...args),
-        getClientList: (...args: any[]) => mockImpressionGetClientList(...args),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForClient: (...args: any[]) => mockListForClient(...args),
     },
 }))
 
@@ -83,7 +88,7 @@ function renderDetail(path = '/client/appointments/apt-001') {
 describe('ClientAppointmentDetail — past appointment with impressions', () => {
     beforeEach(() => {
         mockImpressionSubmit.mockReset()
-        mockImpressionGetClientList.mockReset()
+        mockListForClient.mockReset()
         vi.mocked(toast.error).mockReset?.()
     })
 
@@ -92,8 +97,8 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
             appointment: pastAppointment,
             isLoading: false,
         })
-        mockImpressionGetClientList.mockResolvedValue({
-            data: { impressions: [sampleImpression] },
+        mockListForClient.mockResolvedValue({
+            data: { impressions: [sampleImpression], recommendations: [] },
         })
 
         renderDetail()
@@ -108,7 +113,7 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
             appointment: pastAppointment,
             isLoading: false,
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockResolvedValue({ data: { impressions: [], recommendations: [] } })
 
         renderDetail()
 
@@ -123,7 +128,7 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
             appointment: pastAppointment,
             isLoading: false,
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockResolvedValue({ data: { impressions: [], recommendations: [] } })
         const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New reflection' }
         mockImpressionSubmit.mockResolvedValue({ data: { impression: newImpression } })
 

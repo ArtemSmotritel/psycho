@@ -10,6 +10,7 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { impressionService } from '~/services/impression.service'
 import { recommendationService } from '~/services/recommendation.service'
+import { attachmentService } from '~/services/attachment.service'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
@@ -37,36 +38,18 @@ export default function ClientAppointmentDetail() {
         )
             return
         setIsLoadingImpressions(true)
-        impressionService
-            .getClientList(appointmentId)
+        setIsLoadingRecommendations(true)
+        attachmentService
+            .listForClient(appointmentId)
             .then((res) => {
                 setImpressions(res.data.impressions)
-            })
-            .catch(() => {
-                // Silently ignore
-            })
-            .finally(() => {
-                setIsLoadingImpressions(false)
-            })
-    }, [appointmentId, appointment])
-
-    useEffect(() => {
-        if (
-            !appointmentId ||
-            !appointment ||
-            (appointment.status !== 'past' && appointment.status !== 'missed')
-        )
-            return
-        setIsLoadingRecommendations(true)
-        recommendationService
-            .getClientList(appointmentId)
-            .then((res) => {
                 setRecommendations(res.data.recommendations)
             })
             .catch(() => {
                 // Silently ignore
             })
             .finally(() => {
+                setIsLoadingImpressions(false)
                 setIsLoadingRecommendations(false)
             })
     }, [appointmentId, appointment])
@@ -172,10 +155,10 @@ export default function ClientAppointmentDetail() {
                                             await recommendationService.react(appointmentId, id, {
                                                 done,
                                             })
-                                            const res =
-                                                await recommendationService.getClientList(
-                                                    appointmentId,
-                                                )
+                                            const res = await attachmentService.listForClient(
+                                                appointmentId,
+                                                'recommendation',
+                                            )
                                             setRecommendations(res.data.recommendations)
                                         } catch {
                                             toast.error('Failed to update. Please try again.')
@@ -187,10 +170,10 @@ export default function ClientAppointmentDetail() {
                                             await recommendationService.react(appointmentId, id, {
                                                 comment,
                                             })
-                                            const res =
-                                                await recommendationService.getClientList(
-                                                    appointmentId,
-                                                )
+                                            const res = await attachmentService.listForClient(
+                                                appointmentId,
+                                                'recommendation',
+                                            )
                                             setRecommendations(res.data.recommendations)
                                         } catch {
                                             toast.error(

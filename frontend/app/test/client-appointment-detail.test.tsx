@@ -9,15 +9,21 @@ vi.mock('~/hooks/useRoleGuard', () => ({
 
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
-        getClientList: vi.fn().mockResolvedValue({ data: { impressions: [] } }),
         submit: vi.fn(),
     },
 }))
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        getClientList: vi.fn().mockResolvedValue({ data: { recommendations: [] } }),
         react: vi.fn(),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForClient: vi
+            .fn()
+            .mockResolvedValue({ data: { impressions: [], recommendations: [] } }),
     },
 }))
 

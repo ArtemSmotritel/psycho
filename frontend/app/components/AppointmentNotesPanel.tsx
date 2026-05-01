@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
 import { noteService } from '~/services/note.service'
+import { attachmentService } from '~/services/attachment.service'
 import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
 
@@ -23,7 +24,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         setIsLoading(true)
         setError(null)
         try {
-            const res = await noteService.getList(clientId, appointmentId)
+            const res = await attachmentService.listForPsycho(clientId, appointmentId, 'note')
             setNotes(res.data.notes)
         } catch {
             setError('Failed to load notes.')

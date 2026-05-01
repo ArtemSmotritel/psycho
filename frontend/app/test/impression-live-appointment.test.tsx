@@ -6,7 +6,7 @@ import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockGetClientAppointmentById = vi.fn()
 const mockImpressionSubmit = vi.fn()
-const mockImpressionGetClientList = vi.fn()
+const mockListForClient = vi.fn()
 const mockNavigate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
@@ -18,7 +18,12 @@ vi.mock('~/services/appointment.service', () => ({
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
         submit: (...args: any[]) => mockImpressionSubmit(...args),
-        getClientList: (...args: any[]) => mockImpressionGetClientList(...args),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForClient: (...args: any[]) => mockListForClient(...args),
     },
 }))
 
@@ -130,7 +135,7 @@ describe('LiveAppointment — impressions section', () => {
     beforeEach(() => {
         mockGetClientAppointmentById.mockReset()
         mockImpressionSubmit.mockReset()
-        mockImpressionGetClientList.mockReset()
+        mockListForClient.mockReset()
         mockNavigate.mockReset()
         vi.mocked(toast.error).mockReset?.()
     })
@@ -139,7 +144,7 @@ describe('LiveAppointment — impressions section', () => {
         mockGetClientAppointmentById.mockResolvedValue({
             data: { appointment: activeAppointment },
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockResolvedValue({ data: { impressions: [] } })
 
         renderLiveAppointment()
 
@@ -152,7 +157,7 @@ describe('LiveAppointment — impressions section', () => {
         mockGetClientAppointmentById.mockResolvedValue({
             data: { appointment: activeAppointment },
         })
-        mockImpressionGetClientList.mockResolvedValue({
+        mockListForClient.mockResolvedValue({
             data: { impressions: [sampleImpression] },
         })
 
@@ -168,7 +173,7 @@ describe('LiveAppointment — impressions section', () => {
         mockGetClientAppointmentById.mockResolvedValue({
             data: { appointment: activeAppointment },
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockResolvedValue({ data: { impressions: [] } })
 
         const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New impression text' }
         mockImpressionSubmit.mockResolvedValue({ data: { impression: newImpression } })
@@ -192,7 +197,7 @@ describe('LiveAppointment — impressions section', () => {
         mockGetClientAppointmentById.mockResolvedValue({
             data: { appointment: activeAppointment },
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
+        mockListForClient.mockResolvedValue({ data: { impressions: [] } })
         mockImpressionSubmit.mockRejectedValue(new Error('Network error'))
 
         renderLiveAppointment()

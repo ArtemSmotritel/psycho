@@ -18,6 +18,7 @@ import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { impressionService } from '~/services/impression.service'
+import { attachmentService } from '~/services/attachment.service'
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
@@ -94,8 +95,8 @@ export default function LiveAppointment() {
     useEffect(() => {
         if (!appointmentId) return
         setIsLoadingImpressions(true)
-        impressionService
-            .getClientList(appointmentId)
+        attachmentService
+            .listForClient(appointmentId, 'impression')
             .then((res) => {
                 setImpressions(res.data.impressions)
             })

@@ -5,20 +5,23 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
 const mockReact = vi.fn()
-const mockGetClientList = vi.fn()
-const mockImpressionGetClientList = vi.fn()
+const mockListForClient = vi.fn()
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        getClientList: (...args: any[]) => mockGetClientList(...args),
         react: (...args: any[]) => mockReact(...args),
     },
 }))
 
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
-        getClientList: (...args: any[]) => mockImpressionGetClientList(...args),
         submit: vi.fn(),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForClient: (...args: any[]) => mockListForClient(...args),
     },
 }))
 
@@ -91,20 +94,20 @@ function renderDetail(path = '/client/appointments/apt-001') {
 describe('ClientAppointmentDetail — past appointment with recommendations', () => {
     beforeEach(() => {
         mockReact.mockReset()
-        mockGetClientList.mockReset()
-        mockImpressionGetClientList.mockReset()
+        mockListForClient.mockReset()
         vi.mocked(toast.error).mockReset?.()
         mockUseCurrentClientAppointment = () => ({
             appointment: pastAppointment,
             isLoading: false,
         })
-        mockImpressionGetClientList.mockResolvedValue({ data: { impressions: [] } })
     })
 
     it('calls recommendationService.react on done toggle', async () => {
         const user = userEvent.setup()
-        mockGetClientList
-            .mockResolvedValueOnce({ data: { recommendations: [sampleRecommendation] } })
+        mockListForClient
+            .mockResolvedValueOnce({
+                data: { impressions: [], recommendations: [sampleRecommendation] },
+            })
             .mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReact.mockResolvedValue({ data: { reaction: {} } })
 
@@ -123,9 +126,11 @@ describe('ClientAppointmentDetail — past appointment with recommendations', ()
 
     it('calls recommendationService.react on comment submit', async () => {
         const user = userEvent.setup()
-        // First call: initial load; second call: re-fetch after react
-        mockGetClientList
-            .mockResolvedValueOnce({ data: { recommendations: [sampleRecommendation] } })
+        // First call: initial load (full envelope); second call: re-fetch (recommendations only)
+        mockListForClient
+            .mockResolvedValueOnce({
+                data: { impressions: [], recommendations: [sampleRecommendation] },
+            })
             .mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReact.mockResolvedValue({ data: { reaction: {} } })
 
@@ -160,7 +165,9 @@ describe('ClientAppointmentDetail — past appointment with recommendations', ()
 
     it('shows toast.error when react fails', async () => {
         const user = userEvent.setup()
-        mockGetClientList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
+        mockListForClient.mockResolvedValue({
+            data: { impressions: [], recommendations: [sampleRecommendation] },
+        })
         mockReact.mockRejectedValue(new Error('API error'))
 
         renderDetail()

@@ -14,14 +14,6 @@ export const impressionService = {
             data,
         ),
 
-    getClientList: (appointmentId: string) =>
-        api.get<{ impressions: Attachment[] }>(`/client/appointments/${appointmentId}/impressions`),
-
-    getPsychoList: (clientId: string, appointmentId: string) =>
-        api.get<{ impressions: Attachment[] }>(
-            `/clients/${clientId}/appointments/${appointmentId}/impressions`,
-        ),
-
     getPsychoProgressList: (clientId: string) =>
         api.get<{ impressions: AttachmentWithAppointment[] }>(
             `/clients/${clientId}/progress/impressions`,

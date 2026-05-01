@@ -84,6 +84,21 @@ export interface ImpressionCompletion {
     createdAt: string
 }
 
+export interface AttachmentWithCompletion extends Attachment {
+    completion: ImpressionCompletion | null
+}
+
+export interface PsychoAttachmentList {
+    notes: Attachment[]
+    impressions: AttachmentWithCompletion[]
+    recommendations: AttachmentWithReaction[]
+}
+
+export interface ClientAttachmentList {
+    impressions: AttachmentWithCompletion[]
+    recommendations: AttachmentWithReaction[]
+}
+
 export interface CompleteImpressionDTO {
     response: string
 }

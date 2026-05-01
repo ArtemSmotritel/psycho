@@ -3,17 +3,21 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router'
 
-const mockFetchRecommendations = vi.fn()
 const mockReply = vi.fn()
-const mockGetList = vi.fn()
+const mockListForPsycho = vi.fn()
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        getList: (...args: any[]) => mockGetList(...args),
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
         reply: (...args: any[]) => mockReply(...args),
+    },
+}))
+
+vi.mock('~/services/attachment.service', () => ({
+    attachmentService: {
+        listForPsycho: (...args: any[]) => mockListForPsycho(...args),
     },
 }))
 
@@ -60,7 +64,7 @@ const sampleRecommendation = {
 
 describe('AppointmentRecommendationsPanel', () => {
     beforeEach(() => {
-        mockGetList.mockReset()
+        mockListForPsycho.mockReset()
         mockReply.mockReset()
         vi.mocked(toast.error).mockReset?.()
         vi.mocked(toast.success).mockReset?.()
@@ -68,7 +72,7 @@ describe('AppointmentRecommendationsPanel', () => {
 
     it('calls recommendationService.reply on reply submit', async () => {
         const user = userEvent.setup()
-        mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
+        mockListForPsycho.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockResolvedValue({ data: { reaction: { psychologistReply: 'Keep it up!' } } })
 
         render(
@@ -92,9 +96,9 @@ describe('AppointmentRecommendationsPanel', () => {
         })
     })
 
-    it('calls getList again (fetchRecommendations) on successful reply', async () => {
+    it('calls listForPsycho again (fetchRecommendations) on successful reply', async () => {
         const user = userEvent.setup()
-        mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
+        mockListForPsycho.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockResolvedValue({ data: { reaction: { psychologistReply: 'Keep it up!' } } })
 
         render(
@@ -107,19 +111,19 @@ describe('AppointmentRecommendationsPanel', () => {
             expect(screen.getByText('Do yoga')).toBeInTheDocument()
         })
 
-        const callsBefore = mockGetList.mock.calls.length
+        const callsBefore = mockListForPsycho.mock.calls.length
         const textarea = screen.getByRole('textbox')
         await user.type(textarea, 'Great!')
         await user.click(screen.getByRole('button', { name: /submit/i }))
 
         await waitFor(() => {
-            expect(mockGetList.mock.calls.length).toBeGreaterThan(callsBefore)
+            expect(mockListForPsycho.mock.calls.length).toBeGreaterThan(callsBefore)
         })
     })
 
     it('shows toast.error on reply failure', async () => {
         const user = userEvent.setup()
-        mockGetList.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
+        mockListForPsycho.mockResolvedValue({ data: { recommendations: [sampleRecommendation] } })
         mockReply.mockRejectedValue(new Error('API error'))
 
         render(

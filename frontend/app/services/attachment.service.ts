@@ -1,5 +1,12 @@
 import { api } from './api'
-import type { Attachment, ImpressionCompletion, RecommendationReaction } from '~/models/attachment'
+import type {
+    Attachment,
+    AttachmentType,
+    ClientAttachmentList,
+    ImpressionCompletion,
+    PsychoAttachmentList,
+    RecommendationReaction,
+} from '~/models/attachment'
 
 export interface AttachmentDetailResponse {
     attachment: Attachment
@@ -12,4 +19,15 @@ export const attachmentService = {
         api.get<AttachmentDetailResponse>(
             `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
         ),
+
+    listForPsycho: (clientId: string, appointmentId: string, type?: AttachmentType) =>
+        api.get<PsychoAttachmentList>(
+            `/clients/${clientId}/appointments/${appointmentId}/attachments`,
+            { params: type ? { type } : undefined },
+        ),
+
+    listForClient: (appointmentId: string, type?: Exclude<AttachmentType, 'note'>) =>
+        api.get<ClientAttachmentList>(`/client/appointments/${appointmentId}/attachments`, {
+            params: type ? { type } : undefined,
+        }),
 }
