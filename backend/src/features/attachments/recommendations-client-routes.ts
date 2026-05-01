@@ -4,12 +4,7 @@ import { z } from 'zod/v4'
 import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { AppointmentsService } from '../appointments/services'
-import {
-    findAndValidateAttachment,
-    findReaction,
-    listAttachmentsWithReactions,
-    upsertReaction,
-} from './services'
+import { findAndValidateAttachment, findReaction, upsertReaction } from './services'
 
 const reactionSchema = z.object({
     done: z.boolean().optional(),
@@ -19,16 +14,6 @@ const reactionSchema = z.object({
 export const recommendationClientRoutes = new Hono()
 
 recommendationClientRoutes.use(authorized, onlyClientRequest)
-
-recommendationClientRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-
-    await AppointmentsService.getForClient(appointmentId, user.id)
-
-    const recommendations = await listAttachmentsWithReactions(appointmentId, 'recommendation')
-    return c.json({ recommendations }, 200)
-})
 
 recommendationClientRoutes.patch(
     '/:attachmentId/reaction',

@@ -15,7 +15,6 @@ import { whiteboardRoutes } from '../features/whiteboard/routes'
 import { fileRoutes } from '../features/files/routes'
 import { noteRoutes } from '../features/attachments/notes-routes'
 import { impressionClientRoutes } from '../features/attachments/impressions-client-routes'
-import { impressionPsychoRoutes } from '../features/attachments/impressions-psycho-routes'
 import { recommendationPsychoRoutes } from '../features/attachments/recommendations-psycho-routes'
 import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
 import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
@@ -96,7 +95,6 @@ app.route('/api/client/appointments', clientAppointmentRoutes)
 app.route('/api/psycho/appointments', psychoAppointmentRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
 app.route('/api/client/appointments/:appointmentId/impressions', impressionClientRoutes)
-app.route('/api/clients/:clientId/appointments/:appointmentId/impressions', impressionPsychoRoutes)
 app.route(
     '/api/clients/:clientId/appointments/:appointmentId/recommendations',
     recommendationPsychoRoutes,

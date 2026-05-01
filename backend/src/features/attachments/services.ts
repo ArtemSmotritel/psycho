@@ -69,20 +69,6 @@ export async function createAttachment(params: {
     return (await findAttachmentById(attachmentId))!
 }
 
-export async function listAttachments(
-    appointmentId: string,
-    type: AttachmentType,
-): Promise<Attachment[]> {
-    const rows = await db`
-        SELECT ${db.unsafe(ATTACHMENT_SELECT)}
-        FROM attachments a
-        WHERE a.appointment_id = ${appointmentId}
-          AND a.type = ${type}
-        ORDER BY a.created_at ASC
-    `
-    return rows as Attachment[]
-}
-
 export async function listAttachmentsByAuthor(
     appointmentId: string,
     type: AttachmentType,

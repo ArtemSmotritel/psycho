@@ -7,7 +7,6 @@ import { AppointmentsService } from '../appointments/services'
 import { fileArraySchema } from './schemas'
 import {
     createAttachment,
-    listAttachmentsByAuthor,
     findAndValidateAttachment,
     findImpressionCompletion,
     completeImpression,
@@ -100,13 +99,3 @@ impressionClientRoutes.patch(
         return c.json({ completion }, 200)
     },
 )
-
-impressionClientRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-
-    await AppointmentsService.getForClient(appointmentId, user.id)
-
-    const impressions = await listAttachmentsByAuthor(appointmentId, 'impression', user.id)
-    return c.json({ impressions }, 200)
-})

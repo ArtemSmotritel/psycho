@@ -8,23 +8,12 @@ import {
     createAttachment,
     deleteAttachment,
     findAndValidateAttachment,
-    listAttachmentsByAuthor,
     updateAttachment,
 } from './services'
 
 export const noteRoutes = new Hono()
 
 noteRoutes.use(authorized, onlyPsychoRequest)
-
-noteRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-
-    await checkAppointmentAccess(c)
-
-    const notes = await listAttachmentsByAuthor(appointmentId, 'note', user.id)
-    return c.json({ notes }, 200)
-})
 
 noteRoutes.post('/', zValidator('json', createAttachmentSchema), ownsFiles, async (c) => {
     const user = c.get('user')

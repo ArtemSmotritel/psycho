@@ -10,7 +10,6 @@ import {
     deleteAttachment,
     findAndValidateAttachment,
     findReaction,
-    listAttachmentsWithReactions,
     setReply,
     updateAttachment,
 } from './services'
@@ -22,21 +21,6 @@ const replySchema = z.object({
 export const recommendationPsychoRoutes = new Hono()
 
 recommendationPsychoRoutes.use(authorized, onlyPsychoRequest)
-
-recommendationPsychoRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-
-    // Step 1 only — status check intentionally not applied for listing
-    await checkAppointmentOwnership(c)
-
-    const recommendations = await listAttachmentsWithReactions(
-        appointmentId,
-        'recommendation',
-        user.id,
-    )
-    return c.json({ recommendations }, 200)
-})
 
 recommendationPsychoRoutes.post(
     '/',
