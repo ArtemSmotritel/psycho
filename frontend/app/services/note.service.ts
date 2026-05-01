@@ -13,11 +13,6 @@ export const noteService = {
             data,
         ),
 
-    getById: (clientId: string, appointmentId: string, noteId: string) =>
-        api.get<{ note: Attachment }>(
-            `/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`,
-        ),
-
     update: (clientId: string, appointmentId: string, noteId: string, data: UpdateNoteDTO) =>
         api.patch<{ note: Attachment }>(
             `/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`,

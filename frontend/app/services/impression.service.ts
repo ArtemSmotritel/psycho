@@ -32,14 +32,4 @@ export const impressionService = {
             `/client/appointments/${appointmentId}/impressions/${attachmentId}/complete`,
             data,
         ),
-
-    getCompletion: (appointmentId: string, attachmentId: string) =>
-        api.get<{ completion: ImpressionCompletion | null }>(
-            `/client/appointments/${appointmentId}/impressions/${attachmentId}/completion`,
-        ),
-
-    getPsychoCompletion: (clientId: string, appointmentId: string, attachmentId: string) =>
-        api.get<{ completion: ImpressionCompletion | null }>(
-            `/clients/${clientId}/appointments/${appointmentId}/impressions/${attachmentId}/completion`,
-        ),
 }

@@ -8,7 +8,7 @@ import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { CompleteImpressionForm } from '@/components/CompleteImpressionForm'
 import { AttachmentForm } from '@/components/AttachmentForm'
 import { EmptyMessage } from '@/components/EmptyMessage'
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import {
     Carousel,
     CarouselContent,
@@ -22,7 +22,7 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { noteService } from '~/services/note.service'
 import { recommendationService } from '~/services/recommendation.service'
 import { impressionService } from '~/services/impression.service'
-import type { AttachmentFile, ImpressionCompletion } from '~/models/attachment'
+import type { AttachmentFile } from '~/models/attachment'
 
 interface ImageAttachmentsProps {
     files: AttachmentFile[]
@@ -84,26 +84,11 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
     )
 }
 export default function SessionAttachment() {
-    const { attachment, isLoading, refetch } = useCurrentAttachment()
-    const { clientId, appointmentId, attachmentId } = useParams()
+    const { attachment, completion, isLoading, refetch } = useCurrentAttachment()
+    const { clientId, appointmentId } = useParams()
     const navigate = useNavigate()
     const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
-    const [completion, setCompletion] = useState<ImpressionCompletion | null>(null)
     const { userRole } = useRoleGuard(['psychologist', 'client'])
-
-    const fetchCompletion = useCallback(() => {
-        if (!attachment || attachment.type !== 'impression' || !appointmentId || !attachmentId)
-            return
-        const promise =
-            userRole === 'client'
-                ? impressionService.getCompletion(appointmentId, attachmentId)
-                : impressionService.getPsychoCompletion(clientId!, appointmentId, attachmentId)
-        promise.then((res) => setCompletion(res.data.completion)).catch(() => {})
-    }, [attachment, userRole, clientId, appointmentId, attachmentId])
-
-    useEffect(() => {
-        fetchCompletion()
-    }, [fetchCompletion])
 
     if (isLoading) return <p>Loading...</p>
 
@@ -131,7 +116,7 @@ export default function SessionAttachment() {
     const handleComplete = async (values: { response: string }) => {
         await impressionService.complete(appointmentId!, attachment!.id, values)
         toast.success('Impression completed.')
-        fetchCompletion()
+        refetch()
     }
 
     const handleEdit = async (values: {
