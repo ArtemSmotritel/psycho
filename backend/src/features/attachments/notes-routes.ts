@@ -47,21 +47,6 @@ noteRoutes.post('/', zValidator('json', createAttachmentSchema), ownsFiles, asyn
     return c.json({ note }, 201)
 })
 
-noteRoutes.get('/:attachmentId', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
-
-    await checkAppointmentAccess(c)
-
-    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
-    if (!attachment) {
-        throw new NotFoundError()
-    }
-
-    return c.json({ note: attachment }, 200)
-})
-
 noteRoutes.patch('/:attachmentId', zValidator('json', updateAttachmentSchema), async (c) => {
     const user = c.get('user')
     const appointmentId = c.req.param('appointmentId')

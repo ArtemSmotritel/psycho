@@ -67,27 +67,6 @@ recommendationPsychoRoutes.post(
     },
 )
 
-recommendationPsychoRoutes.get('/:attachmentId', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
-
-    // Steps 1–2: ownership + status check
-    await checkAppointmentAccess(c)
-
-    const attachment = await findAndValidateAttachment(
-        attachmentId,
-        appointmentId,
-        'recommendation',
-        user.id,
-    )
-    if (!attachment) {
-        throw new NotFoundError()
-    }
-
-    return c.json({ recommendation: attachment }, 200)
-})
-
 recommendationPsychoRoutes.patch(
     '/:attachmentId',
     zValidator('json', updateAttachmentSchema),

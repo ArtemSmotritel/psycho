@@ -34,10 +34,7 @@ impressionClientRoutes.post(
         const appointment = await AppointmentsService.getForClient(appointmentId, user.id)
 
         if (appointment.status === 'upcoming') {
-            throw new BadRequestError(
-                'Appointment has not started yet.',
-                'AppointmentNotStarted',
-            )
+            throw new BadRequestError('Appointment has not started yet.', 'AppointmentNotStarted')
         }
 
         const { text, imageFileIds, audioFileIds } = c.req.valid('json')
@@ -103,22 +100,6 @@ impressionClientRoutes.patch(
         return c.json({ completion }, 200)
     },
 )
-
-impressionClientRoutes.get('/:attachmentId/completion', async (c) => {
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
-    const user = c.get('user')
-
-    await AppointmentsService.getForClient(appointmentId, user.id)
-
-    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'impression')
-    if (!attachment) {
-        throw new NotFoundError()
-    }
-
-    const completion = await findImpressionCompletion(attachmentId)
-    return c.json({ completion }, 200)
-})
 
 impressionClientRoutes.get('/', async (c) => {
     const user = c.get('user')
