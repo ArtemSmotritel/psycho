@@ -9,47 +9,9 @@ import type {
     ProgressSession,
     RecommendationReaction,
 } from './models'
+import { ATTACHMENT_SELECT, REACTION_JSON_EXPR } from './repo'
 
-export const ATTACHMENT_SELECT = `
-    a.id,
-    a.appointment_id AS "appointmentId",
-    a.author_id AS "authorId",
-    a.type,
-    a.name,
-    a.text,
-    a.created_at AS "createdAt",
-    a.updated_at AS "updatedAt",
-    COALESCE(
-        (SELECT json_agg(
-            json_build_object(
-                'id', f.id,
-                'url', '/api/files/' || f.stored_name,
-                'originalName', f.original_name,
-                'mimeType', f.mime_type,
-                'size', f.size
-            ) ORDER BY af.position
-        )
-        FROM attachment_files af
-        JOIN files f ON f.id = af.file_id
-        WHERE af.attachment_id = a.id AND af.file_type = 'image'
-        ), '[]'::json
-    ) AS "imageFiles",
-    COALESCE(
-        (SELECT json_agg(
-            json_build_object(
-                'id', f.id,
-                'url', '/api/files/' || f.stored_name,
-                'originalName', f.original_name,
-                'mimeType', f.mime_type,
-                'size', f.size
-            ) ORDER BY af.position
-        )
-        FROM attachment_files af
-        JOIN files f ON f.id = af.file_id
-        WHERE af.attachment_id = a.id AND af.file_type = 'audio'
-        ), '[]'::json
-    ) AS "audioFiles"
-`
+export { ATTACHMENT_SELECT, REACTION_JSON_EXPR }
 
 export async function createAttachment(params: {
     appointmentId: string
@@ -209,19 +171,6 @@ const REACTION_COLUMNS = `
     client_comment AS "clientComment",
     psychologist_reply AS "psychologistReply",
     updated_at AS "updatedAt"
-`
-
-export const REACTION_JSON_EXPR = `
-    CASE
-        WHEN rr.attachment_id IS NOT NULL THEN json_build_object(
-            'attachmentId', rr.attachment_id,
-            'done', rr.done,
-            'clientComment', rr.client_comment,
-            'psychologistReply', rr.psychologist_reply,
-            'updatedAt', rr.updated_at
-        )
-        ELSE NULL
-    END AS reaction
 `
 
 export async function findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
