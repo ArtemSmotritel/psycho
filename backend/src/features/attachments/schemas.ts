@@ -14,3 +14,11 @@ export const updateAttachmentSchema = z.object({
     text: z.string().optional(),
     removeFileIds: z.array(z.string().min(1)).optional(),
 })
+
+export const listQuerySchemaPsycho = z.object({
+    type: z.enum(['note', 'impression', 'recommendation']).optional(),
+})
+
+export const listQuerySchemaClient = z.object({
+    type: z.enum(['impression', 'recommendation']).optional(),
+})

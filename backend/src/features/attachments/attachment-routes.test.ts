@@ -427,7 +427,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
 })
 
 describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId', () => {
-    it("returns own impression with completion=null when not completed", async () => {
+    it('returns own impression with completion=null when not completed', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -644,6 +644,532 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             { method: 'GET', headers: { ...CLIENT_HEADER } },
         )
 
+        expect(res.status).toBe(401)
+    })
+})
+
+describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', () => {
+    it('returns notes, impressions, recommendations grouped', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Note',
+            text: 'Note text',
+        })
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            name: null,
+            text: 'Impression text',
+        })
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            text: 'Rec text',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            notes: Array<{ id: string }>
+            impressions: Array<{ id: string; completion: unknown }>
+            recommendations: Array<{ id: string; reaction: unknown }>
+        }
+        expect(body.notes.map((n) => n.id)).toEqual([note.id])
+        expect(body.impressions.map((i) => i.id)).toEqual([impression.id])
+        expect(body.recommendations.map((r) => r.id)).toEqual([recommendation.id])
+        expect(body.impressions[0]).toHaveProperty('completion')
+        expect(body.impressions[0].completion).toBeNull()
+        expect(body.recommendations[0]).toHaveProperty('reaction')
+        expect(body.recommendations[0].reaction).toBeNull()
+    })
+
+    it('returns the full grouped envelope with all empty arrays when no attachments exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toEqual({ notes: [], impressions: [], recommendations: [] })
+    })
+
+    it('returns 200 with empty groups when the appointment is upcoming (status check not enforced)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toEqual({ notes: [], impressions: [], recommendations: [] })
+    })
+
+    it('returns reaction and completion populated when present', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            name: null,
+            text: 'Impression text',
+        })
+        await completeImpression(impression.id, 'Reflected')
+
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            text: 'Rec text',
+        })
+        await upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            impressions: Array<{ completion: { clientResponse: string } | null }>
+            recommendations: Array<{
+                reaction: { done: boolean; clientComment: string | null } | null
+            }>
+        }
+        expect(body.impressions[0].completion).toMatchObject({ clientResponse: 'Reflected' })
+        expect(body.recommendations[0].reaction).toMatchObject({
+            done: true,
+            clientComment: 'Got it',
+        })
+    })
+
+    it('excludes notes and recommendations authored by another psycho on the same appointment', async () => {
+        // Edge case: only one psycho normally owns an appointment, but this defensively asserts
+        // the per-type author rule in SQL. We attach a foreign-authored note/recommendation
+        // by inserting via the service (bypassing route auth) and ensure they're filtered out.
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const otherPsycho = await insertTestUser({ email: 'other@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: otherPsycho.id,
+            type: 'note',
+            name: 'Foreign Note',
+            text: null,
+        })
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: otherPsycho.id,
+            type: 'recommendation',
+            name: 'Foreign Rec',
+            text: null,
+        })
+        const myNote = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Mine',
+            text: null,
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            notes: Array<{ id: string }>
+            recommendations: Array<{ id: string }>
+        }
+        expect(body.notes.map((n) => n.id)).toEqual([myNote.id])
+        expect(body.recommendations).toEqual([])
+    })
+
+    it('filters by ?type=note', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Note',
+            text: null,
+        })
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            name: null,
+            text: 'Impression',
+        })
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            text: null,
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments?type=note`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            notes: Array<{ id: string }>
+            impressions: unknown[]
+            recommendations: unknown[]
+        }
+        expect(body.notes.map((n) => n.id)).toEqual([note.id])
+        expect(body.impressions).toEqual([])
+        expect(body.recommendations).toEqual([])
+    })
+
+    it('returns 404 when the appointment is not owned by the requesting psycho', async () => {
+        const psycho1 = await insertTestUser({ email: 'p1@test.com' })
+        const psycho2 = await insertTestUser({ email: 'p2@test.com' })
+        const client = await insertTestUser({ email: 'c@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
+        const apt = await createAppointment({
+            psychoId: psycho2.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho1.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when :clientId URL param does not match the appointment client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        const otherClient = await insertTestUser({ email: 'other@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${otherClient.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 when Helpsycho-User-Role is client', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments',
+            await asUser(user.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments',
+            { method: 'GET', headers: { ...PSYCHO_HEADER } },
+        )
+        expect(res.status).toBe(401)
+    })
+})
+
+describe('GET /api/client/appointments/:appointmentId/attachments', () => {
+    it('returns own impressions and all recommendations; no notes key omitted', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Note',
+            text: null,
+        })
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            name: null,
+            text: 'Mine',
+        })
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            text: 'Rec text',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            impressions: Array<{ id: string }>
+            recommendations: Array<{ id: string }>
+            notes?: unknown
+        }
+        expect(body).not.toHaveProperty('notes')
+        expect(body.impressions.map((i) => i.id)).toEqual([impression.id])
+        expect(body.recommendations.map((r) => r.id)).toEqual([recommendation.id])
+    })
+
+    it('returns the full grouped envelope with all empty arrays when no attachments exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toEqual({ impressions: [], recommendations: [] })
+    })
+
+    it("excludes another client's impressions on the same appointment", async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client1 = await insertTestUser({ email: 'c1@test.com' })
+        const client2 = await insertTestUser({ email: 'c2@test.com' })
+        await ClientsService.linkClientToPsycho(client1.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client2.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client1.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: client1.id,
+            type: 'impression',
+            name: null,
+            text: 'Client1 impression',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client2.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        // client2 isn't on this appointment → 404 from ownership gate
+        expect(res.status).toBe(404)
+    })
+
+    it('filters by ?type=recommendation', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            name: null,
+            text: 'Mine',
+        })
+        const recommendation = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Rec',
+            text: null,
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments?type=recommendation`,
+            await asUser(client.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = (await res.json()) as {
+            impressions: unknown[]
+            recommendations: Array<{ id: string }>
+        }
+        expect(body.impressions).toEqual([])
+        expect(body.recommendations.map((r) => r.id)).toEqual([recommendation.id])
+    })
+
+    it('returns 400 when ?type=note', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments?type=note`,
+            await asUser(client.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 404 when appointment does not belong to the client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const owner = await insertTestUser({ email: 'owner@test.com' })
+        const stranger = await insertTestUser({ email: 'stranger@test.com' })
+        await ClientsService.linkClientToPsycho(owner.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: owner.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(stranger.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 403 when Helpsycho-User-Role is psycho', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/client/appointments/some-apt/attachments',
+            await asUser(user.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request('/api/client/appointments/some-apt/attachments', {
+            method: 'GET',
+            headers: { ...CLIENT_HEADER },
+        })
         expect(res.status).toBe(401)
     })
 })

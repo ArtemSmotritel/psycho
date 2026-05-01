@@ -1,6 +1,11 @@
 import { db } from 'config/db'
 import { APPOINTMENT_STATUS_EXPR } from '../appointments/repo'
-import type { Attachment, ImpressionCompletion, RecommendationReaction } from './models'
+import type {
+    Attachment,
+    AttachmentType,
+    ImpressionCompletion,
+    RecommendationReaction,
+} from './models'
 
 export const ATTACHMENT_SELECT = `
     a.id,
@@ -133,5 +138,91 @@ export const AttachmentsRepo = {
         `
         if (!row) return null
         return rowToChain(row as AttachmentChainRow)
+    },
+
+    async listForPsychoView(
+        appointmentId: string,
+        psychoId: string,
+        types?: AttachmentType[],
+    ): Promise<AttachmentChain[]> {
+        const rows = types?.length
+            ? await db`
+                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                       ${db.unsafe(REACTION_JSON_EXPR)},
+                       ${db.unsafe(COMPLETION_JSON_EXPR)}
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+                WHERE ap.id = ${appointmentId}
+                  AND (
+                      a.type = 'impression'
+                      OR (a.type IN ('note', 'recommendation') AND a.author_id = ${psychoId})
+                  )
+                  AND a.type IN ${db(types)}
+                ORDER BY a.type, a.created_at ASC
+            `
+            : await db`
+                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                       ${db.unsafe(REACTION_JSON_EXPR)},
+                       ${db.unsafe(COMPLETION_JSON_EXPR)}
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+                WHERE ap.id = ${appointmentId}
+                  AND (
+                      a.type = 'impression'
+                      OR (a.type IN ('note', 'recommendation') AND a.author_id = ${psychoId})
+                  )
+                ORDER BY a.type, a.created_at ASC
+            `
+        return (rows as AttachmentChainRow[]).map(rowToChain)
+    },
+
+    async listForClientView(
+        appointmentId: string,
+        clientId: string,
+        types?: AttachmentType[],
+    ): Promise<AttachmentChain[]> {
+        const rows = types?.length
+            ? await db`
+                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                       ${db.unsafe(REACTION_JSON_EXPR)},
+                       ${db.unsafe(COMPLETION_JSON_EXPR)}
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+                WHERE ap.id = ${appointmentId}
+                  AND ap.client_id = ${clientId}
+                  AND (
+                      (a.type = 'impression' AND a.author_id = ${clientId})
+                      OR a.type = 'recommendation'
+                  )
+                  AND a.type IN ${db(types)}
+                ORDER BY a.type, a.created_at ASC
+            `
+            : await db`
+                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                       ${db.unsafe(REACTION_JSON_EXPR)},
+                       ${db.unsafe(COMPLETION_JSON_EXPR)}
+                FROM attachments a
+                JOIN appointments ap ON ap.id = a.appointment_id
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+                WHERE ap.id = ${appointmentId}
+                  AND ap.client_id = ${clientId}
+                  AND (
+                      (a.type = 'impression' AND a.author_id = ${clientId})
+                      OR a.type = 'recommendation'
+                  )
+                ORDER BY a.type, a.created_at ASC
+            `
+        return (rows as AttachmentChainRow[]).map(rowToChain)
     },
 } as const

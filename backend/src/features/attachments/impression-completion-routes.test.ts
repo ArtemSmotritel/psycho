@@ -255,4 +255,3 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         expect(res.status).toBe(401)
     })
 })
-

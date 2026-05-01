@@ -1,15 +1,26 @@
 import { db } from 'config/db'
+import { NotFoundError } from 'errors/index'
+import type { User } from 'utils/types'
+import { AppointmentsService } from '../appointments/services'
 import { FilesService } from '../files/services'
+import { AttachmentCheck } from './attachment-check'
 import type {
     Attachment,
     AttachmentType,
     AttachmentWithAppointment,
     AttachmentWithReaction,
+    ClientAttachmentList,
     ImpressionCompletion,
     ProgressSession,
+    PsychoAttachmentList,
     RecommendationReaction,
 } from './models'
-import { ATTACHMENT_SELECT, REACTION_JSON_EXPR } from './repo'
+import {
+    ATTACHMENT_SELECT,
+    AttachmentsRepo,
+    REACTION_JSON_EXPR,
+    type AttachmentChain,
+} from './repo'
 
 export { ATTACHMENT_SELECT, REACTION_JSON_EXPR }
 
@@ -335,4 +346,78 @@ export async function completeImpression(
             created_at AS "createdAt"
     `
     return row as ImpressionCompletion
+}
+
+export async function listAttachmentsForPsychoView(
+    appointmentId: string,
+    psychoId: string,
+    clientId: string,
+    types?: AttachmentType[],
+): Promise<PsychoAttachmentList> {
+    await AppointmentsService.getForPsycho(appointmentId, psychoId, clientId)
+
+    const chains = await AttachmentsRepo.listForPsychoView(appointmentId, psychoId, types)
+
+    const result: PsychoAttachmentList = { notes: [], impressions: [], recommendations: [] }
+    for (const { attachment, reaction, completion } of chains) {
+        if (attachment.type === 'note') {
+            result.notes.push(attachment)
+        } else if (attachment.type === 'impression') {
+            result.impressions.push({ ...attachment, completion })
+        } else {
+            result.recommendations.push({ ...attachment, reaction })
+        }
+    }
+    return result
+}
+
+export async function listAttachmentsForClientView(
+    appointmentId: string,
+    clientId: string,
+    types?: AttachmentType[],
+): Promise<ClientAttachmentList> {
+    await AppointmentsService.getForClient(appointmentId, clientId)
+
+    const chains = await AttachmentsRepo.listForClientView(appointmentId, clientId, types)
+
+    const result: ClientAttachmentList = { impressions: [], recommendations: [] }
+    for (const { attachment, reaction, completion } of chains) {
+        if (attachment.type === 'impression') {
+            result.impressions.push({ ...attachment, completion })
+        } else if (attachment.type === 'recommendation') {
+            result.recommendations.push({ ...attachment, reaction })
+        }
+    }
+    return result
+}
+
+export async function getAttachmentForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+}): Promise<AttachmentChain> {
+    const result = await AttachmentCheck.forPsycho(input).run()
+    // psycho per-type rule:
+    // - impression: any author
+    // - note / recommendation: must be authored by this psycho
+    if (result.attachment.type !== 'impression' && result.attachment.authorId !== input.user.id) {
+        throw new NotFoundError()
+    }
+    return result
+}
+
+export async function getAttachmentForClientView(input: {
+    user: User
+    appointmentId: string
+    attachmentId: string
+}): Promise<AttachmentChain> {
+    const result = await AttachmentCheck.forClient(input).run()
+    // client per-type rule:
+    // - impression: must be authored by this client
+    // - recommendation: any psycho-authored is fine
+    if (result.attachment.type === 'impression' && result.attachment.authorId !== input.user.id) {
+        throw new NotFoundError()
+    }
+    return result
 }
