@@ -2,11 +2,10 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { BadRequestError, NotFoundError } from 'errors/index'
-import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
+import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { checkAppointmentAccess, checkAppointmentOwnership } from './route-helpers'
-import { createAttachmentSchema, updateAttachmentSchema } from './schemas'
+import { updateAttachmentSchema } from './schemas'
 import {
-    createAttachment,
     deleteAttachment,
     findAndValidateAttachment,
     findReaction,
@@ -21,35 +20,6 @@ const replySchema = z.object({
 export const recommendationPsychoRoutes = new Hono()
 
 recommendationPsychoRoutes.use(authorized, onlyPsychoRequest)
-
-recommendationPsychoRoutes.post(
-    '/',
-    zValidator('json', createAttachmentSchema),
-    ownsFiles,
-    async (c) => {
-        const user = c.get('user')
-        const appointmentId = c.req.param('appointmentId')
-
-        // Steps 1–2: ownership + status check
-        await checkAppointmentAccess(c)
-
-        const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
-
-        const recommendation = await createAttachment({
-            appointmentId,
-            authorId: user.id,
-            type: 'recommendation',
-            name,
-            text: text ?? null,
-            imageFileIds,
-            audioFileIds,
-        })
-
-        // TODO: EDG-56 — send recommendation email to client
-
-        return c.json({ recommendation }, 201)
-    },
-)
 
 recommendationPsychoRoutes.patch(
     '/:attachmentId',

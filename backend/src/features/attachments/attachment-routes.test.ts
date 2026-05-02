@@ -1465,7 +1465,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
         expect(body.attachment.name).toBe('Session 1')
     })
 
-    it('returns 400 AppointmentNotActive when the appointment is upcoming', async () => {
+    it('returns 400 AppointmentNotStarted when the appointment is upcoming', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -1487,7 +1487,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
 
         expect(res.status).toBe(400)
         const body = await res.json()
-        expect(body).toHaveProperty('error', 'AppointmentNotActive')
+        expect(body).toHaveProperty('error', 'AppointmentNotStarted')
     })
 
     it('returns 400 when text/images/audio are all empty', async () => {

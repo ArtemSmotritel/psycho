@@ -2,65 +2,13 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { BadRequestError, NotFoundError } from 'errors/index'
-import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
+import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { AppointmentsService } from '../appointments/services'
-import { fileArraySchema } from './schemas'
-import {
-    createAttachment,
-    findAndValidateAttachment,
-    findImpressionCompletion,
-    completeImpression,
-} from './services'
-
-const createImpressionSchema = z.object({
-    text: z.string().optional(),
-    imageFileIds: fileArraySchema,
-    audioFileIds: fileArraySchema,
-})
+import { findAndValidateAttachment, findImpressionCompletion, completeImpression } from './services'
 
 export const impressionClientRoutes = new Hono()
 
 impressionClientRoutes.use(authorized, onlyClientRequest)
-
-impressionClientRoutes.post(
-    '/',
-    zValidator('json', createImpressionSchema),
-    ownsFiles,
-    async (c) => {
-        const user = c.get('user')
-        const appointmentId = c.req.param('appointmentId')
-
-        const appointment = await AppointmentsService.getForClient(appointmentId, user.id)
-
-        if (appointment.status === 'upcoming') {
-            throw new BadRequestError('Appointment has not started yet.', 'AppointmentNotStarted')
-        }
-
-        const { text, imageFileIds, audioFileIds } = c.req.valid('json')
-
-        const hasText = typeof text === 'string' && text.trim() !== ''
-        const hasImages = imageFileIds.length > 0
-        const hasAudio = audioFileIds.length > 0
-
-        if (!hasText && !hasImages && !hasAudio) {
-            throw new BadRequestError(
-                'At least one of text, imageFileIds, or audioFileIds is required.',
-            )
-        }
-
-        const impression = await createAttachment({
-            appointmentId,
-            authorId: user.id,
-            type: 'impression',
-            name: null,
-            text: hasText ? text!.trim() : null,
-            imageFileIds,
-            audioFileIds,
-        })
-
-        return c.json({ impression }, 201)
-    },
-)
 
 const completeSchema = z.object({
     response: z.string().min(1),

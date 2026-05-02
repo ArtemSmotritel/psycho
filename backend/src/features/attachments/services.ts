@@ -109,7 +109,7 @@ export async function createAttachmentForClientView(input: {
 }): Promise<Attachment> {
     const appointment = await AppointmentsService.getForClient(input.appointmentId, input.clientId)
     if (appointment.status === 'upcoming') {
-        throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
+        throw new BadRequestError('Appointment has not started yet.', 'AppointmentNotStarted')
     }
     const text = input.text?.trim() || null
     if (!text && input.imageFileIds.length === 0 && input.audioFileIds.length === 0) {
