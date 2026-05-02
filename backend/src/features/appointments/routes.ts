@@ -1,6 +1,7 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
+import { clientIdParamSchema } from 'utils/types'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { AppointmentsService } from './services'
 
@@ -34,30 +35,35 @@ const endAppointmentSchema = z.object({
 
 export const appointmentRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
-appointmentRoutes.get('/', async (c) => {
+appointmentRoutes.get('/', zValidator('param', clientIdParamSchema), async (c) => {
     const user = c.get('user')
-    const clientId = c.req.param('clientId')
+    const { clientId } = c.req.valid('param')
     const appointments = await AppointmentsService.listForPsycho(user.id, clientId)
     return c.json({ appointments }, 200)
 })
 
-appointmentRoutes.post('/', zValidator('json', createAppointmentSchema), async (c) => {
-    const user = c.get('user')
-    const clientId = c.req.param('clientId')
-    const { startTime, endTime, generateGoogleMeet } = c.req.valid('json')
-    const result = await AppointmentsService.createForPsycho({
-        psychoId: user.id,
-        clientId,
-        startTime,
-        endTime,
-        generateGoogleMeet,
-    })
-    return c.json(result, 201)
-})
+appointmentRoutes.post(
+    '/',
+    zValidator('param', clientIdParamSchema),
+    zValidator('json', createAppointmentSchema),
+    async (c) => {
+        const user = c.get('user')
+        const { clientId } = c.req.valid('param')
+        const { startTime, endTime, generateGoogleMeet } = c.req.valid('json')
+        const result = await AppointmentsService.createForPsycho({
+            psychoId: user.id,
+            clientId,
+            startTime,
+            endTime,
+            generateGoogleMeet,
+        })
+        return c.json(result, 201)
+    },
+)
 
-appointmentRoutes.get('/:appointmentId', async (c) => {
+appointmentRoutes.get('/:appointmentId', zValidator('param', clientIdParamSchema), async (c) => {
     const user = c.get('user')
-    const clientId = c.req.param('clientId')
+    const { clientId } = c.req.valid('param')
     const appointmentId = c.req.param('appointmentId')
     const appointment = await AppointmentsService.getForPsycho(appointmentId, user.id, clientId)
     return c.json({ appointment }, 200)
@@ -65,10 +71,11 @@ appointmentRoutes.get('/:appointmentId', async (c) => {
 
 appointmentRoutes.patch(
     '/:appointmentId',
+    zValidator('param', clientIdParamSchema),
     zValidator('json', updateAppointmentSchema),
     async (c) => {
         const user = c.get('user')
-        const clientId = c.req.param('clientId')
+        const { clientId } = c.req.valid('param')
         const appointmentId = c.req.param('appointmentId')
         const body = c.req.valid('json')
         const result = await AppointmentsService.updateForPsycho(
@@ -81,28 +88,37 @@ appointmentRoutes.patch(
     },
 )
 
-appointmentRoutes.delete('/:appointmentId', async (c) => {
+appointmentRoutes.delete('/:appointmentId', zValidator('param', clientIdParamSchema), async (c) => {
     const user = c.get('user')
-    const clientId = c.req.param('clientId')
+    const { clientId } = c.req.valid('param')
     const appointmentId = c.req.param('appointmentId')
     const result = await AppointmentsService.deleteForPsycho(appointmentId, user.id, clientId)
     return c.json(result, 200)
 })
 
-appointmentRoutes.patch('/:appointmentId/start', async (c) => {
-    const user = c.get('user')
-    const clientId = c.req.param('clientId')
-    const appointmentId = c.req.param('appointmentId')
-    const appointment = await AppointmentsService.startForPsycho(appointmentId, user.id, clientId)
-    return c.json({ appointment }, 200)
-})
+appointmentRoutes.patch(
+    '/:appointmentId/start',
+    zValidator('param', clientIdParamSchema),
+    async (c) => {
+        const user = c.get('user')
+        const { clientId } = c.req.valid('param')
+        const appointmentId = c.req.param('appointmentId')
+        const appointment = await AppointmentsService.startForPsycho(
+            appointmentId,
+            user.id,
+            clientId,
+        )
+        return c.json({ appointment }, 200)
+    },
+)
 
 appointmentRoutes.patch(
     '/:appointmentId/end',
+    zValidator('param', clientIdParamSchema),
     zValidator('json', endAppointmentSchema),
     async (c) => {
         const user = c.get('user')
-        const clientId = c.req.param('clientId')
+        const { clientId } = c.req.valid('param')
         const appointmentId = c.req.param('appointmentId')
         const { snapshotDataUrl } = c.req.valid('json')
         const appointment = await AppointmentsService.endForPsycho(

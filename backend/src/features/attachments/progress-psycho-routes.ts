@@ -1,16 +1,16 @@
+import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { BadRequestError } from 'errors/index'
+import { clientIdParamSchema } from 'utils/types'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { ClientsRepo } from '../clients/repo'
 import { listImpressionsForClientByPsycho } from './services'
 
-export const progressPsychoRoutes = new Hono()
+export const progressPsychoRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
-progressPsychoRoutes.use(authorized, onlyPsychoRequest)
-
-progressPsychoRoutes.get('/', async (c) => {
+progressPsychoRoutes.get('/', zValidator('param', clientIdParamSchema), async (c) => {
     const user = c.get('user')
-    const clientId = c.req.param('clientId')
+    const { clientId } = c.req.valid('param')
 
     const linked = await ClientsRepo.isLinkedToPsycho(clientId, user.id)
     if (!linked) {

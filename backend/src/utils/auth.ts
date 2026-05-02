@@ -40,6 +40,11 @@ export const auth = betterAuth({
             },
         },
     },
+    // advanced: {
+    //     database: {
+    //         generateId: 'uuid',
+    //     },
+    // },
 })
 
 log.info(process.env.GOOGLE_REDIRECT_URI as string)

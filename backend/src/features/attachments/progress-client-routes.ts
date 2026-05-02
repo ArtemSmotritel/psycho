@@ -4,9 +4,7 @@ import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { ClientsRepo } from '../clients/repo'
 import { listClientProgressByPsycho } from './services'
 
-export const progressClientRoutes = new Hono()
-
-progressClientRoutes.use(authorized, onlyClientRequest)
+export const progressClientRoutes = new Hono().use(authorized, onlyClientRequest)
 
 progressClientRoutes.get('/psychologists', async (c) => {
     const user = c.get('user')

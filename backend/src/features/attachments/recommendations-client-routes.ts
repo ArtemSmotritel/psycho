@@ -2,6 +2,7 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
 import { BadRequestError, NotFoundError } from 'errors/index'
+import { appointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { AppointmentsService } from '../appointments/services'
 import { findAndValidateAttachment, findReaction, upsertReaction } from './services'
@@ -11,16 +12,15 @@ const reactionSchema = z.object({
     comment: z.string().min(1).optional(),
 })
 
-export const recommendationClientRoutes = new Hono()
-
-recommendationClientRoutes.use(authorized, onlyClientRequest)
+export const recommendationClientRoutes = new Hono().use(authorized, onlyClientRequest)
 
 recommendationClientRoutes.patch(
     '/:attachmentId/reaction',
+    zValidator('param', appointmentIdParamSchema),
     zValidator('json', reactionSchema),
     async (c) => {
         const user = c.get('user')
-        const appointmentId = c.req.param('appointmentId')
+        const { appointmentId } = c.req.valid('param')
         const attachmentId = c.req.param('attachmentId')
 
         // Step 1 — appointment ownership
