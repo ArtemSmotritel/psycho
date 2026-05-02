@@ -9,7 +9,6 @@ import { InvitationsService } from './services'
 const createInvitation = (psychoId: string, email: string) =>
     InvitationsService.createForPsycho(psychoId, email)
 import { createAppointment } from '../../test-fixtures/appointments'
-import { createAttachment } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }

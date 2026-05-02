@@ -4,7 +4,7 @@ import { BadRequestError } from 'errors/index'
 import { clientIdParamSchema } from 'utils/types'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { ClientsRepo } from '../clients/repo'
-import { listImpressionsForClientByPsycho } from './services'
+import { AttachmentsService } from './services'
 
 export const progressPsychoRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
@@ -17,6 +17,6 @@ progressPsychoRoutes.get('/', zValidator('param', clientIdParamSchema), async (c
         throw new BadRequestError('This client is not in your list.', 'ClientNotLinked')
     }
 
-    const impressions = await listImpressionsForClientByPsycho(clientId, user.id)
+    const impressions = await AttachmentsService.listImpressionsForClientByPsycho(clientId, user.id)
     return c.json({ impressions }, 200)
 })

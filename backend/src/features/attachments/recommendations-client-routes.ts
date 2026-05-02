@@ -1,11 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
-import { BadRequestError, NotFoundError } from 'errors/index'
 import { appointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { AppointmentsService } from '../appointments/services'
-import { findAndValidateAttachment, findReaction, upsertReaction } from './services'
+import { AttachmentsService } from './services'
 
 const reactionSchema = z.object({
     done: z.boolean().optional(),
@@ -22,36 +20,12 @@ recommendationClientRoutes.patch(
         const user = c.get('user')
         const { appointmentId } = c.req.valid('param')
         const attachmentId = c.req.param('attachmentId')
-
-        // Step 1 — appointment ownership
-        await AppointmentsService.getForClient(appointmentId, user.id)
-
-        // Step 2 — attachment chain
-        const attachment = await findAndValidateAttachment(
-            attachmentId,
-            appointmentId,
-            'recommendation',
-        )
-        if (!attachment) {
-            throw new NotFoundError()
-        }
-
         const { done, comment } = c.req.valid('json')
 
-        // Body must have at least one of done or comment
-        if (done === undefined && comment === undefined) {
-            throw new BadRequestError('done or comment is required')
-        }
-
-        // Step 3 — comment-once check
-        if (comment !== undefined) {
-            const existing = await findReaction(attachmentId)
-            if (existing && existing.clientComment !== null) {
-                throw new BadRequestError('Comment has already been set.', 'CommentAlreadySet')
-            }
-        }
-
-        const reaction = await upsertReaction(attachmentId, {
+        const reaction = await AttachmentsService.reactToRecommendationForClient({
+            user,
+            appointmentId,
+            attachmentId,
             done,
             comment,
         })

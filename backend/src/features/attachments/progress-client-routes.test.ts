@@ -9,7 +9,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment, upsertReaction } from './services'
+import { AttachmentsService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -110,21 +110,21 @@ describe('GET /api/client/progress/:psychoId', () => {
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: client.id,
             type: 'impression',
             text: 'First session impression',
         })
-        const rec1 = await createAttachment({
+        const rec1 = await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Breathing exercise',
             text: 'Practice 5 min/day',
         })
-        await upsertReaction(rec1.id, { done: true, comment: 'Tried it, helpful' })
-        await createAttachment({
+        await AttachmentsService.upsertReaction(rec1.id, { done: true, comment: 'Tried it, helpful' })
+        await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -249,13 +249,13 @@ describe('GET /api/client/progress/:psychoId', () => {
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: client1.id,
             type: 'impression',
             text: 'Client1 impression',
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client2.id,
             type: 'impression',

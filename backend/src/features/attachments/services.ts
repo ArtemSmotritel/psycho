@@ -8,18 +8,15 @@ import type {
     Attachment,
     AttachmentType,
     AttachmentWithAppointment,
-    AttachmentWithReaction,
     ClientAttachmentList,
     ImpressionCompletion,
     ProgressSession,
     PsychoAttachmentList,
     RecommendationReaction,
 } from './models'
-import { ATTACHMENT_SELECT, AttachmentsRepo, REACTION_JSON_EXPR } from './repo'
+import { AttachmentsRepo } from './repo'
 
-export { ATTACHMENT_SELECT, REACTION_JSON_EXPR }
-
-export async function createAttachment(params: {
+async function create(params: {
     appointmentId: string
     authorId: string
     type: AttachmentType
@@ -57,7 +54,7 @@ export async function createAttachment(params: {
     })
 }
 
-async function createAttachmentForPsychoView(input: {
+async function createForPsychoView(input: {
     psychoId: string
     clientId: string
     appointmentId: string
@@ -76,7 +73,7 @@ async function createAttachmentForPsychoView(input: {
         throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
     }
     const text = input.text?.trim() || null
-    return createAttachment({
+    return create({
         appointmentId: input.appointmentId,
         authorId: input.psychoId,
         type: input.type,
@@ -87,7 +84,7 @@ async function createAttachmentForPsychoView(input: {
     })
 }
 
-async function createAttachmentForClientView(input: {
+async function createForClientView(input: {
     clientId: string
     appointmentId: string
     name?: string
@@ -105,7 +102,7 @@ async function createAttachmentForClientView(input: {
             'At least one of text, imageFileIds, or audioFileIds is required.',
         )
     }
-    return createAttachment({
+    return create({
         appointmentId: input.appointmentId,
         authorId: input.clientId,
         type: 'impression',
@@ -116,77 +113,17 @@ async function createAttachmentForClientView(input: {
     })
 }
 
-export async function listAttachmentsByAuthor(
-    appointmentId: string,
-    type: AttachmentType,
-    authorId: string,
-): Promise<Attachment[]> {
-    const rows = await db`
-        SELECT ${db.unsafe(ATTACHMENT_SELECT)}
-        FROM attachments a
-        WHERE a.appointment_id = ${appointmentId}
-          AND a.type = ${type}
-          AND a.author_id = ${authorId}
-        ORDER BY a.created_at ASC
-    `
-    return rows as Attachment[]
-}
-
-/**
- * Looks up an attachment by id and verifies it belongs to the given appointment
- * and is of the expected type. If `authorId` is provided, also verifies the author.
- * Returns null on any mismatch — callers can collapse all failures to a single 404.
- */
-export async function findAndValidateAttachment(
+async function updateAttachment(
     id: string,
-    appointmentId: string,
-    type: AttachmentType,
-    authorId?: string,
-): Promise<Attachment | null> {
-    const attachment = await AttachmentsRepo.findById(id)
-    if (
-        !attachment ||
-        attachment.appointmentId !== appointmentId ||
-        attachment.type !== type ||
-        (authorId !== undefined && attachment.authorId !== authorId)
-    ) {
-        return null
-    }
-    return attachment
-}
-
-export async function updateAttachment(
-    id: string,
-    params: { name?: string | null; text?: string | null; removeFileIds?: string[] },
+    params: { name: string | null; text: string | null; removeFileIds?: string[] },
 ): Promise<Attachment> {
     await db.begin(async (tx) => {
-        await tx`
-            UPDATE attachments
-            SET name = COALESCE(${params.name ?? null}, name),
-                text = COALESCE(${params.text ?? null}, text),
-                updated_at = NOW()
-            WHERE id = ${id}
-        `
+        await AttachmentsRepo.update(id, { name: params.name, text: params.text }, tx)
 
         const removeFileIds = params.removeFileIds ?? []
         if (removeFileIds.length > 0) {
-            await tx`
-                DELETE FROM attachment_files
-                WHERE attachment_id = ${id}
-                  AND file_id IN ${tx(removeFileIds)}
-            `
-
-            const files = await tx`
-                SELECT id, stored_name AS "storedName"
-                FROM files
-                WHERE id IN ${tx(removeFileIds)}
-            `
-
-            await tx`
-                DELETE FROM files
-                WHERE id IN ${tx(removeFileIds)}
-            `
-
+            await AttachmentsRepo.unlinkFiles(id, removeFileIds, tx)
+            const files = await AttachmentsRepo.deleteFilesAndReturnStoredNames(removeFileIds, tx)
             for (const file of files) {
                 await FilesService.removeFromDisk(file.storedName)
             }
@@ -196,136 +133,164 @@ export async function updateAttachment(
     return (await AttachmentsRepo.findById(id))!
 }
 
-const REACTION_COLUMNS = `
-    attachment_id AS "attachmentId",
-    done,
-    client_comment AS "clientComment",
-    psychologist_reply AS "psychologistReply",
-    updated_at AS "updatedAt"
-`
+async function updateForPsycho(
+    type: 'note' | 'recommendation',
+    input: {
+        user: User
+        clientId: string
+        appointmentId: string
+        attachmentId: string
+        name?: string
+        text?: string
+        removeFileIds?: string[]
+    },
+): Promise<Attachment> {
+    const appointment = await AppointmentsService.getForPsycho(
+        input.appointmentId,
+        input.user.id,
+        input.clientId,
+    )
+    if (appointment.status === 'upcoming') {
+        throw new BadRequestError('Appointment is not active or past.', 'AppointmentNotActive')
+    }
 
-export async function findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
-    const [row] = await db`
-        SELECT ${db.unsafe(REACTION_COLUMNS)}
-        FROM recommendation_reactions
-        WHERE attachment_id = ${attachmentId}
-    `
-    return (row as RecommendationReaction) ?? null
+    await AttachmentCheck.forPsycho({
+        user: input.user,
+        clientId: input.clientId,
+        appointmentId: input.appointmentId,
+        attachmentId: input.attachmentId,
+    })
+        .setExpectedType(type)
+        .setExpectedAuthor('self')
+        .run()
+
+    return updateAttachment(input.attachmentId, {
+        name: input.name ?? null,
+        text: input.text ?? null,
+        removeFileIds: input.removeFileIds,
+    })
 }
 
-export async function upsertReaction(
-    attachmentId: string,
-    params: { done?: boolean; comment?: string },
-): Promise<RecommendationReaction> {
-    const [row] = await db`
-        INSERT INTO recommendation_reactions (attachment_id, done, client_comment)
-        VALUES (
-            ${attachmentId},
-            ${params.done ?? false},
-            ${params.comment ?? null}
+async function updateNoteForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+    name?: string
+    text?: string
+    removeFileIds?: string[]
+}): Promise<Attachment> {
+    return updateForPsycho('note', input)
+}
+
+async function updateRecommendationForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+    name?: string
+    text?: string
+    removeFileIds?: string[]
+}): Promise<Attachment> {
+    return updateForPsycho('recommendation', input)
+}
+
+async function replyToRecommendationForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+    reply: string
+}): Promise<RecommendationReaction> {
+    const { reaction } = await AttachmentCheck.forPsycho({
+        user: input.user,
+        clientId: input.clientId,
+        appointmentId: input.appointmentId,
+        attachmentId: input.attachmentId,
+    })
+        .setExpectedType('recommendation')
+        .setExpectedAuthor('self')
+        .run()
+
+    if (reaction !== null && reaction.psychologistReply !== null) {
+        throw new BadRequestError('Reply has already been set.', 'ReplyAlreadySet')
+    }
+
+    return AttachmentsRepo.setReply(input.attachmentId, input.reply)
+}
+
+async function reactToRecommendationForClientView(input: {
+    user: User
+    appointmentId: string
+    attachmentId: string
+    done?: boolean
+    comment?: string
+}): Promise<RecommendationReaction> {
+    if (input.done === undefined && input.comment === undefined) {
+        throw new BadRequestError('done or comment is required')
+    }
+
+    const { reaction } = await AttachmentCheck.forClient({
+        user: input.user,
+        appointmentId: input.appointmentId,
+        attachmentId: input.attachmentId,
+    })
+        .setExpectedType('recommendation')
+        .run()
+
+    if (input.comment !== undefined && reaction !== null && reaction.clientComment !== null) {
+        throw new BadRequestError('Comment has already been set.', 'CommentAlreadySet')
+    }
+
+    return AttachmentsRepo.upsertReaction(input.attachmentId, {
+        done: input.done,
+        comment: input.comment,
+    })
+}
+
+async function completeImpressionForClientView(input: {
+    user: User
+    appointmentId: string
+    attachmentId: string
+    response: string
+}): Promise<ImpressionCompletion> {
+    const { completion } = await AttachmentCheck.forClient({
+        user: input.user,
+        appointmentId: input.appointmentId,
+        attachmentId: input.attachmentId,
+    })
+        .setExpectedType('impression')
+        .setExpectedAuthor('self')
+        .run()
+
+    if (completion !== null) {
+        throw new BadRequestError(
+            'This impression has already been completed.',
+            'AlreadyCompleted',
         )
-        ON CONFLICT (attachment_id) DO UPDATE SET
-            done = COALESCE(EXCLUDED.done, recommendation_reactions.done),
-            client_comment = CASE
-                WHEN recommendation_reactions.client_comment IS NULL THEN EXCLUDED.client_comment
-                ELSE recommendation_reactions.client_comment
-            END,
-            updated_at = NOW()
-        RETURNING ${db.unsafe(REACTION_COLUMNS)}
-    `
-    return row as RecommendationReaction
+    }
+
+    return AttachmentsRepo.insertImpressionCompletion(input.attachmentId, input.response)
 }
 
-export async function setReply(
-    attachmentId: string,
-    reply: string,
-): Promise<RecommendationReaction> {
-    const [row] = await db`
-        INSERT INTO recommendation_reactions (attachment_id, psychologist_reply)
-        VALUES (${attachmentId}, ${reply})
-        ON CONFLICT (attachment_id) DO UPDATE SET
-            psychologist_reply = EXCLUDED.psychologist_reply,
-            updated_at = NOW()
-        RETURNING ${db.unsafe(REACTION_COLUMNS)}
-    `
-    return row as RecommendationReaction
-}
-
-export async function listAttachmentsWithReactions(
-    appointmentId: string,
-    type: AttachmentType,
-    authorId?: string,
-): Promise<AttachmentWithReaction[]> {
-    const rows = authorId
-        ? await db`
-            SELECT
-                ${db.unsafe(ATTACHMENT_SELECT)},
-                ${db.unsafe(REACTION_JSON_EXPR)}
-            FROM attachments a
-            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            WHERE a.appointment_id = ${appointmentId}
-              AND a.type = ${type}
-              AND a.author_id = ${authorId}
-            ORDER BY a.created_at ASC
-        `
-        : await db`
-            SELECT
-                ${db.unsafe(ATTACHMENT_SELECT)},
-                ${db.unsafe(REACTION_JSON_EXPR)}
-            FROM attachments a
-            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            WHERE a.appointment_id = ${appointmentId}
-              AND a.type = ${type}
-            ORDER BY a.created_at ASC
-        `
-    return rows as AttachmentWithReaction[]
-}
-
-export async function listImpressionsForClientByPsycho(
+async function listImpressionsForClientByPsycho(
     clientId: string,
     psychoId: string,
 ): Promise<AttachmentWithAppointment[]> {
-    const rows = await db`
-        SELECT
-            ${db.unsafe(ATTACHMENT_SELECT)},
-            ap.start_time AS "appointmentStartTime"
-        FROM attachments a
-        JOIN appointments ap ON ap.id = a.appointment_id
-        WHERE ap.psycho_id = ${psychoId}
-          AND ap.client_id = ${clientId}
-          AND a.type = 'impression'
-        ORDER BY a.created_at ASC
-    `
-    return rows as AttachmentWithAppointment[]
+    return AttachmentsRepo.listImpressionsByPair(clientId, psychoId)
 }
 
-export async function listClientProgressByPsycho(
+async function listClientProgressByPsycho(
     clientId: string,
     psychoId: string,
 ): Promise<ProgressSession[]> {
-    const appointments = (await db`
-        SELECT
-            id,
-            start_time AS "startTime",
-            end_time AS "endTime",
-            'past' AS status
-        FROM appointments
-        WHERE client_id = ${clientId}
-          AND psycho_id = ${psychoId}
-          AND ended_at IS NOT NULL
-        ORDER BY start_time ASC
-    `) as Array<{
-        id: string
-        startTime: string
-        endTime: string
-        status: 'past'
-    }>
+    const appointments = await AttachmentsRepo.listEndedAppointmentsForPair(clientId, psychoId)
 
     return Promise.all(
         appointments.map(async (apt) => {
             const [impressions, recommendations] = await Promise.all([
-                listAttachmentsByAuthor(apt.id, 'impression', clientId),
-                listAttachmentsWithReactions(apt.id, 'recommendation'),
+                AttachmentsRepo.listByAuthor(apt.id, 'impression', clientId),
+                AttachmentsRepo.listWithReactions(apt.id, 'recommendation'),
             ])
             return {
                 id: apt.id,
@@ -339,36 +304,7 @@ export async function listClientProgressByPsycho(
     )
 }
 
-export async function findImpressionCompletion(
-    attachmentId: string,
-): Promise<ImpressionCompletion | null> {
-    const [row] = await db`
-        SELECT
-            attachment_id AS "attachmentId",
-            client_response AS "clientResponse",
-            created_at AS "createdAt"
-        FROM impression_completions
-        WHERE attachment_id = ${attachmentId}
-    `
-    return (row as ImpressionCompletion) ?? null
-}
-
-export async function completeImpression(
-    attachmentId: string,
-    clientResponse: string,
-): Promise<ImpressionCompletion> {
-    const [row] = await db`
-        INSERT INTO impression_completions (attachment_id, client_response)
-        VALUES (${attachmentId}, ${clientResponse})
-        RETURNING
-            attachment_id AS "attachmentId",
-            client_response AS "clientResponse",
-            created_at AS "createdAt"
-    `
-    return row as ImpressionCompletion
-}
-
-async function listAttachmentsForPsychoView(
+async function listForPsychoView(
     appointmentId: string,
     psychoId: string,
     clientId: string,
@@ -391,7 +327,7 @@ async function listAttachmentsForPsychoView(
     return result
 }
 
-async function listAttachmentsForClientView(
+async function listForClientView(
     appointmentId: string,
     clientId: string,
     types?: AttachmentType[],
@@ -420,7 +356,7 @@ const CLIENT_DELETE_RULES = {
     impression: 'self',
 } as const satisfies Partial<Record<AttachmentType, 'self' | 'any'>>
 
-async function deleteAttachmentForPsychoView(input: {
+async function deleteForPsychoView(input: {
     user: User
     clientId: string
     appointmentId: string
@@ -440,7 +376,7 @@ async function deleteAttachmentForPsychoView(input: {
     await deleteAttachmentAndOrphanFiles(attachment)
 }
 
-async function deleteAttachmentForClientView(input: {
+async function deleteForClientView(input: {
     user: User
     appointmentId: string
     attachmentId: string
@@ -475,7 +411,7 @@ type PsychoGetResult =
     | { attachment: Attachment; reaction: RecommendationReaction | null }
     | { attachment: Attachment; completion: ImpressionCompletion | null }
 
-async function getAttachmentForPsychoView(input: {
+async function getForPsychoView(input: {
     user: User
     clientId: string
     appointmentId: string
@@ -497,7 +433,7 @@ type ClientGetResult =
     | { attachment: Attachment; reaction: RecommendationReaction | null }
     | { attachment: Attachment; completion: ImpressionCompletion | null }
 
-async function getAttachmentForClientView(input: {
+async function getForClientView(input: {
     user: User
     appointmentId: string
     attachmentId: string
@@ -514,12 +450,24 @@ async function getAttachmentForClientView(input: {
 }
 
 export const AttachmentsService = {
-    listForPsycho: listAttachmentsForPsychoView,
-    listForClient: listAttachmentsForClientView,
-    createForPsycho: createAttachmentForPsychoView,
-    createForClient: createAttachmentForClientView,
-    getForPsycho: getAttachmentForPsychoView,
-    getForClient: getAttachmentForClientView,
-    deleteForPsycho: deleteAttachmentForPsychoView,
-    deleteForClient: deleteAttachmentForClientView,
+    create,
+    listByAuthor: AttachmentsRepo.listByAuthor,
+    upsertReaction: AttachmentsRepo.upsertReaction,
+    listWithReactions: AttachmentsRepo.listWithReactions,
+    listImpressionsForClientByPsycho,
+    listClientProgressByPsycho,
+    completeImpression: AttachmentsRepo.insertImpressionCompletion,
+    listForPsycho: listForPsychoView,
+    listForClient: listForClientView,
+    createForPsycho: createForPsychoView,
+    createForClient: createForClientView,
+    getForPsycho: getForPsychoView,
+    getForClient: getForClientView,
+    deleteForPsycho: deleteForPsychoView,
+    deleteForClient: deleteForClientView,
+    updateNoteForPsycho: updateNoteForPsychoView,
+    updateRecommendationForPsycho: updateRecommendationForPsychoView,
+    replyToRecommendationForPsycho: replyToRecommendationForPsychoView,
+    reactToRecommendationForClient: reactToRecommendationForClientView,
+    completeImpressionForClient: completeImpressionForClientView,
 } as const

@@ -1,11 +1,9 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { z } from 'zod/v4'
-import { BadRequestError, NotFoundError } from 'errors/index'
 import { appointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
-import { AppointmentsService } from '../appointments/services'
-import { findAndValidateAttachment, findImpressionCompletion, completeImpression } from './services'
+import { AttachmentsService } from './services'
 
 export const impressionClientRoutes = new Hono().use(authorized, onlyClientRequest)
 
@@ -21,29 +19,15 @@ impressionClientRoutes.patch(
         const user = c.get('user')
         const { appointmentId } = c.req.valid('param')
         const attachmentId = c.req.param('attachmentId')
-
-        await AppointmentsService.getForClient(appointmentId, user.id)
-
-        const attachment = await findAndValidateAttachment(
-            attachmentId,
-            appointmentId,
-            'impression',
-            user.id,
-        )
-        if (!attachment) {
-            throw new NotFoundError()
-        }
-
-        const existing = await findImpressionCompletion(attachmentId)
-        if (existing) {
-            throw new BadRequestError(
-                'This impression has already been completed.',
-                'AlreadyCompleted',
-            )
-        }
-
         const { response } = c.req.valid('json')
-        const completion = await completeImpression(attachmentId, response)
+
+        const completion = await AttachmentsService.completeImpressionForClient({
+            user,
+            appointmentId,
+            attachmentId,
+            response,
+        })
+
         return c.json({ completion }, 200)
     },
 )

@@ -10,7 +10,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment, upsertReaction } from '../attachments/services'
+import { AttachmentsService } from '../attachments/services'
 
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
@@ -58,7 +58,7 @@ describe('GET /api/client/dashboard', () => {
         await startAppointment(past.id)
         await endAppointment(past.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: past.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -222,7 +222,7 @@ describe('GET /api/client/dashboard', () => {
         await endAppointment(past.id)
 
         // No reaction - should appear in pending
-        const noReaction = await createAttachment({
+        const noReaction = await AttachmentsService.create({
             appointmentId: past.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -230,22 +230,22 @@ describe('GET /api/client/dashboard', () => {
         })
 
         // done=false - should appear in pending
-        const notDone = await createAttachment({
+        const notDone = await AttachmentsService.create({
             appointmentId: past.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Not done',
         })
-        await upsertReaction(notDone.id, { done: false })
+        await AttachmentsService.upsertReaction(notDone.id, { done: false })
 
         // done=true - should NOT appear in pending
-        const done = await createAttachment({
+        const done = await AttachmentsService.create({
             appointmentId: past.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Already done',
         })
-        await upsertReaction(done.id, { done: true })
+        await AttachmentsService.upsertReaction(done.id, { done: true })
 
         const res = await app.request(
             '/api/client/dashboard',
@@ -303,14 +303,14 @@ describe('GET /api/client/dashboard', () => {
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Recommendation for client1',
         })
 
-        const client2Rec = await createAttachment({
+        const client2Rec = await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: psycho.id,
             type: 'recommendation',

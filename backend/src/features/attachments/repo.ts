@@ -4,6 +4,8 @@ import { APPOINTMENT_STATUS_EXPR } from '../appointments/repo'
 import type {
     Attachment,
     AttachmentType,
+    AttachmentWithAppointment,
+    AttachmentWithReaction,
     ImpressionCompletion,
     RecommendationReaction,
 } from './models'
@@ -71,6 +73,14 @@ export const COMPLETION_JSON_EXPR = `
         )
         ELSE NULL
     END AS completion
+`
+
+const REACTION_COLUMNS = `
+    attachment_id AS "attachmentId",
+    done,
+    client_comment AS "clientComment",
+    psychologist_reply AS "psychologistReply",
+    updated_at AS "updatedAt"
 `
 
 export type AppointmentStatus = 'upcoming' | 'active' | 'past' | 'warning' | 'missed'
@@ -277,5 +287,208 @@ export const AttachmentsRepo = {
                 ORDER BY a.type, a.created_at ASC
             `
         return (rows as AttachmentChainRow[]).map(rowToChain)
+    },
+
+    async listByAuthor(
+        appointmentId: string,
+        type: AttachmentType,
+        authorId: string,
+    ): Promise<Attachment[]> {
+        const rows = await db`
+            SELECT ${db.unsafe(ATTACHMENT_SELECT)}
+            FROM attachments a
+            WHERE a.appointment_id = ${appointmentId}
+              AND a.type = ${type}
+              AND a.author_id = ${authorId}
+            ORDER BY a.created_at ASC
+        `
+        return rows as Attachment[]
+    },
+
+    async update(
+        id: string,
+        params: { name: string | null; text: string | null },
+        executor: SQL = db,
+    ): Promise<void> {
+        await executor`
+            UPDATE attachments
+            SET name = COALESCE(${params.name}, name),
+                text = COALESCE(${params.text}, text),
+                updated_at = NOW()
+            WHERE id = ${id}
+        `
+    },
+
+    async unlinkFiles(
+        attachmentId: string,
+        fileIds: string[],
+        executor: SQL = db,
+    ): Promise<void> {
+        if (fileIds.length === 0) return
+        await executor`
+            DELETE FROM attachment_files
+            WHERE attachment_id = ${attachmentId}
+              AND file_id IN ${executor(fileIds)}
+        `
+    },
+
+    async deleteFilesAndReturnStoredNames(
+        fileIds: string[],
+        executor: SQL = db,
+    ): Promise<Array<{ id: string; storedName: string }>> {
+        if (fileIds.length === 0) return []
+        const rows = (await executor`
+            SELECT id, stored_name AS "storedName"
+            FROM files
+            WHERE id IN ${executor(fileIds)}
+        `) as Array<{ id: string; storedName: string }>
+        await executor`
+            DELETE FROM files
+            WHERE id IN ${executor(fileIds)}
+        `
+        return rows
+    },
+
+    async findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
+        const [row] = await db`
+            SELECT ${db.unsafe(REACTION_COLUMNS)}
+            FROM recommendation_reactions
+            WHERE attachment_id = ${attachmentId}
+        `
+        return (row as RecommendationReaction) ?? null
+    },
+
+    async upsertReaction(
+        attachmentId: string,
+        params: { done?: boolean; comment?: string },
+    ): Promise<RecommendationReaction> {
+        const [row] = await db`
+            INSERT INTO recommendation_reactions (attachment_id, done, client_comment)
+            VALUES (
+                ${attachmentId},
+                ${params.done ?? false},
+                ${params.comment ?? null}
+            )
+            ON CONFLICT (attachment_id) DO UPDATE SET
+                done = COALESCE(EXCLUDED.done, recommendation_reactions.done),
+                client_comment = CASE
+                    WHEN recommendation_reactions.client_comment IS NULL THEN EXCLUDED.client_comment
+                    ELSE recommendation_reactions.client_comment
+                END,
+                updated_at = NOW()
+            RETURNING ${db.unsafe(REACTION_COLUMNS)}
+        `
+        return row as RecommendationReaction
+    },
+
+    async setReply(attachmentId: string, reply: string): Promise<RecommendationReaction> {
+        const [row] = await db`
+            INSERT INTO recommendation_reactions (attachment_id, psychologist_reply)
+            VALUES (${attachmentId}, ${reply})
+            ON CONFLICT (attachment_id) DO UPDATE SET
+                psychologist_reply = EXCLUDED.psychologist_reply,
+                updated_at = NOW()
+            RETURNING ${db.unsafe(REACTION_COLUMNS)}
+        `
+        return row as RecommendationReaction
+    },
+
+    async listWithReactions(
+        appointmentId: string,
+        type: AttachmentType,
+        authorId?: string,
+    ): Promise<AttachmentWithReaction[]> {
+        const rows = authorId
+            ? await db`
+                SELECT
+                    ${db.unsafe(ATTACHMENT_SELECT)},
+                    ${db.unsafe(REACTION_JSON_EXPR)}
+                FROM attachments a
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                WHERE a.appointment_id = ${appointmentId}
+                  AND a.type = ${type}
+                  AND a.author_id = ${authorId}
+                ORDER BY a.created_at ASC
+            `
+            : await db`
+                SELECT
+                    ${db.unsafe(ATTACHMENT_SELECT)},
+                    ${db.unsafe(REACTION_JSON_EXPR)}
+                FROM attachments a
+                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+                WHERE a.appointment_id = ${appointmentId}
+                  AND a.type = ${type}
+                ORDER BY a.created_at ASC
+            `
+        return rows as AttachmentWithReaction[]
+    },
+
+    async listImpressionsByPair(
+        clientId: string,
+        psychoId: string,
+    ): Promise<AttachmentWithAppointment[]> {
+        const rows = await db`
+            SELECT
+                ${db.unsafe(ATTACHMENT_SELECT)},
+                ap.start_time AS "appointmentStartTime"
+            FROM attachments a
+            JOIN appointments ap ON ap.id = a.appointment_id
+            WHERE ap.psycho_id = ${psychoId}
+              AND ap.client_id = ${clientId}
+              AND a.type = 'impression'
+            ORDER BY a.created_at ASC
+        `
+        return rows as AttachmentWithAppointment[]
+    },
+
+    async listEndedAppointmentsForPair(
+        clientId: string,
+        psychoId: string,
+    ): Promise<Array<{ id: string; startTime: string; endTime: string; status: 'past' }>> {
+        const rows = await db`
+            SELECT
+                id,
+                start_time AS "startTime",
+                end_time AS "endTime",
+                'past' AS status
+            FROM appointments
+            WHERE client_id = ${clientId}
+              AND psycho_id = ${psychoId}
+              AND ended_at IS NOT NULL
+            ORDER BY start_time ASC
+        `
+        return rows as Array<{
+            id: string
+            startTime: string
+            endTime: string
+            status: 'past'
+        }>
+    },
+
+    async findImpressionCompletion(attachmentId: string): Promise<ImpressionCompletion | null> {
+        const [row] = await db`
+            SELECT
+                attachment_id AS "attachmentId",
+                client_response AS "clientResponse",
+                created_at AS "createdAt"
+            FROM impression_completions
+            WHERE attachment_id = ${attachmentId}
+        `
+        return (row as ImpressionCompletion) ?? null
+    },
+
+    async insertImpressionCompletion(
+        attachmentId: string,
+        clientResponse: string,
+    ): Promise<ImpressionCompletion> {
+        const [row] = await db`
+            INSERT INTO impression_completions (attachment_id, client_response)
+            VALUES (${attachmentId}, ${clientResponse})
+            RETURNING
+                attachment_id AS "attachmentId",
+                client_response AS "clientResponse",
+                created_at AS "createdAt"
+        `
+        return row as ImpressionCompletion
     },
 } as const

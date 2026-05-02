@@ -9,7 +9,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment } from './services'
+import { AttachmentsService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -40,14 +40,14 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'First appointment impression',
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client.id,
             type: 'impression',
@@ -150,14 +150,14 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt1.id,
             authorId: client1.id,
             type: 'impression',
             name: null,
             text: 'Client1 impression',
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client2.id,
             type: 'impression',

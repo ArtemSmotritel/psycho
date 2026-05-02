@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { BadRequestError } from 'errors/index'
 import { authorized, onlyClientRequest } from '../../middlewares/auth'
 import { ClientsRepo } from '../clients/repo'
-import { listClientProgressByPsycho } from './services'
+import { AttachmentsService } from './services'
 
 export const progressClientRoutes = new Hono().use(authorized, onlyClientRequest)
 
@@ -21,6 +21,6 @@ progressClientRoutes.get('/:psychoId', async (c) => {
         throw new BadRequestError('This psychologist is not in your list.', 'PsychoNotLinked')
     }
 
-    const sessions = await listClientProgressByPsycho(user.id, psychoId)
+    const sessions = await AttachmentsService.listClientProgressByPsycho(user.id, psychoId)
     return c.json({ sessions }, 200)
 })

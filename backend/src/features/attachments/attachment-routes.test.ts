@@ -11,7 +11,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { completeImpression, createAttachment, upsertReaction } from './services'
+import { AttachmentsService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -30,7 +30,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -66,7 +66,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -102,7 +102,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -173,7 +173,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(aptB.id)
         await endAppointment(aptB.id)
 
-        const attachmentB = await createAttachment({
+        const attachmentB = await AttachmentsService.create({
             appointmentId: aptB.id,
             authorId: psycho.id,
             type: 'note',
@@ -207,7 +207,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const attachment = await createAttachment({
+        const attachment = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho2.id,
             type: 'note',
@@ -265,7 +265,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -299,7 +299,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -307,7 +307,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             text: 'Recommendation text',
         })
 
-        await upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
+        await AttachmentsService.upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}`,
@@ -337,7 +337,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -371,7 +371,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -379,7 +379,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             text: 'Impression text',
         })
 
-        await completeImpression(impression.id, 'Reflected on it')
+        await AttachmentsService.completeImpression(impression.id, 'Reflected on it')
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments/${impression.id}`,
@@ -408,7 +408,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -443,7 +443,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -477,7 +477,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -485,7 +485,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             text: 'My impression',
         })
 
-        await completeImpression(impression.id, 'Reflected')
+        await AttachmentsService.completeImpression(impression.id, 'Reflected')
 
         const res = await app.request(
             `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
@@ -513,7 +513,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -547,7 +547,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -555,7 +555,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             text: 'Rec text',
         })
 
-        await upsertReaction(recommendation.id, { done: false, comment: 'Will try' })
+        await AttachmentsService.upsertReaction(recommendation.id, { done: false, comment: 'Will try' })
 
         const res = await app.request(
             `/api/client/appointments/${apt.id}/attachments/${recommendation.id}`,
@@ -584,7 +584,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -615,7 +615,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',
@@ -665,21 +665,21 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
             name: 'Note',
             text: 'Note text',
         })
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'Impression text',
         })
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -764,23 +764,23 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'Impression text',
         })
-        await completeImpression(impression.id, 'Reflected')
+        await AttachmentsService.completeImpression(impression.id, 'Reflected')
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Rec',
             text: 'Rec text',
         })
-        await upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
+        await AttachmentsService.upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
@@ -818,21 +818,21 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: otherPsycho.id,
             type: 'note',
             name: 'Foreign Note',
             text: null,
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: otherPsycho.id,
             type: 'recommendation',
             name: 'Foreign Rec',
             text: null,
         })
-        const myNote = await createAttachment({
+        const myNote = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -867,21 +867,21 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
             name: 'Note',
             text: null,
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'Impression',
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -981,21 +981,21 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
             name: 'Note',
             text: null,
         })
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'Mine',
         })
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -1057,7 +1057,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',
@@ -1087,14 +1087,14 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             name: null,
             text: 'Mine',
         })
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -1664,7 +1664,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -1693,7 +1693,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const rec = await createAttachment({
+        const rec = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -1753,7 +1753,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(aptB.id)
         await endAppointment(aptB.id)
 
-        const noteB = await createAttachment({
+        const noteB = await AttachmentsService.create({
             appointmentId: aptB.id,
             authorId: psycho.id,
             type: 'note',
@@ -1785,7 +1785,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -1816,7 +1816,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho2.id,
             type: 'note',
@@ -1845,7 +1845,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -1874,13 +1874,13 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const rec = await createAttachment({
+        const rec = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
             name: 'Reacted',
         })
-        await upsertReaction(rec.id, { done: true })
+        await AttachmentsService.upsertReaction(rec.id, { done: true })
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments/${rec.id}`,
@@ -1910,7 +1910,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         await plantFileOnDisk(file.storedName)
         expect(await diskFileExists(file.storedName)).toBe(true)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -1946,14 +1946,14 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         const sharedFile = await insertTestFile(psycho.id, { originalName: 'shared.png' })
         await plantFileOnDisk(sharedFile.storedName)
 
-        const noteToDelete = await createAttachment({
+        const noteToDelete = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
             name: 'Delete me',
             imageFileIds: [sharedFile.id],
         })
-        const otherNote = await createAttachment({
+        const otherNote = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -1994,7 +1994,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
             VALUES (${psycho.id}, 'Library item', ${libraryFile.id})
         `
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -2047,7 +2047,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -2097,7 +2097,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const rec = await createAttachment({
+        const rec = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -2126,7 +2126,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -2157,7 +2157,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: owner.id,
             type: 'impression',
@@ -2186,13 +2186,13 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
             text: 'Reflection',
         })
-        await completeImpression(impression.id, 'Done.')
+        await AttachmentsService.completeImpression(impression.id, 'Done.')
 
         const res = await app.request(
             `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
@@ -2221,7 +2221,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         const file = await insertTestFile(client.id, { originalName: 'snapshot.png' })
         await plantFileOnDisk(file.storedName)
 
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',

@@ -9,7 +9,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment } from './services'
+import { AttachmentsService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -28,7 +28,7 @@ async function setupImpressionScenario() {
     })
     await startAppointment(apt.id)
     await endAppointment(apt.id)
-    const impression = await createAttachment({
+    const impression = await AttachmentsService.create({
         appointmentId: apt.id,
         authorId: client.id,
         type: 'impression',
@@ -142,7 +142,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         })
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
-        const impression2 = await createAttachment({
+        const impression2 = await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client.id,
             type: 'impression',
@@ -174,7 +174,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -207,7 +207,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         })
         await startAppointment(apt.id)
         await endAppointment(apt.id)
-        const impression = await createAttachment({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',

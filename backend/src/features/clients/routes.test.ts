@@ -8,7 +8,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment } from '../attachments/services'
+import { AttachmentsService } from '../attachments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -333,9 +333,9 @@ describe('GET /api/clients/:clientId', () => {
         await startAppointment(appt.id)
         await endAppointment(appt.id)
 
-        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
-        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
-        await createAttachment({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -361,12 +361,12 @@ describe('GET /api/clients/:clientId', () => {
         await startAppointment(appt.id)
         await endAppointment(appt.id)
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: appt.id,
             authorId: psycho.id,
             type: 'recommendation',
         })
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: appt.id,
             authorId: psycho.id,
             type: 'recommendation',

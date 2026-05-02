@@ -11,7 +11,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment } from '../attachments/services'
+import { AttachmentsService } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
@@ -179,7 +179,7 @@ describe('GET /api/files/:filename', () => {
         expect(upload.status).toBe(201)
         const storedName = upload.body.url.split('/').pop()!
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
@@ -215,7 +215,7 @@ describe('GET /api/files/:filename', () => {
         expect(upload.status).toBe(201)
         const storedName = upload.body.url.split('/').pop()!
 
-        await createAttachment({
+        await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',

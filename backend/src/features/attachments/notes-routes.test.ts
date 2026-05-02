@@ -10,7 +10,7 @@ import {
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { createAttachment } from './services'
+import { AttachmentsService } from './services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -32,7 +32,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await endAppointment(apt.id)
 
         const file = await insertTestFile(psycho.id, { originalName: 'original.png' })
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -85,7 +85,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: psycho.id,
             type: 'note',
@@ -117,7 +117,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await createAttachment({
+        const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'recommendation',
@@ -150,7 +150,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho2.id,
             type: 'note',
@@ -209,7 +209,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
 
         const file1 = await insertTestFile(psycho.id, { originalName: 'img1.png' })
         const file2 = await insertTestFile(psycho.id, { originalName: 'img2.png' })
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
@@ -246,7 +246,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/notes/:attach
         await endAppointment(apt.id)
 
         const file = await insertTestFile(psycho.id, { originalName: 'img.png' })
-        const note = await createAttachment({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
             type: 'note',
