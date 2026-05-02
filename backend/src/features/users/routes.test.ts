@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 
 describe('GET /api/users/me', () => {
@@ -9,7 +10,7 @@ describe('GET /api/users/me', () => {
         const res = await app.request('/api/users/me', await asUser(user.id))
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('active_role', null)
         expect(body).toHaveProperty('id', user.id)
         expect(body).toHaveProperty('email', 'alice@test.com')
@@ -36,7 +37,7 @@ describe('PATCH /api/users/me/role', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('active_role', 'psycho')
     })
 
@@ -53,7 +54,7 @@ describe('PATCH /api/users/me/role', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('active_role', 'client')
     })
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
@@ -52,7 +53,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('completion')
         expect(body.completion).toHaveProperty('attachmentId', impression.id)
         expect(body.completion).toHaveProperty('clientResponse', 'My completion response')
@@ -81,7 +82,7 @@ describe('PATCH /api/client/appointments/:appointmentId/impressions/:attachmentI
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyCompleted')
     })
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
@@ -45,7 +46,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toHaveProperty('done', true)
         expect(body.reaction).toHaveProperty('attachmentId', recommendation.id)
@@ -80,7 +81,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toHaveProperty('clientComment', 'Great advice!')
     })
@@ -125,7 +126,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.reaction).toHaveProperty('clientComment', 'Original comment')
         expect(body.reaction).toHaveProperty('done', true)
     })
@@ -168,7 +169,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'CommentAlreadySet')
     })
 
@@ -201,7 +202,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'BadRequest')
     })
 
@@ -369,7 +370,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toHaveProperty('psychologistReply', 'Keep it up!')
         expect(body.reaction).toHaveProperty('attachmentId', recommendation.id)
@@ -413,7 +414,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ReplyAlreadySet')
     })
 

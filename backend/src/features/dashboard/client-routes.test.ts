@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
@@ -72,7 +73,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
 
         expect(body).toHaveProperty('nextAppointment')
         expect(body.nextAppointment).toHaveProperty('id', upcoming.id)
@@ -115,7 +116,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.nextAppointment).toBeNull()
         expect(body.activeAppointment).toBeNull()
     })
@@ -141,7 +142,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.activeAppointment).toHaveProperty('id', active.id)
         expect(body.activeAppointment).toHaveProperty('status', 'active')
         expect(body.activeAppointment).toHaveProperty('psychoName', 'Dr. Active')
@@ -175,7 +176,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.activeAppointment).toHaveProperty('id', active.id)
         expect(body.nextAppointment).toHaveProperty('id', upcoming.id)
     })
@@ -201,7 +202,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.nextAppointment).toBeNull()
         expect(body.activeAppointment).toHaveProperty('id', active.id)
     })
@@ -254,7 +255,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
 
         const pendingIds = body.pendingRecommendations.map((r: any) => r.id)
         expect(pendingIds).toContain(noReaction.id)
@@ -273,7 +274,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.pendingRecommendations).toEqual([])
     })
 
@@ -325,7 +326,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
 
         const pendingIds = body.pendingRecommendations.map((r: any) => r.id)
         expect(pendingIds).toContain(client2Rec.id)
@@ -345,7 +346,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologists')
         expect(Array.isArray(body.psychologists)).toBe(true)
         expect(body.psychologists.length).toBe(1)
@@ -370,7 +371,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.psychologists.length).toBe(2)
         const ids = body.psychologists.map((p: any) => p.id)
         expect(ids).toContain(psycho1.id)
@@ -388,7 +389,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.psychologists).toEqual([])
     })
 
@@ -406,7 +407,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.psychologists).toEqual([])
     })
 
@@ -456,7 +457,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointmentCounts.upcoming).toBe(2)
         expect(body.appointmentCounts.past).toBe(1)
         expect(body.appointmentCounts.active).toBe(1)
@@ -481,7 +482,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointmentCounts).toEqual({ upcoming: 1, past: 0, active: 0 })
     })
 
@@ -504,7 +505,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointmentCounts).toEqual({ upcoming: 0, past: 1, active: 0 })
     })
 
@@ -527,7 +528,7 @@ describe('GET /api/client/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointmentCounts).toEqual({ upcoming: 0, past: 0, active: 1 })
     })
 })

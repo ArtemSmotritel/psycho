@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from '../clients/services'
@@ -25,7 +26,7 @@ describe('POST /api/invitations', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('id')
         expect(body).toHaveProperty('token')
         expect(body).toHaveProperty('invitedEmail', 'newclient@example.com')
@@ -78,7 +79,7 @@ describe('POST /api/invitations', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('id', existing.id)
         expect(body).toHaveProperty('token', existing.token)
         expect(body).toHaveProperty('inviteLink')
@@ -99,7 +100,7 @@ describe('POST /api/invitations', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyLinked')
     })
 
@@ -143,7 +144,7 @@ describe('GET /api/invitations', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('invitations')
         expect(body.invitations).toHaveLength(2)
 
@@ -175,7 +176,7 @@ describe('GET /api/invitations', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         const emails = body.invitations.map((i: any) => i.invitedEmail)
         expect(emails).toEqual(['still-pending@example.com'])
     })
@@ -189,7 +190,7 @@ describe('GET /api/invitations', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toEqual({ invitations: [] })
     })
 
@@ -237,7 +238,7 @@ describe('DELETE /api/invitations/:id', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
 
         // Other psycho's invitation still exists
@@ -254,7 +255,7 @@ describe('DELETE /api/invitations/:id', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -279,7 +280,7 @@ describe('DELETE /api/invitations/:id', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'InvalidStatus')
     })
 
@@ -305,7 +306,7 @@ describe('DELETE /api/invitations/:id', () => {
             }),
         )
         expect(acceptRes.status).toBe(404)
-        const body = await acceptRes.json()
+        const body = await jsonBody(acceptRes)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -342,7 +343,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologistId', psycho.id)
         expect(body).toHaveProperty('clientId', client.id)
 
@@ -376,7 +377,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(listRes.status).toBe(200)
-        const listBody = await listRes.json()
+        const listBody = await jsonBody(listRes)
         const emails = listBody.clients.map((c: any) => c.email)
         expect(emails).toContain('client@test.com')
     })
@@ -409,7 +410,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -428,7 +429,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'EmailMismatch')
     })
 
@@ -458,7 +459,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyAccepted')
     })
 
@@ -479,7 +480,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyLinked')
     })
 
@@ -508,7 +509,7 @@ describe('POST /api/invitations/accept', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologistId', psycho.id)
         expect(body).toHaveProperty('clientId', client.id)
     })

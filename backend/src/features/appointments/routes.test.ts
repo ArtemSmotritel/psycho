@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
@@ -33,7 +34,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'upcoming')
         expect(body.appointment).toHaveProperty('googleMeetLink', null)
@@ -93,7 +94,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'BadRequest')
         expect(body).toHaveProperty('message', 'endTime must be after startTime')
     })
@@ -115,7 +116,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ClientNotLinked')
         expect(body).toHaveProperty('message', 'This client is not in your list.')
     })
@@ -176,7 +177,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentConflict')
         expect(body).toHaveProperty('conflictingAppointmentId', existing.id)
         expect(body).toHaveProperty('conflictParticipant', 'psycho')
@@ -208,7 +209,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentConflict')
         expect(body).toHaveProperty('conflictingAppointmentId', existing.id)
         expect(body).toHaveProperty('conflictParticipant', 'client')
@@ -242,7 +243,7 @@ describe('POST /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentConflict')
         expect(body).toHaveProperty('conflictParticipant', 'psycho')
     })
@@ -274,7 +275,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('googleMeetLink', 'https://meet.google.com/abc')
     })
@@ -294,7 +295,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(404)
-        const resBody = await res.json()
+        const resBody = await jsonBody(res)
         expect(resBody).toHaveProperty('error', 'NotFound')
     })
 
@@ -321,7 +322,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(400)
-        const resBody = await res.json()
+        const resBody = await jsonBody(res)
         expect(resBody).toHaveProperty('error', 'AppointmentNotEditable')
         expect(resBody).toHaveProperty('message', 'Only upcoming appointments can be edited.')
     })
@@ -348,7 +349,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotEditable')
     })
 
@@ -376,7 +377,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'BadRequest')
         expect(body).toHaveProperty('message', 'endTime must be after startTime')
     })
@@ -426,7 +427,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('startTime', futureDate(7, 9))
         // endTime stays unchanged
@@ -457,7 +458,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty(
             'googleMeetLink',
@@ -492,7 +493,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('startTime', futureDate(8))
         expect(body).toHaveProperty('meetRescheduleFailed', false)
@@ -530,7 +531,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('meetRescheduleFailed', true)
         // appointment times are still updated
         expect(body.appointment).toHaveProperty('startTime', futureDate(8))
@@ -565,7 +566,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(502)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'MeetRescheduleFailed')
         expect(body).toHaveProperty('googleCalendarEventId', 'fake-event-id-123')
         // appointment times must NOT have been updated — DB and Google Calendar must stay in sync
@@ -606,7 +607,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentConflict')
         expect(body).toHaveProperty('conflictingAppointmentId', apt1.id)
     })
@@ -665,7 +666,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('meetRescheduleFailed', true)
         // appointment is still updated
         expect(body.appointment).toHaveProperty('startTime', futureDate(8))
@@ -690,7 +691,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('success', true)
     })
 
@@ -705,7 +706,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -728,7 +729,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotDeletable')
         expect(body).toHaveProperty('message', 'Only upcoming appointments can be deleted.')
     })
@@ -751,7 +752,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotDeletable')
     })
 
@@ -791,7 +792,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('success', true)
         expect(body).toHaveProperty('meetDeleteFailed', true)
         // DB row is gone regardless of calendar failure
@@ -833,7 +834,7 @@ describe('GET /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toHaveLength(3)
         const statuses = body.appointments.map((a: any) => a.status)
@@ -853,7 +854,7 @@ describe('GET /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toEqual([])
     })
@@ -868,7 +869,7 @@ describe('GET /api/clients/:clientId/appointments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ClientNotLinked')
         expect(body).toHaveProperty('message', 'This client is not in your list.')
     })
@@ -908,7 +909,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('status', 'upcoming')
@@ -925,7 +926,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -984,7 +985,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'active')
     })
@@ -1000,7 +1001,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -1023,7 +1024,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotStartable')
         expect(body).toHaveProperty(
             'message',
@@ -1049,7 +1050,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotStartable')
     })
 
@@ -1079,7 +1080,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/start', () =>
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AnotherAppointmentActive')
         expect(body).toHaveProperty(
             'message',
@@ -1131,7 +1132,7 @@ describe('GET /api/client/appointments (client)', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toHaveLength(2)
         expect(body.appointments[0]).toHaveProperty('psychoName', 'Dr. Smith')
@@ -1147,7 +1148,7 @@ describe('GET /api/client/appointments (client)', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toEqual([])
     })
@@ -1187,7 +1188,7 @@ describe('GET /api/client/appointments/:appointmentId (client)', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('psychoName', 'Dr. Smith')
@@ -1202,7 +1203,7 @@ describe('GET /api/client/appointments/:appointmentId (client)', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -1262,7 +1263,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'past')
     })
@@ -1292,7 +1293,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'past')
         expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', snapshotDataUrl)
@@ -1373,7 +1374,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('status', 'past')
         expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', null)
@@ -1422,7 +1423,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -1443,7 +1444,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotEndable')
         expect(body).toHaveProperty('message', 'Only active appointments can be ended.')
     })
@@ -1467,7 +1468,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotEndable')
     })
 
@@ -1509,7 +1510,7 @@ describe('GET /api/psycho/appointments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment')
         expect(body.appointment).toHaveProperty('id', apt.id)
         expect(body.appointment).toHaveProperty('status', 'active')
@@ -1524,7 +1525,7 @@ describe('GET /api/psycho/appointments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointment', null)
     })
 
@@ -1630,7 +1631,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'warning')
     })
 
@@ -1653,7 +1654,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'missed')
     })
 
@@ -1675,7 +1676,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'active')
     })
 
@@ -1697,7 +1698,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'past')
     })
 
@@ -1720,7 +1721,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'active')
     })
 
@@ -1743,7 +1744,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('status', 'active')
     })
 
@@ -1766,7 +1767,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotStartable')
     })
 
@@ -1787,7 +1788,7 @@ describe('GET /:appointmentId — time-based status computation', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointment).toHaveProperty('startedAt', null)
         expect(body.appointment).toHaveProperty('endedAt', null)
     })
@@ -1822,7 +1823,7 @@ describe('GET /api/psycho/appointments/all', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toHaveLength(1)
         expect(body.appointments[0]).toHaveProperty('clientName', 'Test Client')
@@ -1839,7 +1840,7 @@ describe('GET /api/psycho/appointments/all', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('appointments')
         expect(body.appointments).toEqual([])
     })

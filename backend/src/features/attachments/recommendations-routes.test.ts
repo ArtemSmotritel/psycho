@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { futureDate } from '../../test-fixtures/dates'
@@ -54,7 +55,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('recommendation')
         expect(body.recommendation).toHaveProperty('name', 'Updated Name')
         expect(body.recommendation).toHaveProperty('text', 'Updated Text')
@@ -189,7 +190,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotActive')
     })
 
@@ -226,7 +227,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.recommendation.imageFiles).toHaveLength(1)
         expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file2.id)
     })
@@ -263,7 +264,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.recommendation.imageFiles).toHaveLength(1)
         expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file.id)
     })

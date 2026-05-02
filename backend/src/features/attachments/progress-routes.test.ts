@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
@@ -63,7 +64,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('impressions')
         expect(body.impressions).toHaveLength(2)
         // ordered by created_at ASC
@@ -100,7 +101,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('impressions')
         expect(body.impressions).toHaveLength(0)
     })
@@ -118,7 +119,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ClientNotLinked')
     })
 
@@ -173,7 +174,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.impressions).toHaveLength(1)
         expect(body.impressions[0]).toHaveProperty('text', 'Client1 impression')
     })

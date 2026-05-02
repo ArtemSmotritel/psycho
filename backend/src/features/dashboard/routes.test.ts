@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
@@ -45,7 +46,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('totalClients', 0)
         expect(body).toHaveProperty('totalUpcomingAppointments', 0)
         expect(body).toHaveProperty('totalPastAppointments', 0)
@@ -98,7 +99,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
 
         expect(body.totalClients).toBe(1)
         expect(body.totalPastAppointments).toBe(1)
@@ -129,7 +130,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.activeAppointment).toBeNull()
     })
 
@@ -154,7 +155,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.activeAppointment).not.toBeNull()
         expect(body.activeAppointment).toHaveProperty('id', active.id)
         expect(body.activeAppointment).toHaveProperty('clientName')
@@ -192,7 +193,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.upcomingAppointments.length).toBe(5)
 
         // Check ascending order
@@ -228,7 +229,7 @@ describe('GET /api/psycho/dashboard', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.recentClients.length).toBe(5)
     })
 })

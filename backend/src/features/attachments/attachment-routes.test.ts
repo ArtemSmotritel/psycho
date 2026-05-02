@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { db } from 'config/db'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
@@ -46,7 +47,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('attachment')
         expect(body.attachment.id).toBe(note.id)
         expect(body.attachment.type).toBe('note')
@@ -82,7 +83,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('attachment')
         expect(body.attachment.id).toBe(recommendation.id)
         expect(body.attachment.type).toBe('recommendation')
@@ -118,7 +119,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('attachment')
         expect(body.attachment.id).toBe(impression.id)
         expect(body.attachment.type).toBe('impression')
@@ -278,7 +279,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.id).toBe(recommendation.id)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toBeNull()
@@ -314,7 +315,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.reaction).toMatchObject({
             attachmentId: recommendation.id,
             done: true,
@@ -350,7 +351,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.id).toBe(impression.id)
         expect(body).toHaveProperty('completion')
         expect(body.completion).toBeNull()
@@ -386,7 +387,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.completion).toMatchObject({
             attachmentId: impression.id,
             clientResponse: 'Reflected on it',
@@ -421,7 +422,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.id).toBe(note.id)
         expect(body).not.toHaveProperty('reaction')
         expect(body).not.toHaveProperty('completion')
@@ -456,7 +457,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.id).toBe(impression.id)
         expect(body).toHaveProperty('completion')
         expect(body.completion).toBeNull()
@@ -492,7 +493,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.completion).toMatchObject({
             attachmentId: impression.id,
             clientResponse: 'Reflected',
@@ -526,7 +527,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.id).toBe(recommendation.id)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toBeNull()
@@ -562,7 +563,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.reaction).toMatchObject({
             attachmentId: recommendation.id,
             done: false,
@@ -692,7 +693,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             notes: Array<{ id: string }>
             impressions: Array<{ id: string; completion: unknown }>
             recommendations: Array<{ id: string; reaction: unknown }>
@@ -725,7 +726,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toEqual({ notes: [], impressions: [], recommendations: [] })
     })
 
@@ -746,7 +747,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toEqual({ notes: [], impressions: [], recommendations: [] })
     })
 
@@ -787,7 +788,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             impressions: Array<{ completion: { clientResponse: string } | null }>
             recommendations: Array<{
                 reaction: { done: boolean; clientComment: string | null } | null
@@ -845,7 +846,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             notes: Array<{ id: string }>
             recommendations: Array<{ id: string }>
         }
@@ -894,7 +895,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             notes: Array<{ id: string }>
             impressions: unknown[]
             recommendations: unknown[]
@@ -1008,7 +1009,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             impressions: Array<{ id: string }>
             recommendations: Array<{ id: string }>
             notes?: unknown
@@ -1037,7 +1038,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toEqual({ impressions: [], recommendations: [] })
     })
 
@@ -1107,7 +1108,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = (await res.json()) as {
+        const body = (await jsonBody(res)) as {
             impressions: unknown[]
             recommendations: Array<{ id: string }>
         }
@@ -1199,7 +1200,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('attachment')
         expect(body.attachment).toMatchObject({
             type: 'note',
@@ -1239,7 +1240,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.type).toBe('recommendation')
         expect(body.attachment.imageFiles).toHaveLength(1)
         expect(body.attachment.imageFiles[0]).toHaveProperty('id', file.id)
@@ -1266,7 +1267,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotActive')
     })
 
@@ -1424,7 +1425,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('attachment')
         expect(body.attachment).toMatchObject({
             type: 'impression',
@@ -1462,7 +1463,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.attachment.name).toBe('Session 1')
     })
 
@@ -1487,7 +1488,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentNotStarted')
     })
 
@@ -1887,7 +1888,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'RecommendationHasReaction')
         expect(await attachmentExists(rec.id)).toBe(true)
     })
@@ -2199,7 +2200,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         )
 
         expect(res.status).toBe(409)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ImpressionHasCompletion')
         expect(await attachmentExists(impression.id)).toBe(true)
     })

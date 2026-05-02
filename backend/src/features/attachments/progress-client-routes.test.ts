@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { futureDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
@@ -35,7 +36,7 @@ describe('GET /api/client/progress/psychologists', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologists')
         expect(body.psychologists).toHaveLength(2)
         const ids = body.psychologists.map((p: { id: string }) => p.id).sort()
@@ -55,7 +56,7 @@ describe('GET /api/client/progress/psychologists', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.psychologists).toHaveLength(0)
     })
 
@@ -140,7 +141,7 @@ describe('GET /api/client/progress/:psychoId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('sessions')
         expect(body.sessions).toHaveLength(2)
 
@@ -200,7 +201,7 @@ describe('GET /api/client/progress/:psychoId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.sessions).toHaveLength(1)
         expect(body.sessions[0].id).toBe(pastApt.id)
     })
@@ -218,7 +219,7 @@ describe('GET /api/client/progress/:psychoId', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'PsychoNotLinked')
     })
 
@@ -270,7 +271,7 @@ describe('GET /api/client/progress/:psychoId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.sessions).toHaveLength(1)
         expect(body.sessions[0].id).toBe(apt1.id)
         expect(body.sessions[0].impressions).toHaveLength(1)

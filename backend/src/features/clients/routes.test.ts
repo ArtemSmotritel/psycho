@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { ClientsService } from './services'
 import {
@@ -41,7 +42,7 @@ describe('POST /api/clients', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ClientNotFound')
         expect(body).toHaveProperty(
             'message',
@@ -64,7 +65,7 @@ describe('POST /api/clients', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyLinked')
         expect(body).toHaveProperty('message', 'This client is already in your list.')
     })
@@ -83,7 +84,7 @@ describe('POST /api/clients', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('client')
         expect(body.client).toHaveProperty('id', client.id)
         expect(body.client).toHaveProperty('email', 'client@test.com')
@@ -128,7 +129,7 @@ describe('GET /api/clients', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('clients')
         expect(body.clients).toHaveLength(2)
         const emails = body.clients.map((c: any) => c.email)
@@ -167,7 +168,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('client')
         expect(body.client).toHaveProperty('id', client.id)
         expect(body.client).toHaveProperty('email', 'client@test.com')
@@ -193,7 +194,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -236,7 +237,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toHaveProperty('sessionsCount', 2)
     })
 
@@ -268,7 +269,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client.lastAppointment).not.toBeNull()
         expect(body.client.lastAppointment.id).toBe(a2.id)
     })
@@ -297,7 +298,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client.nextAppointment).not.toBeNull()
         expect(body.client.nextAppointment.id).toBe(a1.id)
     })
@@ -313,7 +314,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client.lastAppointment).toBeNull()
         expect(body.client.nextAppointment).toBeNull()
     })
@@ -342,7 +343,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toHaveProperty('impressionsCount', 3)
     })
 
@@ -377,7 +378,7 @@ describe('GET /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toHaveProperty('recommendationsCount', 2)
     })
 })
@@ -406,7 +407,7 @@ describe('DELETE /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -462,7 +463,7 @@ describe('PUT /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('client')
         expect(body.client.username).toBe('new_user')
         expect(body.client.phone).toBe('+1234')
@@ -485,7 +486,7 @@ describe('PUT /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client.name).toBe('New Name')
     })
 
@@ -504,7 +505,7 @@ describe('PUT /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client.email).toBe('client@test.com')
     })
 
@@ -523,7 +524,7 @@ describe('PUT /api/clients/:clientId', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toHaveProperty('registrationDate')
         expect(body.client).toHaveProperty('sessionsCount')
         expect(body.client).toHaveProperty('impressionsCount')
@@ -585,7 +586,7 @@ describe('GET /api/clients/me', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toMatchObject({
             id: client.id,
             email: 'client@test.com',
@@ -621,7 +622,7 @@ describe('PUT /api/clients/me', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.client).toMatchObject({
             id: client.id,
             phone: '+1234567890',

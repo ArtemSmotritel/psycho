@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from '../clients/services'
@@ -33,7 +34,7 @@ describe('Client re-onboarding after disconnect', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('status', 'pending')
     })
 
@@ -55,7 +56,7 @@ describe('Client re-onboarding after disconnect', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologistId', psycho.id)
         expect(body).toHaveProperty('clientId', client.id)
 
@@ -88,7 +89,7 @@ describe('Client re-onboarding after disconnect', () => {
         )
 
         expect(listRes.status).toBe(200)
-        const listBody = await listRes.json()
+        const listBody = await jsonBody(listRes)
         const emails = listBody.clients.map((c: any) => c.email)
         expect(emails).toContain('client@test.com')
     })
@@ -132,7 +133,7 @@ describe('Client re-onboarding after disconnect', () => {
             await asUser(psycho.id, { headers: PSYCHO_HEADER }),
         )
         expect(visibleRes.status).toBe(200)
-        const body = await visibleRes.json()
+        const body = await jsonBody(visibleRes)
         expect(body.appointments).toHaveLength(1)
         expect(body.appointments[0].id).toBe(apt.id)
     })
@@ -153,7 +154,7 @@ describe('Disconnected client data is hidden from psychologist', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.clients).toHaveLength(0)
     })
 
@@ -189,7 +190,7 @@ describe('Disconnected client data is hidden from psychologist', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'ClientNotLinked')
     })
 
@@ -222,7 +223,7 @@ describe('Disconnected client data is hidden from psychologist', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.appointments).toHaveLength(1)
         expect(body.appointments[0].clientId).toBe(client2.id)
     })

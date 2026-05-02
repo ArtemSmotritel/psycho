@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { testDb } from '../../test-fixtures/db'
@@ -31,7 +32,7 @@ describe('GET /api/associative-images', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('images')
         expect(body.images).toHaveLength(0)
     })
@@ -48,7 +49,7 @@ describe('GET /api/associative-images', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.images).toHaveLength(1)
         expect(body.images[0]).toHaveProperty('name', 'Psycho1 Image')
     })
@@ -87,7 +88,7 @@ describe('POST /api/associative-images', () => {
         )
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('image')
         expect(body.image).toHaveProperty('id')
         expect(body.image).toHaveProperty('name', 'My Card')
@@ -141,7 +142,7 @@ describe('POST /api/associative-images', () => {
         )
 
         expect(res.status).toBe(403)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'FileNotOwned')
     })
 
@@ -202,7 +203,7 @@ describe('POST /api/associative-images', () => {
             await asUser(psycho.id, { headers: PSYCHO_HEADER }),
         )
 
-        const body = await listRes.json()
+        const body = await jsonBody(listRes)
         expect(body.images).toHaveLength(1)
         expect(body.images[0]).toHaveProperty('name', 'New Card')
     })
@@ -225,7 +226,7 @@ describe('PATCH /api/associative-images/:id', () => {
         )
 
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body.image).toHaveProperty('name', 'New Name')
     })
 
@@ -322,7 +323,7 @@ describe('DELETE /api/associative-images/:id', () => {
             await asUser(psycho.id, { headers: PSYCHO_HEADER }),
         )
 
-        const body = await listRes.json()
+        const body = await jsonBody(listRes)
         expect(body.images).toHaveLength(0)
     })
 

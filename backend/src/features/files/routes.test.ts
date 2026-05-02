@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import { app } from 'config/app'
+import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { testDb } from '../../test-fixtures/db'
@@ -36,7 +37,7 @@ async function uploadFileForUser(
         '/api/files/upload',
         await asUser(userId, { method: 'POST', body: formData }),
     )
-    const body = res.status === 201 ? await res.json() : await res.json().catch(() => null)
+    const body = res.status === 201 ? await jsonBody(res) : await jsonBody(res).catch(() => null)
     if (body?.url) {
         // Track storedName (last URL segment) for cleanup.
         const storedName = body.url.split('/').pop()
@@ -64,7 +65,7 @@ describe('POST /api/files/upload', () => {
         )
 
         expect(res.status).toBe(400)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'BadRequest')
         expect(body).toHaveProperty('message', 'file is required')
     })
@@ -241,7 +242,7 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -259,7 +260,7 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 
@@ -275,7 +276,7 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(404)
-        const body = await res.json()
+        const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'NotFound')
     })
 })
