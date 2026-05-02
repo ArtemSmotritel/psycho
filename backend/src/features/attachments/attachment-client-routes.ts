@@ -4,6 +4,7 @@ import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth
 import { createAttachmentClientSchema, listQuerySchemaClient } from './schemas'
 import {
     createAttachmentForClientView,
+    deleteAttachmentForClientView,
     getAttachmentForClientView,
     listAttachmentsForClientView,
 } from './services'
@@ -41,6 +42,16 @@ attachmentClientRoutes.post(
         return c.json({ attachment }, 201)
     },
 )
+
+attachmentClientRoutes.delete('/:attachmentId', async (c) => {
+    const user = c.get('user')!
+    await deleteAttachmentForClientView({
+        user,
+        appointmentId: c.req.param('appointmentId')!,
+        attachmentId: c.req.param('attachmentId')!,
+    })
+    return c.body(null, 204)
+})
 
 attachmentClientRoutes.get('/:attachmentId', async (c) => {
     const user = c.get('user')!

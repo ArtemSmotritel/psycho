@@ -7,7 +7,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { ConfirmAction } from './ConfirmAction'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
-import { attachmentService } from '~/services/attachment.service'
+import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
 
 interface AppointmentRecommendationsPanelProps {
@@ -90,11 +90,11 @@ export function AppointmentRecommendationsPanel({
 
     const handleDelete = async (recommendationId: string) => {
         try {
-            await recommendationService.delete(clientId, appointmentId, recommendationId)
+            await attachmentService.deleteForPsycho(clientId, appointmentId, recommendationId)
             toast.success('Recommendation deleted.')
             await fetchRecommendations()
-        } catch {
-            toast.error('Failed to delete recommendation.')
+        } catch (err) {
+            toast.error(getDeleteAttachmentErrorMessage(err))
         }
     }
 

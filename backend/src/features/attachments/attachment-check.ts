@@ -27,6 +27,7 @@ export class AttachmentCheck {
     private expectedType?: AttachmentType
     private expectedAuthor?: AuthorScope
     private expectedAppointmentStatuses?: AppointmentStatus[]
+    private typeRules?: Partial<Record<AttachmentType, AuthorScope>>
     private consumed = false
 
     private constructor(
@@ -74,6 +75,14 @@ export class AttachmentCheck {
         return this
     }
 
+    // Per-type rule. Types absent from the map => NotFoundError.
+    // 'self' => attachment.authorId must equal userId else NotFoundError.
+    // 'any'  => no author constraint.
+    setTypeRules(rules: Partial<Record<AttachmentType, AuthorScope>>): this {
+        this.typeRules = rules
+        return this
+    }
+
     async run(): Promise<{
         attachment: Attachment
         appointmentStatus: AppointmentStatus
@@ -96,6 +105,14 @@ export class AttachmentCheck {
                 `Appointment status must be one of: ${this.expectedAppointmentStatuses.join(', ')}.`,
                 'AppointmentStatusNotAllowed',
             )
+        }
+
+        if (this.typeRules) {
+            const scope = this.typeRules[chain.attachment.type]
+            if (!scope) throw new NotFoundError()
+            if (scope === 'self' && chain.attachment.authorId !== this.userId) {
+                throw new NotFoundError()
+            }
         }
 
         if (this.expectedType && chain.attachment.type !== this.expectedType) {

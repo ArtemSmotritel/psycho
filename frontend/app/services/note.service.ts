@@ -7,7 +7,4 @@ export const noteService = {
             `/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`,
             data,
         ),
-
-    delete: (clientId: string, appointmentId: string, noteId: string) =>
-        api.delete(`/clients/${clientId}/appointments/${appointmentId}/notes/${noteId}`),
 }

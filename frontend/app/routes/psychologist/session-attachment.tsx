@@ -21,6 +21,7 @@ import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { noteService } from '~/services/note.service'
 import { recommendationService } from '~/services/recommendation.service'
+import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { impressionService } from '~/services/impression.service'
 import type { AttachmentFile } from '~/models/attachment'
 
@@ -101,15 +102,11 @@ export default function SessionAttachment() {
 
     const handleDeleteAttachment = async () => {
         try {
-            if (attachment.type === 'note') {
-                await noteService.delete(clientId!, appointmentId!, attachment.id)
-            } else if (attachment.type === 'recommendation') {
-                await recommendationService.delete(clientId!, appointmentId!, attachment.id)
-            }
+            await attachmentService.deleteForPsycho(clientId!, appointmentId!, attachment.id)
             toast.success('Attachment deleted.')
             navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
-        } catch {
-            toast.error('Failed to delete attachment. Please try again.')
+        } catch (err) {
+            toast.error(getDeleteAttachmentErrorMessage(err))
         }
     }
 

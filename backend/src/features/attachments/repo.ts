@@ -1,3 +1,4 @@
+import type { SQL } from 'bun'
 import { db } from 'config/db'
 import { APPOINTMENT_STATUS_EXPR } from '../appointments/repo'
 import type {
@@ -180,6 +181,10 @@ export const AttachmentsRepo = {
                 ORDER BY a.type, a.created_at ASC
             `
         return (rows as AttachmentChainRow[]).map(rowToChain)
+    },
+
+    async deleteById(attachmentId: string, executor: SQL = db): Promise<void> {
+        await executor`DELETE FROM attachments WHERE id = ${attachmentId}`
     },
 
     async listForClientView(

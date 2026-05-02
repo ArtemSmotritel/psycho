@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { db } from 'config/db'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { insertTestFile } from '../../test-fixtures/files'
 import { futureDate, pastDate } from '../../test-fixtures/dates'
@@ -1616,6 +1617,641 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
             body: JSON.stringify({ type: 'impression', text: 'x' }),
+        })
+        expect(res.status).toBe(401)
+    })
+})
+
+// ─── DELETE — psycho view ─────────────────────────────────────────────────────
+
+async function plantFileOnDisk(storedName: string): Promise<void> {
+    await Bun.write(`./uploads/${storedName}`, new Uint8Array([1, 2, 3, 4]))
+}
+
+async function diskFileExists(storedName: string): Promise<boolean> {
+    return Bun.file(`./uploads/${storedName}`).exists()
+}
+
+async function attachmentExists(id: string): Promise<boolean> {
+    const [row] = await db`SELECT 1 AS one FROM attachments WHERE id = ${id}`
+    return Boolean(row)
+}
+
+async function fileRowExists(id: string): Promise<boolean> {
+    const [row] = await db`SELECT 1 AS one FROM files WHERE id = ${id}`
+    return Boolean(row)
+}
+
+async function attachmentFilesCountFor(attachmentId: string): Promise<number> {
+    const [row] = await db`
+        SELECT COUNT(*)::int AS count FROM attachment_files WHERE attachment_id = ${attachmentId}
+    `
+    return Number(row.count)
+}
+
+describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/:attachmentId', () => {
+    it('returns 204 deleting own note and removes the attachment row', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'To delete',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(note.id)).toBe(false)
+    })
+
+    it('returns 204 deleting own recommendation when no reaction exists', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const rec = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Read this',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${rec.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(rec.id)).toBe(false)
+    })
+
+    it('returns 404 for a non-existent attachmentId', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/00000000-0000-0000-0000-000000000000`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when the attachment belongs to a different appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+
+        const aptA = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(aptA.id)
+        await endAppointment(aptA.id)
+
+        const aptB = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(8),
+            endTime: pastDate(8, 11),
+        })
+        await startAppointment(aptB.id)
+        await endAppointment(aptB.id)
+
+        const noteB = await createAttachment({
+            appointmentId: aptB.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'B note',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${aptA.id}/attachments/${noteB.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(noteB.id)).toBe(true)
+    })
+
+    it('returns 404 when the clientId in the URL does not own the appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const owner = await insertTestUser({ email: 'owner@test.com' })
+        const stranger = await insertTestUser({ email: 'stranger@test.com' })
+        await ClientsService.linkClientToPsycho(owner.id, psycho.id)
+        await ClientsService.linkClientToPsycho(stranger.id, psycho.id)
+
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: owner.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'X',
+        })
+
+        const res = await app.request(
+            `/api/clients/${stranger.id}/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(note.id)).toBe(true)
+    })
+
+    it('returns 404 when the note was authored by a different psychologist', async () => {
+        const psycho1 = await insertTestUser({ email: 'p1@test.com' })
+        const psycho2 = await insertTestUser({ email: 'p2@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho1.id)
+
+        const apt = await createAppointment({
+            psychoId: psycho1.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho2.id,
+            type: 'note',
+            name: 'Other psycho note',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(psycho1.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(note.id)).toBe(true)
+    })
+
+    it('returns 404 when attempting to delete an impression', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            text: 'My reflection',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${impression.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(impression.id)).toBe(true)
+    })
+
+    it('returns 409 RecommendationHasReaction when the recommendation has any reaction row', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const rec = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Reacted',
+        })
+        await upsertReaction(rec.id, { done: true })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${rec.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'RecommendationHasReaction')
+        expect(await attachmentExists(rec.id)).toBe(true)
+    })
+
+    it('removes orphan files (db row + disk blob) when deleting a note', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const file = await insertTestFile(psycho.id, { originalName: 'photo.png' })
+        await plantFileOnDisk(file.storedName)
+        expect(await diskFileExists(file.storedName)).toBe(true)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'With image',
+            imageFileIds: [file.id],
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(note.id)).toBe(false)
+        expect(await attachmentFilesCountFor(note.id)).toBe(0)
+        expect(await fileRowExists(file.id)).toBe(false)
+        expect(await diskFileExists(file.storedName)).toBe(false)
+    })
+
+    it('preserves files referenced by another attachment_files row when deleting', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const sharedFile = await insertTestFile(psycho.id, { originalName: 'shared.png' })
+        await plantFileOnDisk(sharedFile.storedName)
+
+        const noteToDelete = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Delete me',
+            imageFileIds: [sharedFile.id],
+        })
+        const otherNote = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Keep me',
+            imageFileIds: [sharedFile.id],
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${noteToDelete.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(noteToDelete.id)).toBe(false)
+        expect(await attachmentExists(otherNote.id)).toBe(true)
+        expect(await fileRowExists(sharedFile.id)).toBe(true)
+        expect(await diskFileExists(sharedFile.storedName)).toBe(true)
+        expect(await attachmentFilesCountFor(otherNote.id)).toBe(1)
+    })
+
+    it('preserves files referenced by an associative_images row when deleting', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const libraryFile = await insertTestFile(psycho.id, { originalName: 'library.png' })
+        await plantFileOnDisk(libraryFile.storedName)
+        await db`
+            INSERT INTO associative_images (psychologist_id, name, file_id)
+            VALUES (${psycho.id}, 'Library item', ${libraryFile.id})
+        `
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Uses library image',
+            imageFileIds: [libraryFile.id],
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(psycho.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(note.id)).toBe(false)
+        expect(await fileRowExists(libraryFile.id)).toBe(true)
+        expect(await diskFileExists(libraryFile.storedName)).toBe(true)
+    })
+
+    it('returns 403 with the client role header', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments/some-id',
+            await asUser(user.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request(
+            '/api/clients/some-client/appointments/some-apt/attachments/some-id',
+            { method: 'DELETE', headers: { ...PSYCHO_HEADER } },
+        )
+        expect(res.status).toBe(401)
+    })
+})
+
+// ─── DELETE — client view ─────────────────────────────────────────────────────
+
+describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachmentId', () => {
+    it('returns 204 deleting own impression with no completion', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            text: 'My reflection',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(impression.id)).toBe(false)
+    })
+
+    it('returns 404 for a non-existent attachmentId', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/00000000-0000-0000-0000-000000000000`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+    })
+
+    it('returns 404 when attempting to delete a recommendation', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const rec = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'recommendation',
+            name: 'Read this',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${rec.id}`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(rec.id)).toBe(true)
+    })
+
+    it('returns 404 when attempting to delete a note', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const note = await createAttachment({
+            appointmentId: apt.id,
+            authorId: psycho.id,
+            type: 'note',
+            name: 'Private',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${note.id}`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(note.id)).toBe(true)
+    })
+
+    it('returns 404 when the impression was authored by a different client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const owner = await insertTestUser({ email: 'owner@test.com' })
+        const stranger = await insertTestUser({ email: 'stranger@test.com' })
+        await ClientsService.linkClientToPsycho(owner.id, psycho.id)
+        await ClientsService.linkClientToPsycho(stranger.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: owner.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: owner.id,
+            type: 'impression',
+            text: 'Owner reflection',
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
+            await asUser(stranger.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(404)
+        expect(await attachmentExists(impression.id)).toBe(true)
+    })
+
+    it('returns 409 ImpressionHasCompletion when the impression has a completion row', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            text: 'Reflection',
+        })
+        await completeImpression(impression.id, 'Done.')
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await res.json()
+        expect(body).toHaveProperty('error', 'ImpressionHasCompletion')
+        expect(await attachmentExists(impression.id)).toBe(true)
+    })
+
+    it('removes orphan files (db row + disk blob) when deleting an impression', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const file = await insertTestFile(client.id, { originalName: 'snapshot.png' })
+        await plantFileOnDisk(file.storedName)
+
+        const impression = await createAttachment({
+            appointmentId: apt.id,
+            authorId: client.id,
+            type: 'impression',
+            text: 'with image',
+            imageFileIds: [file.id],
+        })
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
+            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(204)
+        expect(await attachmentExists(impression.id)).toBe(false)
+        expect(await fileRowExists(file.id)).toBe(false)
+        expect(await diskFileExists(file.storedName)).toBe(false)
+    })
+
+    it('returns 403 with the psycho role header', async () => {
+        const user = await insertTestUser()
+        const res = await app.request(
+            '/api/client/appointments/some-apt/attachments/some-id',
+            await asUser(user.id, { method: 'DELETE', headers: { ...PSYCHO_HEADER } }),
+        )
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await app.request('/api/client/appointments/some-apt/attachments/some-id', {
+            method: 'DELETE',
+            headers: { ...CLIENT_HEADER },
         })
         expect(res.status).toBe(401)
     })

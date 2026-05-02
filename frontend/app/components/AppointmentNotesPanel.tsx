@@ -6,7 +6,7 @@ import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
 import { noteService } from '~/services/note.service'
-import { attachmentService } from '~/services/attachment.service'
+import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
 
@@ -93,11 +93,11 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
 
     const handleDelete = async (noteId: string) => {
         try {
-            await noteService.delete(clientId, appointmentId, noteId)
+            await attachmentService.deleteForPsycho(clientId, appointmentId, noteId)
             toast.success('Note deleted.')
             await fetchNotes()
-        } catch {
-            toast.error('Failed to delete note.')
+        } catch (err) {
+            toast.error(getDeleteAttachmentErrorMessage(err))
         }
     }
 

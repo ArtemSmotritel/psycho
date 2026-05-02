@@ -47,6 +47,34 @@ export const FilesService = {
         await FilesRepo.deleteById(id, executor)
     },
 
+    // Deletes file rows + disk blobs for the given ids, but only those
+    // with no remaining references in attachment_files or associative_images.
+    // `tx` MUST be the same transaction that already removed the calling
+    // attachment so the cascade has dropped its junction rows first.
+    async cleanupOrphans(fileIds: string[], tx: SQL): Promise<void> {
+        if (fileIds.length === 0) return
+
+        const orphans = (await tx`
+            SELECT f.id, f.stored_name AS "storedName"
+            FROM files f
+            WHERE f.id IN ${tx(fileIds)}
+              AND NOT EXISTS (
+                  SELECT 1 FROM attachment_files af WHERE af.file_id = f.id
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM associative_images ai WHERE ai.file_id = f.id
+              )
+        `) as Array<{ id: string; storedName: string }>
+
+        if (orphans.length === 0) return
+
+        await tx`DELETE FROM files WHERE id IN ${tx(orphans.map((o) => o.id))}`
+
+        for (const file of orphans) {
+            await FilesService.removeFromDisk(file.storedName)
+        }
+    },
+
     async removeFromDisk(storedName: string): Promise<void> {
         const filePath = `${UPLOAD_DIR}/${storedName}`
         try {

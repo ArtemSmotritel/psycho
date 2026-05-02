@@ -1,5 +1,5 @@
 import { db } from 'config/db'
-import { BadRequestError, NotFoundError } from 'errors/index'
+import { BadRequestError, ConflictError, NotFoundError } from 'errors/index'
 import type { User } from 'utils/types'
 import { AppointmentsService } from '../appointments/services'
 import { FilesService } from '../files/services'
@@ -434,6 +434,65 @@ export async function listAttachmentsForClientView(
         }
     }
     return result
+}
+
+const PSYCHO_DELETE_RULES = {
+    note: 'self',
+    recommendation: 'self',
+} as const satisfies Partial<Record<AttachmentType, 'self' | 'any'>>
+
+const CLIENT_DELETE_RULES = {
+    impression: 'self',
+} as const satisfies Partial<Record<AttachmentType, 'self' | 'any'>>
+
+export async function deleteAttachmentForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+}): Promise<void> {
+    const { attachment, reaction } = await AttachmentCheck.forPsycho(input)
+        .setTypeRules(PSYCHO_DELETE_RULES)
+        .run()
+
+    if (attachment.type === 'recommendation' && reaction !== null) {
+        throw new ConflictError(
+            'Recommendation has a client reaction and cannot be deleted.',
+            'RecommendationHasReaction',
+        )
+    }
+
+    await deleteAttachmentAndOrphanFiles(attachment)
+}
+
+export async function deleteAttachmentForClientView(input: {
+    user: User
+    appointmentId: string
+    attachmentId: string
+}): Promise<void> {
+    const { attachment, completion } = await AttachmentCheck.forClient(input)
+        .setTypeRules(CLIENT_DELETE_RULES)
+        .run()
+
+    if (attachment.type === 'impression' && completion !== null) {
+        throw new ConflictError(
+            'Impression has a psychologist completion and cannot be deleted.',
+            'ImpressionHasCompletion',
+        )
+    }
+
+    await deleteAttachmentAndOrphanFiles(attachment)
+}
+
+async function deleteAttachmentAndOrphanFiles(attachment: Attachment): Promise<void> {
+    const fileIds = [
+        ...attachment.imageFiles.map((f) => f.id),
+        ...attachment.audioFiles.map((f) => f.id),
+    ]
+    await db.begin(async (tx) => {
+        await AttachmentsRepo.deleteById(attachment.id, tx)
+        await FilesService.cleanupOrphans(fileIds, tx)
+    })
 }
 
 export async function getAttachmentForPsychoView(input: {

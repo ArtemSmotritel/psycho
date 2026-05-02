@@ -14,9 +14,6 @@ export const recommendationService = {
             data,
         ),
 
-    delete: (clientId: string, appointmentId: string, id: string) =>
-        api.delete(`/clients/${clientId}/appointments/${appointmentId}/recommendations/${id}`),
-
     react: (appointmentId: string, attachmentId: string, data: UpsertReactionDTO) =>
         api.patch<{ reaction: RecommendationReaction }>(
             `/client/appointments/${appointmentId}/recommendations/${attachmentId}/reaction`,

@@ -4,6 +4,7 @@ import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth
 import { createAttachmentPsychoSchema, listQuerySchemaPsycho } from './schemas'
 import {
     createAttachmentForPsychoView,
+    deleteAttachmentForPsychoView,
     getAttachmentForPsychoView,
     listAttachmentsForPsychoView,
 } from './services'
@@ -40,6 +41,17 @@ attachmentPsychoRoutes.post(
         return c.json({ attachment }, 201)
     },
 )
+
+attachmentPsychoRoutes.delete('/:attachmentId', async (c) => {
+    const user = c.get('user')!
+    await deleteAttachmentForPsychoView({
+        user,
+        clientId: c.req.param('clientId')!,
+        appointmentId: c.req.param('appointmentId')!,
+        attachmentId: c.req.param('attachmentId')!,
+    })
+    return c.body(null, 204)
+})
 
 attachmentPsychoRoutes.get('/:attachmentId', async (c) => {
     const user = c.get('user')!

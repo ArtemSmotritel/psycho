@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import { api } from './api'
 import type {
     Attachment,
@@ -44,4 +45,25 @@ export const attachmentService = {
             `/client/appointments/${appointmentId}/attachments`,
             data,
         ),
+
+    deleteForPsycho: (clientId: string, appointmentId: string, attachmentId: string) =>
+        api.delete(
+            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
+        ),
+
+    deleteForClient: (appointmentId: string, attachmentId: string) =>
+        api.delete(`/client/appointments/${appointmentId}/attachments/${attachmentId}`),
+}
+
+export function getDeleteAttachmentErrorMessage(err: unknown): string {
+    if (isAxiosError(err) && err.response?.status === 409) {
+        const code = err.response.data?.error
+        if (code === 'RecommendationHasReaction') {
+            return 'Cannot delete: the client has already reacted to this recommendation.'
+        }
+        if (code === 'ImpressionHasCompletion') {
+            return 'Cannot delete: the psychologist has already completed this impression.'
+        }
+    }
+    return 'Failed to delete attachment. Please try again.'
 }
