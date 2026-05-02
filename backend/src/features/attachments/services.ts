@@ -15,12 +15,7 @@ import type {
     PsychoAttachmentList,
     RecommendationReaction,
 } from './models'
-import {
-    ATTACHMENT_SELECT,
-    AttachmentsRepo,
-    REACTION_JSON_EXPR,
-    type AttachmentChain,
-} from './repo'
+import { ATTACHMENT_SELECT, AttachmentsRepo, REACTION_JSON_EXPR } from './repo'
 
 export { ATTACHMENT_SELECT, REACTION_JSON_EXPR }
 
@@ -33,43 +28,36 @@ export async function createAttachment(params: {
     imageFileIds?: string[]
     audioFileIds?: string[]
 }): Promise<Attachment> {
-    let attachmentId = ''
+    const fileLinks = [
+        ...(params.imageFileIds ?? []).map((fileId, position) => ({
+            fileId,
+            fileType: 'image' as const,
+            position,
+        })),
+        ...(params.audioFileIds ?? []).map((fileId, position) => ({
+            fileId,
+            fileType: 'audio' as const,
+            position,
+        })),
+    ]
 
-    await db.begin(async (tx) => {
-        const [row] = await tx`
-            INSERT INTO attachments (appointment_id, author_id, type, name, text)
-            VALUES (
-                ${params.appointmentId},
-                ${params.authorId},
-                ${params.type},
-                ${params.name ?? null},
-                ${params.text ?? null}
-            )
-            RETURNING id
-        `
-        attachmentId = row.id
-
-        const imageFileIds = params.imageFileIds ?? []
-        for (let i = 0; i < imageFileIds.length; i++) {
-            await tx`
-                INSERT INTO attachment_files (attachment_id, file_id, file_type, position)
-                VALUES (${attachmentId}, ${imageFileIds[i]}, 'image', ${i})
-            `
-        }
-
-        const audioFileIds = params.audioFileIds ?? []
-        for (let i = 0; i < audioFileIds.length; i++) {
-            await tx`
-                INSERT INTO attachment_files (attachment_id, file_id, file_type, position)
-                VALUES (${attachmentId}, ${audioFileIds[i]}, 'audio', ${i})
-            `
-        }
+    return db.begin(async (tx) => {
+        const { id } = await AttachmentsRepo.insert(
+            {
+                appointmentId: params.appointmentId,
+                authorId: params.authorId,
+                type: params.type,
+                name: params.name ?? null,
+                text: params.text ?? null,
+            },
+            tx,
+        )
+        await AttachmentsRepo.linkFiles(id, fileLinks, tx)
+        return (await AttachmentsRepo.findById(id, tx))!
     })
-
-    return (await findAttachmentById(attachmentId))!
 }
 
-export async function createAttachmentForPsychoView(input: {
+async function createAttachmentForPsychoView(input: {
     psychoId: string
     clientId: string
     appointmentId: string
@@ -99,7 +87,7 @@ export async function createAttachmentForPsychoView(input: {
     })
 }
 
-export async function createAttachmentForClientView(input: {
+async function createAttachmentForClientView(input: {
     clientId: string
     appointmentId: string
     name?: string
@@ -144,15 +132,6 @@ export async function listAttachmentsByAuthor(
     return rows as Attachment[]
 }
 
-export async function findAttachmentById(id: string): Promise<Attachment | null> {
-    const [row] = await db`
-        SELECT ${db.unsafe(ATTACHMENT_SELECT)}
-        FROM attachments a
-        WHERE a.id = ${id}
-    `
-    return (row as Attachment) ?? null
-}
-
 /**
  * Looks up an attachment by id and verifies it belongs to the given appointment
  * and is of the expected type. If `authorId` is provided, also verifies the author.
@@ -164,7 +143,7 @@ export async function findAndValidateAttachment(
     type: AttachmentType,
     authorId?: string,
 ): Promise<Attachment | null> {
-    const attachment = await findAttachmentById(id)
+    const attachment = await AttachmentsRepo.findById(id)
     if (
         !attachment ||
         attachment.appointmentId !== appointmentId ||
@@ -214,7 +193,7 @@ export async function updateAttachment(
         }
     })
 
-    return (await findAttachmentById(id))!
+    return (await AttachmentsRepo.findById(id))!
 }
 
 const REACTION_COLUMNS = `
@@ -389,7 +368,7 @@ export async function completeImpression(
     return row as ImpressionCompletion
 }
 
-export async function listAttachmentsForPsychoView(
+async function listAttachmentsForPsychoView(
     appointmentId: string,
     psychoId: string,
     clientId: string,
@@ -412,7 +391,7 @@ export async function listAttachmentsForPsychoView(
     return result
 }
 
-export async function listAttachmentsForClientView(
+async function listAttachmentsForClientView(
     appointmentId: string,
     clientId: string,
     types?: AttachmentType[],
@@ -441,7 +420,7 @@ const CLIENT_DELETE_RULES = {
     impression: 'self',
 } as const satisfies Partial<Record<AttachmentType, 'self' | 'any'>>
 
-export async function deleteAttachmentForPsychoView(input: {
+async function deleteAttachmentForPsychoView(input: {
     user: User
     clientId: string
     appointmentId: string
@@ -461,7 +440,7 @@ export async function deleteAttachmentForPsychoView(input: {
     await deleteAttachmentAndOrphanFiles(attachment)
 }
 
-export async function deleteAttachmentForClientView(input: {
+async function deleteAttachmentForClientView(input: {
     user: User
     appointmentId: string
     attachmentId: string
@@ -491,33 +470,56 @@ async function deleteAttachmentAndOrphanFiles(attachment: Attachment): Promise<v
     })
 }
 
-export async function getAttachmentForPsychoView(input: {
+type PsychoGetResult =
+    | { attachment: Attachment }
+    | { attachment: Attachment; reaction: RecommendationReaction | null }
+    | { attachment: Attachment; completion: ImpressionCompletion | null }
+
+async function getAttachmentForPsychoView(input: {
     user: User
     clientId: string
     appointmentId: string
     attachmentId: string
-}): Promise<AttachmentChain> {
-    const result = await AttachmentCheck.forPsycho(input).run()
+}): Promise<PsychoGetResult> {
+    const { attachment, reaction, completion } = await AttachmentCheck.forPsycho(input).run()
     // psycho per-type rule:
     // - impression: any author
     // - note / recommendation: must be authored by this psycho
-    if (result.attachment.type !== 'impression' && result.attachment.authorId !== input.user.id) {
+    if (attachment.type !== 'impression' && attachment.authorId !== input.user.id) {
         throw new NotFoundError()
     }
-    return result
+    if (attachment.type === 'recommendation') return { attachment, reaction }
+    if (attachment.type === 'impression') return { attachment, completion }
+    return { attachment }
 }
 
-export async function getAttachmentForClientView(input: {
+type ClientGetResult =
+    | { attachment: Attachment; reaction: RecommendationReaction | null }
+    | { attachment: Attachment; completion: ImpressionCompletion | null }
+
+async function getAttachmentForClientView(input: {
     user: User
     appointmentId: string
     attachmentId: string
-}): Promise<AttachmentChain> {
-    const result = await AttachmentCheck.forClient(input).run()
+}): Promise<ClientGetResult> {
+    const { attachment, reaction, completion } = await AttachmentCheck.forClient(input).run()
     // client per-type rule:
     // - impression: must be authored by this client
     // - recommendation: any psycho-authored is fine
-    if (result.attachment.type === 'impression' && result.attachment.authorId !== input.user.id) {
+    if (attachment.type === 'impression' && attachment.authorId !== input.user.id) {
         throw new NotFoundError()
     }
-    return result
+    if (attachment.type === 'recommendation') return { attachment, reaction }
+    return { attachment, completion }
 }
+
+export const AttachmentsService = {
+    listForPsycho: listAttachmentsForPsychoView,
+    listForClient: listAttachmentsForClientView,
+    createForPsycho: createAttachmentForPsychoView,
+    createForClient: createAttachmentForClientView,
+    getForPsycho: getAttachmentForPsychoView,
+    getForClient: getAttachmentForClientView,
+    deleteForPsycho: deleteAttachmentForPsychoView,
+    deleteForClient: deleteAttachmentForClientView,
+} as const

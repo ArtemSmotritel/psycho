@@ -94,6 +94,54 @@ function rowToChain(row: AttachmentChainRow): AttachmentChain {
 }
 
 export const AttachmentsRepo = {
+    async insert(
+        params: {
+            appointmentId: string
+            authorId: string
+            type: AttachmentType
+            name: string | null
+            text: string | null
+        },
+        executor: SQL = db,
+    ): Promise<{ id: string }> {
+        const [row] = await executor`
+            INSERT INTO attachments (appointment_id, author_id, type, name, text)
+            VALUES (
+                ${params.appointmentId},
+                ${params.authorId},
+                ${params.type},
+                ${params.name},
+                ${params.text}
+            )
+            RETURNING id
+        `
+        return row as { id: string }
+    },
+
+    async linkFiles(
+        attachmentId: string,
+        files: Array<{ fileId: string; fileType: 'image' | 'audio'; position: number }>,
+        executor: SQL = db,
+    ): Promise<void> {
+        if (files.length === 0) return
+        const rows = files.map((f) => ({
+            attachment_id: attachmentId,
+            file_id: f.fileId,
+            file_type: f.fileType,
+            position: f.position,
+        }))
+        await executor`INSERT INTO attachment_files ${executor(rows)}`
+    },
+
+    async findById(id: string, executor: SQL = db): Promise<Attachment | null> {
+        const [row] = await executor`
+            SELECT ${db.unsafe(ATTACHMENT_SELECT)}
+            FROM attachments a
+            WHERE a.id = ${id}
+        `
+        return (row as Attachment) ?? null
+    },
+
     async findAttachmentForPsycho(
         psychoId: string,
         clientId: string,

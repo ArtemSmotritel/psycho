@@ -2,24 +2,19 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import { createAttachmentPsychoSchema, listQuerySchemaPsycho } from './schemas'
-import {
-    createAttachmentForPsychoView,
-    deleteAttachmentForPsychoView,
-    getAttachmentForPsychoView,
-    listAttachmentsForPsychoView,
-} from './services'
+import { AttachmentsService } from './services'
 
-export const attachmentPsychoRoutes = new Hono()
-
-attachmentPsychoRoutes.use(authorized, onlyPsychoRequest)
+export const attachmentPsychoRoutes = new Hono().use(authorized, onlyPsychoRequest)
 
 attachmentPsychoRoutes.get('/', zValidator('query', listQuerySchemaPsycho), async (c) => {
-    const user = c.get('user')!
+    const user = c.get('user')
+    const appointmentId = c.req.param('appointmentId')
+    const clientId = c.req.param('clientId')
     const { type } = c.req.valid('query')
-    const result = await listAttachmentsForPsychoView(
-        c.req.param('appointmentId')!,
+    const result = await AttachmentsService.listForPsycho(
+        appointmentId,
         user.id,
-        c.req.param('clientId')!,
+        clientId,
         type ? [type] : undefined,
     )
     return c.json(result, 200)
@@ -30,43 +25,42 @@ attachmentPsychoRoutes.post(
     zValidator('json', createAttachmentPsychoSchema),
     ownsFiles,
     async (c) => {
-        const user = c.get('user')!
-        const body = c.req.valid('json')
-        const attachment = await createAttachmentForPsychoView({
+        const user = c.get('user')
+        const clientId = c.req.param('clientId')
+        const appointmentId = c.req.param('appointmentId')
+        const { type, name, text, imageFileIds, audioFileIds } = c.req.valid('json')
+        const attachment = await AttachmentsService.createForPsycho({
             psychoId: user.id,
-            clientId: c.req.param('clientId')!,
-            appointmentId: c.req.param('appointmentId')!,
-            ...body,
+            clientId,
+            appointmentId,
+            type,
+            name,
+            text,
+            imageFileIds,
+            audioFileIds,
         })
         return c.json({ attachment }, 201)
     },
 )
 
-attachmentPsychoRoutes.delete('/:attachmentId', async (c) => {
-    const user = c.get('user')!
-    await deleteAttachmentForPsychoView({
+attachmentPsychoRoutes.get('/:attachmentId', async (c) => {
+    const user = c.get('user')
+    const result = await AttachmentsService.getForPsycho({
         user,
-        clientId: c.req.param('clientId')!,
-        appointmentId: c.req.param('appointmentId')!,
-        attachmentId: c.req.param('attachmentId')!,
+        clientId: c.req.param('clientId'),
+        appointmentId: c.req.param('appointmentId'),
+        attachmentId: c.req.param('attachmentId'),
     })
-    return c.body(null, 204)
+    return c.json(result, 200)
 })
 
-attachmentPsychoRoutes.get('/:attachmentId', async (c) => {
-    const user = c.get('user')!
-    const { attachment, reaction, completion } = await getAttachmentForPsychoView({
+attachmentPsychoRoutes.delete('/:attachmentId', async (c) => {
+    const user = c.get('user')
+    await AttachmentsService.deleteForPsycho({
         user,
-        clientId: c.req.param('clientId')!,
-        appointmentId: c.req.param('appointmentId')!,
-        attachmentId: c.req.param('attachmentId')!,
+        clientId: c.req.param('clientId'),
+        appointmentId: c.req.param('appointmentId'),
+        attachmentId: c.req.param('attachmentId'),
     })
-
-    if (attachment.type === 'recommendation') {
-        return c.json({ attachment, reaction }, 200)
-    }
-    if (attachment.type === 'impression') {
-        return c.json({ attachment, completion }, 200)
-    }
-    return c.json({ attachment }, 200)
+    return c.body(null, 204)
 })

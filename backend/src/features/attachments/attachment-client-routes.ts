@@ -2,22 +2,16 @@ import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
 import { createAttachmentClientSchema, listQuerySchemaClient } from './schemas'
-import {
-    createAttachmentForClientView,
-    deleteAttachmentForClientView,
-    getAttachmentForClientView,
-    listAttachmentsForClientView,
-} from './services'
+import { AttachmentsService } from './services'
 
-export const attachmentClientRoutes = new Hono()
-
-attachmentClientRoutes.use(authorized, onlyClientRequest)
+export const attachmentClientRoutes = new Hono().use(authorized, onlyClientRequest)
 
 attachmentClientRoutes.get('/', zValidator('query', listQuerySchemaClient), async (c) => {
-    const user = c.get('user')!
+    const user = c.get('user')
+    const appointmentId = c.req.param('appointmentId')
     const { type } = c.req.valid('query')
-    const result = await listAttachmentsForClientView(
-        c.req.param('appointmentId')!,
+    const result = await AttachmentsService.listForClient(
+        appointmentId,
         user.id,
         type ? [type] : undefined,
     )
@@ -29,11 +23,12 @@ attachmentClientRoutes.post(
     zValidator('json', createAttachmentClientSchema),
     ownsFiles,
     async (c) => {
-        const user = c.get('user')!
+        const user = c.get('user')
+        const appointmentId = c.req.param('appointmentId')
         const { name, text, imageFileIds, audioFileIds } = c.req.valid('json')
-        const attachment = await createAttachmentForClientView({
+        const attachment = await AttachmentsService.createForClient({
             clientId: user.id,
-            appointmentId: c.req.param('appointmentId')!,
+            appointmentId,
             name,
             text,
             imageFileIds,
@@ -43,26 +38,22 @@ attachmentClientRoutes.post(
     },
 )
 
-attachmentClientRoutes.delete('/:attachmentId', async (c) => {
-    const user = c.get('user')!
-    await deleteAttachmentForClientView({
+attachmentClientRoutes.get('/:attachmentId', async (c) => {
+    const user = c.get('user')
+    const result = await AttachmentsService.getForClient({
         user,
-        appointmentId: c.req.param('appointmentId')!,
-        attachmentId: c.req.param('attachmentId')!,
+        appointmentId: c.req.param('appointmentId'),
+        attachmentId: c.req.param('attachmentId'),
     })
-    return c.body(null, 204)
+    return c.json(result, 200)
 })
 
-attachmentClientRoutes.get('/:attachmentId', async (c) => {
-    const user = c.get('user')!
-    const { attachment, reaction, completion } = await getAttachmentForClientView({
+attachmentClientRoutes.delete('/:attachmentId', async (c) => {
+    const user = c.get('user')
+    await AttachmentsService.deleteForClient({
         user,
-        appointmentId: c.req.param('appointmentId')!,
-        attachmentId: c.req.param('attachmentId')!,
+        appointmentId: c.req.param('appointmentId'),
+        attachmentId: c.req.param('attachmentId'),
     })
-
-    if (attachment.type === 'recommendation') {
-        return c.json({ attachment, reaction }, 200)
-    }
-    return c.json({ attachment, completion }, 200)
+    return c.body(null, 204)
 })
