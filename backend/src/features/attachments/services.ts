@@ -217,10 +217,6 @@ export async function updateAttachment(
     return (await findAttachmentById(id))!
 }
 
-export async function deleteAttachment(id: string): Promise<void> {
-    await db`DELETE FROM attachments WHERE id = ${id}`
-}
-
 const REACTION_COLUMNS = `
     attachment_id AS "attachmentId",
     done,

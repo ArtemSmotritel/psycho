@@ -5,13 +5,7 @@ import { BadRequestError, NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { checkAppointmentAccess, checkAppointmentOwnership } from './route-helpers'
 import { updateAttachmentSchema } from './schemas'
-import {
-    deleteAttachment,
-    findAndValidateAttachment,
-    findReaction,
-    setReply,
-    updateAttachment,
-} from './services'
+import { findAndValidateAttachment, findReaction, setReply, updateAttachment } from './services'
 
 const replySchema = z.object({
     reply: z.string().min(1),
@@ -53,28 +47,6 @@ recommendationPsychoRoutes.patch(
         return c.json({ recommendation: updated }, 200)
     },
 )
-
-recommendationPsychoRoutes.delete('/:attachmentId', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
-
-    // Steps 1–2: ownership + status check
-    await checkAppointmentAccess(c)
-
-    const attachment = await findAndValidateAttachment(
-        attachmentId,
-        appointmentId,
-        'recommendation',
-        user.id,
-    )
-    if (!attachment) {
-        throw new NotFoundError()
-    }
-
-    await deleteAttachment(attachmentId)
-    return c.json({ success: true }, 200)
-})
 
 recommendationPsychoRoutes.patch(
     '/:attachmentId/reply',

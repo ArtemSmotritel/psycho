@@ -4,7 +4,7 @@ import { NotFoundError } from 'errors/index'
 import { authorized, onlyPsychoRequest } from '../../middlewares/auth'
 import { checkAppointmentAccess } from './route-helpers'
 import { updateAttachmentSchema } from './schemas'
-import { deleteAttachment, findAndValidateAttachment, updateAttachment } from './services'
+import { findAndValidateAttachment, updateAttachment } from './services'
 
 export const noteRoutes = new Hono()
 
@@ -31,20 +31,4 @@ noteRoutes.patch('/:attachmentId', zValidator('json', updateAttachmentSchema), a
     })
 
     return c.json({ note: updated }, 200)
-})
-
-noteRoutes.delete('/:attachmentId', async (c) => {
-    const user = c.get('user')
-    const appointmentId = c.req.param('appointmentId')
-    const attachmentId = c.req.param('attachmentId')
-
-    await checkAppointmentAccess(c)
-
-    const attachment = await findAndValidateAttachment(attachmentId, appointmentId, 'note', user.id)
-    if (!attachment) {
-        throw new NotFoundError()
-    }
-
-    await deleteAttachment(attachmentId)
-    return c.json({ success: true }, 200)
 })
