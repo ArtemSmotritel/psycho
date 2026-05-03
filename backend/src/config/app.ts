@@ -17,7 +17,8 @@ import { psychoProgressRoutes } from '../features/progress/psycho-routes'
 import { clientProgressRoutes } from '../features/progress/client-routes'
 import { psychoAttachmentRoutes } from '../features/attachments/psycho-routes'
 import { clientAttachmentRoutes } from '../features/attachments/client-routes'
-import { clientDashboardRoutes, psychoDashboardRoutes } from '../features/dashboard/routes'
+import { clientDashboardRoutes } from '../features/dashboard/client-routes'
+import { psychoDashboardRoutes } from '../features/dashboard/psycho-routes'
 import { invitationRoutes } from '../features/invitations/routes'
 import { associativeImageRoutes } from '../features/associative-images/routes'
 
@@ -85,18 +86,19 @@ app.use('*', setUserRole)
 
 app.route('/api/clients', clientSelfRoutes)
 app.route('/api/clients', clientRoutes)
-app.route('/api/users', userRoutes)
 app.route('/api/clients/:clientId/appointments', appointmentRoutes)
-app.route('/api/client/appointments', clientAppointmentRoutes)
-app.route('/api/psycho/appointments', psychoAppointmentRoutes)
 app.route('/api/clients/:clientId/progress/impressions', psychoProgressRoutes)
-app.route('/api/client/progress', clientProgressRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', psychoAttachmentRoutes)
-app.route('/api/client/appointments/:appointmentId/attachments', clientAttachmentRoutes)
 
 app.route('/api/client/dashboard', clientDashboardRoutes)
-app.route('/api/psycho/dashboard', psychoDashboardRoutes)
+app.route('/api/client/appointments/:appointmentId/attachments', clientAttachmentRoutes)
+app.route('/api/client/progress', clientProgressRoutes)
+app.route('/api/client/appointments', clientAppointmentRoutes)
 
+app.route('/api/psycho/dashboard', psychoDashboardRoutes)
+app.route('/api/psycho/appointments', psychoAppointmentRoutes)
+
+app.route('/api/users', userRoutes)
 app.route('/api/files', fileRoutes)
 app.route('/api/whiteboard', whiteboardRoutes)
 app.route('/api/invitations', invitationRoutes)

@@ -77,6 +77,7 @@ psychoAttachmentRoutes.patch(
     '/:attachmentId',
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('json', updateAttachmentSchema),
+    ownsFiles,
     async (c) => {
         const user = c.get('user')
         const { clientId, appointmentId } = c.req.valid('param')

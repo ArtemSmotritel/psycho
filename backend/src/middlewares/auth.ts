@@ -117,16 +117,31 @@ export const onlyLinkedClient = createMiddleware<MiddlewareVariable<'user', User
     },
 )
 
+type OwnsFilesBody = {
+    imageFileIds?: string[]
+    audioFileIds?: string[]
+    removeFileIds?: string[]
+}
+
+type OwnsFilesInput = {
+    in: { json: OwnsFilesBody }
+    out: { json: OwnsFilesBody }
+}
+
 /**
  * Verifies all file IDs in the request body (imageFileIds, audioFileIds) were uploaded by the current user.
  * Must be used after `authorized`.
  */
-export const ownsFiles = createMiddleware<MiddlewareVariable<'user', User>>(async (c, next) => {
+export const ownsFiles = createMiddleware<
+    MiddlewareVariable<'user', User>,
+    string,
+    OwnsFilesInput
+>(async (c, next) => {
     const user = c.get('user')
 
-    let body: Record<string, unknown>
+    let body: OwnsFilesBody
     try {
-        body = await c.req.json()
+        body = c.req.valid('json')
     } catch {
         await next()
         return
@@ -138,6 +153,9 @@ export const ownsFiles = createMiddleware<MiddlewareVariable<'user', User>>(asyn
     }
     if (Array.isArray(body.audioFileIds)) {
         fileIds.push(...body.audioFileIds)
+    }
+    if (Array.isArray(body.removeFileIds)) {
+        fileIds.push(...body.removeFileIds)
     }
 
     if (fileIds.length === 0) {

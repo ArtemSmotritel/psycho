@@ -21,7 +21,7 @@ const addClientSchema = z.object({
     email: z.email(),
 })
 
-export const clientSelfRoutes = new Hono().use('/me', authorized, onlyClientRequest)
+export const clientSelfRoutes = new Hono().use(authorized, onlyClientRequest)
 
 clientSelfRoutes.get('/me', async (c) => {
     const user = c.get('user')
@@ -69,7 +69,7 @@ clientRoutes.put(
     },
 )
 
-clientRoutes.delete('/:clientId', async (c) => {
+clientRoutes.delete('/:clientId', onlyLinkedClient, async (c) => {
     const user = c.get('user')
     const clientId = c.req.param('clientId')
     await ClientsService.unlinkForPsycho(clientId, user.id)
