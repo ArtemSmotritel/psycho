@@ -122,50 +122,30 @@ export const AppointmentsRepo = {
     async findOverlapping(params: FindOverlappingParams): Promise<OverlappingAppointment | null> {
         const { psychoId, clientId, startTime, endTime, excludeAppointmentId } = params
 
-        const rows = excludeAppointmentId
-            ? await db`
-                SELECT
-                    id,
-                    psycho_id AS "psychoId",
-                    client_id AS "clientId",
-                    start_time AS "startTime",
-                    end_time AS "endTime",
-                    CASE
-                        WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
-                        ELSE 'client'
-                    END AS "conflictParticipant"
-                FROM appointments
-                WHERE (
-                        psycho_id = ${psychoId} OR client_id = ${psychoId}
-                     OR psycho_id = ${clientId} OR client_id = ${clientId}
-                    )
-                  AND start_time < ${endTime}
-                  AND end_time > ${startTime}
-                  AND id <> ${excludeAppointmentId}
-                LIMIT 1
-            `
-            : await db`
-                SELECT
-                    id,
-                    psycho_id AS "psychoId",
-                    client_id AS "clientId",
-                    start_time AS "startTime",
-                    end_time AS "endTime",
-                    CASE
-                        WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
-                        ELSE 'client'
-                    END AS "conflictParticipant"
-                FROM appointments
-                WHERE (
-                        psycho_id = ${psychoId} OR client_id = ${psychoId}
-                     OR psycho_id = ${clientId} OR client_id = ${clientId}
-                    )
-                  AND start_time < ${endTime}
-                  AND end_time > ${startTime}
-                LIMIT 1
-            `
+        const excludeFilter = excludeAppointmentId ? db`AND id <> ${excludeAppointmentId}` : db``
 
-        const [row] = rows
+        const [row] = await db`
+            SELECT
+                id,
+                psycho_id AS "psychoId",
+                client_id AS "clientId",
+                start_time AS "startTime",
+                end_time AS "endTime",
+                CASE
+                    WHEN psycho_id = ${psychoId} OR client_id = ${psychoId} THEN 'psycho'
+                    ELSE 'client'
+                END AS "conflictParticipant"
+            FROM appointments
+            WHERE (
+                    psycho_id = ${psychoId} OR client_id = ${psychoId}
+                 OR psycho_id = ${clientId} OR client_id = ${clientId}
+                )
+              AND start_time < ${endTime}
+              AND end_time > ${startTime}
+              ${excludeFilter}
+            LIMIT 1
+        `
+
         return (row as OverlappingAppointment) ?? null
     },
 

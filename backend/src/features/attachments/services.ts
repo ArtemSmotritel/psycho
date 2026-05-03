@@ -121,10 +121,7 @@ async function updateAttachment(
         const removeFileIds = params.removeFileIds ?? []
         if (removeFileIds.length > 0) {
             await AttachmentsRepo.unlinkFiles(id, removeFileIds, tx)
-            const files = await AttachmentsRepo.deleteFilesAndReturnStoredNames(removeFileIds, tx)
-            for (const file of files) {
-                await FilesService.removeFromDisk(file.storedName)
-            }
+            await FilesService.cleanupOrphans(removeFileIds, tx)
         }
     })
 
@@ -392,9 +389,7 @@ async function getForClientView(input: {
 
 export const AttachmentsService = {
     create,
-    listByAuthor: AttachmentsRepo.listByAuthor,
     upsertReaction: AttachmentsRepo.upsertReaction,
-    listWithReactions: AttachmentsRepo.listWithReactions,
     completeImpression: AttachmentsRepo.insertImpressionCompletion,
     listForPsycho: listForPsychoView,
     listForClient: listForClientView,

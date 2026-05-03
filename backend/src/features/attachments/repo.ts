@@ -203,40 +203,24 @@ export const AttachmentsRepo = {
         psychoId: string,
         types?: AttachmentType[],
     ): Promise<AttachmentChain[]> {
-        const rows = types?.length
-            ? await db`
-                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
-                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                       ${db.unsafe(REACTION_JSON_EXPR)},
-                       ${db.unsafe(COMPLETION_JSON_EXPR)}
-                FROM attachments a
-                JOIN appointments ap ON ap.id = a.appointment_id
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
-                WHERE ap.id = ${appointmentId}
-                  AND (
-                      a.type = 'impression'
-                      OR (a.type IN ('note', 'recommendation') AND a.author_id = ${psychoId})
-                  )
-                  AND a.type IN ${db(types)}
-                ORDER BY a.type, a.created_at ASC
-            `
-            : await db`
-                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
-                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                       ${db.unsafe(REACTION_JSON_EXPR)},
-                       ${db.unsafe(COMPLETION_JSON_EXPR)}
-                FROM attachments a
-                JOIN appointments ap ON ap.id = a.appointment_id
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
-                WHERE ap.id = ${appointmentId}
-                  AND (
-                      a.type = 'impression'
-                      OR (a.type IN ('note', 'recommendation') AND a.author_id = ${psychoId})
-                  )
-                ORDER BY a.type, a.created_at ASC
-            `
+        const typesFilter = types?.length ? db`AND a.type IN ${db(types)}` : db``
+        const rows = await db`
+            SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                   ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                   ${db.unsafe(REACTION_JSON_EXPR)},
+                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+            FROM attachments a
+            JOIN appointments ap ON ap.id = a.appointment_id
+            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+            WHERE ap.id = ${appointmentId}
+              AND (
+                  a.type = 'impression'
+                  OR (a.type IN ('note', 'recommendation') AND a.author_id = ${psychoId})
+              )
+              ${typesFilter}
+            ORDER BY a.type, a.created_at ASC
+        `
         return (rows as AttachmentChainRow[]).map(rowToChain)
     },
 
@@ -249,42 +233,25 @@ export const AttachmentsRepo = {
         clientId: string,
         types?: AttachmentType[],
     ): Promise<AttachmentChain[]> {
-        const rows = types?.length
-            ? await db`
-                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
-                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                       ${db.unsafe(REACTION_JSON_EXPR)},
-                       ${db.unsafe(COMPLETION_JSON_EXPR)}
-                FROM attachments a
-                JOIN appointments ap ON ap.id = a.appointment_id
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
-                WHERE ap.id = ${appointmentId}
-                  AND ap.client_id = ${clientId}
-                  AND (
-                      (a.type = 'impression' AND a.author_id = ${clientId})
-                      OR a.type = 'recommendation'
-                  )
-                  AND a.type IN ${db(types)}
-                ORDER BY a.type, a.created_at ASC
-            `
-            : await db`
-                SELECT ${db.unsafe(ATTACHMENT_SELECT)},
-                       ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                       ${db.unsafe(REACTION_JSON_EXPR)},
-                       ${db.unsafe(COMPLETION_JSON_EXPR)}
-                FROM attachments a
-                JOIN appointments ap ON ap.id = a.appointment_id
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
-                WHERE ap.id = ${appointmentId}
-                  AND ap.client_id = ${clientId}
-                  AND (
-                      (a.type = 'impression' AND a.author_id = ${clientId})
-                      OR a.type = 'recommendation'
-                  )
-                ORDER BY a.type, a.created_at ASC
-            `
+        const typesFilter = types?.length ? db`AND a.type IN ${db(types)}` : db``
+        const rows = await db`
+            SELECT ${db.unsafe(ATTACHMENT_SELECT)},
+                   ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
+                   ${db.unsafe(REACTION_JSON_EXPR)},
+                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+            FROM attachments a
+            JOIN appointments ap ON ap.id = a.appointment_id
+            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
+            WHERE ap.id = ${appointmentId}
+              AND ap.client_id = ${clientId}
+              AND (
+                  (a.type = 'impression' AND a.author_id = ${clientId})
+                  OR a.type = 'recommendation'
+              )
+              ${typesFilter}
+            ORDER BY a.type, a.created_at ASC
+        `
         return (rows as AttachmentChainRow[]).map(rowToChain)
     },
 
@@ -327,32 +294,6 @@ export const AttachmentsRepo = {
         `
     },
 
-    async deleteFilesAndReturnStoredNames(
-        fileIds: string[],
-        executor: SQL = db,
-    ): Promise<Array<{ id: string; storedName: string }>> {
-        if (fileIds.length === 0) return []
-        const rows = (await executor`
-            SELECT id, stored_name AS "storedName"
-            FROM files
-            WHERE id IN ${executor(fileIds)}
-        `) as Array<{ id: string; storedName: string }>
-        await executor`
-            DELETE FROM files
-            WHERE id IN ${executor(fileIds)}
-        `
-        return rows
-    },
-
-    async findReaction(attachmentId: string): Promise<RecommendationReaction | null> {
-        const [row] = await db`
-            SELECT ${db.unsafe(REACTION_COLUMNS)}
-            FROM recommendation_reactions
-            WHERE attachment_id = ${attachmentId}
-        `
-        return (row as RecommendationReaction) ?? null
-    },
-
     async upsertReaction(
         attachmentId: string,
         params: { done?: boolean; comment?: string },
@@ -393,41 +334,19 @@ export const AttachmentsRepo = {
         type: AttachmentType,
         authorId?: string,
     ): Promise<AttachmentWithReaction[]> {
-        const rows = authorId
-            ? await db`
-                SELECT
-                    ${db.unsafe(ATTACHMENT_SELECT)},
-                    ${db.unsafe(REACTION_JSON_EXPR)}
-                FROM attachments a
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                WHERE a.appointment_id = ${appointmentId}
-                  AND a.type = ${type}
-                  AND a.author_id = ${authorId}
-                ORDER BY a.created_at ASC
-            `
-            : await db`
-                SELECT
-                    ${db.unsafe(ATTACHMENT_SELECT)},
-                    ${db.unsafe(REACTION_JSON_EXPR)}
-                FROM attachments a
-                LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-                WHERE a.appointment_id = ${appointmentId}
-                  AND a.type = ${type}
-                ORDER BY a.created_at ASC
-            `
-        return rows as AttachmentWithReaction[]
-    },
-
-    async findImpressionCompletion(attachmentId: string): Promise<ImpressionCompletion | null> {
-        const [row] = await db`
+        const authorFilter = authorId ? db`AND a.author_id = ${authorId}` : db``
+        const rows = await db`
             SELECT
-                attachment_id AS "attachmentId",
-                client_response AS "clientResponse",
-                created_at AS "createdAt"
-            FROM impression_completions
-            WHERE attachment_id = ${attachmentId}
+                ${db.unsafe(ATTACHMENT_SELECT)},
+                ${db.unsafe(REACTION_JSON_EXPR)}
+            FROM attachments a
+            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
+            WHERE a.appointment_id = ${appointmentId}
+              AND a.type = ${type}
+              ${authorFilter}
+            ORDER BY a.created_at ASC
         `
-        return (row as ImpressionCompletion) ?? null
+        return rows as AttachmentWithReaction[]
     },
 
     async insertImpressionCompletion(

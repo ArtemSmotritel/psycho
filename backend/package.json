@@ -10,6 +10,7 @@
         "snapshot:save": "bun run scripts/snapshot-save.ts",
         "snapshot:restore": "bun run scripts/snapshot-restore.ts",
         "lint": "oxlint . -c ../oxlintrc.json",
+        "typecheck": "bunx tsc --noEmit",
         "prettier": "bunx prettier -w . --config /Users/artem/uni/psycho/.prettierrc.json"
     },
     "dependencies": {

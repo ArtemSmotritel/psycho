@@ -50,7 +50,7 @@ export const AssociativeImagesService = {
         const file = await FilesRepo.findById(image.fileId)
         await db.begin(async (tx) => {
             await AssociativeImagesRepo.deleteById(id, tx)
-            await FilesService.deleteById(image.fileId, tx)
+            await FilesService.cleanupOrphans([image.fileId], tx)
         })
         if (file) {
             await FilesService.removeFromDisk(file.storedName)

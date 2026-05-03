@@ -21,7 +21,7 @@ const addClientSchema = z.object({
     email: z.email(),
 })
 
-export const clientSelfRoutes = new Hono().use(authorized, onlyClientRequest)
+export const clientSelfRoutes = new Hono().use('/me', authorized, onlyClientRequest)
 
 clientSelfRoutes.get('/me', async (c) => {
     const user = c.get('user')

@@ -43,10 +43,6 @@ export const FilesService = {
         return bunFile
     },
 
-    async deleteById(id: string, executor?: SQL): Promise<void> {
-        await FilesRepo.deleteById(id, executor)
-    },
-
     // Deletes file rows + disk blobs for the given ids, but only those
     // with no remaining references in attachment_files or associative_images.
     // `tx` MUST be the same transaction that already removed the calling

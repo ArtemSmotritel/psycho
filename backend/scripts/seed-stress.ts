@@ -11,7 +11,8 @@ import { ALL_APP_TABLES } from '../src/test-fixtures/db'
 import { insertTestUser } from '../src/test-fixtures/users'
 import { UsersService } from '../src/features/users/services'
 import { AppointmentsRepo } from '../src/features/appointments/repo'
-import { createAttachment, upsertReaction, setReply } from '../src/features/attachments/services'
+import { AttachmentsService } from '../src/features/attachments/services'
+import { AttachmentsRepo } from '../src/features/attachments/repo'
 import { InvitationsService } from '../src/features/invitations/services'
 import { join, extname } from 'node:path'
 import { ClientsService } from '../src/features/clients/services'
@@ -440,7 +441,7 @@ async function seed() {
         for (let n = 0; n < noteCount; n++) {
             const imgIds =
                 attachmentCounter % 3 === 0 ? [fileIds[attachmentCounter % fileIds.length]!] : []
-            await createAttachment({
+            await AttachmentsService.create({
                 appointmentId,
                 authorId: psychoId,
                 type: 'note',
@@ -451,7 +452,7 @@ async function seed() {
         }
 
         // 1 impression (author = psychologist); ~70% get a client completion
-        const impr = await createAttachment({
+        const impr = await AttachmentsService.create({
             appointmentId,
             authorId: psychoId,
             type: 'impression',
@@ -467,7 +468,7 @@ async function seed() {
 
         // 1 recommendation (author = psychologist); most get a reaction
         const recText = pick(RECOMMENDATION_TEXTS, attachmentCounter)
-        const rec = await createAttachment({
+        const rec = await AttachmentsService.create({
             appointmentId,
             authorId: psychoId,
             type: 'recommendation',
@@ -477,20 +478,20 @@ async function seed() {
         // Reaction mix: done+comment, comment-only, done-only, none, + reply variants
         const mode = attachmentCounter % 5
         if (mode === 0) {
-            await upsertReaction(rec.id, {
+            await AttachmentsRepo.upsertReaction(rec.id, {
                 done: true,
                 comment: pick(CLIENT_COMMENTS, attachmentCounter),
             })
-            await setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))
+            await AttachmentsRepo.setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))
         } else if (mode === 1) {
-            await upsertReaction(rec.id, { comment: pick(CLIENT_COMMENTS, attachmentCounter) })
+            await AttachmentsRepo.upsertReaction(rec.id, { comment: pick(CLIENT_COMMENTS, attachmentCounter) })
         } else if (mode === 2) {
-            await upsertReaction(rec.id, { done: true })
-            await setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))
+            await AttachmentsRepo.upsertReaction(rec.id, { done: true })
+            await AttachmentsRepo.setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))
         } else if (mode === 3) {
             // no reaction at all
         } else {
-            await upsertReaction(rec.id, {
+            await AttachmentsRepo.upsertReaction(rec.id, {
                 done: false,
                 comment: pick(CLIENT_COMMENTS, attachmentCounter),
             })
@@ -503,7 +504,7 @@ async function seed() {
                 fileIds[attachmentCounter % fileIds.length]!,
                 fileIds[(attachmentCounter + 1) % fileIds.length]!,
             ]
-            const impr2 = await createAttachment({
+            const impr2 = await AttachmentsService.create({
                 appointmentId,
                 authorId: psychoId,
                 type: 'impression',
@@ -524,7 +525,7 @@ async function seed() {
     // view has something on day-of
     for (const { id: appointmentId, slot } of appointments) {
         if (slot.startedAt && !slot.endedAt) {
-            await createAttachment({
+            await AttachmentsService.create({
                 appointmentId,
                 authorId: psychos[slot.psychoIdx]!.id,
                 type: 'note',

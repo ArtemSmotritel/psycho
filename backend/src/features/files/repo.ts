@@ -35,10 +35,6 @@ export const FilesRepo = {
         return (row as FileEntity) ?? null
     },
 
-    async deleteById(id: string, executor: SQL = db): Promise<void> {
-        await executor`DELETE FROM files WHERE id = ${id}`
-    },
-
     async findIdsNotOwnedBy(fileIds: string[], userId: string): Promise<string[]> {
         if (fileIds.length === 0) return []
         const rows = (await db`
