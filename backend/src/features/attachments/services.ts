@@ -7,10 +7,8 @@ import { AttachmentCheck } from './attachment-check'
 import type {
     Attachment,
     AttachmentType,
-    AttachmentWithAppointment,
     ClientAttachmentList,
     ImpressionCompletion,
-    ProgressSession,
     PsychoAttachmentList,
     RecommendationReaction,
 } from './models'
@@ -247,37 +245,6 @@ async function completeImpressionForClientView(input: {
     return AttachmentsRepo.insertImpressionCompletion(input.attachmentId, input.response)
 }
 
-async function listImpressionsForClientByPsycho(
-    clientId: string,
-    psychoId: string,
-): Promise<AttachmentWithAppointment[]> {
-    return AttachmentsRepo.listImpressionsByPair(clientId, psychoId)
-}
-
-async function listClientProgressByPsycho(
-    clientId: string,
-    psychoId: string,
-): Promise<ProgressSession[]> {
-    const appointments = await AttachmentsRepo.listEndedAppointmentsForPair(clientId, psychoId)
-
-    return Promise.all(
-        appointments.map(async (apt) => {
-            const [impressions, recommendations] = await Promise.all([
-                AttachmentsRepo.listByAuthor(apt.id, 'impression', clientId),
-                AttachmentsRepo.listWithReactions(apt.id, 'recommendation'),
-            ])
-            return {
-                id: apt.id,
-                startTime: apt.startTime,
-                endTime: apt.endTime,
-                status: apt.status,
-                impressions,
-                recommendations,
-            }
-        }),
-    )
-}
-
 async function listForPsychoView(
     appointmentId: string,
     psychoId: string,
@@ -428,8 +395,6 @@ export const AttachmentsService = {
     listByAuthor: AttachmentsRepo.listByAuthor,
     upsertReaction: AttachmentsRepo.upsertReaction,
     listWithReactions: AttachmentsRepo.listWithReactions,
-    listImpressionsForClientByPsycho,
-    listClientProgressByPsycho,
     completeImpression: AttachmentsRepo.insertImpressionCompletion,
     listForPsycho: listForPsychoView,
     listForClient: listForClientView,

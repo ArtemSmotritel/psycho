@@ -13,8 +13,8 @@ import { clientAppointmentRoutes } from '../features/appointments/client-routes'
 import { psychoAppointmentRoutes } from '../features/appointments/psycho-routes'
 import { whiteboardRoutes } from '../features/whiteboard/routes'
 import { fileRoutes } from '../features/files/routes'
-import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
-import { progressClientRoutes } from '../features/attachments/progress-client-routes'
+import { psychoProgressRoutes } from '../features/progress/psycho-routes'
+import { clientProgressRoutes } from '../features/progress/client-routes'
 import { psychoAttachmentRoutes } from '../features/attachments/psycho-routes'
 import { clientAttachmentRoutes } from '../features/attachments/client-routes'
 import { clientDashboardRoutes, psychoDashboardRoutes } from '../features/dashboard/routes'
@@ -89,8 +89,8 @@ app.route('/api/users', userRoutes)
 app.route('/api/clients/:clientId/appointments', appointmentRoutes)
 app.route('/api/client/appointments', clientAppointmentRoutes)
 app.route('/api/psycho/appointments', psychoAppointmentRoutes)
-app.route('/api/clients/:clientId/progress/impressions', progressPsychoRoutes)
-app.route('/api/client/progress', progressClientRoutes)
+app.route('/api/clients/:clientId/progress/impressions', psychoProgressRoutes)
+app.route('/api/client/progress', clientProgressRoutes)
 app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', psychoAttachmentRoutes)
 app.route('/api/client/appointments/:appointmentId/attachments', clientAttachmentRoutes)
 

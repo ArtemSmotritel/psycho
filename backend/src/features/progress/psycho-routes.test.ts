@@ -2,14 +2,14 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { futureDate, pastDate } from '../../test-fixtures/dates'
+import { futureDate } from '../../test-fixtures/dates'
 import { ClientsService } from '../clients/services'
 import {
     createAppointment,
     startAppointment,
     endAppointment,
 } from '../../test-fixtures/appointments'
-import { AttachmentsService } from './services'
+import { AttachmentsService } from '../attachments/services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }

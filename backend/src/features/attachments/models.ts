@@ -33,10 +33,6 @@ export interface AttachmentWithReaction extends Attachment {
     reaction: RecommendationReaction | null
 }
 
-export interface AttachmentWithAppointment extends Attachment {
-    appointmentStartTime: string // ISO timestamp from appointments.start_time
-}
-
 export interface ImpressionCompletion {
     attachmentId: string
     clientResponse: string
@@ -55,14 +51,5 @@ export interface PsychoAttachmentList {
 
 export interface ClientAttachmentList {
     impressions: AttachmentWithCompletion[]
-    recommendations: AttachmentWithReaction[]
-}
-
-export interface ProgressSession {
-    id: string
-    startTime: string
-    endTime: string
-    status: 'active' | 'past'
-    impressions: Attachment[]
     recommendations: AttachmentWithReaction[]
 }
