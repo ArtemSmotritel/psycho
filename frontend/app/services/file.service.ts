@@ -1,5 +1,5 @@
 import { api } from './api'
-import type { FileUploadResponse, FileDeleteResponse } from '~/models/file'
+import type { FileUploadResponse } from '~/models/file'
 
 export const fileService = {
     upload: (file: File) => {
@@ -11,6 +11,4 @@ export const fileService = {
             },
         })
     },
-
-    delete: (fileId: string) => api.delete<FileDeleteResponse>(`/files/${fileId}`),
 }

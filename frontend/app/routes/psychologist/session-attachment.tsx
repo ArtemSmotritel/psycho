@@ -19,8 +19,6 @@ import {
 import { getAttachmentTypeLabel, formatAppDate } from '~/utils/utils'
 import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
-import { noteService } from '~/services/note.service'
-import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { impressionService } from '~/services/impression.service'
 import type { AttachmentFile } from '~/models/attachment'
@@ -127,15 +125,8 @@ export default function SessionAttachment() {
                 text: values.text,
                 removeFileIds: values.removedFileIds.length > 0 ? values.removedFileIds : undefined,
             }
-            if (attachment.type === 'note') {
-                await noteService.update(clientId!, appointmentId!, attachment.id, updateData)
-            } else if (attachment.type === 'recommendation') {
-                await recommendationService.update(
-                    clientId!,
-                    appointmentId!,
-                    attachment.id,
-                    updateData,
-                )
+            if (attachment.type === 'note' || attachment.type === 'recommendation') {
+                await attachmentService.update(clientId!, appointmentId!, attachment.id, updateData)
             }
             toast.success('Attachment updated.')
             refetch()

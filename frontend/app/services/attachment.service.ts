@@ -9,6 +9,7 @@ import type {
     ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
+    UpdateAttachmentDTO,
 } from '~/models/attachment'
 
 export interface AttachmentDetailResponse {
@@ -46,13 +47,21 @@ export const attachmentService = {
             data,
         ),
 
+    update: (
+        clientId: string,
+        appointmentId: string,
+        attachmentId: string,
+        data: UpdateAttachmentDTO,
+    ) =>
+        api.patch<{ attachment: Attachment }>(
+            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
+            data,
+        ),
+
     deleteForPsycho: (clientId: string, appointmentId: string, attachmentId: string) =>
         api.delete(
             `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
         ),
-
-    deleteForClient: (appointmentId: string, attachmentId: string) =>
-        api.delete(`/client/appointments/${appointmentId}/attachments/${attachmentId}`),
 }
 
 export function getDeleteAttachmentErrorMessage(err: unknown): string {

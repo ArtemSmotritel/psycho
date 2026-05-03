@@ -73,7 +73,7 @@ export function AppointmentRecommendationsPanel({
     ) => {
         setUpdatingId(recommendationId)
         try {
-            await recommendationService.update(
+            await attachmentService.update(
                 clientId,
                 appointmentId,
                 recommendationId,

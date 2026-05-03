@@ -5,7 +5,6 @@ import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
-import { noteService } from '~/services/note.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
@@ -76,7 +75,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         values: { name: string; text?: string; removedFileIds?: string[] },
     ) => {
         try {
-            await noteService.update(clientId, appointmentId, noteId, {
+            await attachmentService.update(clientId, appointmentId, noteId, {
                 name: values.name,
                 text: values.text,
                 removeFileIds:

@@ -21,17 +21,13 @@ export interface Attachment {
     updatedAt: string
 }
 
-export interface UpdateNoteDTO {
+export interface UpdateAttachmentDTO {
     name?: string
     text?: string
     removeFileIds?: string[]
 }
 
-export interface UpdateRecommendationDTO {
-    name?: string
-    text?: string
-    removeFileIds?: string[]
-}
+export type UpdateRecommendationDTO = UpdateAttachmentDTO
 
 export type CreateAttachmentPsychoDTO =
     | {

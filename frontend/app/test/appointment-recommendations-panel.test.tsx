@@ -8,7 +8,6 @@ const mockListForPsycho = vi.fn()
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        update: vi.fn(),
         reply: (...args: any[]) => mockReply(...args),
     },
 }))
@@ -18,6 +17,7 @@ vi.mock('~/services/attachment.service', () => ({
         listForPsycho: (...args: any[]) => mockListForPsycho(...args),
         createForPsycho: vi.fn(),
         deleteForPsycho: vi.fn(),
+        update: vi.fn(),
     },
     getDeleteAttachmentErrorMessage: () => 'Failed to delete attachment.',
 }))

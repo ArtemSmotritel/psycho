@@ -12,8 +12,6 @@ vi.mock('~/services/client.service', () => ({
         getById: vi.fn(),
         addByEmail: vi.fn(),
         update: vi.fn(),
-        getSessions: vi.fn(),
-        getProgress: vi.fn(),
     },
 }))
 

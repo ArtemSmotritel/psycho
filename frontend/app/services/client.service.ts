@@ -12,8 +12,6 @@ export const clientService = {
 
     remove: (id: string) => api.delete(`/clients/${id}`),
 
-    getProgress: (clientId: string) => api.get(`/clients/${clientId}/progress`),
-
     getMe: () => api.get<{ client: Client }>('/clients/me'),
 
     updateMe: (
