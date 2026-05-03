@@ -13,14 +13,10 @@ import { clientAppointmentRoutes } from '../features/appointments/client-routes'
 import { psychoAppointmentRoutes } from '../features/appointments/psycho-routes'
 import { whiteboardRoutes } from '../features/whiteboard/routes'
 import { fileRoutes } from '../features/files/routes'
-import { noteRoutes } from '../features/attachments/notes-routes'
-import { impressionClientRoutes } from '../features/attachments/impressions-client-routes'
-import { recommendationPsychoRoutes } from '../features/attachments/recommendations-psycho-routes'
-import { recommendationClientRoutes } from '../features/attachments/recommendations-client-routes'
 import { progressPsychoRoutes } from '../features/attachments/progress-psycho-routes'
 import { progressClientRoutes } from '../features/attachments/progress-client-routes'
-import { attachmentPsychoRoutes } from '../features/attachments/attachment-psycho-routes'
-import { attachmentClientRoutes } from '../features/attachments/attachment-client-routes'
+import { psychoAttachmentRoutes } from '../features/attachments/psycho-routes'
+import { clientAttachmentRoutes } from '../features/attachments/client-routes'
 import { clientDashboardRoutes, psychoDashboardRoutes } from '../features/dashboard/routes'
 import { invitationRoutes } from '../features/invitations/routes'
 import { associativeImageRoutes } from '../features/associative-images/routes'
@@ -93,17 +89,10 @@ app.route('/api/users', userRoutes)
 app.route('/api/clients/:clientId/appointments', appointmentRoutes)
 app.route('/api/client/appointments', clientAppointmentRoutes)
 app.route('/api/psycho/appointments', psychoAppointmentRoutes)
-app.route('/api/clients/:clientId/appointments/:appointmentId/notes', noteRoutes)
-app.route('/api/client/appointments/:appointmentId/impressions', impressionClientRoutes)
-app.route(
-    '/api/clients/:clientId/appointments/:appointmentId/recommendations',
-    recommendationPsychoRoutes,
-)
-app.route('/api/client/appointments/:appointmentId/recommendations', recommendationClientRoutes)
 app.route('/api/clients/:clientId/progress/impressions', progressPsychoRoutes)
 app.route('/api/client/progress', progressClientRoutes)
-app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', attachmentPsychoRoutes)
-app.route('/api/client/appointments/:appointmentId/attachments', attachmentClientRoutes)
+app.route('/api/clients/:clientId/appointments/:appointmentId/attachments', psychoAttachmentRoutes)
+app.route('/api/client/appointments/:appointmentId/attachments', clientAttachmentRoutes)
 
 app.route('/api/client/dashboard', clientDashboardRoutes)
 app.route('/api/psycho/dashboard', psychoDashboardRoutes)

@@ -123,7 +123,10 @@ describe('GET /api/client/progress/:psychoId', () => {
             name: 'Breathing exercise',
             text: 'Practice 5 min/day',
         })
-        await AttachmentsService.upsertReaction(rec1.id, { done: true, comment: 'Tried it, helpful' })
+        await AttachmentsService.upsertReaction(rec1.id, {
+            done: true,
+            comment: 'Tried it, helpful',
+        })
         await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: psycho.id,

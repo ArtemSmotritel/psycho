@@ -133,18 +133,20 @@ async function updateAttachment(
     return (await AttachmentsRepo.findById(id))!
 }
 
-async function updateForPsycho(
-    type: 'note' | 'recommendation',
-    input: {
-        user: User
-        clientId: string
-        appointmentId: string
-        attachmentId: string
-        name?: string
-        text?: string
-        removeFileIds?: string[]
-    },
-): Promise<Attachment> {
+const PSYCHO_UPDATE_RULES = {
+    note: 'self',
+    recommendation: 'self',
+} as const satisfies Partial<Record<AttachmentType, 'self' | 'any'>>
+
+async function updateForPsychoView(input: {
+    user: User
+    clientId: string
+    appointmentId: string
+    attachmentId: string
+    name?: string
+    text?: string
+    removeFileIds?: string[]
+}): Promise<Attachment> {
     const appointment = await AppointmentsService.getForPsycho(
         input.appointmentId,
         input.user.id,
@@ -160,8 +162,7 @@ async function updateForPsycho(
         appointmentId: input.appointmentId,
         attachmentId: input.attachmentId,
     })
-        .setExpectedType(type)
-        .setExpectedAuthor('self')
+        .setTypeRules(PSYCHO_UPDATE_RULES)
         .run()
 
     return updateAttachment(input.attachmentId, {
@@ -169,30 +170,6 @@ async function updateForPsycho(
         text: input.text ?? null,
         removeFileIds: input.removeFileIds,
     })
-}
-
-async function updateNoteForPsychoView(input: {
-    user: User
-    clientId: string
-    appointmentId: string
-    attachmentId: string
-    name?: string
-    text?: string
-    removeFileIds?: string[]
-}): Promise<Attachment> {
-    return updateForPsycho('note', input)
-}
-
-async function updateRecommendationForPsychoView(input: {
-    user: User
-    clientId: string
-    appointmentId: string
-    attachmentId: string
-    name?: string
-    text?: string
-    removeFileIds?: string[]
-}): Promise<Attachment> {
-    return updateForPsycho('recommendation', input)
 }
 
 async function replyToRecommendationForPsychoView(input: {
@@ -264,10 +241,7 @@ async function completeImpressionForClientView(input: {
         .run()
 
     if (completion !== null) {
-        throw new BadRequestError(
-            'This impression has already been completed.',
-            'AlreadyCompleted',
-        )
+        throw new BadRequestError('This impression has already been completed.', 'AlreadyCompleted')
     }
 
     return AttachmentsRepo.insertImpressionCompletion(input.attachmentId, input.response)
@@ -465,8 +439,7 @@ export const AttachmentsService = {
     getForClient: getForClientView,
     deleteForPsycho: deleteForPsychoView,
     deleteForClient: deleteForClientView,
-    updateNoteForPsycho: updateNoteForPsychoView,
-    updateRecommendationForPsycho: updateRecommendationForPsychoView,
+    updateForPsycho: updateForPsychoView,
     replyToRecommendationForPsycho: replyToRecommendationForPsychoView,
     reactToRecommendationForClient: reactToRecommendationForClientView,
     completeImpressionForClient: completeImpressionForClientView,

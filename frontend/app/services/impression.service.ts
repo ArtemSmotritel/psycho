@@ -13,7 +13,7 @@ export const impressionService = {
 
     complete: (appointmentId: string, attachmentId: string, data: CompleteImpressionDTO) =>
         api.patch<{ completion: ImpressionCompletion }>(
-            `/client/appointments/${appointmentId}/impressions/${attachmentId}/complete`,
+            `/client/appointments/${appointmentId}/attachments/${attachmentId}/complete`,
             data,
         ),
 }

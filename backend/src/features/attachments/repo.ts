@@ -319,11 +319,7 @@ export const AttachmentsRepo = {
         `
     },
 
-    async unlinkFiles(
-        attachmentId: string,
-        fileIds: string[],
-        executor: SQL = db,
-    ): Promise<void> {
+    async unlinkFiles(attachmentId: string, fileIds: string[], executor: SQL = db): Promise<void> {
         if (fileIds.length === 0) return
         await executor`
             DELETE FROM attachment_files

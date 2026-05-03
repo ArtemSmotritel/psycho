@@ -1,13 +1,22 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import { clientIdAppointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
-import { createAttachmentPsychoSchema, listQuerySchemaPsycho } from './schemas'
+import {
+    createAttachmentPsychoSchema,
+    listQuerySchemaPsycho,
+    updateAttachmentSchema,
+} from './schemas'
 import { AttachmentsService } from './services'
 
-export const attachmentPsychoRoutes = new Hono().use(authorized, onlyPsychoRequest)
+const replySchema = z.object({
+    reply: z.string().min(1),
+})
 
-attachmentPsychoRoutes.get(
+export const psychoAttachmentRoutes = new Hono().use(authorized, onlyPsychoRequest)
+
+psychoAttachmentRoutes.get(
     '/',
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('query', listQuerySchemaPsycho),
@@ -25,7 +34,7 @@ attachmentPsychoRoutes.get(
     },
 )
 
-attachmentPsychoRoutes.post(
+psychoAttachmentRoutes.post(
     '/',
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('json', createAttachmentPsychoSchema),
@@ -48,7 +57,7 @@ attachmentPsychoRoutes.post(
     },
 )
 
-attachmentPsychoRoutes.get(
+psychoAttachmentRoutes.get(
     '/:attachmentId',
     zValidator('param', clientIdAppointmentIdParamSchema),
     async (c) => {
@@ -64,7 +73,49 @@ attachmentPsychoRoutes.get(
     },
 )
 
-attachmentPsychoRoutes.delete(
+psychoAttachmentRoutes.patch(
+    '/:attachmentId',
+    zValidator('param', clientIdAppointmentIdParamSchema),
+    zValidator('json', updateAttachmentSchema),
+    async (c) => {
+        const user = c.get('user')
+        const { clientId, appointmentId } = c.req.valid('param')
+        const attachmentId = c.req.param('attachmentId')
+        const { name, text, removeFileIds } = c.req.valid('json')
+        const attachment = await AttachmentsService.updateForPsycho({
+            user,
+            clientId,
+            appointmentId,
+            attachmentId,
+            name,
+            text,
+            removeFileIds,
+        })
+        return c.json({ attachment }, 200)
+    },
+)
+
+psychoAttachmentRoutes.patch(
+    '/:attachmentId/reply',
+    zValidator('param', clientIdAppointmentIdParamSchema),
+    zValidator('json', replySchema),
+    async (c) => {
+        const user = c.get('user')
+        const { clientId, appointmentId } = c.req.valid('param')
+        const attachmentId = c.req.param('attachmentId')
+        const { reply } = c.req.valid('json')
+        const reaction = await AttachmentsService.replyToRecommendationForPsycho({
+            user,
+            clientId,
+            appointmentId,
+            attachmentId,
+            reply,
+        })
+        return c.json({ reaction }, 200)
+    },
+)
+
+psychoAttachmentRoutes.delete(
     '/:attachmentId',
     zValidator('param', clientIdAppointmentIdParamSchema),
     async (c) => {

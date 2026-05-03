@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
-import { jsonBody } from '../../test-fixtures/responses'
-import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { ClientsService } from '../clients/services'
+import { jsonBody } from '../../../test-fixtures/responses'
+import { asUser, insertTestUser } from '../../../test-fixtures/users'
+import { futureDate, pastDate } from '../../../test-fixtures/dates'
+import { ClientsService } from '../../clients/services'
 import {
     createAppointment,
     startAppointment,
     endAppointment,
-} from '../../test-fixtures/appointments'
-import { AttachmentsService } from './services'
+} from '../../../test-fixtures/appointments'
+import { AttachmentsService } from '../services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
-// ─── PATCH /api/client/appointments/:appointmentId/recommendations/:attachmentId/reaction ──
+// ─── PATCH /api/client/appointments/:appointmentId/attachments/:attachmentId/reaction ──
 
-describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachmentId/reaction', () => {
+describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentId/reaction', () => {
     it('returns 200 with done: true when toggling done', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -37,7 +37,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -72,7 +72,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -107,7 +107,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
 
         // First: set comment
         await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -117,7 +117,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
 
         // Second: toggle done only
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -151,7 +151,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -160,7 +160,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         )
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -193,7 +193,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -227,7 +227,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${recommendation.id}/reaction`,
             await asUser(otherClient.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -267,7 +267,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt1.id}/recommendations/${recommendation.id}/reaction`,
+            `/api/client/appointments/${apt1.id}/attachments/${recommendation.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -298,7 +298,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         })
 
         const res = await app.request(
-            `/api/client/appointments/${apt.id}/recommendations/${note.id}/reaction`,
+            `/api/client/appointments/${apt.id}/attachments/${note.id}/reaction`,
             await asUser(client.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -313,7 +313,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/client/appointments/some-apt/recommendations/some-id/reaction',
+            '/api/client/appointments/some-apt/attachments/some-id/reaction',
             await asUser(user.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -326,7 +326,7 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
 
     it('returns 401 unauthenticated', async () => {
         const res = await app.request(
-            '/api/client/appointments/some-apt/recommendations/some-id/reaction',
+            '/api/client/appointments/some-apt/attachments/some-id/reaction',
             {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -338,9 +338,9 @@ describe('PATCH /api/client/appointments/:appointmentId/recommendations/:attachm
     })
 })
 
-// ─── PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId/reply ──
+// ─── PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:attachmentId/reply ──
 
-describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId/reply', () => {
+describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:attachmentId/reply', () => {
     it('returns 200 with psychologistReply set', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -361,7 +361,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -396,7 +396,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -405,7 +405,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         )
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -438,7 +438,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -469,7 +469,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -501,7 +501,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -533,7 +533,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${otherClient.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${otherClient.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -573,7 +573,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt1.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt1.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -604,7 +604,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${note.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -636,7 +636,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}/reply`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}/reply`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -651,7 +651,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/clients/some-client/appointments/some-apt/recommendations/some-id/reply',
+            '/api/clients/some-client/appointments/some-apt/attachments/some-id/reply',
             await asUser(user.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
@@ -664,7 +664,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
 
     it('returns 401 unauthenticated', async () => {
         const res = await app.request(
-            '/api/clients/some-client/appointments/some-apt/recommendations/some-id/reply',
+            '/api/clients/some-client/appointments/some-apt/attachments/some-id/reply',
             {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },

@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { db } from 'config/db'
-import { jsonBody } from '../../test-fixtures/responses'
-import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { insertTestFile } from '../../test-fixtures/files'
-import { futureDate, pastDate } from '../../test-fixtures/dates'
-import { ClientsService } from '../clients/services'
+import { jsonBody } from '../../../test-fixtures/responses'
+import { asUser, insertTestUser } from '../../../test-fixtures/users'
+import { insertTestFile } from '../../../test-fixtures/files'
+import { futureDate, pastDate } from '../../../test-fixtures/dates'
+import { ClientsService } from '../../clients/services'
 import {
     createAppointment,
     startAppointment,
     endAppointment,
-} from '../../test-fixtures/appointments'
-import { AttachmentsService } from './services'
+} from '../../../test-fixtures/appointments'
+import { AttachmentsService } from '../services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
@@ -307,7 +307,10 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             text: 'Recommendation text',
         })
 
-        await AttachmentsService.upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
+        await AttachmentsService.upsertReaction(recommendation.id, {
+            done: true,
+            comment: 'Got it',
+        })
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments/${recommendation.id}`,
@@ -555,7 +558,10 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             text: 'Rec text',
         })
 
-        await AttachmentsService.upsertReaction(recommendation.id, { done: false, comment: 'Will try' })
+        await AttachmentsService.upsertReaction(recommendation.id, {
+            done: false,
+            comment: 'Will try',
+        })
 
         const res = await app.request(
             `/api/client/appointments/${apt.id}/attachments/${recommendation.id}`,
@@ -780,7 +786,10 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
             name: 'Rec',
             text: 'Rec text',
         })
-        await AttachmentsService.upsertReaction(recommendation.id, { done: true, comment: 'Got it' })
+        await AttachmentsService.upsertReaction(recommendation.id, {
+            done: true,
+            comment: 'Got it',
+        })
 
         const res = await app.request(
             `/api/clients/${client.id}/appointments/${apt.id}/attachments`,

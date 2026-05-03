@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
-import { jsonBody } from '../../test-fixtures/responses'
-import { asUser, insertTestUser } from '../../test-fixtures/users'
-import { insertTestFile } from '../../test-fixtures/files'
-import { futureDate } from '../../test-fixtures/dates'
-import { ClientsService } from '../clients/services'
+import { jsonBody } from '../../../test-fixtures/responses'
+import { asUser, insertTestUser } from '../../../test-fixtures/users'
+import { insertTestFile } from '../../../test-fixtures/files'
+import { futureDate } from '../../../test-fixtures/dates'
+import { ClientsService } from '../../clients/services'
 import {
     createAppointment,
     startAppointment,
     endAppointment,
-} from '../../test-fixtures/appointments'
-import { AttachmentsService } from './services'
+} from '../../../test-fixtures/appointments'
+import { AttachmentsService } from '../services'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
-// ─── PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId ──
+// ─── PATCH /:attachmentId ─────────────────────────────────────────────────────
 
-describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendations/:attachmentId', () => {
-    it('returns 200 with updated name/text; imageFileIds in body is ignored (unchanged in response)', async () => {
+describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:attachmentId (note)', () => {
+    it('happy path — updates name and text; imageFileIds in body does not change stored imageFiles', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -32,17 +32,17 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         await endAppointment(apt.id)
 
         const file = await insertTestFile(psycho.id, { originalName: 'original.png' })
-        const recommendation = await AttachmentsService.create({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
-            type: 'recommendation',
+            type: 'note',
             name: 'Original Name',
             text: 'Original Text',
             imageFileIds: [file.id],
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -56,12 +56,12 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
 
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
-        expect(body).toHaveProperty('recommendation')
-        expect(body.recommendation).toHaveProperty('name', 'Updated Name')
-        expect(body.recommendation).toHaveProperty('text', 'Updated Text')
+        expect(body).toHaveProperty('attachment')
+        expect(body.attachment).toHaveProperty('name', 'Updated Name')
+        expect(body.attachment).toHaveProperty('text', 'Updated Text')
         // imageFiles should NOT be changed (locked after creation)
-        expect(body.recommendation.imageFiles).toHaveLength(1)
-        expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file.id)
+        expect(body.attachment.imageFiles).toHaveLength(1)
+        expect(body.attachment.imageFiles[0]).toHaveProperty('id', file.id)
     })
 
     it('returns 404 when attachmentId belongs to a different appointment', async () => {
@@ -85,15 +85,15 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         await startAppointment(apt2.id)
         await endAppointment(apt2.id)
 
-        const recommendation = await AttachmentsService.create({
+        const note = await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: psycho.id,
-            type: 'recommendation',
-            name: 'Recommendation on apt2',
+            type: 'note',
+            name: 'Note',
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt1.id}/recommendations/${recommendation.id}`,
+            `/api/clients/${client.id}/appointments/${apt1.id}/attachments/${note.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -104,7 +104,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         expect(res.status).toBe(404)
     })
 
-    it('returns 404 when attachmentId has type !== recommendation', async () => {
+    it('returns 404 when attachment type is impression (psycho cannot update impressions)', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -117,26 +117,26 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const note = await AttachmentsService.create({
+        const impression = await AttachmentsService.create({
             appointmentId: apt.id,
-            authorId: psycho.id,
-            type: 'note',
-            name: 'A Note',
+            authorId: client.id,
+            type: 'impression',
+            text: 'An Impression',
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${note.id}`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${impression.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ name: 'Updated' }),
+                body: JSON.stringify({ text: 'Updated' }),
             }),
         )
 
         expect(res.status).toBe(404)
     })
 
-    it('returns 404 when recommendation was created by a different psychologist', async () => {
+    it('returns 404 when note was created by a different psychologist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
@@ -150,15 +150,15 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        const recommendation = await AttachmentsService.create({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho2.id,
-            type: 'recommendation',
-            name: 'Other psycho recommendation',
+            type: 'note',
+            name: 'Other psycho note',
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -181,7 +181,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/some-id`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/some-id`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -194,7 +194,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         expect(body).toHaveProperty('error', 'AppointmentNotActive')
     })
 
-    it('happy path — removeFileIds removes linked files from the recommendation', async () => {
+    it('happy path — removeFileIds removes linked files from the note', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -209,16 +209,16 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
 
         const file1 = await insertTestFile(psycho.id, { originalName: 'img1.png' })
         const file2 = await insertTestFile(psycho.id, { originalName: 'img2.png' })
-        const recommendation = await AttachmentsService.create({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
-            type: 'recommendation',
-            name: 'Rec with files',
+            type: 'note',
+            name: 'Note with files',
             imageFileIds: [file1.id, file2.id],
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -228,8 +228,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
 
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
-        expect(body.recommendation.imageFiles).toHaveLength(1)
-        expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file2.id)
+        expect(body.attachment.imageFiles).toHaveLength(1)
+        expect(body.attachment.imageFiles[0]).toHaveProperty('id', file2.id)
     })
 
     it('removeFileIds with non-existent ids does not fail', async () => {
@@ -246,16 +246,16 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
         await endAppointment(apt.id)
 
         const file = await insertTestFile(psycho.id, { originalName: 'img.png' })
-        const recommendation = await AttachmentsService.create({
+        const note = await AttachmentsService.create({
             appointmentId: apt.id,
             authorId: psycho.id,
-            type: 'recommendation',
-            name: 'Rec',
+            type: 'note',
+            name: 'Note',
             imageFileIds: [file.id],
         })
 
         const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/recommendations/${recommendation.id}`,
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${note.id}`,
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
@@ -265,15 +265,15 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/recommendatio
 
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
-        expect(body.recommendation.imageFiles).toHaveLength(1)
-        expect(body.recommendation.imageFiles[0]).toHaveProperty('id', file.id)
+        expect(body.attachment.imageFiles).toHaveLength(1)
+        expect(body.attachment.imageFiles[0]).toHaveProperty('id', file.id)
     })
 
     it('returns 403 with client role header', async () => {
         const user = await insertTestUser()
 
         const res = await app.request(
-            '/api/clients/some-client/appointments/some-apt/recommendations/some-id',
+            '/api/clients/some-client/appointments/some-apt/attachments/some-id',
             await asUser(user.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
