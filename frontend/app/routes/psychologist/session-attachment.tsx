@@ -14,7 +14,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel'
-import { getAttachmentTypeLabel, formatAppDate } from '~/utils/utils'
+import { getAttachmentTypeLabel, formatAppDate, formatAttachmentTitle } from '~/utils/utils'
 import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
@@ -130,7 +130,7 @@ export default function SessionAttachment() {
             <div className="flex items-center gap-4">
                 <AttachmentIcon type={attachment.type} size="h-8 w-8" />
                 <div>
-                    <h1 className="text-2xl font-bold">{attachment.name}</h1>
+                    <h1 className="text-2xl font-bold">{formatAttachmentTitle(attachment)}</h1>
                     <p className="text-sm text-muted-foreground">
                         {getAttachmentTypeLabel(attachment.type)} &middot;{' '}
                         {formatAppDate(attachment.createdAt)}

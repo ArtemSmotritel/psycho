@@ -14,6 +14,7 @@ import type { AttachmentWithAppointment } from '~/models/attachment'
 import { impressionService } from '~/services/impression.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { formatAttachmentTitle } from '~/utils/utils'
 import { format } from 'date-fns'
 
 type ClientProgressProps = {
@@ -73,16 +74,25 @@ function AppointmentInTimeline({
                     <CardContent className="space-y-4">
                         <div>
                             <h3 className="mb-2 font-medium">Impressions</h3>
-                            <ul className="space-y-1">
+                            <ul className="space-y-2">
                                 {impressions.map((impression) => (
-                                    <li
-                                        key={impression.id}
-                                        className="flex items-start gap-2 text-sm"
-                                    >
-                                        <span className="text-muted-foreground">
-                                            {format(new Date(impression.createdAt), 'PPP HH:mm')}
-                                        </span>
-                                        <span>{impression.text}</span>
+                                    <li key={impression.id} className="text-sm space-y-0.5">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-xs text-muted-foreground">
+                                                {format(
+                                                    new Date(impression.createdAt),
+                                                    'PPP HH:mm',
+                                                )}
+                                            </span>
+                                            <span className="font-medium">
+                                                {formatAttachmentTitle(impression)}
+                                            </span>
+                                        </div>
+                                        {impression.text && (
+                                            <p className="text-muted-foreground whitespace-pre-wrap">
+                                                {impression.text}
+                                            </p>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

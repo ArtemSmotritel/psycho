@@ -72,6 +72,35 @@ export function RecommendationCard({
                     <p className="text-sm text-muted-foreground">{recommendation.text}</p>
                 )}
 
+                {recommendation.imageFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                        {recommendation.imageFiles.map((file) => (
+                            <a
+                                key={file.id}
+                                href={file.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-20 h-20"
+                            >
+                                <img
+                                    src={file.url}
+                                    alt={file.originalName}
+                                    className="w-full h-full object-cover rounded border"
+                                />
+                            </a>
+                        ))}
+                    </div>
+                )}
+                {recommendation.audioFiles.length > 0 && (
+                    <div className="space-y-1">
+                        {recommendation.audioFiles.map((file) => (
+                            <audio key={file.id} controls className="w-full">
+                                <source src={file.url} type={file.mimeType} />
+                            </audio>
+                        ))}
+                    </div>
+                )}
+
                 {role === 'client' && (
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -103,6 +132,9 @@ export function RecommendationCard({
                                         onChange={(e) => setCommentText(e.target.value)}
                                         disabled={isSubmitting}
                                     />
+                                    <p className="text-xs text-muted-foreground">
+                                        This will be sent and cannot be edited.
+                                    </p>
                                     <Button
                                         size="sm"
                                         onClick={handleSubmitComment}
@@ -112,6 +144,15 @@ export function RecommendationCard({
                                     </Button>
                                 </div>
                             )
+                        )}
+
+                        {reaction?.psychologistReply && (
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    Psychologist&apos;s reply:
+                                </p>
+                                <p className="text-sm">{reaction.psychologistReply}</p>
+                            </div>
                         )}
                     </div>
                 )}
@@ -150,6 +191,9 @@ export function RecommendationCard({
                                         onChange={(e) => setReplyText(e.target.value)}
                                         disabled={isSubmitting}
                                     />
+                                    <p className="text-xs text-muted-foreground">
+                                        This will be sent and cannot be edited.
+                                    </p>
                                     <Button
                                         size="sm"
                                         onClick={handleSubmitReply}

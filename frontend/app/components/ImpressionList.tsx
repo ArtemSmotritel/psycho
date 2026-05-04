@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import type { Attachment } from '~/models/attachment'
+import { formatAttachmentTitle } from '~/utils/utils'
 
 interface ImpressionListProps {
     impressions: Attachment[]
@@ -27,7 +28,16 @@ export function ImpressionList({ impressions, isLoading, clientId }: ImpressionL
             {impressions.map((impression) => (
                 <div key={impression.id} className="border rounded-md p-3 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm">{impression.text}</p>
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium">
+                                {formatAttachmentTitle(impression)}
+                            </p>
+                            {impression.text && (
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {impression.text}
+                                </p>
+                            )}
+                        </div>
                         {clientId && (
                             <div className="flex items-center gap-1 shrink-0">
                                 <Link

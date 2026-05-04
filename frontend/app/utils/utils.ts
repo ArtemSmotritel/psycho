@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import type { Attachment } from '~/models/attachment'
 
 export function formatAppDate(date: Date | string) {
     if (typeof date === 'string') {
@@ -15,10 +16,17 @@ export const getAttachmentTypeLabel = (type: string) => {
         case 'recommendation':
             return 'Recommendation'
         case 'impression':
-            return 'Client Impression'
+            return 'Impression'
         default:
             return type
     }
+}
+
+export function formatAttachmentTitle(
+    attachment: Pick<Attachment, 'name' | 'type' | 'createdAt'>,
+): string {
+    if (attachment.name) return attachment.name
+    return `${getAttachmentTypeLabel(attachment.type)} — ${formatAppDate(attachment.createdAt)}`
 }
 
 export const getFileUrl = (fileOrUrl: File | string) => {
