@@ -14,11 +14,25 @@ vi.mock('~/services/attachment.service', () => ({
     },
 }))
 
+vi.mock('~/services/file.service', () => ({
+    fileService: {
+        upload: vi.fn(),
+    },
+}))
+
 vi.mock('~/hooks/useRoleGuard', () => ({
     useRoleGuard: () => ({ userRole: 'client' }),
 }))
 
-// Controlled mock for useCurrentClientAppointment
+vi.mock('react-media-recorder', () => ({
+    useReactMediaRecorder: () => ({
+        status: 'idle',
+        startRecording: vi.fn(),
+        stopRecording: vi.fn(),
+        clearBlobUrl: vi.fn(),
+    }),
+}))
+
 let mockUseCurrentClientAppointment: () => { appointment: any; isLoading: boolean }
 
 vi.mock('~/hooks/useCurrentClientAppointment', () => ({
@@ -56,7 +70,7 @@ const sampleImpression = {
     appointmentId: 'apt-001',
     authorId: 'client-456',
     type: 'impression' as const,
-    name: null,
+    name: 'How I felt',
     text: 'Felt very relaxed.',
     imageFiles: [],
     audioFiles: [],
@@ -124,21 +138,31 @@ describe('ClientAppointmentDetail — past appointment with impressions', () => 
             isLoading: false,
         })
         mockListForClient.mockResolvedValue({ data: { impressions: [], recommendations: [] } })
-        const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New reflection' }
+        const newImpression = {
+            ...sampleImpression,
+            id: 'imp-002',
+            name: 'New name',
+            text: 'New reflection',
+        }
         mockCreateForClient.mockResolvedValue({ data: { attachment: newImpression } })
 
         renderDetail()
 
         await waitFor(() => {
-            expect(screen.getByText(/my impressions/i)).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /add impression/i })).toBeInTheDocument()
         })
 
-        await user.type(screen.getByRole('textbox'), 'New reflection')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByRole('button', { name: /add impression/i }))
+
+        const nameInput = await screen.findByLabelText(/^name$/i)
+        await user.type(nameInput, 'New name')
+        await user.type(screen.getByLabelText(/text \(optional\)/i), 'New reflection')
+        await user.click(screen.getByRole('button', { name: /create impression/i }))
 
         await waitFor(() => {
             expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
                 type: 'impression',
+                name: 'New name',
                 text: 'New reflection',
                 imageFileIds: [],
                 audioFileIds: [],

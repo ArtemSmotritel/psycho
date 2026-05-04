@@ -22,7 +22,12 @@ import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
-import { ImpressionForm } from '~/components/ImpressionForm'
+import {
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+    isAttachmentFile,
+} from '~/components/AttachmentForm'
+import { fileService } from '~/services/file.service'
 import { ImpressionList } from '~/components/ImpressionList'
 import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
@@ -67,7 +72,40 @@ export default function LiveAppointment() {
     )
     const [impressions, setImpressions] = useState<Attachment[]>([])
     const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
-    const [isSubmittingImpression, setIsSubmittingImpression] = useState(false)
+
+    const handleCreateImpression = async (values: AttachmentFormSubmitValues) => {
+        if (!appointmentId) return
+        try {
+            const audioFileIds: string[] = []
+            for (const f of values.voiceFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    audioFileIds.push(res.data.id)
+                }
+            }
+
+            const imageFileIds: string[] = []
+            for (const f of values.imageFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    imageFileIds.push(res.data.id)
+                } else if (isAttachmentFile(f)) {
+                    imageFileIds.push(f.id)
+                }
+            }
+
+            const res = await attachmentService.createForClient(appointmentId, {
+                type: 'impression',
+                name: values.name,
+                text: values.text,
+                imageFileIds,
+                audioFileIds,
+            })
+            setImpressions((prev) => [...prev, res.data.attachment])
+        } catch {
+            toast.error('Failed to submit impression. Please try again.')
+        }
+    }
 
     // Initial fetch
     useEffect(() => {
@@ -196,30 +234,11 @@ export default function LiveAppointment() {
                             </SheetDescription>
                         </SheetHeader>
                         <div className="px-4 space-y-4">
-                            <ImpressionForm
-                                isSubmitting={isSubmittingImpression}
-                                onSubmit={async (text) => {
-                                    if (!appointmentId) return
-                                    setIsSubmittingImpression(true)
-                                    try {
-                                        const res = await attachmentService.createForClient(
-                                            appointmentId,
-                                            {
-                                                type: 'impression',
-                                                text,
-                                                imageFileIds: [],
-                                                audioFileIds: [],
-                                            },
-                                        )
-                                        setImpressions((prev) => [...prev, res.data.attachment])
-                                    } catch {
-                                        toast.error(
-                                            'Failed to submit impression. Please try again.',
-                                        )
-                                    } finally {
-                                        setIsSubmittingImpression(false)
-                                    }
-                                }}
+                            <AttachmentForm
+                                type="impression"
+                                mode="create"
+                                trigger={<Button size="sm">Add Impression</Button>}
+                                onSubmit={handleCreateImpression}
                             />
                             <ImpressionList
                                 impressions={impressions}

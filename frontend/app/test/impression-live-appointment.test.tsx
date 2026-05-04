@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
@@ -19,6 +19,12 @@ vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForClient: (...args: any[]) => mockListForClient(...args),
         createForClient: (...args: any[]) => mockCreateForClient(...args),
+    },
+}))
+
+vi.mock('~/services/file.service', () => ({
+    fileService: {
+        upload: vi.fn(),
     },
 }))
 
@@ -48,6 +54,7 @@ vi.mock('~/hooks/useWhiteboardSync', () => ({
     }),
 }))
 
+// Sheet renders inline so the impressions panel is visible without clicking the panel toggle.
 vi.mock('~/components/ui/sheet', () => ({
     Sheet: ({ children }: any) => <div>{children}</div>,
     SheetTrigger: ({ children }: any) => <div>{children}</div>,
@@ -65,13 +72,13 @@ vi.mock('~/components/PageContainer', () => ({
     PageContainer: ({ children }: any) => <div>{children}</div>,
 }))
 
-vi.mock('~/components/ui/dialog', () => ({
-    Dialog: ({ children, open }: any) => (open ? <div data-testid="dialog">{children}</div> : null),
-    DialogContent: ({ children }: any) => <div>{children}</div>,
-    DialogHeader: ({ children }: any) => <div>{children}</div>,
-    DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-    DialogDescription: ({ children }: any) => <p>{children}</p>,
-    DialogFooter: ({ children }: any) => <div>{children}</div>,
+vi.mock('react-media-recorder', () => ({
+    useReactMediaRecorder: () => ({
+        status: 'idle',
+        startRecording: vi.fn(),
+        stopRecording: vi.fn(),
+        clearBlobUrl: vi.fn(),
+    }),
 }))
 
 vi.mock('sonner', () => ({
@@ -103,7 +110,7 @@ const sampleImpression = {
     appointmentId: 'apt-001',
     authorId: 'client-456',
     type: 'impression' as const,
-    name: null,
+    name: 'How I felt',
     text: 'Felt good today.',
     imageFiles: [],
     audioFiles: [],
@@ -163,25 +170,43 @@ describe('LiveAppointment — impressions section', () => {
         })
     })
 
-    it('appends new impression to list after successful submit', async () => {
+    it('appends new impression to list after successful submit via AttachmentForm', async () => {
         const user = userEvent.setup()
         mockGetClientAppointmentById.mockResolvedValue({
             data: { appointment: activeAppointment },
         })
         mockListForClient.mockResolvedValue({ data: { impressions: [] } })
 
-        const newImpression = { ...sampleImpression, id: 'imp-002', text: 'New impression text' }
+        const newImpression = {
+            ...sampleImpression,
+            id: 'imp-002',
+            name: 'New thoughts',
+            text: 'New impression text',
+        }
         mockCreateForClient.mockResolvedValue({ data: { attachment: newImpression } })
 
         renderLiveAppointment()
 
         await waitFor(() => {
-            expect(screen.getByText(/my impressions/i)).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /add impression/i })).toBeInTheDocument()
         })
 
-        await user.type(screen.getByRole('textbox'), 'New impression text')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByRole('button', { name: /add impression/i }))
 
+        const nameInput = await screen.findByLabelText(/^name$/i)
+        await user.type(nameInput, 'New thoughts')
+        await user.type(screen.getByLabelText(/text \(optional\)/i), 'New impression text')
+        await user.click(screen.getByRole('button', { name: /create impression/i }))
+
+        await waitFor(() => {
+            expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
+                type: 'impression',
+                name: 'New thoughts',
+                text: 'New impression text',
+                imageFileIds: [],
+                audioFileIds: [],
+            })
+        })
         await waitFor(() => {
             expect(screen.getByText('New impression text')).toBeInTheDocument()
         })
@@ -198,11 +223,14 @@ describe('LiveAppointment — impressions section', () => {
         renderLiveAppointment()
 
         await waitFor(() => {
-            expect(screen.getByText(/my impressions/i)).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /add impression/i })).toBeInTheDocument()
         })
 
-        await user.type(screen.getByRole('textbox'), 'Some text')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByRole('button', { name: /add impression/i }))
+
+        const nameInput = await screen.findByLabelText(/^name$/i)
+        await user.type(nameInput, 'Some name')
+        await user.click(screen.getByRole('button', { name: /create impression/i }))
 
         await waitFor(() => {
             expect(vi.mocked(toast.error)).toHaveBeenCalled()

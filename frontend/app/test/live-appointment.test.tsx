@@ -75,6 +75,22 @@ vi.mock('~/components/ui/dialog', () => ({
     DialogTitle: ({ children }: any) => <h2>{children}</h2>,
     DialogDescription: ({ children }: any) => <p>{children}</p>,
     DialogFooter: ({ children }: any) => <div>{children}</div>,
+    DialogTrigger: ({ children }: any) => <>{children}</>,
+}))
+
+vi.mock('~/services/file.service', () => ({
+    fileService: {
+        upload: vi.fn(),
+    },
+}))
+
+vi.mock('react-media-recorder', () => ({
+    useReactMediaRecorder: () => ({
+        status: 'idle',
+        startRecording: vi.fn(),
+        stopRecording: vi.fn(),
+        clearBlobUrl: vi.fn(),
+    }),
 }))
 
 import LiveAppointment from '~/routes/client/live-appointment'
@@ -250,21 +266,22 @@ describe('LiveAppointment page', () => {
             expect(screen.getByText('Session Ended')).toBeInTheDocument()
         })
 
-        it('"Skip for now" button in modal calls navigate without submitting', async () => {
+        it('Cancel button in modal calls navigate (skip flow) without submitting', async () => {
             await triggerPollAndModal()
 
             expect(screen.getByText('Session Ended')).toBeInTheDocument()
 
-            const skipBtn = screen.getByRole('button', { name: /skip for now/i })
+            const cancelBtn = screen.getByRole('button', { name: /cancel/i })
             await act(async () => {
-                skipBtn.click()
+                fireEvent.click(cancelBtn)
+                await Promise.resolve()
             })
 
             expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
             expect(mockCreateForClient).not.toHaveBeenCalled()
         })
 
-        it('submitting impression from modal calls submit then navigates to summary', async () => {
+        it('submitting impression from modal calls createForClient with name+text and navigates', async () => {
             mockCreateForClient.mockResolvedValue({
                 data: {
                     attachment: {
@@ -272,7 +289,7 @@ describe('LiveAppointment page', () => {
                         appointmentId: 'apt-001',
                         authorId: 'client-456',
                         type: 'impression',
-                        name: null,
+                        name: 'How I felt',
                         text: 'Felt good today.',
                         imageFiles: [],
                         audioFiles: [],
@@ -284,25 +301,30 @@ describe('LiveAppointment page', () => {
 
             await triggerPollAndModal()
 
-            const textarea = screen.getByPlaceholderText(/write your impression/i)
-            fireEvent.change(textarea, { target: { value: 'Felt good today.' } })
+            // Switch back to real timers so react-hook-form's validation / Promise chain resolves
+            vi.useRealTimers()
 
-            // The post-session modal renders an ImpressionForm; its Submit button is the only
-            // one visible (the Sheet is closed), so a simple role query is unambiguous here.
-            const submitBtn = screen.getByRole('button', { name: /^submit$/i })
-            await act(async () => {
-                fireEvent.click(submitBtn)
-                await Promise.resolve()
-                await Promise.resolve()
-            })
+            const nameInput = screen.getByLabelText(/^name$/i) as HTMLInputElement
+            fireEvent.change(nameInput, { target: { value: 'How I felt' } })
 
-            expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
-                type: 'impression',
-                text: 'Felt good today.',
-                imageFileIds: [],
-                audioFileIds: [],
+            const textArea = screen.getByLabelText(/text \(optional\)/i) as HTMLTextAreaElement
+            fireEvent.change(textArea, { target: { value: 'Felt good today.' } })
+
+            const submitBtn = screen.getByRole('button', { name: /create impression/i })
+            fireEvent.click(submitBtn)
+
+            await waitFor(() => {
+                expect(mockCreateForClient).toHaveBeenCalledWith('apt-001', {
+                    type: 'impression',
+                    name: 'How I felt',
+                    text: 'Felt good today.',
+                    imageFileIds: [],
+                    audioFileIds: [],
+                })
             })
-            expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
+            await waitFor(() => {
+                expect(mockNavigate).toHaveBeenCalledWith('/client/appointments/apt-001')
+            })
         })
 
         it('does not auto-dismiss the modal after 5 seconds', async () => {

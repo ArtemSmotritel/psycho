@@ -4,16 +4,22 @@ import { useEffect, useState } from 'react'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
+import { Button } from '~/components/ui/button'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService } from '~/services/attachment.service'
+import { fileService } from '~/services/file.service'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
-import { ImpressionForm } from '~/components/ImpressionForm'
+import {
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+    isAttachmentFile,
+} from '~/components/AttachmentForm'
 import { toast } from 'sonner'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 
@@ -25,9 +31,42 @@ export default function ClientAppointmentDetail() {
 
     const [impressions, setImpressions] = useState<Attachment[]>([])
     const [isLoadingImpressions, setIsLoadingImpressions] = useState(false)
-    const [isSubmittingImpression, setIsSubmittingImpression] = useState(false)
     const [recommendations, setRecommendations] = useState<AttachmentWithReaction[]>([])
     const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
+
+    const handleCreateImpression = async (values: AttachmentFormSubmitValues) => {
+        if (!appointmentId) return
+        try {
+            const audioFileIds: string[] = []
+            for (const f of values.voiceFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    audioFileIds.push(res.data.id)
+                }
+            }
+
+            const imageFileIds: string[] = []
+            for (const f of values.imageFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    imageFileIds.push(res.data.id)
+                } else if (isAttachmentFile(f)) {
+                    imageFileIds.push(f.id)
+                }
+            }
+
+            const res = await attachmentService.createForClient(appointmentId, {
+                type: 'impression',
+                name: values.name,
+                text: values.text,
+                imageFileIds,
+                audioFileIds,
+            })
+            setImpressions((prev) => [...prev, res.data.attachment])
+        } catch {
+            toast.error('Failed to submit impression. Please try again.')
+        }
+    }
 
     useEffect(() => {
         if (
@@ -112,28 +151,16 @@ export default function ClientAppointmentDetail() {
                 </div>
 
                 <div className="mt-6 space-y-4">
-                    <h3 className="text-lg font-semibold">My Impressions</h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">My Impressions</h3>
+                        <AttachmentForm
+                            type="impression"
+                            mode="create"
+                            trigger={<Button size="sm">Add Impression</Button>}
+                            onSubmit={handleCreateImpression}
+                        />
+                    </div>
                     <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
-                    <ImpressionForm
-                        isSubmitting={isSubmittingImpression}
-                        onSubmit={async (text) => {
-                            if (!appointmentId) return
-                            setIsSubmittingImpression(true)
-                            try {
-                                const res = await attachmentService.createForClient(appointmentId, {
-                                    type: 'impression',
-                                    text,
-                                    imageFileIds: [],
-                                    audioFileIds: [],
-                                })
-                                setImpressions((prev) => [...prev, res.data.attachment])
-                            } catch {
-                                toast.error('Failed to submit impression. Please try again.')
-                            } finally {
-                                setIsSubmittingImpression(false)
-                            }
-                        }}
-                    />
                 </div>
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Recommendations</h3>

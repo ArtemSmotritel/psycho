@@ -44,6 +44,8 @@ export interface AttachmentFormProps {
     showLibraryPicker?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    title?: React.ReactNode
+    description?: React.ReactNode
 }
 
 export function isAttachmentFile(file: AttachmentFileInput): file is AttachmentFile {

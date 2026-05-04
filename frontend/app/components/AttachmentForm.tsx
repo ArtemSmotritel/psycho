@@ -46,6 +46,8 @@ export function AttachmentForm({
     showLibraryPicker = false,
     open: controlledOpen,
     onOpenChange,
+    title,
+    description,
 }: AttachmentFormProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
@@ -118,12 +120,14 @@ export function AttachmentForm({
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'edit' ? 'Edit' : 'Create'} {getAttachmentTypeLabel(type)}
+                        {title ??
+                            `${mode === 'edit' ? 'Edit' : 'Create'} ${getAttachmentTypeLabel(type)}`}
                     </DialogTitle>
                     <DialogDescription>
-                        {mode === 'edit'
-                            ? `Edit the name and text of this ${type.toLowerCase()}.`
-                            : `Add a new ${type.toLowerCase()} with optional text, voice recordings, and images.`}
+                        {description ??
+                            (mode === 'edit'
+                                ? `Edit the name and text of this ${type.toLowerCase()}.`
+                                : `Add a new ${type.toLowerCase()} with optional text, voice recordings, and images.`)}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>

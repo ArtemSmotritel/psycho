@@ -47,7 +47,7 @@ export type CreateAttachmentPsychoDTO =
 
 export interface CreateAttachmentClientDTO {
     type: 'impression'
-    name?: string
+    name: string
     text?: string
     imageFileIds: string[]
     audioFileIds: string[]

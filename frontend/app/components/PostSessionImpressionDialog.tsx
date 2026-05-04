@@ -1,16 +1,12 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { toast } from 'sonner'
-import { Button } from '~/components/ui/button'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '~/components/ui/dialog'
-import { ImpressionForm } from '~/components/ImpressionForm'
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+    isAttachmentFile,
+} from '~/components/AttachmentForm'
 import { attachmentService } from '~/services/attachment.service'
+import { fileService } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
 
 interface PostSessionImpressionDialogProps {
@@ -26,43 +22,59 @@ export function PostSessionImpressionDialog({
     onSubmitted,
     onSkip,
 }: PostSessionImpressionDialogProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const submittedRef = useRef(false)
 
-    const handleSubmit = async (text: string) => {
-        setIsSubmitting(true)
+    const handleSubmit = async (values: AttachmentFormSubmitValues) => {
+        submittedRef.current = true
         try {
+            const audioFileIds: string[] = []
+            for (const f of values.voiceFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    audioFileIds.push(res.data.id)
+                }
+            }
+
+            const imageFileIds: string[] = []
+            for (const f of values.imageFiles) {
+                if (f instanceof File) {
+                    const res = await fileService.upload(f)
+                    imageFileIds.push(res.data.id)
+                } else if (isAttachmentFile(f)) {
+                    imageFileIds.push(f.id)
+                }
+            }
+
             const res = await attachmentService.createForClient(appointmentId, {
                 type: 'impression',
-                text,
-                imageFileIds: [],
-                audioFileIds: [],
+                name: values.name,
+                text: values.text,
+                imageFileIds,
+                audioFileIds,
             })
             toast.success('Impression saved.')
             onSubmitted(res.data.attachment)
         } catch {
+            submittedRef.current = false
             toast.error('Failed to submit impression. Please try again.')
-        } finally {
-            setIsSubmitting(false)
+        }
+    }
+
+    const handleOpenChange = (next: boolean) => {
+        if (!next && !submittedRef.current) {
+            onSkip()
         }
     }
 
     return (
-        <Dialog open={open} onOpenChange={() => {}}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Session Ended</DialogTitle>
-                    <DialogDescription>
-                        Your psychologist has ended the session. How did it feel? Share an
-                        impression now or add one later from the summary.
-                    </DialogDescription>
-                </DialogHeader>
-                <ImpressionForm isSubmitting={isSubmitting} onSubmit={handleSubmit} />
-                <DialogFooter>
-                    <Button variant="ghost" onClick={onSkip}>
-                        Skip for now
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <AttachmentForm
+            type="impression"
+            mode="create"
+            open={open}
+            onOpenChange={handleOpenChange}
+            onSubmit={handleSubmit}
+            title="Session Ended"
+            description="Your psychologist has ended the session. How did it feel? Share an impression now or skip and add one later from the summary."
+        />
     )
 }

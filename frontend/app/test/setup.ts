@@ -20,6 +20,30 @@ global.Worker = class Worker {
     }
 } as unknown as typeof Worker
 
+// jsdom does not implement MediaRecorder — stub it so react-media-recorder's mount-time
+// `if (!window.MediaRecorder) throw new Error('Unsupported Browser')` check passes
+class MediaRecorderStub {
+    static isTypeSupported() {
+        return true
+    }
+    state = 'inactive'
+    ondataavailable: ((e: { data: Blob }) => void) | null = null
+    onstart: (() => void) | null = null
+    onstop: (() => void) | null = null
+    onerror: (() => void) | null = null
+    start() {}
+    stop() {}
+    pause() {}
+    resume() {}
+    addEventListener() {}
+    removeEventListener() {}
+    dispatchEvent() {
+        return false
+    }
+}
+;(global as any).MediaRecorder = MediaRecorderStub
+;(window as any).MediaRecorder = MediaRecorderStub
+
 // jsdom does not implement window.matchMedia — stub it so SidebarProvider/useIsMobile works
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
