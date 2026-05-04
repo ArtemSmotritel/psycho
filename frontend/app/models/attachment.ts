@@ -98,7 +98,3 @@ export interface ClientAttachmentList {
     impressions: AttachmentWithCompletion[]
     recommendations: AttachmentWithReaction[]
 }
-
-export interface CompleteImpressionDTO {
-    response: string
-}

@@ -1,14 +1,12 @@
-import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight, CheckCircle } from 'lucide-react'
+import { Edit, Mic, Image as ImageIcon, Trash2, User, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmAction } from '@/components/ConfirmAction'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
 import { AttachmentIcon } from '~/utils/componentUtils'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
-import { CompleteImpressionForm } from '@/components/CompleteImpressionForm'
 import { AttachmentForm } from '@/components/AttachmentForm'
 import { EmptyMessage } from '@/components/EmptyMessage'
-import { useState } from 'react'
 import {
     Carousel,
     CarouselContent,
@@ -20,7 +18,6 @@ import { getAttachmentTypeLabel, formatAppDate } from '~/utils/utils'
 import { ImagePreview } from '~/components/ImagePreview'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
-import { impressionService } from '~/services/impression.service'
 import type { AttachmentFile } from '~/models/attachment'
 
 interface ImageAttachmentsProps {
@@ -83,11 +80,10 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
     )
 }
 export default function SessionAttachment() {
-    const { attachment, completion, isLoading, refetch } = useCurrentAttachment()
+    const { attachment, isLoading, refetch } = useCurrentAttachment()
     const { clientId, appointmentId } = useParams()
     const navigate = useNavigate()
-    const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
-    const { userRole } = useRoleGuard(['psychologist', 'client'])
+    useRoleGuard(['psychologist'])
 
     if (isLoading) return <p>Loading...</p>
 
@@ -95,8 +91,8 @@ export default function SessionAttachment() {
         return <div>Attachment not found</div>
     }
 
-    const canEditAttachment = userRole === 'psychologist' && attachment.type !== 'impression'
-    const canDeleteAttachment = userRole === 'psychologist' && attachment.type !== 'impression'
+    const canEditAttachment = attachment.type !== 'impression'
+    const canDeleteAttachment = attachment.type !== 'impression'
 
     const handleDeleteAttachment = async () => {
         try {
@@ -106,12 +102,6 @@ export default function SessionAttachment() {
         } catch (err) {
             toast.error(getDeleteAttachmentErrorMessage(err))
         }
-    }
-
-    const handleComplete = async (values: { response: string }) => {
-        await impressionService.complete(appointmentId!, attachment!.id, values)
-        toast.success('Impression completed.')
-        refetch()
     }
 
     const handleEdit = async (values: {
@@ -166,23 +156,12 @@ export default function SessionAttachment() {
                 )}
 
                 <Link to={`/psycho/clients/${clientId}`}>
-                    <ActionItem
-                        icon={<User className="h-6" />}
-                        label={`Open ${userRole === 'client' ? 'My' : 'Client'} Profile`}
-                    />
+                    <ActionItem icon={<User className="h-6" />} label="Open Client Profile" />
                 </Link>
 
                 <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
-
-                {attachment.type === 'impression' && userRole === 'client' && !completion && (
-                    <ActionItem
-                        icon={<CheckCircle className="h-6" />}
-                        label="Complete"
-                        onClick={() => setIsCompleteDialogOpen(true)}
-                    />
-                )}
 
                 {canDeleteAttachment && (
                     <ConfirmAction
@@ -212,18 +191,6 @@ export default function SessionAttachment() {
                     </div>
                 )}
 
-                {completion && (
-                    <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Client Response</h3>
-                        <div className="rounded-lg border bg-muted/50 p-4">
-                            <p className="whitespace-pre-wrap">{completion.clientResponse}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                Completed on {formatAppDate(completion.createdAt)}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
                         <Mic className="h-5 w-5" />
@@ -242,12 +209,6 @@ export default function SessionAttachment() {
                     </div>
                 </div>
             </div>
-
-            <CompleteImpressionForm
-                isOpen={isCompleteDialogOpen}
-                onClose={() => setIsCompleteDialogOpen(false)}
-                onSubmit={handleComplete}
-            />
         </>
     )
 }

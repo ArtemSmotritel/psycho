@@ -6,7 +6,6 @@ import type {
     ClientAttachmentList,
     CreateAttachmentClientDTO,
     CreateAttachmentPsychoDTO,
-    ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
     UpdateAttachmentDTO,
@@ -15,7 +14,6 @@ import type {
 export interface AttachmentDetailResponse {
     attachment: Attachment
     reaction?: RecommendationReaction | null
-    completion?: ImpressionCompletion | null
 }
 
 export const attachmentService = {
