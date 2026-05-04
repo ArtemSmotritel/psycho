@@ -6,6 +6,7 @@ import type {
     ClientAttachmentList,
     CreateAttachmentClientDTO,
     CreateAttachmentPsychoDTO,
+    ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
     UpdateAttachmentDTO,
@@ -14,6 +15,12 @@ import type {
 export interface AttachmentDetailResponse {
     attachment: Attachment
     reaction?: RecommendationReaction | null
+}
+
+export interface ClientAttachmentDetailResponse {
+    attachment: Attachment
+    reaction?: RecommendationReaction | null
+    completion?: ImpressionCompletion | null
 }
 
 export const attachmentService = {
@@ -60,6 +67,14 @@ export const attachmentService = {
         api.delete(
             `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
         ),
+
+    getByIdForClient: (appointmentId: string, attachmentId: string) =>
+        api.get<ClientAttachmentDetailResponse>(
+            `/client/appointments/${appointmentId}/attachments/${attachmentId}`,
+        ),
+
+    deleteForClient: (appointmentId: string, attachmentId: string) =>
+        api.delete(`/client/appointments/${appointmentId}/attachments/${attachmentId}`),
 }
 
 export function getDeleteAttachmentErrorMessage(err: unknown): string {

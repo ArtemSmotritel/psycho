@@ -8,9 +8,15 @@ interface ImpressionListProps {
     impressions: Attachment[]
     isLoading: boolean
     clientId?: string
+    clientLinks?: boolean
 }
 
-export function ImpressionList({ impressions, isLoading, clientId }: ImpressionListProps) {
+export function ImpressionList({
+    impressions,
+    isLoading,
+    clientId,
+    clientLinks,
+}: ImpressionListProps) {
     if (isLoading) {
         return (
             <div data-testid="loading-spinner" className="flex items-center justify-center py-4">
@@ -42,6 +48,17 @@ export function ImpressionList({ impressions, isLoading, clientId }: ImpressionL
                             <div className="flex items-center gap-1 shrink-0">
                                 <Link
                                     to={`/psycho/clients/${clientId}/appointments/${impression.appointmentId}/attachment/${impression.id}`}
+                                >
+                                    <Button variant="ghost" size="sm">
+                                        Open
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                        {clientLinks && (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Link
+                                    to={`/client/appointments/${impression.appointmentId}/attachment/${impression.id}`}
                                 >
                                     <Button variant="ghost" size="sm">
                                         Open

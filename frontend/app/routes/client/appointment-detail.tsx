@@ -160,7 +160,11 @@ export default function ClientAppointmentDetail() {
                             onSubmit={handleCreateImpression}
                         />
                     </div>
-                    <ImpressionList impressions={impressions} isLoading={isLoadingImpressions} />
+                    <ImpressionList
+                        impressions={impressions}
+                        isLoading={isLoadingImpressions}
+                        clientLinks
+                    />
                 </div>
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Recommendations</h3>
@@ -180,6 +184,7 @@ export default function ClientAppointmentDetail() {
                                     key={recommendation.id}
                                     recommendation={recommendation}
                                     role="client"
+                                    detailHref={`/client/appointments/${appointmentId}/attachment/${recommendation.id}`}
                                     onToggleDone={async (id, done) => {
                                         if (!appointmentId) return
                                         try {

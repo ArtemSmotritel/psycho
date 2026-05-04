@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Link } from 'react-router'
 import { Card, CardContent } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Textarea } from '~/components/ui/textarea'
@@ -9,6 +10,7 @@ import type { AttachmentWithReaction } from '~/models/attachment'
 interface RecommendationCardProps {
     recommendation: AttachmentWithReaction
     role: 'client' | 'psychologist'
+    detailHref?: string
     onToggleDone?: (id: string, done: boolean) => Promise<void>
     onSubmitComment?: (id: string, comment: string) => Promise<void>
     onSubmitReply?: (id: string, reply: string) => Promise<void>
@@ -17,6 +19,7 @@ interface RecommendationCardProps {
 export function RecommendationCard({
     recommendation,
     role,
+    detailHref,
     onToggleDone,
     onSubmitComment,
     onSubmitReply,
@@ -67,7 +70,16 @@ export function RecommendationCard({
     return (
         <Card>
             <CardContent className="space-y-3 pt-6">
-                <p className="font-bold">{recommendation.name}</p>
+                <div className="flex items-start justify-between gap-2">
+                    <p className="font-bold">{recommendation.name}</p>
+                    {detailHref && (
+                        <Link to={detailHref} className="shrink-0">
+                            <Button variant="ghost" size="sm">
+                                Open
+                            </Button>
+                        </Link>
+                    )}
+                </div>
                 {recommendation.text && (
                     <p className="text-sm text-muted-foreground">{recommendation.text}</p>
                 )}

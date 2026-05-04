@@ -243,6 +243,7 @@ export default function LiveAppointment() {
                             <ImpressionList
                                 impressions={impressions}
                                 isLoading={isLoadingImpressions}
+                                clientLinks
                             />
                         </div>
                     </SheetContent>
