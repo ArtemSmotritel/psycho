@@ -21,7 +21,7 @@ export const createAttachmentPsychoSchema = z.discriminatedUnion('type', [
 
 export const createAttachmentClientSchema = z.object({
     type: z.literal('impression'),
-    name: z.string().min(1).optional(),
+    name: z.string().min(1),
     text: z.string().optional(),
     imageFileIds: fileArraySchema,
     audioFileIds: fileArraySchema,

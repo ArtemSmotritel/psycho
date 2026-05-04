@@ -85,7 +85,7 @@ async function createForPsychoView(input: {
 async function createForClientView(input: {
     clientId: string
     appointmentId: string
-    name?: string
+    name: string
     text?: string
     imageFileIds: string[]
     audioFileIds: string[]
@@ -95,16 +95,11 @@ async function createForClientView(input: {
         throw new BadRequestError('Appointment has not started yet.', 'AppointmentNotStarted')
     }
     const text = input.text?.trim() || null
-    if (!text && input.imageFileIds.length === 0 && input.audioFileIds.length === 0) {
-        throw new BadRequestError(
-            'At least one of text, imageFileIds, or audioFileIds is required.',
-        )
-    }
     return create({
         appointmentId: input.appointmentId,
         authorId: input.clientId,
         type: 'impression',
-        name: input.name ?? null,
+        name: input.name,
         text,
         imageFileIds: input.imageFileIds,
         audioFileIds: input.audioFileIds,

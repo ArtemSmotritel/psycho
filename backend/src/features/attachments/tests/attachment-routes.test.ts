@@ -1411,41 +1411,7 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
 })
 
 describe('POST /api/client/appointments/:appointmentId/attachments', () => {
-    it('creates an impression on a past appointment with text', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
-        await ClientsService.linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: pastDate(7),
-            endTime: pastDate(7, 11),
-        })
-        await startAppointment(apt.id)
-        await endAppointment(apt.id)
-
-        const res = await app.request(
-            `/api/client/appointments/${apt.id}/attachments`,
-            await asUser(client.id, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-                body: JSON.stringify({ type: 'impression', text: 'My reflection' }),
-            }),
-        )
-
-        expect(res.status).toBe(201)
-        const body = await jsonBody(res)
-        expect(body).toHaveProperty('attachment')
-        expect(body.attachment).toMatchObject({
-            type: 'impression',
-            text: 'My reflection',
-            name: null,
-            authorId: client.id,
-            appointmentId: apt.id,
-        })
-    })
-
-    it('accepts an optional name on impression', async () => {
+    it('creates an impression on a past appointment with name and text', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -1466,14 +1432,52 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
                 body: JSON.stringify({
                     type: 'impression',
                     name: 'Session 1',
-                    text: 'Notes',
+                    text: 'My reflection',
                 }),
             }),
         )
 
         expect(res.status).toBe(201)
         const body = await jsonBody(res)
-        expect(body.attachment.name).toBe('Session 1')
+        expect(body).toHaveProperty('attachment')
+        expect(body.attachment).toMatchObject({
+            type: 'impression',
+            text: 'My reflection',
+            name: 'Session 1',
+            authorId: client.id,
+            appointmentId: apt.id,
+        })
+    })
+
+    it('creates an impression with name only (no text/images/audio)', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression', name: 'Session 1' }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const body = await jsonBody(res)
+        expect(body.attachment).toMatchObject({
+            type: 'impression',
+            name: 'Session 1',
+            text: null,
+        })
     })
 
     it('returns 400 AppointmentNotStarted when the appointment is upcoming', async () => {
@@ -1492,7 +1496,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-                body: JSON.stringify({ type: 'impression', text: 'x' }),
+                body: JSON.stringify({ type: 'impression', name: 'X', text: 'x' }),
             }),
         )
 
@@ -1501,7 +1505,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
         expect(body).toHaveProperty('error', 'AppointmentNotStarted')
     })
 
-    it('returns 400 when text/images/audio are all empty', async () => {
+    it('returns 400 when name is missing', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com' })
         const client = await insertTestUser({ email: 'client@test.com' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -1519,7 +1523,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
             await asUser(client.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-                body: JSON.stringify({ type: 'impression' }),
+                body: JSON.stringify({ type: 'impression', text: 'something' }),
             }),
         )
 
@@ -1574,6 +1578,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
                 body: JSON.stringify({
                     type: 'impression',
+                    name: 'X',
                     text: 'x',
                     imageFileIds: [foreignFile.id],
                 }),
@@ -1602,7 +1607,7 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
             await asUser(stranger.id, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
-                body: JSON.stringify({ type: 'impression', text: 'x' }),
+                body: JSON.stringify({ type: 'impression', name: 'X', text: 'x' }),
             }),
         )
 
