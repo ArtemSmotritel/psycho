@@ -38,10 +38,12 @@ export interface AttachmentFormInitialData {
 export interface AttachmentFormProps {
     type: AttachmentType
     mode?: 'create' | 'edit'
-    trigger: React.ReactNode
+    trigger?: React.ReactNode
     initialData?: AttachmentFormInitialData
     onSubmit: (values: AttachmentFormSubmitValues) => void
     showLibraryPicker?: boolean
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function isAttachmentFile(file: AttachmentFileInput): file is AttachmentFile {

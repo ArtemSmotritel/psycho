@@ -44,8 +44,16 @@ export function AttachmentForm({
     initialData,
     onSubmit,
     showLibraryPicker = false,
+    open: controlledOpen,
+    onOpenChange,
 }: AttachmentFormProps) {
-    const [open, setOpen] = useState(false)
+    const [internalOpen, setInternalOpen] = useState(false)
+    const isControlled = controlledOpen !== undefined
+    const open = isControlled ? controlledOpen : internalOpen
+    const setOpen = (next: boolean) => {
+        if (!isControlled) setInternalOpen(next)
+        onOpenChange?.(next)
+    }
 
     const form = useForm<AttachmentFormValues>({
         resolver: zodResolver(attachmentFormSchema),
