@@ -105,7 +105,7 @@ function AppointmentInTimeline({
 const ITEMS_PER_PAGE = 3
 
 export default function ClientProgress({ params }: ClientProgressProps) {
-    useRoleGuard(['psychologist'])
+    useRoleGuard(['psycho'])
 
     const [impressions, setImpressions] = useState<AttachmentWithAppointment[]>([])
     const [isLoading, setIsLoading] = useState(true)

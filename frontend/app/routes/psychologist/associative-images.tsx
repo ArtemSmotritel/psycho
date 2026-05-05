@@ -163,7 +163,7 @@ export default function AssociativeImages() {
     }
 
     return (
-        <ProtectedRoute allowedRoles={['psychologist']}>
+        <ProtectedRoute allowedRoles={['psycho']}>
             <PageContainer>
                 <AppPageHeader text="Associative Images" />
 

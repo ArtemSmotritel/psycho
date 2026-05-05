@@ -47,7 +47,7 @@ const Excalidraw = lazy(() =>
 )
 
 export default function LiveSession() {
-    useRoleGuard(['psychologist'])
+    useRoleGuard(['psycho'])
     const { clientId, appointmentId } = useParams<{
         clientId: string
         appointmentId: string

@@ -9,7 +9,7 @@ import type { AttachmentWithReaction } from '~/models/attachment'
 
 interface RecommendationCardProps {
     recommendation: AttachmentWithReaction
-    role: 'client' | 'psychologist'
+    role: 'client' | 'psycho'
     detailHref?: string
     onToggleDone?: (id: string, done: boolean) => Promise<void>
     onSubmitComment?: (id: string, comment: string) => Promise<void>
@@ -169,7 +169,7 @@ export function RecommendationCard({
                     </div>
                 )}
 
-                {role === 'psychologist' && (
+                {role === 'psycho' && (
                     <div className="space-y-2">
                         {reaction?.done !== undefined && (
                             <p className="text-sm text-muted-foreground">

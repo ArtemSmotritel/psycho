@@ -39,7 +39,7 @@ type AppointmentsListProps = {
 const ITEMS_PER_PAGE = 4
 
 function AppointmentCard({ appointment, clientId }: AppointmentCardProps) {
-    useRoleGuard(['psychologist', 'client'])
+    useRoleGuard(['psycho', 'client'])
 
     return (
         <Link to={routes.psycho.appointment(clientId, appointment.id)} className="block">

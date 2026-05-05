@@ -121,7 +121,7 @@ describe('RecommendationCard — client role', () => {
 
 describe('RecommendationCard — psychologist role', () => {
     it('does not render a checkbox toggle', () => {
-        render(<RecommendationCard recommendation={makeRecommendation()} role="psychologist" />)
+        render(<RecommendationCard recommendation={makeRecommendation()} role="psycho" />)
         expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     })
 
@@ -135,7 +135,7 @@ describe('RecommendationCard — psychologist role', () => {
                 updatedAt: '2026-04-01T10:00:00.000Z',
             },
         })
-        render(<RecommendationCard recommendation={recommendation} role="psychologist" />)
+        render(<RecommendationCard recommendation={recommendation} role="psycho" />)
         expect(screen.getByText('Client said this')).toBeInTheDocument()
     })
 
@@ -143,7 +143,7 @@ describe('RecommendationCard — psychologist role', () => {
         render(
             <RecommendationCard
                 recommendation={makeRecommendation()}
-                role="psychologist"
+                role="psycho"
                 onSubmitReply={vi.fn()}
             />,
         )
@@ -163,7 +163,7 @@ describe('RecommendationCard — psychologist role', () => {
         render(
             <RecommendationCard
                 recommendation={recommendation}
-                role="psychologist"
+                role="psycho"
                 onSubmitReply={vi.fn()}
             />,
         )
@@ -177,7 +177,7 @@ describe('RecommendationCard — psychologist role', () => {
         render(
             <RecommendationCard
                 recommendation={makeRecommendation()}
-                role="psychologist"
+                role="psycho"
                 onSubmitReply={onSubmitReply}
             />,
         )

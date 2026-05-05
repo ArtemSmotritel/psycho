@@ -1,4 +1,4 @@
-export type UserRole = 'psychologist' | 'client' | 'roleless'
+export type UserRole = 'psycho' | 'client' | 'roleless'
 
 export interface User {
     id: string

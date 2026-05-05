@@ -2,7 +2,7 @@ import { useAuth } from '~/contexts/auth-context'
 
 interface ProtectedComponentProps {
     children: React.ReactNode
-    allowedRoles?: Array<'psychologist' | 'client'>
+    allowedRoles?: Array<'psycho' | 'client'>
 }
 
 export function ProtectedComponent({ children, allowedRoles }: ProtectedComponentProps) {
@@ -14,7 +14,7 @@ export function ProtectedComponent({ children, allowedRoles }: ProtectedComponen
         (allowedRoles &&
             user &&
             !!user.role &&
-            !allowedRoles.includes(user.role as 'psychologist' | 'client'))
+            !allowedRoles.includes(user.role as 'psycho' | 'client'))
     ) {
         return null
     }

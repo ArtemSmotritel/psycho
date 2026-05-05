@@ -11,7 +11,7 @@ vi.mock('~/services/attachment.service', () => ({
 }))
 
 vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psychologist' }),
+    useRoleGuard: () => ({ userRole: 'psycho' }),
 }))
 
 vi.mock('~/components/AppointmentNotesPanel', () => ({

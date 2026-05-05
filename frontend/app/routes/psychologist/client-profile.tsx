@@ -250,7 +250,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     onSubmit={handleEditClient}
                 />
 
-                <ProtectedComponent allowedRoles={['psychologist']}>
+                <ProtectedComponent allowedRoles={['psycho']}>
                     <SessionForm
                         mode="add"
                         trigger={

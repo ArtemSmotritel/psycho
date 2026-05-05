@@ -5,7 +5,7 @@ import { ProtectedRoute } from '../../components/ProtectedRoute'
 
 export default function PsychologistLayout() {
     return (
-        <ProtectedRoute allowedRoles={['psychologist']}>
+        <ProtectedRoute allowedRoles={['psycho']}>
             <SidebarProvider>
                 <div className="flex h-screen w-full">
                     <AppSidebar />

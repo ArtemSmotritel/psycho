@@ -29,7 +29,7 @@ import { isPostSessionPromptDone, isRecentlyEnded } from '~/utils/post-session-p
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
-    const { userRole } = useRoleGuard(['psychologist', 'client'])
+    const { userRole } = useRoleGuard(['psycho', 'client'])
     const navigate = useNavigate()
     const { clientId } = useParams<{ clientId: string }>()
     const client = useCurrentClient()
@@ -46,12 +46,7 @@ export default function Session() {
     const [showFollowUp, setShowFollowUp] = useState(false)
 
     useEffect(() => {
-        if (
-            userRole !== 'psychologist' ||
-            !appointment ||
-            appointment.status !== 'past' ||
-            !client
-        ) {
+        if (userRole !== 'psycho' || !appointment || appointment.status !== 'past' || !client) {
             return
         }
         if (!isRecentlyEnded(appointment.endedAt)) return
@@ -222,7 +217,7 @@ export default function Session() {
             )}
 
             <ActionsSection title="Actions">
-                {userRole === 'psychologist' && (
+                {userRole === 'psycho' && (
                     <ActionItem
                         icon={<Play className="h-6" />}
                         label="Start Appointment"
@@ -232,7 +227,7 @@ export default function Session() {
                     />
                 )}
 
-                {userRole === 'psychologist' && appointment.status === 'upcoming' && (
+                {userRole === 'psycho' && appointment.status === 'upcoming' && (
                     <SessionForm
                         mode="edit"
                         trigger={
@@ -301,7 +296,7 @@ export default function Session() {
                     to={routes.psycho.client(appointment.clientId)}
                 />
 
-                {userRole === 'psychologist' && appointment.status === 'upcoming' && (
+                {userRole === 'psycho' && appointment.status === 'upcoming' && (
                     <ConfirmDeleteButton
                         itemLabel="Appointment"
                         trigger={

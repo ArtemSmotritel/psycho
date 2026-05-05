@@ -14,18 +14,18 @@ export type SidebarItem = {
     title: string
     icon: typeof HomeIcon
     href: string
-    availableTo: 'client' | 'psychologist'
+    availableTo: 'client' | 'psycho'
 }
 
 export function useSidebarItems(): SidebarItem[] {
-    const { userRole } = useRoleGuard(['client', 'psychologist'])
+    const { userRole } = useRoleGuard(['client', 'psycho'])
 
     const allItems: SidebarItem[] = [
         {
             title: 'Dashboard',
             icon: HomeIcon,
             href: routes.psycho.root,
-            availableTo: 'psychologist',
+            availableTo: 'psycho',
         },
         {
             title: 'Dashboard',
@@ -37,25 +37,25 @@ export function useSidebarItems(): SidebarItem[] {
             title: 'Clients',
             icon: UsersIcon,
             href: routes.psycho.clients,
-            availableTo: 'psychologist',
+            availableTo: 'psycho',
         },
         {
             title: 'Invitations',
             icon: MailIcon,
             href: routes.psycho.invitations,
-            availableTo: 'psychologist',
+            availableTo: 'psycho',
         },
         {
             title: 'Sessions',
             icon: CalendarIcon,
             href: routes.psycho.appointments,
-            availableTo: 'psychologist',
+            availableTo: 'psycho',
         },
         {
             title: 'Associative Images',
             icon: ImageIcon,
             href: routes.psycho.associativeImages,
-            availableTo: 'psychologist',
+            availableTo: 'psycho',
         },
         {
             title: 'My Profile',

@@ -6,27 +6,25 @@ import { routes } from '~/lib/routes'
 
 interface ProtectedRouteProps {
     children: React.ReactNode
-    allowedRoles?: Array<'psychologist' | 'client'>
+    allowedRoles?: Array<'psycho' | 'client'>
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
     const { isLoading, isAuthenticated, activeRole } = useAuth()
     const location = useLocation()
 
-    const mappedRole: 'psychologist' | 'client' | null =
-        activeRole === 'psycho' ? 'psychologist' : activeRole === 'client' ? 'client' : null
-
     const isWrongRole =
         !isLoading &&
         isAuthenticated &&
         !!allowedRoles &&
-        (!mappedRole || !allowedRoles.includes(mappedRole))
+        (!activeRole || !allowedRoles.includes(activeRole))
 
     useEffect(() => {
         if (isWrongRole) {
             const expected = allowedRoles![0]
+            const expectedLabel = expected === 'psycho' ? 'psychologist' : 'client'
             toast.warning(
-                `This page is only accessible to ${expected}s. Change your role in the sidebar to access the page.`,
+                `This page is only accessible to ${expectedLabel}s. Change your role in the sidebar to access the page.`,
             )
         }
     }, [isWrongRole])

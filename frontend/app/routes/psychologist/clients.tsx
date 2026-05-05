@@ -177,7 +177,7 @@ export default function Clients() {
     })
 
     return (
-        <ProtectedRoute allowedRoles={['psychologist']}>
+        <ProtectedRoute allowedRoles={['psycho']}>
             <PageContainer>
                 <AppPageHeader text="Clients" />
 

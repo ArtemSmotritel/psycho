@@ -1,17 +1,13 @@
 import { useAuth } from '~/contexts/auth-context'
 
-export function useRoleGuard(allowedRoles: Array<'psychologist' | 'client'>) {
+export function useRoleGuard(allowedRoles: Array<'psycho' | 'client'>) {
     const { user, isAuthenticated, activeRole } = useAuth()
 
-    // Map activeRole ('psycho'/'client') to the UserRole values ('psychologist'/'client')
-    const mappedRole: 'psychologist' | 'client' | null =
-        activeRole === 'psycho' ? 'psychologist' : activeRole === 'client' ? 'client' : null
-
-    const canAccess = isAuthenticated && !!mappedRole && allowedRoles.includes(mappedRole)
+    const canAccess = isAuthenticated && !!activeRole && allowedRoles.includes(activeRole)
 
     return {
         canAccess,
-        userRole: mappedRole,
+        userRole: activeRole,
         activeRole,
         user,
     }

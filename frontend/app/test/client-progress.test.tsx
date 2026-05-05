@@ -12,7 +12,7 @@ vi.mock('~/services/impression.service', () => ({
 }))
 
 vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psychologist' }),
+    useRoleGuard: () => ({ userRole: 'psycho' }),
 }))
 
 import ClientProgress from '~/routes/psychologist/client-progress'

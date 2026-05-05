@@ -20,7 +20,7 @@ vi.mock('sonner', () => ({
 }))
 
 vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psychologist' }),
+    useRoleGuard: () => ({ userRole: 'psycho' }),
 }))
 
 // Capture the onSubmit and isLoading props passed to the edit SessionForm

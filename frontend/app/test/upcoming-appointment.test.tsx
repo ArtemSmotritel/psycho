@@ -22,7 +22,7 @@ vi.mock('sonner', () => ({
 }))
 
 vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psychologist' }),
+    useRoleGuard: () => ({ userRole: 'psycho' }),
 }))
 
 vi.mock('react-router', async (importOriginal) => {

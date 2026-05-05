@@ -79,7 +79,7 @@ export default function InvitationsPage() {
     }
 
     return (
-        <ProtectedRoute allowedRoles={['psychologist']}>
+        <ProtectedRoute allowedRoles={['psycho']}>
             <PageContainer>
                 <AppPageHeader text="Invitations" />
 

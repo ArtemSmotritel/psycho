@@ -17,7 +17,7 @@ export default function SessionAttachment() {
     const { attachment, isLoading, refetch } = useCurrentAttachment()
     const { clientId, appointmentId } = useParams()
     const navigate = useNavigate()
-    useRoleGuard(['psychologist'])
+    useRoleGuard(['psycho'])
 
     if (isLoading) return <Loading />
 

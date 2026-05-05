@@ -197,7 +197,7 @@ export default function Sessions() {
     }
 
     return (
-        <ProtectedRoute allowedRoles={['psychologist']}>
+        <ProtectedRoute allowedRoles={['psycho']}>
             <PageContainer>
                 <AppPageHeader text="Appointments" />
 
