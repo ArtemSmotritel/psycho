@@ -1,20 +1,13 @@
-import { useEffect, useState } from 'react'
 import { clientService } from '~/services/client.service'
 import type { ClientSummary } from '~/models/client'
+import { useResource } from './useResource'
 
 export function useClientList(): ClientSummary[] {
-    const [clients, setClients] = useState<ClientSummary[]>([])
+    const { data } = useResource<ClientSummary[]>(
+        () => clientService.getListForPsycho().then((res) => res.data.clients),
+        [],
+        { initial: [] },
+    )
 
-    useEffect(() => {
-        clientService
-            .getListForPsycho()
-            .then((res) => {
-                setClients(res.data.clients)
-            })
-            .catch(() => {
-                setClients([])
-            })
-    }, [])
-
-    return clients
+    return data ?? []
 }

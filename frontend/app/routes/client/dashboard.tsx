@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +6,7 @@ import { PageContainer } from '~/components/PageContainer'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { useResource } from '~/hooks/useResource'
 import { dashboardService } from '~/services/dashboard.service'
 import { recommendationService } from '~/services/recommendation.service'
 import { routes } from '~/lib/routes'
@@ -16,26 +16,16 @@ import type { ClientDashboardData } from '~/models/dashboard'
 export default function ClientDashboard() {
     useRoleGuard(['client'])
 
-    const [data, setData] = useState<ClientDashboardData | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchDashboard = async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await dashboardService.getDashboardForClient()
-            setData(res.data)
-        } catch {
-            setError('Failed to load dashboard data.')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchDashboard()
-    }, [])
+    const {
+        data,
+        isLoading,
+        error,
+        refetch: fetchDashboard,
+    } = useResource<ClientDashboardData>(
+        () => dashboardService.getDashboardForClient().then((res) => res.data),
+        [],
+        { errorMessage: 'Failed to load dashboard data.' },
+    )
 
     if (isLoading) {
         return (

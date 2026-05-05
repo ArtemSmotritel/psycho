@@ -1,30 +1,15 @@
-import { useEffect, useState } from 'react'
 import { useAuth } from '~/contexts/auth-context'
 import { appointmentService } from '~/services/appointment.service'
+import { useResource } from './useResource'
 
 export function useHasActiveAppointment() {
     const { activeRole } = useAuth()
-    const [hasActiveAppointment, setHasActiveAppointment] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        if (activeRole !== 'psycho') {
-            return
-        }
+    const { data, isLoading } = useResource<boolean>(
+        () => appointmentService.getActiveForPsycho().then((res) => res.data.appointment !== null),
+        [activeRole],
+        { initial: false, enabled: activeRole === 'psycho' },
+    )
 
-        setIsLoading(true)
-        appointmentService
-            .getActiveForPsycho()
-            .then((res) => {
-                setHasActiveAppointment(res.data.appointment !== null)
-            })
-            .catch(() => {
-                setHasActiveAppointment(false)
-            })
-            .finally(() => {
-                setIsLoading(false)
-            })
-    }, [activeRole])
-
-    return { hasActiveAppointment, isLoading }
+    return { hasActiveAppointment: data ?? false, isLoading }
 }

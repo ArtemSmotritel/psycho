@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
@@ -6,26 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { dashboardService } from '~/services/dashboard.service'
 import { formatAppointmentDateTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
+import { useResource } from '~/hooks/useResource'
 import type { PsychoDashboard } from '~/models/dashboard'
 
 export default function DashboardOverview() {
-    const [data, setData] = useState<PsychoDashboard | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        dashboardService
-            .getDashboardForPsycho()
-            .then((res) => {
-                setData(res.data)
-            })
-            .catch(() => {
-                setError('Failed to load dashboard. Please try again.')
-            })
-            .finally(() => {
-                setLoading(false)
-            })
-    }, [])
+    const {
+        data,
+        isLoading: loading,
+        error,
+    } = useResource<PsychoDashboard>(
+        () => dashboardService.getDashboardForPsycho().then((res) => res.data),
+        [],
+        { errorMessage: 'Failed to load dashboard. Please try again.' },
+    )
 
     if (loading) {
         return (

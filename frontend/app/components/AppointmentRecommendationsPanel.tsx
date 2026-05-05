@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
@@ -9,6 +9,7 @@ import { RecommendationForm, type RecommendationFormCreateDTO } from './Recommen
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { routes } from '~/lib/routes'
+import { useResource } from '~/hooks/useResource'
 import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
 
 interface AppointmentRecommendationsPanelProps {
@@ -20,33 +21,23 @@ export function AppointmentRecommendationsPanel({
     clientId,
     appointmentId,
 }: AppointmentRecommendationsPanelProps) {
-    const [recommendations, setRecommendations] = useState<AttachmentWithReaction[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const {
+        data,
+        isLoading,
+        error,
+        refetch: fetchRecommendations,
+    } = useResource<AttachmentWithReaction[]>(
+        () =>
+            attachmentService
+                .listForPsycho(clientId, appointmentId, 'recommendation')
+                .then((res) => res.data.recommendations),
+        [clientId, appointmentId],
+        { initial: [], errorMessage: 'Failed to load recommendations.' },
+    )
+    const recommendations = data ?? []
     const [isCreating, setIsCreating] = useState(false)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
     const [replyTexts, setReplyTexts] = useState<Record<string, string>>({})
-
-    const fetchRecommendations = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await attachmentService.listForPsycho(
-                clientId,
-                appointmentId,
-                'recommendation',
-            )
-            setRecommendations(res.data.recommendations)
-        } catch {
-            setError('Failed to load recommendations.')
-        } finally {
-            setIsLoading(false)
-        }
-    }, [clientId, appointmentId])
-
-    useEffect(() => {
-        fetchRecommendations()
-    }, [fetchRecommendations])
 
     const handleCreate = async (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => {
         setIsCreating(true)

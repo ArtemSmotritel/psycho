@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 import type { Attachment, RecommendationReaction } from '~/models/attachment'
 import { attachmentService } from '~/services/attachment.service'
+import { useResource } from './useResource'
+
+interface CurrentAttachmentData {
+    attachment: Attachment
+    reaction: RecommendationReaction | null
+}
 
 export function useCurrentAttachment(): {
     attachment: Attachment | null
@@ -14,34 +19,23 @@ export function useCurrentAttachment(): {
         appointmentId: string
         attachmentId: string
     }>()
-    const [attachment, setAttachment] = useState<Attachment | null>(null)
-    const [reaction, setReaction] = useState<RecommendationReaction | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
 
-    const fetchAttachment = useCallback(() => {
-        if (!clientId || !appointmentId || !attachmentId) {
-            setAttachment(null)
-            setReaction(null)
-            return
-        }
+    const { data, isLoading, refetch } = useResource<CurrentAttachmentData>(
+        () =>
+            attachmentService
+                .getByIdForPsycho(clientId!, appointmentId!, attachmentId!)
+                .then((res) => ({
+                    attachment: res.data.attachment,
+                    reaction: res.data.reaction ?? null,
+                })),
+        [clientId, appointmentId, attachmentId],
+        { enabled: !!clientId && !!appointmentId && !!attachmentId },
+    )
 
-        setIsLoading(true)
-        attachmentService
-            .getByIdForPsycho(clientId, appointmentId, attachmentId)
-            .then((res) => {
-                setAttachment(res.data.attachment)
-                setReaction(res.data.reaction ?? null)
-            })
-            .catch(() => {
-                setAttachment(null)
-                setReaction(null)
-            })
-            .finally(() => setIsLoading(false))
-    }, [clientId, appointmentId, attachmentId])
-
-    useEffect(() => {
-        fetchAttachment()
-    }, [fetchAttachment])
-
-    return { attachment, reaction, isLoading, refetch: fetchAttachment }
+    return {
+        attachment: data?.attachment ?? null,
+        reaction: data?.reaction ?? null,
+        isLoading,
+        refetch,
+    }
 }

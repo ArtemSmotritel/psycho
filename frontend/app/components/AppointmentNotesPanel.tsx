@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
@@ -8,6 +7,7 @@ import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentFor
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
+import { useResource } from '~/hooks/useResource'
 import type { Attachment } from '~/models/attachment'
 
 interface AppointmentNotesPanelProps {
@@ -16,26 +16,20 @@ interface AppointmentNotesPanelProps {
 }
 
 export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNotesPanelProps) {
-    const [notes, setNotes] = useState<Attachment[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchNotes = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await attachmentService.listForPsycho(clientId, appointmentId, 'note')
-            setNotes(res.data.notes)
-        } catch {
-            setError('Failed to load notes.')
-        } finally {
-            setIsLoading(false)
-        }
-    }, [clientId, appointmentId])
-
-    useEffect(() => {
-        fetchNotes()
-    }, [fetchNotes])
+    const {
+        data,
+        isLoading,
+        error,
+        refetch: fetchNotes,
+    } = useResource<Attachment[]>(
+        () =>
+            attachmentService
+                .listForPsycho(clientId, appointmentId, 'note')
+                .then((res) => res.data.notes),
+        [clientId, appointmentId],
+        { initial: [], errorMessage: 'Failed to load notes.' },
+    )
+    const notes = data ?? []
 
     const handleCreate = async (values: AttachmentFormSubmitValues) => {
         try {

@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Phone, MessageSquare, Instagram, Mail, Edit, Copy } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -8,6 +7,7 @@ import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
+import { useResource } from '~/hooks/useResource'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
 import { Link } from 'react-router'
@@ -75,26 +75,16 @@ function ContactItem({ icon, label, value, type }: ContactItemProps) {
 export default function ClientProfile() {
     useRoleGuard(['client'])
 
-    const [client, setClient] = useState<Client | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchProfile = async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await clientService.getMeForClient()
-            setClient(res.data.client)
-        } catch {
-            setError('Failed to load profile.')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchProfile()
-    }, [])
+    const {
+        data: client,
+        isLoading,
+        error,
+        refetch: fetchProfile,
+    } = useResource<Client>(
+        () => clientService.getMeForClient().then((res) => res.data.client),
+        [],
+        { errorMessage: 'Failed to load profile.' },
+    )
 
     if (isLoading) {
         return (
@@ -116,9 +106,9 @@ export default function ClientProfile() {
 
     const handleEdit = async (values: any) => {
         try {
-            const res = await clientService.updateMeForClient(values)
-            setClient(res.data.client)
+            await clientService.updateMeForClient(values)
             toast.success('Profile updated.')
+            fetchProfile()
         } catch {
             toast.error('Failed to update profile. Please try again.')
         }

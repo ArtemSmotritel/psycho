@@ -18,7 +18,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { isToday, format } from 'date-fns'
 import { formatAppDate } from '~/utils/utils'
 import { routes } from '~/lib/routes'
@@ -39,33 +39,25 @@ import type { AppointmentWithClient } from '~/models/appointment'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 import { appointmentService } from '~/services/appointment.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
+import { useResource } from '~/hooks/useResource'
 
 export default function Sessions() {
     const navigate = useNavigate()
 
-    const [data, setData] = useState<AppointmentWithClient[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const {
+        data: appointments,
+        isLoading,
+        error,
+        refetch: fetchAppointments,
+    } = useResource<AppointmentWithClient[]>(
+        () => appointmentService.getAllForPsycho().then((res) => res.data.appointments),
+        [],
+        { initial: [], errorMessage: 'Failed to load appointments. Please try again.' },
+    )
+    const data = appointments ?? []
 
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-
-    const fetchAppointments = async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const res = await appointmentService.getAllForPsycho()
-            setData(res.data.appointments)
-        } catch {
-            setError('Failed to load appointments. Please try again.')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchAppointments()
-    }, [])
 
     const { handleCreate: handleAddSession, isCreating } = useCreateAppointment(fetchAppointments)
 
