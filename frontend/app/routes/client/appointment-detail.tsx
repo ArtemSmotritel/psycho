@@ -9,9 +9,11 @@ import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
+import { formatAppointmentTimeRange } from '~/utils/utils'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
+import { routes } from '~/lib/routes'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
@@ -82,17 +84,15 @@ export default function ClientAppointmentDetail() {
 
     if (appointment.status === 'past' || appointment.status === 'missed') {
         const pastFormattedDate = format(new Date(appointment.startTime), 'PPP')
-        const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
-        const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
         return (
             <PageContainer>
-                <AppPageHeader text="Appointment" linkTo="/client/appointments" />
+                <AppPageHeader text="Appointment" linkTo={routes.client.appointments} />
                 <div className="flex items-center gap-2 mb-1">
                     <h2 className="text-xl font-semibold">{pastFormattedDate}</h2>
                     <AppointmentStatusBadge status={appointment.status} />
                 </div>
                 <p className="text-muted-foreground mb-4">
-                    {pastFormattedStart} – {pastFormattedEnd}
+                    {formatAppointmentTimeRange(appointment)}
                 </p>
                 <p className="text-muted-foreground mb-4">{appointment.psychoName}</p>
 
@@ -164,7 +164,10 @@ export default function ClientAppointmentDetail() {
                                     key={recommendation.id}
                                     recommendation={recommendation}
                                     role="client"
-                                    detailHref={`/client/appointments/${appointmentId}/attachment/${recommendation.id}`}
+                                    detailHref={routes.client.attachment(
+                                        appointmentId!,
+                                        recommendation.id,
+                                    )}
                                     onToggleDone={async (id, done) => {
                                         if (!appointmentId) return
                                         try {
@@ -215,24 +218,20 @@ export default function ClientAppointmentDetail() {
     }
 
     if (appointment.status === 'active') {
-        return <Navigate to={`/client/appointments/${appointmentId}/live`} replace />
+        return <Navigate to={routes.client.appointmentLive(appointmentId!)} replace />
     }
 
     // upcoming
     const formattedDate = format(new Date(appointment.startTime), 'PPP')
-    const formattedStart = format(new Date(appointment.startTime), 'HH:mm')
-    const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
         <PageContainer>
-            <AppPageHeader text="Appointment" linkTo="/client/appointments" />
+            <AppPageHeader text="Appointment" linkTo={routes.client.appointments} />
             <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-xl font-semibold">{formattedDate}</h2>
                 <AppointmentStatusBadge status={appointment.status} />
             </div>
-            <p className="text-muted-foreground mb-4">
-                {formattedStart} – {formattedEnd}
-            </p>
+            <p className="text-muted-foreground mb-4">{formatAppointmentTimeRange(appointment)}</p>
             <p className="text-muted-foreground mb-4">{appointment.psychoName}</p>
 
             <Alert className="mb-4">

@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import type { Appointment } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 
 export function formatAppDate(date: Date | string) {
@@ -7,6 +8,16 @@ export function formatAppDate(date: Date | string) {
     }
 
     return format(date, 'PPP HH:mm')
+}
+
+type AppointmentTimeRange = Pick<Appointment, 'startTime' | 'endTime'>
+
+export function formatAppointmentTimeRange(a: AppointmentTimeRange): string {
+    return `${format(new Date(a.startTime), 'HH:mm')} – ${format(new Date(a.endTime), 'HH:mm')}`
+}
+
+export function formatAppointmentDateTimeRange(a: AppointmentTimeRange): string {
+    return `${format(new Date(a.startTime), 'PPp')} — ${format(new Date(a.endTime), 'p')}`
 }
 
 export const getAttachmentTypeLabel = (type: string) => {

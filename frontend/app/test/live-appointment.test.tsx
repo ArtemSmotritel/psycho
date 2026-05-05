@@ -82,6 +82,7 @@ vi.mock('~/services/file.service', () => ({
     fileService: {
         upload: vi.fn(),
     },
+    resolveAttachmentFileIds: vi.fn(async () => ({ audioFileIds: [], imageFileIds: [] })),
 }))
 
 vi.mock('react-media-recorder', () => ({

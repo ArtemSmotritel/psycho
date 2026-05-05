@@ -26,6 +26,7 @@ import { clientService } from '~/services/client.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
 import { nextSameWeekdayOccurrence } from '~/utils/next-occurrence'
+import { routes } from '~/lib/routes'
 
 type ClientProfileProps = {
     params: {
@@ -271,14 +272,14 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ActionItem
                     icon={<TrendingUp className="h-6 w-6" />}
                     label="View Progress"
-                    to={`/psycho/clients/${client.id}/progress`}
+                    to={routes.psycho.clientProgress(client.id)}
                 />
 
                 {client.lastAppointment && (
                     <ActionItem
                         icon={<ArrowLeft className="h-6 w-6" />}
                         label="View Last Session"
-                        to={`/psycho/clients/${client.id}/appointments/${client.lastAppointment.id}`}
+                        to={routes.psycho.appointment(client.id, client.lastAppointment.id)}
                         subtext={formatAppDate(client.lastAppointment.startTime)}
                     />
                 )}
@@ -286,14 +287,14 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                 <ActionItem
                     icon={<History className="h-6 w-6" />}
                     label="View Session History"
-                    to={`/psycho/clients/${client.id}/appointments`}
+                    to={routes.psycho.clientAppointments(client.id)}
                 />
 
                 {client.nextAppointment && (
                     <ActionItem
                         icon={<ArrowRight className="h-6 w-6" />}
                         label="View Next Session"
-                        to={`/psycho/clients/${client.id}/appointments/${client.nextAppointment.id}`}
+                        to={routes.psycho.appointment(client.id, client.nextAppointment.id)}
                         subtext={formatAppDate(client.nextAppointment.startTime)}
                     />
                 )}

@@ -8,6 +8,7 @@ import {
     ActivityIcon,
 } from 'lucide-react'
 import { useRoleGuard } from './useRoleGuard'
+import { routes } from '~/lib/routes'
 
 export type SidebarItem = {
     title: string
@@ -23,55 +24,55 @@ export function useSidebarItems(): SidebarItem[] {
         {
             title: 'Dashboard',
             icon: HomeIcon,
-            href: '/psycho',
+            href: routes.psycho.root,
             availableTo: 'psychologist',
         },
         {
             title: 'Dashboard',
             icon: HomeIcon,
-            href: '/client',
+            href: routes.client.root,
             availableTo: 'client',
         },
         {
             title: 'Clients',
             icon: UsersIcon,
-            href: '/psycho/clients',
+            href: routes.psycho.clients,
             availableTo: 'psychologist',
         },
         {
             title: 'Invitations',
             icon: MailIcon,
-            href: '/psycho/invitations',
+            href: routes.psycho.invitations,
             availableTo: 'psychologist',
         },
         {
             title: 'Sessions',
             icon: CalendarIcon,
-            href: '/psycho/appointments',
+            href: routes.psycho.appointments,
             availableTo: 'psychologist',
         },
         {
             title: 'Associative Images',
             icon: ImageIcon,
-            href: '/psycho/associative-images',
+            href: routes.psycho.associativeImages,
             availableTo: 'psychologist',
         },
         {
             title: 'My Profile',
             icon: UserIcon,
-            href: '/me',
+            href: routes.me,
             availableTo: 'client',
         },
         {
             title: 'Appointments',
             icon: CalendarIcon,
-            href: '/client/appointments',
+            href: routes.client.appointments,
             availableTo: 'client',
         },
         {
             title: 'Progress',
             icon: ActivityIcon,
-            href: '/client/progress',
+            href: routes.client.progress,
             availableTo: 'client',
         },
     ]

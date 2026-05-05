@@ -20,6 +20,8 @@ import {
 } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import { isToday, format } from 'date-fns'
+import { formatAppDate } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
 import {
@@ -95,7 +97,7 @@ export default function Sessions() {
             },
             cell: ({ row }) => {
                 const startTime = row.getValue('startTime') as string
-                return format(new Date(startTime), 'PPP HH:mm')
+                return formatAppDate(startTime)
             },
             filterFn: todayFilterFn,
         },
@@ -157,7 +159,7 @@ export default function Sessions() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     onClick={() =>
-                                        navigate(`/psycho/clients/${appointment.clientId}`)
+                                        navigate(routes.psycho.client(appointment.clientId))
                                     }
                                 >
                                     View client profile

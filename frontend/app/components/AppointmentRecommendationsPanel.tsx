@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
@@ -8,6 +8,7 @@ import { ConfirmAction } from './ConfirmAction'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
+import { routes } from '~/lib/routes'
 import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
 
 interface AppointmentRecommendationsPanelProps {
@@ -137,7 +138,11 @@ export function AppointmentRecommendationsPanel({
                                 <p className="font-semibold">{recommendation.name}</p>
                                 <div className="flex items-center gap-1 shrink-0">
                                     <Link
-                                        to={`/psycho/clients/${clientId}/appointments/${appointmentId}/attachment/${recommendation.id}`}
+                                        to={routes.psycho.attachment(
+                                            clientId,
+                                            appointmentId,
+                                            recommendation.id,
+                                        )}
                                     >
                                         <Button variant="ghost" size="sm">
                                             Open
@@ -244,9 +249,7 @@ export function AppointmentRecommendationsPanel({
                                 {recommendation.audioFiles.length > 0 && (
                                     <span>{recommendation.audioFiles.length} recording(s)</span>
                                 )}
-                                <span>
-                                    {format(new Date(recommendation.createdAt), 'PPP HH:mm')}
-                                </span>
+                                <span>{formatAppDate(recommendation.createdAt)}</span>
                             </div>
                         </div>
                     ))}

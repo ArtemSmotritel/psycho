@@ -2,6 +2,7 @@ import { Outlet } from 'react-router'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
+import { routes } from '~/lib/routes'
 
 export default function ClientLayout() {
     const client = useCurrentClient()
@@ -10,7 +11,7 @@ export default function ClientLayout() {
         <PageContainer className="w-full h-full flex flex-col">
             <AppPageHeader
                 text={`Profile: ${client?.name}`}
-                linkTo={`/psycho/clients/${client?.id}`}
+                linkTo={routes.psycho.client(client?.id ?? '')}
             />
             <div className="flex-1 min-h-0 flex flex-col">
                 <Outlet />

@@ -24,6 +24,8 @@ import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
 import { resolveAttachmentFileIds } from '~/services/file.service'
+import { routes } from '~/lib/routes'
+import { formatAppointmentTimeRange } from '~/utils/utils'
 import { ImpressionList } from '~/components/ImpressionList'
 import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
@@ -156,7 +158,7 @@ export default function LiveAppointment() {
         return (
             <div className="space-y-4">
                 <p>No active appointment found.</p>
-                <Link to={`/client/appointments/${appointmentId}`}>
+                <Link to={routes.client.appointment(appointmentId!)}>
                     <Button variant="default">Back to appointment</Button>
                 </Link>
             </div>
@@ -164,8 +166,7 @@ export default function LiveAppointment() {
     }
 
     const formattedDate = format(new Date(appointment.startTime), 'PPP')
-    const formattedStart = format(new Date(appointment.startTime), 'HH:mm')
-    const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
+    const timeRange = formatAppointmentTimeRange(appointment)
 
     return (
         <PageContainer className="flex flex-col w-full h-full">
@@ -174,12 +175,12 @@ export default function LiveAppointment() {
                 <div className="flex items-center gap-4">
                     <AppPageHeader
                         text="Live Session"
-                        linkTo={`/client/appointments/${appointmentId}`}
+                        linkTo={routes.client.appointment(appointmentId!)}
                         className="mb-0"
                     />
                     <div>
                         <p className="text-sm text-muted-foreground">
-                            {formattedDate} &middot; {formattedStart} – {formattedEnd}
+                            {formattedDate} &middot; {timeRange}
                         </p>
                     </div>
                     {appointment.googleMeetLink && (
@@ -261,8 +262,8 @@ export default function LiveAppointment() {
                 <PostSessionImpressionDialog
                     open={showEndedModal}
                     appointmentId={appointmentId}
-                    onSubmitted={() => navigate(`/client/appointments/${appointmentId}`)}
-                    onSkip={() => navigate(`/client/appointments/${appointmentId}`)}
+                    onSubmitted={() => navigate(routes.client.appointment(appointmentId))}
+                    onSkip={() => navigate(routes.client.appointment(appointmentId))}
                 />
             )}
         </PageContainer>

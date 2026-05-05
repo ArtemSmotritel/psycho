@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
@@ -10,6 +9,8 @@ import { RecommendationCard } from '~/components/RecommendationCard'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { dashboardService } from '~/services/dashboard.service'
 import { recommendationService } from '~/services/recommendation.service'
+import { routes } from '~/lib/routes'
+import { formatAppointmentDateTimeRange } from '~/utils/utils'
 import type { ClientDashboardData } from '~/models/dashboard'
 
 export default function ClientDashboard() {
@@ -91,11 +92,10 @@ export default function ClientDashboard() {
                     <p className="text-sm font-medium text-muted-foreground">Active Appointment</p>
                     <p className="mt-1 text-lg font-semibold">{activeAppointment.psychoName}</p>
                     <p className="text-sm text-muted-foreground">
-                        {format(new Date(activeAppointment.startTime), 'PPp')} —{' '}
-                        {format(new Date(activeAppointment.endTime), 'p')}
+                        {formatAppointmentDateTimeRange(activeAppointment)}
                     </p>
                     <Link
-                        to={`/client/appointments/${activeAppointment.id}/live`}
+                        to={routes.client.appointmentLive(activeAppointment.id)}
                         className="mt-2 inline-block text-sm font-medium text-primary underline underline-offset-2"
                     >
                         Join now
@@ -151,13 +151,12 @@ export default function ClientDashboard() {
                         ) : (
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">
-                                    {format(new Date(nextAppointment.startTime), 'PPp')} —{' '}
-                                    {format(new Date(nextAppointment.endTime), 'p')}
+                                    {formatAppointmentDateTimeRange(nextAppointment)}
                                 </p>
                                 <p className="font-medium">{nextAppointment.psychoName}</p>
                                 <p className="text-sm capitalize">{nextAppointment.status}</p>
                                 <Link
-                                    to={`/client/appointments/${nextAppointment.id}`}
+                                    to={routes.client.appointment(nextAppointment.id)}
                                     className="text-sm underline"
                                 >
                                     View appointment
@@ -212,7 +211,7 @@ export default function ClientDashboard() {
                                 <span className="font-medium">Past:</span> {appointmentCounts.past}
                             </p>
                         </div>
-                        <Link to="/client/appointments" className="text-sm underline">
+                        <Link to={routes.client.appointments} className="text-sm underline">
                             View all appointments
                         </Link>
                     </CardContent>

@@ -13,6 +13,7 @@ import { AttachmentIcon } from '~/utils/componentUtils'
 import { formatAppDate, formatAttachmentTitle, getAttachmentTypeLabel } from '~/utils/utils'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { recommendationService } from '~/services/recommendation.service'
+import { routes } from '~/lib/routes'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 
@@ -49,7 +50,7 @@ export default function ClientAttachmentDetail() {
         try {
             await attachmentService.deleteForClient(appointmentId!, attachment.id)
             toast.success('Attachment deleted.')
-            navigate(`/client/appointments/${appointmentId}`)
+            navigate(routes.client.appointment(appointmentId!))
         } catch (err) {
             toast.error(getDeleteAttachmentErrorMessage(err))
         }
@@ -73,7 +74,7 @@ export default function ClientAttachmentDetail() {
 
     return (
         <PageContainer>
-            <AppPageHeader text="Attachment" linkTo={`/client/appointments/${appointmentId}`} />
+            <AppPageHeader text="Attachment" linkTo={routes.client.appointment(appointmentId!)} />
 
             <div className="flex items-center gap-4">
                 <AttachmentIcon type={attachment.type} size="h-8 w-8" />
@@ -87,7 +88,7 @@ export default function ClientAttachmentDetail() {
             </div>
 
             <ActionsSection title="Actions">
-                <Link to={`/client/appointments/${appointmentId}`}>
+                <Link to={routes.client.appointment(appointmentId!)}>
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
 

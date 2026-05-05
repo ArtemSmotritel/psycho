@@ -15,7 +15,8 @@ import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
-import { format } from 'date-fns'
+import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 import { AppPageHeader } from '~/components/AppPageHeader'
 
 type AppointmentCardProps = {
@@ -32,7 +33,7 @@ const ITEMS_PER_PAGE = 4
 
 function AppointmentCard({ appointment }: AppointmentCardProps) {
     return (
-        <Link to={`/client/appointments/${appointment.id}`} className="block">
+        <Link to={routes.client.appointment(appointment.id)} className="block">
             <Card className="hover:bg-accent/50 transition-colors max-w-lg">
                 <CardHeader className="max-w-lg">
                     <div className="flex sm:items-center sm:flex-row flex-col sm:justify-between items-start">
@@ -43,15 +44,12 @@ function AppointmentCard({ appointment }: AppointmentCardProps) {
                                 <Circle className="h-5 w-5 text-yellow-500" />
                             )}
                             <CardTitle className="text-lg">
-                                {format(new Date(appointment.startTime), 'PPP HH:mm')}
+                                {formatAppDate(appointment.startTime)}
                             </CardTitle>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4" />
-                            <span>
-                                {format(new Date(appointment.startTime), 'HH:mm')} –{' '}
-                                {format(new Date(appointment.endTime), 'HH:mm')}
-                            </span>
+                            <span>{formatAppointmentTimeRange(appointment)}</span>
                         </div>
                     </div>
                 </CardHeader>

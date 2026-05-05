@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { formatAppointmentTimeRange } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 import '@excalidraw/excalidraw/index.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 // TODO: import exportToBlob lazily to reduce initial bundle size (EDG-47)
@@ -108,7 +110,7 @@ export default function LiveSession() {
         return (
             <div className="space-y-4">
                 <p>No active appointment found.</p>
-                <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
+                <Link to={routes.psycho.appointment(clientId!, appointmentId!)}>
                     <Button variant="default">Back to appointment</Button>
                 </Link>
             </div>
@@ -116,8 +118,7 @@ export default function LiveSession() {
     }
 
     const formattedDate = format(new Date(appointment.startTime), 'PPP')
-    const formattedStart = format(new Date(appointment.startTime), 'HH:mm')
-    const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
+    const timeRange = formatAppointmentTimeRange(appointment)
 
     const handleEndAppointment = async () => {
         setIsEnding(true)
@@ -154,7 +155,7 @@ export default function LiveSession() {
             if (!hasUpcoming && !alreadyDone) {
                 setFollowUpAppointment(ended)
             } else {
-                navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+                navigate(routes.psycho.appointment(clientId!, appointmentId!))
             }
         } catch {
             toast.error('Failed to end appointment. Please try again.')
@@ -165,7 +166,7 @@ export default function LiveSession() {
 
     const handleFollowUpClose = () => {
         setFollowUpAppointment(null)
-        navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+        navigate(routes.psycho.appointment(clientId!, appointmentId!))
     }
 
     return (
@@ -175,9 +176,7 @@ export default function LiveSession() {
                 <div className="flex items-center gap-4">
                     <div>
                         <h2 className="text-lg font-semibold leading-tight">{formattedDate}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {formattedStart} – {formattedEnd}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{timeRange}</p>
                     </div>
                     {appointment.googleMeetLink && (
                         <Link

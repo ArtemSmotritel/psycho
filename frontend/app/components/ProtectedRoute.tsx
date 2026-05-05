@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '~/contexts/auth-context'
+import { routes } from '~/lib/routes'
 
 interface ProtectedRouteProps {
     children: React.ReactNode
@@ -35,11 +36,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     }
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" state={{ from: location }} replace />
+        return <Navigate to={routes.login} state={{ from: location }} replace />
     }
 
     if (isWrongRole) {
-        return <Navigate to="/login" replace />
+        return <Navigate to={routes.login} replace />
     }
 
     return <>{children}</>

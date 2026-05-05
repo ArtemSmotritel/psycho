@@ -13,6 +13,7 @@ import { useHasActiveAppointment } from '../hooks/useHasActiveAppointment'
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
 import { ConfirmAction } from '../components/ConfirmAction'
 import { ArrowLeftRight, LogOut } from 'lucide-react'
+import { routes } from '~/lib/routes'
 
 export function AppSidebar() {
     const sidebarItems = useSidebarItems()
@@ -28,15 +29,15 @@ export function AppSidebar() {
 
     const handleLogout = async () => {
         await logout()
-        navigate('/login')
+        navigate(routes.login)
     }
 
     const handleRoleSwitch = async () => {
         await setActiveRole(otherRole)
         if (otherRole === 'psycho') {
-            navigate('/psycho')
+            navigate(routes.psycho.root)
         } else {
-            navigate('/client')
+            navigate(routes.client.root)
         }
     }
 

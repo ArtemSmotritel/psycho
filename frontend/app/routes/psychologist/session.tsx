@@ -14,6 +14,8 @@ import { toast } from 'sonner'
 import { isAxiosError } from 'axios'
 import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
 import { format } from 'date-fns'
+import { formatAppointmentTimeRange } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
 import { ImpressionList } from '~/components/ImpressionList'
@@ -87,8 +89,6 @@ export default function Session() {
 
     if (appointment.status === 'past' || appointment.status === 'missed') {
         const pastFormattedDate = format(new Date(appointment.startTime), 'PPP')
-        const pastFormattedStart = format(new Date(appointment.startTime), 'HH:mm')
-        const pastFormattedEnd = format(new Date(appointment.endTime), 'HH:mm')
         return (
             <>
                 <div className="flex items-center gap-2 mb-1">
@@ -96,7 +96,7 @@ export default function Session() {
                     <AppointmentStatusBadge status={appointment.status} />
                 </div>
                 <p className="text-muted-foreground mb-4">
-                    {pastFormattedStart} – {pastFormattedEnd}
+                    {formatAppointmentTimeRange(appointment)}
                 </p>
                 <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
                 {appointment.whiteboardSnapshotUrl && (
@@ -136,9 +136,7 @@ export default function Session() {
 
     if (appointment.status === 'active') {
         return (
-            <Link
-                to={`/psycho/clients/${appointment.clientId}/appointments/${appointment.id}/live`}
-            >
+            <Link to={routes.psycho.appointmentLive(appointment.clientId, appointment.id)}>
                 <Button>Go to Active Appointment</Button>
             </Link>
         )
@@ -151,7 +149,7 @@ export default function Session() {
         setStartError(null)
         try {
             await appointmentService.startForPsycho(appointment.clientId, appointment.id)
-            navigate(`/psycho/clients/${appointment.clientId}/appointments/${appointment.id}/live`)
+            navigate(routes.psycho.appointmentLive(appointment.clientId, appointment.id))
         } catch (err: any) {
             const errorCode = err?.response?.data?.error
             if (errorCode === 'AnotherAppointmentActive') {
@@ -173,7 +171,7 @@ export default function Session() {
         try {
             await appointmentService.deleteForPsycho(appointment.clientId, appointment.id)
             toast.success('Appointment deleted.')
-            navigate(`/psycho/clients/${appointment.clientId}/appointments`)
+            navigate(routes.psycho.clientAppointments(appointment.clientId))
         } catch {
             toast.error('Failed to delete appointment. Please try again.')
         } finally {
@@ -182,8 +180,6 @@ export default function Session() {
     }
 
     const formattedDate = format(new Date(appointment.startTime), 'PPP')
-    const formattedStart = format(new Date(appointment.startTime), 'HH:mm')
-    const formattedEnd = format(new Date(appointment.endTime), 'HH:mm')
 
     return (
         <>
@@ -191,9 +187,7 @@ export default function Session() {
                 <h2 className="text-xl font-semibold">{formattedDate}</h2>
                 <AppointmentStatusBadge status={appointment.status} />
             </div>
-            <p className="text-muted-foreground mb-4">
-                {formattedStart} – {formattedEnd}
-            </p>
+            <p className="text-muted-foreground mb-4">{formatAppointmentTimeRange(appointment)}</p>
 
             <Alert className="mb-4">
                 <Video className="text-primary" />
@@ -311,7 +305,7 @@ export default function Session() {
                 <ActionItem
                     icon={<User className="h-6" />}
                     label="Visit Client Profile"
-                    to={`/psycho/clients/${appointment.clientId}`}
+                    to={routes.psycho.client(appointment.clientId)}
                 />
 
                 {userRole === 'psychologist' && appointment.status === 'upcoming' && (

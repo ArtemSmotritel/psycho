@@ -1,6 +1,7 @@
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Link } from 'react-router'
+import { routes } from '~/lib/routes'
 
 import type { Route } from './+types/home'
 
@@ -31,7 +32,7 @@ export default function Home() {
                     </p>
                     <div className="flex gap-4 justify-center">
                         <Button asChild size="lg">
-                            <Link to="/login">Get Started</Link>
+                            <Link to={routes.login}>Get Started</Link>
                         </Button>
                     </div>
                 </div>
@@ -95,7 +96,7 @@ export default function Home() {
                         our platform.
                     </p>
                     <Button asChild size="lg">
-                        <Link to="/login">Get Started Today</Link>
+                        <Link to={routes.login}>Get Started Today</Link>
                     </Button>
                 </div>
             </section>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -14,6 +13,7 @@ import { Form } from '@/components/ui/form'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
 import { useClientList } from '~/hooks/useClientList'
 import { usePingConflictSubmit } from '~/hooks/usePingConflictSubmit'
+import { useControlledOpen } from '~/hooks/useControlledOpen'
 import { PingConflictDialog } from '@/components/PingConflictDialog'
 import {
     sessionFormSchema,
@@ -40,13 +40,7 @@ export function SessionForm({
     cancelLabel,
     submitLabel,
 }: SessionFormProps) {
-    const [internalOpen, setInternalOpen] = useState(false)
-    const isControlled = externalOpen !== undefined
-    const open = isControlled ? externalOpen : internalOpen
-    const setOpen = (next: boolean) => {
-        if (!isControlled) setInternalOpen(next)
-        onOpenChange?.(next)
-    }
+    const [open, setOpen] = useControlledOpen(externalOpen, onOpenChange)
     const currentClient = useCurrentClient()
     const clients = useClientList()
 

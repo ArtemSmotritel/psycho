@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
 import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
+import { routes } from '~/lib/routes'
 import type { Attachment } from '~/models/attachment'
 
 interface AppointmentNotesPanelProps {
@@ -115,7 +116,11 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                 <p className="font-semibold">{note.name}</p>
                                 <div className="flex items-center gap-1 shrink-0">
                                     <Link
-                                        to={`/psycho/clients/${clientId}/appointments/${appointmentId}/attachment/${note.id}`}
+                                        to={routes.psycho.attachment(
+                                            clientId,
+                                            appointmentId,
+                                            note.id,
+                                        )}
                                     >
                                         <Button variant="ghost" size="sm">
                                             Open
@@ -170,7 +175,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                 {note.audioFiles.length > 0 && (
                                     <span>{note.audioFiles.length} recording(s)</span>
                                 )}
-                                <span>{format(new Date(note.createdAt), 'PPP HH:mm')}</span>
+                                <span>{formatAppDate(note.createdAt)}</span>
                             </div>
                         </div>
                     ))}

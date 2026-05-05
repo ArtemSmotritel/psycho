@@ -1,8 +1,8 @@
-import { format } from 'date-fns'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import type { Attachment } from '~/models/attachment'
-import { formatAttachmentTitle } from '~/utils/utils'
+import { formatAppDate, formatAttachmentTitle } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 
 interface ImpressionListProps {
     impressions: Attachment[]
@@ -47,7 +47,11 @@ export function ImpressionList({
                         {clientId && (
                             <div className="flex items-center gap-1 shrink-0">
                                 <Link
-                                    to={`/psycho/clients/${clientId}/appointments/${impression.appointmentId}/attachment/${impression.id}`}
+                                    to={routes.psycho.attachment(
+                                        clientId,
+                                        impression.appointmentId,
+                                        impression.id,
+                                    )}
                                 >
                                     <Button variant="ghost" size="sm">
                                         Open
@@ -58,7 +62,10 @@ export function ImpressionList({
                         {clientLinks && (
                             <div className="flex items-center gap-1 shrink-0">
                                 <Link
-                                    to={`/client/appointments/${impression.appointmentId}/attachment/${impression.id}`}
+                                    to={routes.client.attachment(
+                                        impression.appointmentId,
+                                        impression.id,
+                                    )}
                                 >
                                     <Button variant="ghost" size="sm">
                                         Open
@@ -68,7 +75,7 @@ export function ImpressionList({
                         )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        {format(new Date(impression.createdAt), 'PPP HH:mm')}
+                        {formatAppDate(impression.createdAt)}
                     </p>
                 </div>
             ))}

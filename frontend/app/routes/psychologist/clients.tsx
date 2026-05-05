@@ -34,6 +34,7 @@ import { AddClientByEmailDialog } from '@/components/AddClientByEmailDialog'
 import { clientService } from '~/services/client.service'
 import type { ClientSummary } from '~/models/client'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
+import { routes } from '~/lib/routes'
 
 const columns: ColumnDef<ClientSummary>[] = [
     {
@@ -116,13 +117,13 @@ const columns: ColumnDef<ClientSummary>[] = [
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                                onClick={() => navigate(`/psycho/clients/${client.id}`)}
+                                onClick={() => navigate(routes.psycho.client(client.id))}
                             >
                                 View client profile
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() =>
-                                    navigate(`/psycho/clients/${client.id}/appointments`)
+                                    navigate(routes.psycho.clientAppointments(client.id))
                                 }
                             >
                                 View appointment history
@@ -226,7 +227,7 @@ export default function Clients() {
                                                 data-state={row.getIsSelected() && 'selected'}
                                                 className="cursor-pointer"
                                                 onClick={() =>
-                                                    navigate(`/psycho/clients/${row.original.id}`)
+                                                    navigate(routes.psycho.client(row.original.id))
                                                 }
                                             >
                                                 {row.getVisibleCells().map((cell) => (

@@ -19,11 +19,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 import { useReactMediaRecorder } from 'react-media-recorder'
 import { getAttachmentTypeLabel } from '../utils/utils'
 import { Separator } from './ui/separator'
 import { useAttachmentFiles } from '~/hooks/useAttachmentFiles'
+import { useControlledOpen } from '~/hooks/useControlledOpen'
 import {
     attachmentFormSchema,
     isAttachmentFile,
@@ -49,13 +49,7 @@ export function AttachmentForm({
     title,
     description,
 }: AttachmentFormProps) {
-    const [internalOpen, setInternalOpen] = useState(false)
-    const isControlled = controlledOpen !== undefined
-    const open = isControlled ? controlledOpen : internalOpen
-    const setOpen = (next: boolean) => {
-        if (!isControlled) setInternalOpen(next)
-        onOpenChange?.(next)
-    }
+    const [open, setOpen] = useControlledOpen(controlledOpen, onOpenChange)
 
     const form = useForm<AttachmentFormValues>({
         resolver: zodResolver(attachmentFormSchema),

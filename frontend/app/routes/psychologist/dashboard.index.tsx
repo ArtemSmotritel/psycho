@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router'
-import { format } from 'date-fns'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { dashboardService } from '~/services/dashboard.service'
+import { formatAppointmentDateTimeRange } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 import type { PsychoDashboard } from '~/models/dashboard'
 
 export default function DashboardOverview() {
@@ -57,11 +58,13 @@ export default function DashboardOverview() {
                         {data.activeAppointment.clientName}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                        {format(new Date(data.activeAppointment.startTime), 'PPp')} —{' '}
-                        {format(new Date(data.activeAppointment.endTime), 'p')}
+                        {formatAppointmentDateTimeRange(data.activeAppointment)}
                     </p>
                     <Link
-                        to={`/psycho/clients/${data.activeAppointment.clientId}/appointments/${data.activeAppointment.id}/live`}
+                        to={routes.psycho.appointmentLive(
+                            data.activeAppointment.clientId,
+                            data.activeAppointment.id,
+                        )}
                         className="mt-2 inline-block text-sm font-medium text-primary underline underline-offset-2"
                     >
                         Go to appointment
@@ -113,12 +116,11 @@ export default function DashboardOverview() {
                                         <div>
                                             <p className="text-sm font-medium">{apt.clientName}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {format(new Date(apt.startTime), 'PPp')} —{' '}
-                                                {format(new Date(apt.endTime), 'p')}
+                                                {formatAppointmentDateTimeRange(apt)}
                                             </p>
                                         </div>
                                         <Link
-                                            to={`/psycho/clients/${apt.clientId}/appointments/${apt.id}`}
+                                            to={routes.psycho.appointment(apt.clientId, apt.id)}
                                             className="text-xs text-primary underline underline-offset-2"
                                         >
                                             View
@@ -146,7 +148,7 @@ export default function DashboardOverview() {
                                     >
                                         <p className="text-sm font-medium">{client.name}</p>
                                         <Link
-                                            to={`/psycho/clients/${client.id}`}
+                                            to={routes.psycho.client(client.id)}
                                             className="text-xs text-primary underline underline-offset-2"
                                         >
                                             View profile

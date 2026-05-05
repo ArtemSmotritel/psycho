@@ -10,6 +10,7 @@ import { AttachmentMediaPreview } from '~/components/AttachmentMediaPreview'
 import { getAttachmentTypeLabel, formatAppDate, formatAttachmentTitle } from '~/utils/utils'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
+import { routes } from '~/lib/routes'
 
 export default function SessionAttachment() {
     const { attachment, isLoading, refetch } = useCurrentAttachment()
@@ -30,7 +31,7 @@ export default function SessionAttachment() {
         try {
             await attachmentService.deleteForPsycho(clientId!, appointmentId!, attachment.id)
             toast.success('Attachment deleted.')
-            navigate(`/psycho/clients/${clientId}/appointments/${appointmentId}`)
+            navigate(routes.psycho.appointment(clientId!, appointmentId!))
         } catch (err) {
             toast.error(getDeleteAttachmentErrorMessage(err))
         }
@@ -92,11 +93,11 @@ export default function SessionAttachment() {
                     />
                 )}
 
-                <Link to={`/psycho/clients/${clientId}`}>
+                <Link to={routes.psycho.client(clientId!)}>
                     <ActionItem icon={<User className="h-6" />} label="Open Client Profile" />
                 </Link>
 
-                <Link to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}>
+                <Link to={routes.psycho.appointment(clientId!, appointmentId!)}>
                     <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                 </Link>
 

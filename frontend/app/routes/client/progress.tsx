@@ -13,6 +13,7 @@ import { AppPageHeader } from '~/components/AppPageHeader'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { progressService } from '~/services/progress.service'
 import { cn } from '~/lib/utils'
+import { routes } from '~/lib/routes'
 import type { ClientPsychologist } from '~/models/dashboard'
 import type { ProgressSession } from '~/models/progress'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
@@ -129,7 +130,7 @@ function SessionColumn({ session, expanded, onToggle, enterDelayMs }: SessionCol
                                 <AttachmentNode
                                     key={rec.id}
                                     label={attachmentLabel(rec, 'Recommendation')}
-                                    to={`/client/appointments/${session.id}`}
+                                    to={routes.client.appointment(session.id)}
                                     direction="up"
                                     delayMs={i * 60}
                                     closing={closing}
@@ -155,7 +156,7 @@ function SessionColumn({ session, expanded, onToggle, enterDelayMs }: SessionCol
                     style={{ width: `${DOT_RADIUS * 2}px`, height: `${DOT_RADIUS * 2}px` }}
                 />
                 <Link
-                    to={`/client/appointments/${session.id}`}
+                    to={routes.client.appointment(session.id)}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
                         'rounded-md border bg-card px-3 py-2 text-sm font-medium hover:bg-accent hover:underline',
@@ -195,7 +196,7 @@ function SessionColumn({ session, expanded, onToggle, enterDelayMs }: SessionCol
                                 <AttachmentNode
                                     key={imp.id}
                                     label={attachmentLabel(imp, 'Impression')}
-                                    to={`/client/appointments/${session.id}`}
+                                    to={routes.client.appointment(session.id)}
                                     direction="down"
                                     delayMs={i * 60}
                                     closing={closing}

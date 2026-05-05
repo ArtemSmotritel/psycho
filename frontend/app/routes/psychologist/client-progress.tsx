@@ -14,8 +14,8 @@ import type { AttachmentWithAppointment } from '~/models/attachment'
 import { impressionService } from '~/services/impression.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
-import { formatAttachmentTitle } from '~/utils/utils'
-import { format } from 'date-fns'
+import { formatAppDate, formatAttachmentTitle } from '~/utils/utils'
+import { routes } from '~/lib/routes'
 
 type ClientProgressProps = {
     params: {
@@ -62,13 +62,13 @@ function AppointmentInTimeline({
                 <Card className="flex-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <Link
-                            to={`/psycho/clients/${clientId}/appointments/${appointmentId}`}
+                            to={routes.psycho.appointment(clientId, appointmentId)}
                             className="text-sm font-medium hover:underline"
                         >
                             Appointment {startIndex + index + 1}
                         </Link>
                         <div className="text-sm text-muted-foreground">
-                            {format(new Date(appointmentStartTime), 'PPP HH:mm')}
+                            {formatAppDate(appointmentStartTime)}
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -79,10 +79,7 @@ function AppointmentInTimeline({
                                     <li key={impression.id} className="text-sm space-y-0.5">
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-xs text-muted-foreground">
-                                                {format(
-                                                    new Date(impression.createdAt),
-                                                    'PPP HH:mm',
-                                                )}
+                                                {formatAppDate(impression.createdAt)}
                                             </span>
                                             <span className="font-medium">
                                                 {formatAttachmentTitle(impression)}
