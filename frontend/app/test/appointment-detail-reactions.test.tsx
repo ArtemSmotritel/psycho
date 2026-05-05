@@ -9,7 +9,7 @@ const mockListForClient = vi.fn()
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        react: (...args: any[]) => mockReact(...args),
+        reactForClient: (...args: any[]) => mockReact(...args),
     },
 }))
 

@@ -8,9 +8,9 @@ const mockNavigate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
-        start: (...args: any[]) => mockStart(...args),
-        update: vi.fn(),
-        delete: (...args: any[]) => mockDelete(...args),
+        startForPsycho: (...args: any[]) => mockStart(...args),
+        updateForPsycho: vi.fn(),
+        deleteForPsycho: (...args: any[]) => mockDelete(...args),
     },
 }))
 

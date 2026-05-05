@@ -20,7 +20,7 @@ export function useCurrentClientAppointment(): {
 
         setIsLoading(true)
         appointmentService
-            .getClientAppointmentById(appointmentId)
+            .getByIdForClient(appointmentId)
             .then((res) => {
                 setAppointment(res.data.appointment)
             })

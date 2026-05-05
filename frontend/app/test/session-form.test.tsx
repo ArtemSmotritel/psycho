@@ -9,7 +9,7 @@ vi.mock('~/hooks/useCurrentClient', () => ({
 
 vi.mock('~/services/client.service', () => ({
     clientService: {
-        getList: vi.fn().mockResolvedValue({ data: { clients: [] } }),
+        getListForPsycho: vi.fn().mockResolvedValue({ data: { clients: [] } }),
     },
 }))
 

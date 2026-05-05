@@ -23,7 +23,7 @@ export default function ClientDashboard() {
         setIsLoading(true)
         setError(null)
         try {
-            const res = await dashboardService.getClientDashboard()
+            const res = await dashboardService.getDashboardForClient()
             setData(res.data)
         } catch {
             setError('Failed to load dashboard data.')
@@ -65,7 +65,7 @@ export default function ClientDashboard() {
     const handleToggleDoneForRec =
         (appointmentId: string) => async (attachmentId: string, done: boolean) => {
             try {
-                await recommendationService.react(appointmentId, attachmentId, { done })
+                await recommendationService.reactForClient(appointmentId, attachmentId, { done })
                 await fetchDashboard()
             } catch {
                 toast.error('Failed to update recommendation. Please try again.')
@@ -75,7 +75,7 @@ export default function ClientDashboard() {
     const handleSubmitCommentForRec =
         (appointmentId: string) => async (attachmentId: string, comment: string) => {
             try {
-                await recommendationService.react(appointmentId, attachmentId, { comment })
+                await recommendationService.reactForClient(appointmentId, attachmentId, { comment })
                 await fetchDashboard()
             } catch {
                 toast.error('Failed to submit comment. Please try again.')

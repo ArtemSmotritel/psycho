@@ -59,7 +59,7 @@ export default function ClientAttachmentDetail() {
         if (!commentText.trim()) return
         setIsSubmittingComment(true)
         try {
-            await recommendationService.react(appointmentId!, attachment.id, {
+            await recommendationService.reactForClient(appointmentId!, attachment.id, {
                 comment: commentText.trim(),
             })
             setCommentText('')

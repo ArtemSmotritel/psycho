@@ -102,7 +102,7 @@ export default function AssociativeImages() {
     useEffect(() => {
         setLoading(true)
         associativeImageService
-            .getList({ search: debouncedSearch, limit: PAGE_SIZE, offset: 0 })
+            .getListForPsycho({ search: debouncedSearch, limit: PAGE_SIZE, offset: 0 })
             .then((res) => {
                 setImages(res.data.images)
                 setTotal(res.data.total)
@@ -118,7 +118,7 @@ export default function AssociativeImages() {
     const handleLoadMore = async () => {
         setLoadingMore(true)
         try {
-            const res = await associativeImageService.getList({
+            const res = await associativeImageService.getListForPsycho({
                 search: debouncedSearch,
                 limit: PAGE_SIZE,
                 offset: images.length,
@@ -136,7 +136,7 @@ export default function AssociativeImages() {
         try {
             const uploadRes = await fileService.upload(file)
             const fileId = uploadRes.data.id
-            const res = await associativeImageService.create({ name, fileId })
+            const res = await associativeImageService.createForPsycho({ name, fileId })
             setImages([res.data.image, ...images])
             setTotal((t) => t + 1)
         } catch {
@@ -146,7 +146,7 @@ export default function AssociativeImages() {
 
     const handleDeleteImage = async (id: string) => {
         try {
-            await associativeImageService.delete(id)
+            await associativeImageService.deleteForPsycho(id)
             setImages(images.filter((image) => image.id !== id))
             setTotal((t) => t - 1)
         } catch {
@@ -156,7 +156,7 @@ export default function AssociativeImages() {
 
     const handleSaveEdit = async (id: string, newName: string) => {
         try {
-            const res = await associativeImageService.updateName(id, { name: newName })
+            const res = await associativeImageService.updateNameForPsycho(id, { name: newName })
             setImages(images.map((img) => (img.id === id ? res.data.image : img)))
         } catch {
             toast.error('Failed to rename image.')

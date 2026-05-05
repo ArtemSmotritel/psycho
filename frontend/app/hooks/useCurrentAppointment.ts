@@ -17,7 +17,7 @@ export function useCurrentAppointment(): { appointment: Appointment | null; isLo
 
         setIsLoading(true)
         appointmentService
-            .getById(clientId, appointmentId)
+            .getByIdForPsycho(clientId, appointmentId)
             .then((res) => {
                 setAppointment(res.data.appointment)
             })

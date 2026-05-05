@@ -27,7 +27,7 @@ export function useCreateAppointment(onSuccess?: () => void) {
         if (!values.clientId) return
         setIsCreating(true)
         try {
-            const { data } = await appointmentService.create(values.clientId, {
+            const { data } = await appointmentService.createForPsycho(values.clientId, {
                 startTime: formatISO(values.startTime),
                 endTime: formatISO(values.endTime),
                 generateGoogleMeet: values.generateGoogleMeet ?? false,

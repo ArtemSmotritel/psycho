@@ -6,22 +6,14 @@ import type {
 } from '~/models/associative-image'
 
 export const associativeImageService = {
-    getList: (params?: { search?: string; limit?: number; offset?: number }) => {
-        const query = new URLSearchParams()
-        if (params?.search) query.set('search', params.search)
-        if (params?.limit) query.set('limit', String(params.limit))
-        if (params?.offset) query.set('offset', String(params.offset))
-        const qs = query.toString()
-        return api.get<{ images: AssociativeImage[]; total: number }>(
-            `/associative-images${qs ? `?${qs}` : ''}`,
-        )
-    },
+    getListForPsycho: (params?: { search?: string; limit?: number; offset?: number }) =>
+        api.get<{ images: AssociativeImage[]; total: number }>('/associative-images', { params }),
 
-    create: (data: CreateAssociativeImageDTO) =>
+    createForPsycho: (data: CreateAssociativeImageDTO) =>
         api.post<{ image: AssociativeImage }>('/associative-images', data),
 
-    updateName: (id: string, data: UpdateAssociativeImageDTO) =>
+    updateNameForPsycho: (id: string, data: UpdateAssociativeImageDTO) =>
         api.patch<{ image: AssociativeImage }>(`/associative-images/${id}`, data),
 
-    delete: (id: string) => api.delete(`/associative-images/${id}`),
+    deleteForPsycho: (id: string) => api.delete(`/associative-images/${id}`),
 }

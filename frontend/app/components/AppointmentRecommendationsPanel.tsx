@@ -73,7 +73,7 @@ export function AppointmentRecommendationsPanel({
     ) => {
         setUpdatingId(recommendationId)
         try {
-            await attachmentService.update(
+            await attachmentService.updateForPsycho(
                 clientId,
                 appointmentId,
                 recommendationId,
@@ -100,7 +100,7 @@ export function AppointmentRecommendationsPanel({
 
     const handleReply = async (id: string, reply: string) => {
         try {
-            await recommendationService.reply(clientId, appointmentId, id, { reply })
+            await recommendationService.replyForPsycho(clientId, appointmentId, id, { reply })
             await fetchRecommendations()
         } catch {
             toast.error('Failed to submit reply.')

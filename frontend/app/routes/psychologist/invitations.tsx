@@ -31,7 +31,7 @@ export default function InvitationsPage() {
         setLoading(true)
         setError(null)
         try {
-            const res = await invitationService.list()
+            const res = await invitationService.listForPsycho()
             setInvitations(res.data.invitations)
         } catch {
             setError('Failed to load invitations. Please try again.')
@@ -70,7 +70,7 @@ export default function InvitationsPage() {
             return rest
         })
         try {
-            await invitationService.remove(id)
+            await invitationService.deleteForPsycho(id)
             toast.success('Invitation deleted')
             await fetchInvitations()
         } catch {

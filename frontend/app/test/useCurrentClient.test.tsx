@@ -6,7 +6,7 @@ const mockGetById = vi.fn()
 
 vi.mock('~/services/client.service', () => ({
     clientService: {
-        getById: (...args: any[]) => mockGetById(...args),
+        getByIdForPsycho: (...args: any[]) => mockGetById(...args),
     },
 }))
 

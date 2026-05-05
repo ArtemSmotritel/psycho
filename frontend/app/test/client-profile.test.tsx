@@ -7,11 +7,11 @@ const mockNavigate = vi.fn()
 
 vi.mock('~/services/client.service', () => ({
     clientService: {
-        remove: (...args: any[]) => mockRemove(...args),
-        getList: vi.fn(),
-        getById: vi.fn(),
-        addByEmail: vi.fn(),
-        update: vi.fn(),
+        deleteForPsycho: (...args: any[]) => mockRemove(...args),
+        getListForPsycho: vi.fn(),
+        getByIdForPsycho: vi.fn(),
+        addByEmailForPsycho: vi.fn(),
+        updateForPsycho: vi.fn(),
     },
 }))
 

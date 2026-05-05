@@ -188,9 +188,13 @@ export default function ClientAppointmentDetail() {
                                     onToggleDone={async (id, done) => {
                                         if (!appointmentId) return
                                         try {
-                                            await recommendationService.react(appointmentId, id, {
-                                                done,
-                                            })
+                                            await recommendationService.reactForClient(
+                                                appointmentId,
+                                                id,
+                                                {
+                                                    done,
+                                                },
+                                            )
                                             const res = await attachmentService.listForClient(
                                                 appointmentId,
                                                 'recommendation',
@@ -203,9 +207,13 @@ export default function ClientAppointmentDetail() {
                                     onSubmitComment={async (id, comment) => {
                                         if (!appointmentId) return
                                         try {
-                                            await recommendationService.react(appointmentId, id, {
-                                                comment,
-                                            })
+                                            await recommendationService.reactForClient(
+                                                appointmentId,
+                                                id,
+                                                {
+                                                    comment,
+                                                },
+                                            )
                                             const res = await attachmentService.listForClient(
                                                 appointmentId,
                                                 'recommendation',

@@ -150,7 +150,7 @@ export default function Session() {
         setIsStarting(true)
         setStartError(null)
         try {
-            await appointmentService.start(appointment.clientId, appointment.id)
+            await appointmentService.startForPsycho(appointment.clientId, appointment.id)
             navigate(`/psycho/clients/${appointment.clientId}/appointments/${appointment.id}/live`)
         } catch (err: any) {
             const errorCode = err?.response?.data?.error
@@ -171,7 +171,7 @@ export default function Session() {
         if (!appointment) return
         setIsDeleting(true)
         try {
-            await appointmentService.delete(appointment.clientId, appointment.id)
+            await appointmentService.deleteForPsycho(appointment.clientId, appointment.id)
             toast.success('Appointment deleted.')
             navigate(`/psycho/clients/${appointment.clientId}/appointments`)
         } catch {
@@ -270,7 +270,7 @@ export default function Session() {
                                         ? { acknowledgePingConflict: true }
                                         : {}),
                                 }
-                                const { data } = await appointmentService.update(
+                                const { data } = await appointmentService.updateForPsycho(
                                     appointment.clientId,
                                     appointment.id,
                                     dto,

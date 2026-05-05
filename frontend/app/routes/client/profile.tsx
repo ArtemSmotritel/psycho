@@ -83,7 +83,7 @@ export default function ClientProfile() {
         setIsLoading(true)
         setError(null)
         try {
-            const res = await clientService.getMe()
+            const res = await clientService.getMeForClient()
             setClient(res.data.client)
         } catch {
             setError('Failed to load profile.')
@@ -116,7 +116,7 @@ export default function ClientProfile() {
 
     const handleEdit = async (values: any) => {
         try {
-            const res = await clientService.updateMe(values)
+            const res = await clientService.updateMeForClient(values)
             setClient(res.data.client)
             toast.success('Profile updated.')
         } catch {

@@ -48,7 +48,12 @@ export default function SessionAttachment() {
                 removeFileIds: values.removedFileIds.length > 0 ? values.removedFileIds : undefined,
             }
             if (attachment.type === 'note' || attachment.type === 'recommendation') {
-                await attachmentService.update(clientId!, appointmentId!, attachment.id, updateData)
+                await attachmentService.updateForPsycho(
+                    clientId!,
+                    appointmentId!,
+                    attachment.id,
+                    updateData,
+                )
             }
             toast.success('Attachment updated.')
             refetch()

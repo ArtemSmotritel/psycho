@@ -75,7 +75,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         values: { name: string; text?: string; removedFileIds?: string[] },
     ) => {
         try {
-            await attachmentService.update(clientId, appointmentId, noteId, {
+            await attachmentService.updateForPsycho(clientId, appointmentId, noteId, {
                 name: values.name,
                 text: values.text,
                 removeFileIds:

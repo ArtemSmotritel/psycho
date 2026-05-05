@@ -191,7 +191,7 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
         setIsLoading(true)
         setError(null)
         appointmentService
-            .getList(params.clientId)
+            .getListForPsycho(params.clientId)
             .then((res) => {
                 setAppointments(res.data.appointments)
             })

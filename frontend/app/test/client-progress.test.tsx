@@ -7,7 +7,7 @@ const mockGetPsychoProgressList = vi.fn()
 
 vi.mock('~/services/impression.service', () => ({
     impressionService: {
-        getPsychoProgressList: (...args: any[]) => mockGetPsychoProgressList(...args),
+        getProgressListForPsycho: (...args: any[]) => mockGetPsychoProgressList(...args),
     },
 }))
 

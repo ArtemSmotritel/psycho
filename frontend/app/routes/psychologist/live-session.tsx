@@ -140,7 +140,7 @@ export default function LiveSession() {
                     snapshotDataUrl = null
                 }
             }
-            const { data } = await appointmentService.end(
+            const { data } = await appointmentService.endForPsycho(
                 clientId!,
                 appointmentId!,
                 snapshotDataUrl,

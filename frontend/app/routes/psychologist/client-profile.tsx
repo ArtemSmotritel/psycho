@@ -115,7 +115,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
 
     const handleEditClient = async (values: any) => {
         try {
-            await clientService.update(client.id, values)
+            await clientService.updateForPsycho(client.id, values)
             toast.success('Client updated.')
         } catch {
             toast.error('Failed to update client. Please try again.')
@@ -124,7 +124,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
 
     const handleRemoveClient = async () => {
         try {
-            await clientService.remove(client.id)
+            await clientService.deleteForPsycho(client.id)
             navigate(`/${role}/clients`)
         } catch {
             toast.error('Failed to remove client. Please try again.')

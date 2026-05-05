@@ -8,8 +8,8 @@ let mockExcalidrawAPI: any = null
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
-        getById: vi.fn(),
-        end: (...args: any[]) => mockEnd(...args),
+        getByIdForPsycho: vi.fn(),
+        endForPsycho: (...args: any[]) => mockEnd(...args),
     },
 }))
 

@@ -6,11 +6,12 @@ import type {
 } from '~/models/invitation'
 
 export const invitationService = {
-    create: (email: string) => api.post<CreateInvitationResponse>('/invitations', { email }),
+    createForPsycho: (email: string) =>
+        api.post<CreateInvitationResponse>('/invitations', { email }),
 
-    list: () => api.get<{ invitations: Invitation[] }>('/invitations'),
+    listForPsycho: () => api.get<{ invitations: Invitation[] }>('/invitations'),
 
-    remove: (id: string) => api.delete(`/invitations/${id}`),
+    deleteForPsycho: (id: string) => api.delete(`/invitations/${id}`),
 
     accept: (token: string) => api.post<AcceptInvitationResponse>('/invitations/accept', { token }),
 }

@@ -10,7 +10,7 @@ const mockNavigate = vi.fn()
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
-        getClientAppointmentById: (...args: any[]) => mockGetClientAppointmentById(...args),
+        getByIdForClient: (...args: any[]) => mockGetClientAppointmentById(...args),
     },
 }))
 

@@ -82,7 +82,7 @@ export function WhiteboardImageInsert({ excalidrawAPI }: WhiteboardImageInsertPr
     }, [searchQuery])
 
     const fetchImages = useCallback(async (search: string, offset: number) => {
-        const res = await associativeImageService.getList({
+        const res = await associativeImageService.getListForPsycho({
             search,
             limit: PAGE_SIZE,
             offset,

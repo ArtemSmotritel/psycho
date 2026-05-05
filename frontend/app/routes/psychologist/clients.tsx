@@ -147,7 +147,7 @@ export default function Clients() {
         setLoading(true)
         setError(null)
         try {
-            const res = await clientService.getList()
+            const res = await clientService.getListForPsycho()
             setData(res.data.clients)
         } catch {
             setError('Failed to load clients. Please try again.')

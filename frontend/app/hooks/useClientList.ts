@@ -7,7 +7,7 @@ export function useClientList(): ClientSummary[] {
 
     useEffect(() => {
         clientService
-            .getList()
+            .getListForPsycho()
             .then((res) => {
                 setClients(res.data.clients)
             })

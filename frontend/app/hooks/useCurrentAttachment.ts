@@ -27,7 +27,7 @@ export function useCurrentAttachment(): {
 
         setIsLoading(true)
         attachmentService
-            .getById(clientId, appointmentId, attachmentId)
+            .getByIdForPsycho(clientId, appointmentId, attachmentId)
             .then((res) => {
                 setAttachment(res.data.attachment)
                 setReaction(res.data.reaction ?? null)

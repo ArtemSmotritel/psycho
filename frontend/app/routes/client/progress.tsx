@@ -276,7 +276,7 @@ export default function ClientProgress() {
         setIsLoadingPsychos(true)
         setError(null)
         progressService
-            .getPsychologists()
+            .getPsychologistsForClient()
             .then((res) => {
                 setPsychologists(res.data.psychologists)
                 if (res.data.psychologists.length === 1) {
@@ -299,7 +299,7 @@ export default function ClientProgress() {
         setIsLoadingSessions(true)
         setError(null)
         progressService
-            .getProgress(selectedPsychoId)
+            .getProgressForClient(selectedPsychoId)
             .then((res) => {
                 setSessions(res.data.sessions)
             })

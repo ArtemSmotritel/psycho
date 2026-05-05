@@ -116,7 +116,7 @@ export default function LiveAppointment() {
         }
 
         appointmentService
-            .getClientAppointmentById(appointmentId)
+            .getByIdForClient(appointmentId)
             .then((res) => {
                 setAppointment(res.data.appointment)
             })
@@ -151,7 +151,7 @@ export default function LiveAppointment() {
 
         const interval = setInterval(() => {
             appointmentService
-                .getClientAppointmentById(appointmentId!)
+                .getByIdForClient(appointmentId!)
                 .then((res) => {
                     const updated = res.data.appointment
                     if (updated.status === 'past') {

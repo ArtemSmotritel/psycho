@@ -182,7 +182,7 @@ export default function ClientAppointments() {
         setIsLoading(true)
         setError(null)
         appointmentService
-            .getClientGlobalList()
+            .getListForClient()
             .then((res) => {
                 setAppointments(res.data.appointments)
             })

@@ -1,5 +1,6 @@
 import { isAxiosError } from 'axios'
 import { api } from './api'
+import { clientAtt, psychoAtt } from './paths'
 import type {
     Attachment,
     AttachmentType,
@@ -24,57 +25,44 @@ export interface ClientAttachmentDetailResponse {
 }
 
 export const attachmentService = {
-    getById: (clientId: string, appointmentId: string, attachmentId: string) =>
-        api.get<AttachmentDetailResponse>(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
-        ),
+    getByIdForPsycho: (clientId: string, appointmentId: string, attachmentId: string) =>
+        api.get<AttachmentDetailResponse>(psychoAtt(clientId, appointmentId, attachmentId)),
 
     listForPsycho: (clientId: string, appointmentId: string, type?: AttachmentType) =>
-        api.get<PsychoAttachmentList>(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments`,
-            { params: type ? { type } : undefined },
-        ),
+        api.get<PsychoAttachmentList>(psychoAtt(clientId, appointmentId), {
+            params: type ? { type } : undefined,
+        }),
 
     listForClient: (appointmentId: string, type?: Exclude<AttachmentType, 'note'>) =>
-        api.get<ClientAttachmentList>(`/client/appointments/${appointmentId}/attachments`, {
+        api.get<ClientAttachmentList>(clientAtt(appointmentId), {
             params: type ? { type } : undefined,
         }),
 
     createForPsycho: (clientId: string, appointmentId: string, data: CreateAttachmentPsychoDTO) =>
-        api.post<{ attachment: Attachment }>(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments`,
-            data,
-        ),
+        api.post<{ attachment: Attachment }>(psychoAtt(clientId, appointmentId), data),
 
     createForClient: (appointmentId: string, data: CreateAttachmentClientDTO) =>
-        api.post<{ attachment: Attachment }>(
-            `/client/appointments/${appointmentId}/attachments`,
-            data,
-        ),
+        api.post<{ attachment: Attachment }>(clientAtt(appointmentId), data),
 
-    update: (
+    updateForPsycho: (
         clientId: string,
         appointmentId: string,
         attachmentId: string,
         data: UpdateAttachmentDTO,
     ) =>
         api.patch<{ attachment: Attachment }>(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
+            psychoAtt(clientId, appointmentId, attachmentId),
             data,
         ),
 
     deleteForPsycho: (clientId: string, appointmentId: string, attachmentId: string) =>
-        api.delete(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}`,
-        ),
+        api.delete(psychoAtt(clientId, appointmentId, attachmentId)),
 
     getByIdForClient: (appointmentId: string, attachmentId: string) =>
-        api.get<ClientAttachmentDetailResponse>(
-            `/client/appointments/${appointmentId}/attachments/${attachmentId}`,
-        ),
+        api.get<ClientAttachmentDetailResponse>(clientAtt(appointmentId, attachmentId)),
 
     deleteForClient: (appointmentId: string, attachmentId: string) =>
-        api.delete(`/client/appointments/${appointmentId}/attachments/${attachmentId}`),
+        api.delete(clientAtt(appointmentId, attachmentId)),
 }
 
 export function getDeleteAttachmentErrorMessage(err: unknown): string {

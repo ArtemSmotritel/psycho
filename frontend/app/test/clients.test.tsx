@@ -6,7 +6,7 @@ const mockGetList = vi.fn()
 
 vi.mock('~/services/client.service', () => ({
     clientService: {
-        getList: (...args: any[]) => mockGetList(...args),
+        getListForPsycho: (...args: any[]) => mockGetList(...args),
     },
 }))
 

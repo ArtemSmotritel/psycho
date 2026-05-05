@@ -9,7 +9,7 @@ vi.mock('~/hooks/useRoleGuard', () => ({
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        react: vi.fn(),
+        reactForClient: vi.fn(),
     },
 }))
 

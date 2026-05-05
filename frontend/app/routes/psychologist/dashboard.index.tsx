@@ -14,7 +14,7 @@ export default function DashboardOverview() {
 
     useEffect(() => {
         dashboardService
-            .getPsychoDashboard()
+            .getDashboardForPsycho()
             .then((res) => {
                 setData(res.data)
             })

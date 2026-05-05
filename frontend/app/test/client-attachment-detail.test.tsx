@@ -19,7 +19,7 @@ vi.mock('~/services/attachment.service', () => ({
 
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
-        react: (...args: any[]) => mockReact(...args),
+        reactForClient: (...args: any[]) => mockReact(...args),
     },
 }))
 

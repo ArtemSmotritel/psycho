@@ -24,9 +24,9 @@ vi.mock('~/components/AppointmentRecommendationsPanel', () => ({
 
 vi.mock('~/services/appointment.service', () => ({
     appointmentService: {
-        start: vi.fn(),
-        update: vi.fn(),
-        delete: vi.fn(),
+        startForPsycho: vi.fn(),
+        updateForPsycho: vi.fn(),
+        deleteForPsycho: vi.fn(),
     },
 }))
 

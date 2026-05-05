@@ -5,7 +5,7 @@ const mockAddByEmail = vi.fn()
 
 vi.mock('~/services/client.service', () => ({
     clientService: {
-        addByEmail: (...args: any[]) => mockAddByEmail(...args),
+        addByEmailForPsycho: (...args: any[]) => mockAddByEmail(...args),
     },
 }))
 

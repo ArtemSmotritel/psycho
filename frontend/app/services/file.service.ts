@@ -5,10 +5,6 @@ export const fileService = {
     upload: (file: File) => {
         const formData = new FormData()
         formData.append('file', file)
-        return api.post<FileUploadResponse>('/files/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        })
+        return api.post<FileUploadResponse>('/files/upload', formData)
     },
 }

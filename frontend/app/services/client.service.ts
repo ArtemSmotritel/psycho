@@ -2,19 +2,20 @@ import { api } from './api'
 import type { Client, ClientSummary } from '~/models/client'
 
 export const clientService = {
-    addByEmail: (email: string) => api.post<{ client: ClientSummary }>('/clients', { email }),
+    addByEmailForPsycho: (email: string) =>
+        api.post<{ client: ClientSummary }>('/clients', { email }),
 
-    getList: () => api.get<{ clients: ClientSummary[] }>('/clients'),
+    getListForPsycho: () => api.get<{ clients: ClientSummary[] }>('/clients'),
 
-    getById: (id: string) => api.get<{ client: Client }>(`/clients/${id}`),
+    getByIdForPsycho: (id: string) => api.get<{ client: Client }>(`/clients/${id}`),
 
-    update: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
+    updateForPsycho: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
 
-    remove: (id: string) => api.delete(`/clients/${id}`),
+    deleteForPsycho: (id: string) => api.delete(`/clients/${id}`),
 
-    getMe: () => api.get<{ client: Client }>('/clients/me'),
+    getMeForClient: () => api.get<{ client: Client }>('/clients/me'),
 
-    updateMe: (
+    updateMeForClient: (
         data: Partial<Pick<Client, 'name' | 'username' | 'phone' | 'telegram' | 'instagram'>>,
     ) => api.put<{ client: Client }>('/clients/me', data),
 }

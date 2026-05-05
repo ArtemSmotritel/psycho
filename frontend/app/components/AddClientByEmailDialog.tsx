@@ -58,7 +58,7 @@ export function AddClientByEmailDialog({ trigger, onSuccess }: AddClientByEmailD
     async function handleSubmit(values: FormValues) {
         setServerError(null)
         try {
-            await clientService.addByEmail(values.email)
+            await clientService.addByEmailForPsycho(values.email)
             form.reset()
             setOpen(false)
             onSuccess()
@@ -78,7 +78,7 @@ export function AddClientByEmailDialog({ trigger, onSuccess }: AddClientByEmailD
         setServerError(null)
         setDialogState({ type: 'invite-sending' })
         try {
-            const res = await invitationService.create(email)
+            const res = await invitationService.createForPsycho(email)
             setDialogState({ type: 'invite-sent', inviteLink: res.data.inviteLink })
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to send invitation.'

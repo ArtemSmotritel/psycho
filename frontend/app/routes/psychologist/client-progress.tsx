@@ -119,7 +119,7 @@ export default function ClientProgress({ params }: ClientProgressProps) {
         setIsLoading(true)
         setError(null)
         impressionService
-            .getPsychoProgressList(params.clientId)
+            .getProgressListForPsycho(params.clientId)
             .then((res) => {
                 setImpressions(res.data.impressions)
             })

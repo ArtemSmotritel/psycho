@@ -7,7 +7,7 @@ const mockGetClientDashboard = vi.fn()
 
 vi.mock('~/services/dashboard.service', () => ({
     dashboardService: {
-        getClientDashboard: (...args: any[]) => mockGetClientDashboard(...args),
+        getDashboardForClient: (...args: any[]) => mockGetClientDashboard(...args),
     },
 }))
 

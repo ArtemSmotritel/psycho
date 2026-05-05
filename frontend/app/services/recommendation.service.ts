@@ -1,16 +1,22 @@
 import { api } from './api'
+import { clientAtt, psychoAtt } from './paths'
 import type { RecommendationReaction, SetReplyDTO, UpsertReactionDTO } from '~/models/attachment'
 
 export const recommendationService = {
-    react: (appointmentId: string, attachmentId: string, data: UpsertReactionDTO) =>
+    reactForClient: (appointmentId: string, attachmentId: string, data: UpsertReactionDTO) =>
         api.patch<{ reaction: RecommendationReaction }>(
-            `/client/appointments/${appointmentId}/attachments/${attachmentId}/reaction`,
+            `${clientAtt(appointmentId, attachmentId)}/reaction`,
             data,
         ),
 
-    reply: (clientId: string, appointmentId: string, attachmentId: string, data: SetReplyDTO) =>
+    replyForPsycho: (
+        clientId: string,
+        appointmentId: string,
+        attachmentId: string,
+        data: SetReplyDTO,
+    ) =>
         api.patch<{ reaction: RecommendationReaction }>(
-            `/clients/${clientId}/appointments/${appointmentId}/attachments/${attachmentId}/reply`,
+            `${psychoAtt(clientId, appointmentId, attachmentId)}/reply`,
             data,
         ),
 }

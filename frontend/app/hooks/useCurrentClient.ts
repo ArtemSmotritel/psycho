@@ -14,7 +14,7 @@ export function useCurrentClient(): Client | null {
         }
 
         clientService
-            .getById(clientId)
+            .getByIdForPsycho(clientId)
             .then((res) => {
                 setClient(res.data.client)
             })
