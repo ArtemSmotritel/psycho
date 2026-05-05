@@ -22,12 +22,8 @@ import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
-import {
-    AttachmentForm,
-    type AttachmentFormSubmitValues,
-    isAttachmentFile,
-} from '~/components/AttachmentForm'
-import { fileService } from '~/services/file.service'
+import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
+import { resolveAttachmentFileIds } from '~/services/file.service'
 import { ImpressionList } from '~/components/ImpressionList'
 import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
@@ -76,23 +72,7 @@ export default function LiveAppointment() {
     const handleCreateImpression = async (values: AttachmentFormSubmitValues) => {
         if (!appointmentId) return
         try {
-            const audioFileIds: string[] = []
-            for (const f of values.voiceFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    audioFileIds.push(res.data.id)
-                }
-            }
-
-            const imageFileIds: string[] = []
-            for (const f of values.imageFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    imageFileIds.push(res.data.id)
-                } else if (isAttachmentFile(f)) {
-                    imageFileIds.push(f.id)
-                }
-            }
+            const { audioFileIds, imageFileIds } = await resolveAttachmentFileIds(values)
 
             const res = await attachmentService.createForClient(appointmentId, {
                 type: 'impression',

@@ -11,15 +11,11 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService } from '~/services/attachment.service'
-import { fileService } from '~/services/file.service'
+import { resolveAttachmentFileIds } from '~/services/file.service'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
-import {
-    AttachmentForm,
-    type AttachmentFormSubmitValues,
-    isAttachmentFile,
-} from '~/components/AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
 import { toast } from 'sonner'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 
@@ -37,23 +33,7 @@ export default function ClientAppointmentDetail() {
     const handleCreateImpression = async (values: AttachmentFormSubmitValues) => {
         if (!appointmentId) return
         try {
-            const audioFileIds: string[] = []
-            for (const f of values.voiceFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    audioFileIds.push(res.data.id)
-                }
-            }
-
-            const imageFileIds: string[] = []
-            for (const f of values.imageFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    imageFileIds.push(res.data.id)
-                } else if (isAttachmentFile(f)) {
-                    imageFileIds.push(f.id)
-                }
-            }
+            const { audioFileIds, imageFileIds } = await resolveAttachmentFileIds(values)
 
             const res = await attachmentService.createForClient(appointmentId, {
                 type: 'impression',

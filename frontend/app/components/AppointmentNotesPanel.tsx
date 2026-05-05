@@ -4,9 +4,9 @@ import { toast } from 'sonner'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { ConfirmAction } from './ConfirmAction'
-import { AttachmentForm, type AttachmentFormSubmitValues, isAttachmentFile } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
-import { fileService } from '~/services/file.service'
+import { resolveAttachmentFileIds } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
 
 interface AppointmentNotesPanelProps {
@@ -38,23 +38,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
 
     const handleCreate = async (values: AttachmentFormSubmitValues) => {
         try {
-            const audioFileIds: string[] = []
-            for (const f of values.voiceFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    audioFileIds.push(res.data.id)
-                }
-            }
-
-            const imageFileIds: string[] = []
-            for (const f of values.imageFiles) {
-                if (f instanceof File) {
-                    const res = await fileService.upload(f)
-                    imageFileIds.push(res.data.id)
-                } else if (isAttachmentFile(f)) {
-                    imageFileIds.push(f.id)
-                }
-            }
+            const { audioFileIds, imageFileIds } = await resolveAttachmentFileIds(values)
 
             await attachmentService.createForPsycho(clientId, appointmentId, {
                 type: 'note',
