@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Search, Copy, Trash2 } from 'lucide-react'
+import { Search, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,7 @@ import {
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
-import { ConfirmAction } from '~/components/ConfirmAction'
+import { ConfirmDeleteButton } from '~/components/ConfirmDeleteButton'
 import { invitationService } from '~/services/invitation.service'
 import type { Invitation } from '~/models/invitation'
 import { formatAppDate } from '~/utils/utils'
@@ -148,20 +148,10 @@ export default function InvitationsPage() {
                                                         ? 'Copied!'
                                                         : 'Copy Link'}
                                                 </Button>
-                                                <ConfirmAction
-                                                    trigger={
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="sm"
-                                                        >
-                                                            <Trash2 className="mr-1 h-3.5 w-3.5" />
-                                                            Delete
-                                                        </Button>
-                                                    }
+                                                <ConfirmDeleteButton
+                                                    itemLabel="invitation"
                                                     title="Delete invitation?"
                                                     description={`This will permanently delete the invitation sent to ${invitation.invitedEmail}. The link will stop working.`}
-                                                    confirmText="Delete"
                                                     onConfirm={() => handleDelete(invitation.id)}
                                                 />
                                             </div>

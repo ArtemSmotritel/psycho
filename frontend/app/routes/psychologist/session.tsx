@@ -1,6 +1,6 @@
 import { Video, Edit, User, Trash2, LogIn, Play } from 'lucide-react'
 import { SessionForm } from '@/components/SessionForm'
-import { ConfirmAction } from '@/components/ConfirmAction'
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -21,6 +21,8 @@ import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecomme
 import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
+import { Loading } from '~/components/Loading'
+import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 import { PostSessionFollowUpDialog } from '~/components/PostSessionFollowUpDialog'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
 import { isPostSessionPromptDone, isRecentlyEnded } from '~/utils/post-session-prompt'
@@ -80,7 +82,7 @@ export default function Session() {
     }, [appointment, clientId])
 
     if (isLoading) {
-        return <p>Loading appointment...</p>
+        return <Loading text="Loading appointment..." />
     }
 
     if (!appointment) {
@@ -99,16 +101,7 @@ export default function Session() {
                     {formatAppointmentTimeRange(appointment)}
                 </p>
                 <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
-                {appointment.whiteboardSnapshotUrl && (
-                    <div className="mt-6 space-y-2">
-                        <h3 className="text-lg font-semibold">Whiteboard Snapshot</h3>
-                        <img
-                            src={appointment.whiteboardSnapshotUrl}
-                            alt="Whiteboard Snapshot"
-                            className="w-full rounded-lg"
-                        />
-                    </div>
-                )}
+                <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
                     <ImpressionList
@@ -309,7 +302,8 @@ export default function Session() {
                 />
 
                 {userRole === 'psychologist' && appointment.status === 'upcoming' && (
-                    <ConfirmAction
+                    <ConfirmDeleteButton
+                        itemLabel="Appointment"
                         trigger={
                             <ActionItem
                                 icon={<Trash2 className="h-6" />}
@@ -319,9 +313,6 @@ export default function Session() {
                                 disabled={isDeleting}
                             />
                         }
-                        title="Delete Appointment"
-                        description="Are you sure you want to delete this appointment? This action cannot be undone."
-                        confirmText="Delete"
                         onConfirm={handleDeleteAppointment}
                     />
                 )}

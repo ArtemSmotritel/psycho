@@ -2,7 +2,9 @@ import { toast } from 'sonner'
 import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { ConfirmAction } from './ConfirmAction'
+import { ConfirmDeleteButton } from './ConfirmDeleteButton'
+import { EmptyMessage } from './EmptyMessage'
+import { Loading } from './Loading'
 import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
@@ -80,7 +82,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
     }
 
     if (isLoading) {
-        return <p>Loading notes...</p>
+        return <Loading text="Loading notes..." />
     }
 
     if (error) {
@@ -101,7 +103,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
             </div>
 
             {notes.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No notes yet.</p>
+                <EmptyMessage title="No notes yet." />
             ) : (
                 <div className="space-y-3">
                     {notes.map((note) => (
@@ -142,19 +144,8 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                             })
                                         }
                                     />
-                                    <ConfirmAction
-                                        trigger={
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive hover:text-destructive"
-                                            >
-                                                Delete
-                                            </Button>
-                                        }
-                                        title="Delete Note"
-                                        description="Are you sure you want to delete this note? This action cannot be undone."
-                                        confirmText="Delete"
+                                    <ConfirmDeleteButton
+                                        itemLabel="Note"
                                         onConfirm={() => handleDelete(note.id)}
                                     />
                                 </div>

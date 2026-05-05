@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
+import { Loading } from '~/components/Loading'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { dashboardService } from '~/services/dashboard.service'
 import { formatAppointmentDateTimeRange } from '~/utils/utils'
@@ -23,7 +24,7 @@ export default function DashboardOverview() {
         return (
             <PageContainer>
                 <AppPageHeader text="Dashboard" />
-                <p className="text-muted-foreground">Loading...</p>
+                <Loading />
             </PageContainer>
         )
     }

@@ -4,7 +4,9 @@ import { formatAppDate } from '~/utils/utils'
 import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Textarea } from '~/components/ui/textarea'
-import { ConfirmAction } from './ConfirmAction'
+import { ConfirmDeleteButton } from './ConfirmDeleteButton'
+import { EmptyMessage } from './EmptyMessage'
+import { Loading } from './Loading'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
@@ -100,7 +102,7 @@ export function AppointmentRecommendationsPanel({
     }
 
     if (isLoading) {
-        return <p>Loading recommendations...</p>
+        return <Loading text="Loading recommendations..." />
     }
 
     if (error) {
@@ -120,7 +122,7 @@ export function AppointmentRecommendationsPanel({
             </div>
 
             {recommendations.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No recommendations yet.</p>
+                <EmptyMessage title="No recommendations yet." />
             ) : (
                 <div className="space-y-3">
                     {recommendations.map((recommendation) => (
@@ -155,19 +157,8 @@ export function AppointmentRecommendationsPanel({
                                         isLoading={updatingId === recommendation.id}
                                         onSubmit={(dto) => handleUpdate(recommendation.id, dto)}
                                     />
-                                    <ConfirmAction
-                                        trigger={
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive hover:text-destructive"
-                                            >
-                                                Delete
-                                            </Button>
-                                        }
-                                        title="Delete Recommendation"
-                                        description="Are you sure you want to delete this recommendation? This action cannot be undone."
-                                        confirmText="Delete"
+                                    <ConfirmDeleteButton
+                                        itemLabel="Recommendation"
                                         onConfirm={() => handleDelete(recommendation.id)}
                                     />
                                 </div>

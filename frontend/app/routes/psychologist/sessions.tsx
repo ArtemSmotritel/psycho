@@ -37,6 +37,7 @@ import { SessionForm } from '@/components/SessionForm'
 import { DataTablePagination } from '@/components/DataTablePagination'
 import type { AppointmentWithClient } from '~/models/appointment'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
+import { Loading } from '~/components/Loading'
 import { appointmentService } from '~/services/appointment.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 import { useResource } from '~/hooks/useResource'
@@ -188,7 +189,7 @@ export default function Sessions() {
     }
 
     if (isLoading) {
-        return <p className="text-muted-foreground">Loading appointments...</p>
+        return <Loading text="Loading appointments..." />
     }
 
     if (error) {

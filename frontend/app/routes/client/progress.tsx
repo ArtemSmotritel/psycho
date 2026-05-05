@@ -11,6 +11,7 @@ import {
 import { PageContainer } from '~/components/PageContainer'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
 import { progressService } from '~/services/progress.service'
 import { cn } from '~/lib/utils'
 import { routes } from '~/lib/routes'
@@ -324,7 +325,7 @@ export default function ClientProgress() {
         return (
             <PageContainer>
                 <AppPageHeader text="Progress" />
-                <p>Loading...</p>
+                <Loading />
             </PageContainer>
         )
     }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ConfirmAction } from '@/components/ConfirmAction'
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { AttachmentMediaPreview } from '~/components/AttachmentMediaPreview'
 import { Button } from '@/components/ui/button'
@@ -93,7 +93,8 @@ export default function ClientAttachmentDetail() {
                 </Link>
 
                 {isOwnImpression && (
-                    <ConfirmAction
+                    <ConfirmDeleteButton
+                        itemLabel="Impression"
                         trigger={
                             <ActionItem
                                 icon={<Trash2 className="h-6" />}
@@ -102,9 +103,6 @@ export default function ClientAttachmentDetail() {
                                 className="text-destructive hover:text-destructive"
                             />
                         }
-                        title="Delete Impression"
-                        description="Are you sure you want to delete this impression? This action cannot be undone."
-                        confirmText="Delete"
                         onConfirm={handleDelete}
                     />
                 )}

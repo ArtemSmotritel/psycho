@@ -6,8 +6,9 @@ import { useState, useEffect } from 'react'
 import { Trash2, Save, X, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
 import { AddImageDialog } from '~/components/AddImageDialog'
-import { ConfirmAction } from '~/components/ConfirmAction'
+import { ConfirmDeleteButton } from '~/components/ConfirmDeleteButton'
 import { ImagePreview } from '~/components/ImagePreview'
 import { ProtectedRoute } from '~/components/ProtectedRoute'
 import { toast } from 'sonner'
@@ -52,7 +53,8 @@ function ImageCard({ image, onDelete, onSaveEdit }: ImageCardProps) {
                 <ImagePreview src={image.imageUrl} alt={image.name} />
             </CardContent>
             <CardFooter className="flex justify-between items-center">
-                <ConfirmAction
+                <ConfirmDeleteButton
+                    itemLabel="Image"
                     trigger={
                         <Button
                             variant="ghost"
@@ -62,9 +64,6 @@ function ImageCard({ image, onDelete, onSaveEdit }: ImageCardProps) {
                             <Trash2 className="h-4 w-4 mr-2" />
                         </Button>
                     }
-                    title="Delete Image"
-                    description="Are you sure you want to delete this image? This action cannot be undone."
-                    confirmText="Delete"
                     onConfirm={() => onDelete(image.id)}
                 />
                 {editingName?.id === image.id && (
@@ -181,7 +180,7 @@ export default function AssociativeImages() {
                     <AddImageDialog onAddImage={handleAddImage} />
                 </div>
 
-                {loading && <p className="text-muted-foreground">Loading...</p>}
+                {loading && <Loading />}
 
                 {!loading && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

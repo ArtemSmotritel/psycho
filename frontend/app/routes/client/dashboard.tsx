@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
 import { RecommendationCard } from '~/components/RecommendationCard'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { useResource } from '~/hooks/useResource'
@@ -31,7 +32,7 @@ export default function ClientDashboard() {
         return (
             <PageContainer>
                 <AppPageHeader text="Dashboard" />
-                <p>Loading...</p>
+                <Loading />
             </PageContainer>
         )
     }

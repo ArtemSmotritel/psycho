@@ -3,6 +3,8 @@ import { Button } from '~/components/ui/button'
 import type { Attachment } from '~/models/attachment'
 import { formatAppDate, formatAttachmentTitle } from '~/utils/utils'
 import { routes } from '~/lib/routes'
+import { EmptyMessage } from './EmptyMessage'
+import { Loading } from './Loading'
 
 interface ImpressionListProps {
     impressions: Attachment[]
@@ -18,15 +20,11 @@ export function ImpressionList({
     clientLinks,
 }: ImpressionListProps) {
     if (isLoading) {
-        return (
-            <div data-testid="loading-spinner" className="flex items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
-            </div>
-        )
+        return <Loading text="Loading impressions..." />
     }
 
     if (impressions.length === 0) {
-        return <p className="text-muted-foreground text-sm">No impressions yet.</p>
+        return <EmptyMessage title="No impressions yet." />
     }
 
     return (

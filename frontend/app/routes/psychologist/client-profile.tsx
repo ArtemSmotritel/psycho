@@ -20,6 +20,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { ConfirmAction } from '~/components/ConfirmAction'
+import { Loading } from '~/components/Loading'
 import { formatAppDate } from '~/utils/utils'
 import { ProtectedComponent } from '~/components/ProtectedComponent'
 import { clientService } from '~/services/client.service'
@@ -107,7 +108,7 @@ export default function ClientProfile({ params }: ClientProfileProps) {
         useCreateAppointment()
     const client = useCurrentClient()
 
-    if (!client) return <p>Loading...</p>
+    if (!client) return <Loading />
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text)

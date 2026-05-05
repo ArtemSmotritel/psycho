@@ -13,6 +13,7 @@ import {
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
 import { PageContainer } from '~/components/PageContainer'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
@@ -202,7 +203,7 @@ export default function ClientAppointments() {
     return (
         <PageContainer>
             <AppPageHeader text="Appointments" />
-            {isLoading && <p className="text-muted-foreground">Loading appointments...</p>}
+            {isLoading && <Loading text="Loading appointments..." />}
             {error && <p className="text-destructive">{error}</p>}
             {!isLoading && !error && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">

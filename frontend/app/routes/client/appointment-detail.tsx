@@ -20,6 +20,9 @@ import { ImpressionList } from '~/components/ImpressionList'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
 import { toast } from 'sonner'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
+import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
+import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 
 export default function ClientAppointmentDetail() {
     useRoleGuard(['client'])
@@ -75,7 +78,7 @@ export default function ClientAppointmentDetail() {
     }, [appointmentId, appointment])
 
     if (isLoading) {
-        return <p>Loading appointment...</p>
+        return <Loading text="Loading appointment..." />
     }
 
     if (!appointment) {
@@ -115,20 +118,7 @@ export default function ClientAppointmentDetail() {
                     </AlertDescription>
                 </Alert>
 
-                <div className="mt-6 space-y-2">
-                    <h3 className="text-lg font-semibold">Whiteboard Snapshot</h3>
-                    {appointment.whiteboardSnapshotUrl ? (
-                        <img
-                            src={appointment.whiteboardSnapshotUrl}
-                            alt="Whiteboard snapshot"
-                            className="w-full rounded-md border"
-                        />
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            No whiteboard snapshot available.
-                        </p>
-                    )}
-                </div>
+                <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
 
                 <div className="mt-6 space-y-4">
                     <div className="flex items-center justify-between">
@@ -149,14 +139,9 @@ export default function ClientAppointmentDetail() {
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Recommendations</h3>
                     {isLoadingRecommendations ? (
-                        <div
-                            data-testid="loading-spinner"
-                            className="flex items-center justify-center py-4"
-                        >
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
-                        </div>
+                        <Loading text="Loading recommendations..." />
                     ) : recommendations.length === 0 ? (
-                        <p className="text-muted-foreground text-sm">No recommendations yet.</p>
+                        <EmptyMessage title="No recommendations yet." />
                     ) : (
                         <div className="space-y-3">
                             {recommendations.map((recommendation) => (

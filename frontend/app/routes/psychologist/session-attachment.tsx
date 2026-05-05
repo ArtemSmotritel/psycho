@@ -1,6 +1,7 @@
 import { Edit, Trash2, User, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
-import { ConfirmAction } from '@/components/ConfirmAction'
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton'
+import { Loading } from '~/components/Loading'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
 import { AttachmentIcon } from '~/utils/componentUtils'
@@ -18,7 +19,7 @@ export default function SessionAttachment() {
     const navigate = useNavigate()
     useRoleGuard(['psychologist'])
 
-    if (isLoading) return <p>Loading...</p>
+    if (isLoading) return <Loading />
 
     if (!attachment) {
         return <div>Attachment not found</div>
@@ -102,7 +103,8 @@ export default function SessionAttachment() {
                 </Link>
 
                 {canDeleteAttachment && (
-                    <ConfirmAction
+                    <ConfirmDeleteButton
+                        itemLabel="Attachment"
                         trigger={
                             <ActionItem
                                 icon={<Trash2 className="h-6" />}
@@ -111,9 +113,6 @@ export default function SessionAttachment() {
                                 className="text-destructive hover:text-destructive"
                             />
                         }
-                        title="Delete Attachment"
-                        description="Are you sure you want to delete this attachment? This action cannot be undone."
-                        confirmText="Delete"
                         onConfirm={handleDeleteAttachment}
                     />
                 )}

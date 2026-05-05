@@ -13,6 +13,7 @@ import {
 import type { Appointment } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { Loading } from '~/components/Loading'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
@@ -202,7 +203,7 @@ export default function ClientSessions({ params }: ClientSessionsProps) {
     }, [params.clientId])
 
     if (isLoading) {
-        return <p className="text-muted-foreground">Loading appointments...</p>
+        return <Loading text="Loading appointments..." />
     }
 
     if (error) {
