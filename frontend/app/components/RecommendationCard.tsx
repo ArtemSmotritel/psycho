@@ -1,25 +1,31 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Link } from 'react-router'
 import { Card, CardContent } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
+import { ConfirmAction } from '~/components/ConfirmAction'
+import { formatAppDate } from '~/utils/utils'
 import type { AttachmentWithReaction } from '~/models/attachment'
 
 interface RecommendationCardProps {
     recommendation: AttachmentWithReaction
     role: 'client' | 'psycho'
     detailHref?: string
+    actions?: ReactNode
     onToggleDone?: (id: string, done: boolean) => Promise<void>
     onSubmitComment?: (id: string, comment: string) => Promise<void>
     onSubmitReply?: (id: string, reply: string) => Promise<void>
 }
 
+const FINALITY_DESCRIPTION = "This is final — you won't be able to edit it later."
+
 export function RecommendationCard({
     recommendation,
     role,
     detailHref,
+    actions,
     onToggleDone,
     onSubmitComment,
     onSubmitReply,
@@ -72,12 +78,17 @@ export function RecommendationCard({
             <CardContent className="space-y-3 pt-6">
                 <div className="flex items-start justify-between gap-2">
                     <p className="font-bold">{recommendation.name}</p>
-                    {detailHref && (
-                        <Link to={detailHref} className="shrink-0">
-                            <Button variant="ghost" size="sm">
-                                Open
-                            </Button>
-                        </Link>
+                    {(detailHref || actions) && (
+                        <div className="flex items-center gap-1 shrink-0">
+                            {detailHref && (
+                                <Link to={detailHref}>
+                                    <Button variant="ghost" size="sm">
+                                        Open
+                                    </Button>
+                                </Link>
+                            )}
+                            {actions}
+                        </div>
                     )}
                 </div>
                 {recommendation.text && (
@@ -144,16 +155,20 @@ export function RecommendationCard({
                                         onChange={(e) => setCommentText(e.target.value)}
                                         disabled={isSubmitting}
                                     />
-                                    <p className="text-xs text-muted-foreground">
-                                        This will be sent and cannot be edited.
-                                    </p>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleSubmitComment}
-                                        disabled={isSubmitting || !commentText.trim()}
-                                    >
-                                        Submit
-                                    </Button>
+                                    <ConfirmAction
+                                        trigger={
+                                            <Button
+                                                size="sm"
+                                                disabled={isSubmitting || !commentText.trim()}
+                                            >
+                                                Submit
+                                            </Button>
+                                        }
+                                        title="Send comment?"
+                                        description={FINALITY_DESCRIPTION}
+                                        confirmText="Send"
+                                        onConfirm={handleSubmitComment}
+                                    />
                                 </div>
                             )
                         )}
@@ -203,21 +218,29 @@ export function RecommendationCard({
                                         onChange={(e) => setReplyText(e.target.value)}
                                         disabled={isSubmitting}
                                     />
-                                    <p className="text-xs text-muted-foreground">
-                                        This will be sent and cannot be edited.
-                                    </p>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleSubmitReply}
-                                        disabled={isSubmitting || !replyText.trim()}
-                                    >
-                                        Submit
-                                    </Button>
+                                    <ConfirmAction
+                                        trigger={
+                                            <Button
+                                                size="sm"
+                                                disabled={isSubmitting || !replyText.trim()}
+                                            >
+                                                Submit
+                                            </Button>
+                                        }
+                                        title="Send reply?"
+                                        description={FINALITY_DESCRIPTION}
+                                        confirmText="Send"
+                                        onConfirm={handleSubmitReply}
+                                    />
                                 </div>
                             )
                         )}
                     </div>
                 )}
+
+                <p className="text-xs text-muted-foreground">
+                    {formatAppDate(recommendation.createdAt)}
+                </p>
             </CardContent>
         </Card>
     )

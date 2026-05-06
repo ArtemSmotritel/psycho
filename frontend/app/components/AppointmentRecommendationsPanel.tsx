@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { formatAppDate } from '~/utils/utils'
-import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { Textarea } from '~/components/ui/textarea'
 import { ConfirmDeleteButton } from './ConfirmDeleteButton'
 import { EmptyMessage } from './EmptyMessage'
 import { Loading } from './Loading'
+import { RecommendationCard } from './RecommendationCard'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
@@ -39,7 +37,6 @@ export function AppointmentRecommendationsPanel({
     const recommendations = data ?? []
     const [isCreating, setIsCreating] = useState(false)
     const [updatingId, setUpdatingId] = useState<string | null>(null)
-    const [replyTexts, setReplyTexts] = useState<Record<string, string>>({})
 
     const handleCreate = async (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => {
         setIsCreating(true)
@@ -126,21 +123,18 @@ export function AppointmentRecommendationsPanel({
             ) : (
                 <div className="space-y-3">
                     {recommendations.map((recommendation) => (
-                        <div key={recommendation.id} className="border rounded-md p-3 space-y-1">
-                            <div className="flex items-start justify-between gap-2">
-                                <p className="font-semibold">{recommendation.name}</p>
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <Link
-                                        to={routes.psycho.attachment(
-                                            clientId,
-                                            appointmentId,
-                                            recommendation.id,
-                                        )}
-                                    >
-                                        <Button variant="ghost" size="sm">
-                                            Open
-                                        </Button>
-                                    </Link>
+                        <RecommendationCard
+                            key={recommendation.id}
+                            recommendation={recommendation}
+                            role="psycho"
+                            detailHref={routes.psycho.attachment(
+                                clientId,
+                                appointmentId,
+                                recommendation.id,
+                            )}
+                            onSubmitReply={handleReply}
+                            actions={
+                                <>
                                     <RecommendationForm
                                         mode="edit"
                                         trigger={
@@ -161,79 +155,9 @@ export function AppointmentRecommendationsPanel({
                                         itemLabel="Recommendation"
                                         onConfirm={() => handleDelete(recommendation.id)}
                                     />
-                                </div>
-                            </div>
-                            {recommendation.text && (
-                                <p className="text-sm text-muted-foreground">
-                                    {recommendation.text}
-                                </p>
-                            )}
-                            {recommendation.reaction && (
-                                <div className="space-y-1 pt-1">
-                                    <p className="text-xs text-muted-foreground">
-                                        Status: {recommendation.reaction.done ? 'Done' : 'Not done'}
-                                    </p>
-                                    {recommendation.reaction.clientComment && (
-                                        <div>
-                                            <p className="text-xs font-medium text-muted-foreground">
-                                                Client comment:
-                                            </p>
-                                            <p className="text-sm">
-                                                {recommendation.reaction.clientComment}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {recommendation.reaction?.psychologistReply !== null &&
-                            recommendation.reaction?.psychologistReply !== undefined ? (
-                                <div className="pt-1">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        Your reply:
-                                    </p>
-                                    <p className="text-sm">
-                                        {recommendation.reaction.psychologistReply}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-2 pt-1">
-                                    <Textarea
-                                        placeholder="Write a reply..."
-                                        value={replyTexts[recommendation.id] ?? ''}
-                                        onChange={(e) =>
-                                            setReplyTexts((prev) => ({
-                                                ...prev,
-                                                [recommendation.id]: e.target.value,
-                                            }))
-                                        }
-                                    />
-                                    <Button
-                                        size="sm"
-                                        onClick={async () => {
-                                            const text = replyTexts[recommendation.id]?.trim()
-                                            if (!text) return
-                                            await handleReply(recommendation.id, text)
-                                            setReplyTexts((prev) => ({
-                                                ...prev,
-                                                [recommendation.id]: '',
-                                            }))
-                                        }}
-                                        disabled={!replyTexts[recommendation.id]?.trim()}
-                                    >
-                                        Submit
-                                    </Button>
-                                </div>
-                            )}
-                            <div className="flex gap-3 text-xs text-muted-foreground">
-                                {recommendation.imageFiles.length > 0 && (
-                                    <span>{recommendation.imageFiles.length} image(s)</span>
-                                )}
-                                {recommendation.audioFiles.length > 0 && (
-                                    <span>{recommendation.audioFiles.length} recording(s)</span>
-                                )}
-                                <span>{formatAppDate(recommendation.createdAt)}</span>
-                            </div>
-                        </div>
+                                </>
+                            }
+                        />
                     ))}
                 </div>
             )}

@@ -29,12 +29,16 @@ vi.mock('sonner', () => ({
     },
 }))
 
-// Mock ConfirmAction to bypass dialog
+// Mock ConfirmAction to bypass the Radix dialog. Each instance exposes a
+// distinct testid keyed on title so different confirmations (delete vs reply)
+// can be targeted independently.
 vi.mock('~/components/ConfirmAction', () => ({
-    ConfirmAction: ({ trigger, onConfirm }: any) => (
+    ConfirmAction: ({ trigger, title, description, onConfirm }: any) => (
         <div>
             {trigger}
-            <button data-testid="confirm-action" onClick={onConfirm}>
+            <div>{title}</div>
+            <div>{description}</div>
+            <button data-testid={`confirm-${title}`} onClick={onConfirm}>
                 Confirm
             </button>
         </div>
@@ -88,7 +92,7 @@ describe('AppointmentRecommendationsPanel', () => {
 
         const textarea = screen.getByRole('textbox')
         await user.type(textarea, 'Keep it up!')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByTestId('confirm-Send reply?'))
 
         await waitFor(() => {
             expect(mockReply).toHaveBeenCalledWith('client-001', 'apt-001', 'rec-001', {
@@ -115,7 +119,7 @@ describe('AppointmentRecommendationsPanel', () => {
         const callsBefore = mockListForPsycho.mock.calls.length
         const textarea = screen.getByRole('textbox')
         await user.type(textarea, 'Great!')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByTestId('confirm-Send reply?'))
 
         await waitFor(() => {
             expect(mockListForPsycho.mock.calls.length).toBeGreaterThan(callsBefore)
@@ -139,7 +143,7 @@ describe('AppointmentRecommendationsPanel', () => {
 
         const textarea = screen.getByRole('textbox')
         await user.type(textarea, 'Reply')
-        await user.click(screen.getByRole('button', { name: /submit/i }))
+        await user.click(screen.getByTestId('confirm-Send reply?'))
 
         await waitFor(() => {
             expect(vi.mocked(toast.error)).toHaveBeenCalled()

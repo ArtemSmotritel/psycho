@@ -44,6 +44,19 @@ vi.mock('sonner', () => ({
     },
 }))
 
+vi.mock('~/components/ConfirmAction', () => ({
+    ConfirmAction: ({ trigger, title, description, onConfirm }: any) => (
+        <div>
+            {trigger}
+            <div>{title}</div>
+            <div>{description}</div>
+            <button data-testid={`confirm-${title}`} onClick={onConfirm}>
+                Confirm
+            </button>
+        </div>
+    ),
+}))
+
 import ClientAppointmentDetail from '~/routes/client/appointment-detail'
 import { toast } from 'sonner'
 
@@ -141,20 +154,9 @@ describe('ClientAppointmentDetail — past appointment with recommendations', ()
         })
 
         // Multiple textareas: impression form + recommendation comment textarea
-        // Find the one with "Leave a comment..." placeholder
         const commentTextarea = screen.getByPlaceholderText('Leave a comment...')
         await user.type(commentTextarea, 'My comment')
-        // The impression form submit is the "type=submit" button; the recommendation card
-        // uses an onClick button. Use aria-label or test by proximity — click the submit
-        // that is closest to (directly after) the comment textarea.
-        // Since both are type button, find by finding all Submit buttons and clicking the
-        // second one (first one belongs to impression form which has type="submit" attr)
-        const submitButtons = screen.getAllByRole('button', { name: /submit/i })
-        // impression form button is type=submit, recommendation card button is type=button
-        const reactionSubmit = submitButtons.find(
-            (btn) => btn.getAttribute('type') !== 'submit' && !btn.hasAttribute('disabled'),
-        )
-        await user.click(reactionSubmit!)
+        await user.click(screen.getByTestId('confirm-Send comment?'))
 
         await waitFor(() => {
             expect(mockReact).toHaveBeenCalledWith('apt-001', 'rec-001', {
