@@ -39,10 +39,3 @@ export function formatAttachmentTitle(
     if (attachment.name) return attachment.name
     return `${getAttachmentTypeLabel(attachment.type)} — ${formatAppDate(attachment.createdAt)}`
 }
-
-export const getFileUrl = (fileOrUrl: File | string) => {
-    if (typeof fileOrUrl === 'string') {
-        return fileOrUrl
-    }
-    return URL.createObjectURL(fileOrUrl)
-}

@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: session, isPending } = auth.useSession()
     const [user, setUser] = useState<User | null>(null)
     const [isFetchingUser, setIsFetchingUser] = useState(false)
+    const [authResolved, setAuthResolved] = useState(false)
 
     useEffect(() => {
         if (isPending) return
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!session) {
             setUser(null)
             setApiRole(null)
+            setAuthResolved(true)
             return
         }
 
@@ -44,12 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     activeRole: data.active_role,
                 } as User)
             })
-            .catch(() => {
+            .catch((err) => {
+                console.error('[auth] getMe failed', err)
                 setUser(null)
                 setApiRole(null)
             })
             .finally(() => {
                 setIsFetchingUser(false)
+                setAuthResolved(true)
             })
     }, [isPending, session])
 
@@ -73,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         )
     }, [])
 
-    const isLoading = isPending || isFetchingUser || (!isPending && !!session && !user)
+    const isLoading = isPending || isFetchingUser || (!!session && !authResolved)
     const activeRole = user?.activeRole ?? null
 
     return (

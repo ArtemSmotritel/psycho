@@ -52,21 +52,6 @@ export function useAttachmentFiles({
         }
     }, [open, initialData])
 
-    useEffect(() => {
-        return () => {
-            voiceFiles.forEach((file) => {
-                if (file instanceof File) {
-                    URL.revokeObjectURL(URL.createObjectURL(file))
-                }
-            })
-            imageFiles.forEach((file) => {
-                if (file instanceof File) {
-                    URL.revokeObjectURL(URL.createObjectURL(file))
-                }
-            })
-        }
-    }, [voiceFiles, imageFiles])
-
     const requestVoiceRecordingSlot = (): boolean => {
         if (voiceFiles.length >= MAX_VOICE_FILES) {
             onError('voiceFiles', `Maximum ${MAX_VOICE_FILES} voice recordings allowed`)

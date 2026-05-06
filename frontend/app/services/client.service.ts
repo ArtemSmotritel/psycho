@@ -9,7 +9,8 @@ export const clientService = {
 
     getByIdForPsycho: (id: string) => api.get<{ client: Client }>(`/clients/${id}`),
 
-    updateForPsycho: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
+    updateForPsycho: (id: string, data: Partial<Client>) =>
+        api.put<{ client: Client }>(`/clients/${id}`, data),
 
     deleteForPsycho: (id: string) => api.delete(`/clients/${id}`),
 

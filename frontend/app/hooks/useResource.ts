@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type DependencyList } from 'react'
+import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react'
 
 export interface UseResourceOptions<T> {
     initial?: T | null
@@ -25,20 +25,26 @@ export function useResource<T>(
     const [isLoading, setIsLoading] = useState<boolean>(enabled)
     const [error, setError] = useState<string | null>(null)
 
+    const activeTokenRef = useRef(0)
+
     const run = useCallback(() => {
         if (!enabled) {
+            activeTokenRef.current += 1
             setData(initial)
             setError(null)
             setIsLoading(false)
             return
         }
+        const token = ++activeTokenRef.current
         setIsLoading(true)
         setError(null)
         fetcher()
             .then((value) => {
+                if (token !== activeTokenRef.current) return
                 setData(value)
             })
             .catch((e) => {
+                if (token !== activeTokenRef.current) return
                 setData(initial)
                 if (errorMessage !== undefined) {
                     setError(errorMessage)
@@ -47,6 +53,7 @@ export function useResource<T>(
                 }
             })
             .finally(() => {
+                if (token !== activeTokenRef.current) return
                 setIsLoading(false)
             })
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,6 +61,9 @@ export function useResource<T>(
 
     useEffect(() => {
         run()
+        return () => {
+            activeTokenRef.current += 1
+        }
     }, [run])
 
     return { data, isLoading, error, refetch: run }

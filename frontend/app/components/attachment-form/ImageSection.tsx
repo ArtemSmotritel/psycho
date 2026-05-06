@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { EmptyMessage } from '../EmptyMessage'
 import { AssociativeImagePicker } from '../AssociativeImagePicker'
 import type { AssociativeImage } from '~/models/associative-image'
-import { MAX_IMAGE_FILES, getDisplayUrl, type AttachmentFileInput } from './schema'
+import { useObjectUrl } from '~/hooks/useObjectUrl'
+import { MAX_IMAGE_FILES, isAttachmentFile, type AttachmentFileInput } from './schema'
 
 interface ImageSectionProps {
     mode: 'create' | 'edit'
@@ -73,30 +74,15 @@ export function ImageSection({
                 <div className="space-y-2">
                     <h4 className="text-sm font-medium">Images</h4>
                     <div className="grid grid-cols-3 gap-2">
-                        {imageFiles.map((file, index) => {
-                            const markedForRemoval = isFileMarkedForRemoval(file)
-                            return (
-                                <div
-                                    key={index}
-                                    className={`relative group ${markedForRemoval ? 'opacity-40' : ''}`}
-                                >
-                                    <img
-                                        src={getDisplayUrl(file)}
-                                        alt={`Uploaded image ${index + 1}`}
-                                        className="w-full h-24 object-cover rounded-md"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
-                                        onClick={() => onToggleFileRemoval(file)}
-                                    >
-                                        {markedForRemoval ? 'Restore' : 'Remove'}
-                                    </Button>
-                                </div>
-                            )
-                        })}
+                        {imageFiles.map((file, index) => (
+                            <ImagePreviewItem
+                                key={index}
+                                file={file}
+                                index={index}
+                                markedForRemoval={isFileMarkedForRemoval(file)}
+                                onToggleFileRemoval={onToggleFileRemoval}
+                            />
+                        ))}
                     </div>
                 </div>
             ) : (
@@ -107,5 +93,39 @@ export function ImageSection({
                 />
             )}
         </>
+    )
+}
+
+interface ImagePreviewItemProps {
+    file: AttachmentFileInput
+    index: number
+    markedForRemoval: boolean
+    onToggleFileRemoval: (file: AttachmentFileInput) => void
+}
+
+function ImagePreviewItem({
+    file,
+    index,
+    markedForRemoval,
+    onToggleFileRemoval,
+}: ImagePreviewItemProps) {
+    const src = useObjectUrl(isAttachmentFile(file) ? file.url : file)
+    return (
+        <div className={`relative group ${markedForRemoval ? 'opacity-40' : ''}`}>
+            <img
+                src={src}
+                alt={`Uploaded image ${index + 1}`}
+                className="w-full h-24 object-cover rounded-md"
+            />
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100"
+                onClick={() => onToggleFileRemoval(file)}
+            >
+                {markedForRemoval ? 'Restore' : 'Remove'}
+            </Button>
+        </div>
     )
 }

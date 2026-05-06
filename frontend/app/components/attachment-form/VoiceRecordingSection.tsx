@@ -1,7 +1,8 @@
 import { Mic, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyMessage } from '../EmptyMessage'
-import { MAX_VOICE_FILES, getDisplayUrl, type AttachmentFileInput } from './schema'
+import { useObjectUrl } from '~/hooks/useObjectUrl'
+import { MAX_VOICE_FILES, isAttachmentFile, type AttachmentFileInput } from './schema'
 
 interface VoiceRecordingSectionProps {
     mode: 'create' | 'edit'
@@ -67,25 +68,14 @@ export function VoiceRecordingSection({
                 <div className="space-y-2">
                     <h4 className="text-sm font-medium">Voice Recordings</h4>
                     <div className="space-y-2">
-                        {voiceFiles.map((file, index) => {
-                            const markedForRemoval = isFileMarkedForRemoval(file)
-                            return (
-                                <div
-                                    key={index}
-                                    className={`flex items-center gap-2 ${markedForRemoval ? 'opacity-40' : ''}`}
-                                >
-                                    <audio controls src={getDisplayUrl(file)} />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onToggleFileRemoval(file)}
-                                    >
-                                        {markedForRemoval ? 'Restore' : 'Remove'}
-                                    </Button>
-                                </div>
-                            )
-                        })}
+                        {voiceFiles.map((file, index) => (
+                            <VoiceRecordingItem
+                                key={index}
+                                file={file}
+                                markedForRemoval={isFileMarkedForRemoval(file)}
+                                onToggleFileRemoval={onToggleFileRemoval}
+                            />
+                        ))}
                     </div>
                 </div>
             ) : (
@@ -96,5 +86,32 @@ export function VoiceRecordingSection({
                 />
             )}
         </>
+    )
+}
+
+interface VoiceRecordingItemProps {
+    file: AttachmentFileInput
+    markedForRemoval: boolean
+    onToggleFileRemoval: (file: AttachmentFileInput) => void
+}
+
+function VoiceRecordingItem({
+    file,
+    markedForRemoval,
+    onToggleFileRemoval,
+}: VoiceRecordingItemProps) {
+    const src = useObjectUrl(isAttachmentFile(file) ? file.url : file)
+    return (
+        <div className={`flex items-center gap-2 ${markedForRemoval ? 'opacity-40' : ''}`}>
+            <audio controls src={src} />
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onToggleFileRemoval(file)}
+            >
+                {markedForRemoval ? 'Restore' : 'Remove'}
+            </Button>
+        </div>
     )
 }

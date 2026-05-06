@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { getFileUrl } from '~/utils/utils'
+import { useObjectUrl } from '~/hooks/useObjectUrl'
 
 interface ImagePreviewProps {
     src: string | File
@@ -8,10 +8,11 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ src, alt, className = '' }: ImagePreviewProps) {
+    const url = useObjectUrl(src)
     return (
         <div className="relative group aspect-square p-2">
             <img
-                src={getFileUrl(src)}
+                src={url}
                 alt={alt}
                 className={`w-full h-full object-contain rounded-lg ${className}`}
             />
@@ -21,7 +22,7 @@ export function ImagePreview({ src, alt, className = '' }: ImagePreviewProps) {
                     size="sm"
                     className="text-white hover:text-white hover:bg-white/20"
                     onClick={() => {
-                        window.open(getFileUrl(src), '_blank')
+                        window.open(url, '_blank')
                     }}
                 >
                     View Full Size

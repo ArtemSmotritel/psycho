@@ -1,6 +1,5 @@
 import * as z from 'zod'
 import type { AttachmentFile } from '~/models/attachment'
-import { getFileUrl } from '../../utils/utils'
 
 export const MAX_VOICE_FILES = 3
 export const MAX_IMAGE_FILES = 9
@@ -50,9 +49,4 @@ export interface AttachmentFormProps {
 
 export function isAttachmentFile(file: AttachmentFileInput): file is AttachmentFile {
     return typeof file === 'object' && !(file instanceof File) && 'id' in file && 'url' in file
-}
-
-export function getDisplayUrl(file: AttachmentFileInput): string {
-    if (isAttachmentFile(file)) return file.url
-    return getFileUrl(file)
 }

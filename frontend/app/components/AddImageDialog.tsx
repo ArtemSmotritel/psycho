@@ -20,6 +20,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useObjectUrl } from '~/hooks/useObjectUrl'
 
 const MAX_FILE_SIZE = 5000000 // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
@@ -46,7 +47,8 @@ interface AddImageDialogProps {
 
 export function AddImageDialog({ onAddImage }: AddImageDialogProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [preview, setPreview] = useState<string | null>(null)
+    const [previewFile, setPreviewFile] = useState<File | null>(null)
+    const preview = useObjectUrl(previewFile ?? '')
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -55,18 +57,9 @@ export function AddImageDialog({ onAddImage }: AddImageDialogProps) {
         },
     })
 
-    // Cleanup preview URL when component unmounts or dialog closes
-    useEffect(() => {
-        return () => {
-            if (preview) {
-                URL.revokeObjectURL(preview)
-            }
-        }
-    }, [preview])
-
     useEffect(() => {
         if (!isOpen) {
-            setPreview(null)
+            setPreviewFile(null)
             form.reset()
         }
     }, [isOpen, form])
@@ -78,16 +71,7 @@ export function AddImageDialog({ onAddImage }: AddImageDialogProps) {
     }
 
     const handleFileChange = (files: FileList | null) => {
-        if (preview) {
-            URL.revokeObjectURL(preview)
-        }
-
-        if (files?.[0]) {
-            setPreview(URL.createObjectURL(files[0]))
-        } else {
-            setPreview(null)
-        }
-
+        setPreviewFile(files?.[0] ?? null)
         form.setValue('file', files as FileList)
     }
 
