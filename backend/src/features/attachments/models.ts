@@ -13,7 +13,7 @@ export interface Attachment {
     appointmentId: string
     authorId: string
     type: AttachmentType
-    name: string | null
+    name: string
     text: string | null
     imageFiles: AttachmentFile[]
     audioFiles: AttachmentFile[]

@@ -18,7 +18,7 @@ async function create(params: {
     appointmentId: string
     authorId: string
     type: AttachmentType
-    name?: string | null
+    name: string
     text?: string | null
     imageFileIds?: string[]
     audioFileIds?: string[]
@@ -42,7 +42,7 @@ async function create(params: {
                 appointmentId: params.appointmentId,
                 authorId: params.authorId,
                 type: params.type,
-                name: params.name ?? null,
+                name: params.name,
                 text: params.text ?? null,
             },
             tx,
@@ -108,7 +108,7 @@ async function createForClientView(input: {
 
 async function updateAttachment(
     id: string,
-    params: { name: string | null; text: string | null; removeFileIds?: string[] },
+    params: { name: string; text: string | null; removeFileIds?: string[] },
 ): Promise<Attachment> {
     await db.begin(async (tx) => {
         await AttachmentsRepo.update(id, { name: params.name, text: params.text }, tx)
@@ -133,7 +133,7 @@ async function updateForPsychoView(input: {
     clientId: string
     appointmentId: string
     attachmentId: string
-    name?: string
+    name: string
     text?: string
     removeFileIds?: string[]
 }): Promise<Attachment> {
@@ -156,7 +156,7 @@ async function updateForPsychoView(input: {
         .run()
 
     return updateAttachment(input.attachmentId, {
-        name: input.name ?? null,
+        name: input.name,
         text: input.text ?? null,
         removeFileIds: input.removeFileIds,
     })

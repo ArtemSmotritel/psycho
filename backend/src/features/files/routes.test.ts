@@ -183,7 +183,7 @@ describe('GET /api/files/:filename', () => {
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Impression with a file',
             text: 'with a file',
             imageFileIds: [upload.body.id],
         })

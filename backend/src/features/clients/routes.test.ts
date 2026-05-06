@@ -333,9 +333,9 @@ describe('GET /api/clients/:clientId', () => {
         await startAppointment(appt.id)
         await endAppointment(appt.id)
 
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 1' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 2' })
+        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 3' })
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -365,11 +365,13 @@ describe('GET /api/clients/:clientId', () => {
             appointmentId: appt.id,
             authorId: psycho.id,
             type: 'recommendation',
+            name: 'rec 1',
         })
         await AttachmentsService.create({
             appointmentId: appt.id,
             authorId: psycho.id,
             type: 'recommendation',
+            name: 'rec 2',
         })
 
         const res = await app.request(

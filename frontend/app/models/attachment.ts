@@ -13,7 +13,7 @@ export interface Attachment {
     appointmentId: string
     authorId: string
     type: AttachmentType
-    name: string | null
+    name: string
     text: string | null
     imageFiles: AttachmentFile[]
     audioFiles: AttachmentFile[]
@@ -22,7 +22,7 @@ export interface Attachment {
 }
 
 export interface UpdateAttachmentDTO {
-    name?: string
+    name: string
     text?: string
     removeFileIds?: string[]
 }

@@ -32,6 +32,7 @@ async function setupImpressionScenario() {
         appointmentId: apt.id,
         authorId: client.id,
         type: 'impression',
+        name: 'Test impression',
         text: 'My impression text',
     })
     return { psycho, client, apt, impression }
@@ -146,6 +147,7 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
             appointmentId: apt2.id,
             authorId: client.id,
             type: 'impression',
+            name: 'Another impression',
             text: 'Another impression',
         })
 
@@ -211,6 +213,7 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',
+            name: 'Client1 impression',
             text: 'Client1 impression',
         })
 

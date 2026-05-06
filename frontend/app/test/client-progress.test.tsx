@@ -26,7 +26,7 @@ function makeImpression(
         appointmentId: 'apt-001',
         authorId: 'user-001',
         type: 'impression',
-        name: null,
+        name: '',
         text: 'Sample impression text',
         imageFiles: [],
         audioFiles: [],

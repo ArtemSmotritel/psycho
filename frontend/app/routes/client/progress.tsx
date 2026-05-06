@@ -39,7 +39,7 @@ function useDelayedUnmount(visible: boolean, durationMs: number): boolean {
 }
 
 function attachmentLabel(a: Attachment | AttachmentWithReaction, fallback: string): string {
-    if (a.name && a.name.trim().length > 0) return a.name
+    if (a.name.trim().length > 0) return a.name
     if (a.text && a.text.trim().length > 0) {
         const t = a.text.trim()
         return t.length > 36 ? t.slice(0, 36) + '…' : t

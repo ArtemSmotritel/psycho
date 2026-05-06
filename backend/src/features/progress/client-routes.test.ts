@@ -114,6 +114,7 @@ describe('GET /api/client/progress/:psychoId', () => {
             appointmentId: apt1.id,
             authorId: client.id,
             type: 'impression',
+            name: 'First session impression',
             text: 'First session impression',
         })
         const rec1 = await AttachmentsService.create({
@@ -256,12 +257,14 @@ describe('GET /api/client/progress/:psychoId', () => {
             appointmentId: apt1.id,
             authorId: client1.id,
             type: 'impression',
+            name: 'Client1 impression',
             text: 'Client1 impression',
         })
         await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client2.id,
             type: 'impression',
+            name: 'Client2 impression',
             text: 'Client2 impression — should NOT appear',
         })
 

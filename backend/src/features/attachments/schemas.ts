@@ -28,7 +28,7 @@ export const createAttachmentClientSchema = z.object({
 })
 
 export const updateAttachmentSchema = z.object({
-    name: z.string().min(1).optional(),
+    name: z.string().min(1),
     text: z.string().optional(),
     removeFileIds: z.array(z.string().min(1)).optional(),
 })

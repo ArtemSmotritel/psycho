@@ -9,7 +9,7 @@ const makeImpression = (overrides: Partial<Attachment> = {}): Attachment => ({
     appointmentId: 'apt-001',
     authorId: 'user-001',
     type: 'impression',
-    name: null,
+    name: '',
     text: 'Felt much better today.',
     imageFiles: [],
     audioFiles: [],

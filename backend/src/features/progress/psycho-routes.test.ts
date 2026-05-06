@@ -44,14 +44,14 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
             appointmentId: apt1.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'First appointment impression',
             text: 'First appointment impression',
         })
         await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Second appointment impression',
             text: 'Second appointment impression',
         })
 
@@ -154,14 +154,14 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
             appointmentId: apt1.id,
             authorId: client1.id,
             type: 'impression',
-            name: null,
+            name: 'Client1 impression',
             text: 'Client1 impression',
         })
         await AttachmentsService.create({
             appointmentId: apt2.id,
             authorId: client2.id,
             type: 'impression',
-            name: null,
+            name: 'Client2 impression',
             text: 'Client2 impression — should NOT appear',
         })
 

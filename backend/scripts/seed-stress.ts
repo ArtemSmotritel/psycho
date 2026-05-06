@@ -441,22 +441,26 @@ async function seed() {
         for (let n = 0; n < noteCount; n++) {
             const imgIds =
                 attachmentCounter % 3 === 0 ? [fileIds[attachmentCounter % fileIds.length]!] : []
+            const noteText = pick(NOTE_TEXTS, attachmentCounter + n)
             await AttachmentsService.create({
                 appointmentId,
                 authorId: psychoId,
                 type: 'note',
-                text: pick(NOTE_TEXTS, attachmentCounter + n),
+                name: noteText.split(':')[0] ?? noteText,
+                text: noteText,
                 imageFileIds: imgIds,
             })
             attachmentCounter++
         }
 
         // 1 impression (author = psychologist); ~70% get a client completion
+        const imprText = pick(IMPRESSION_TEXTS, attachmentCounter)
         const impr = await AttachmentsService.create({
             appointmentId,
             authorId: psychoId,
             type: 'impression',
-            text: pick(IMPRESSION_TEXTS, attachmentCounter),
+            name: imprText.split(':')[0] ?? imprText,
+            text: imprText,
         })
         if (attachmentCounter % 10 !== 7 && attachmentCounter % 10 !== 3) {
             await db`
@@ -472,7 +476,7 @@ async function seed() {
             appointmentId,
             authorId: psychoId,
             type: 'recommendation',
-            name: recText.split(':')[0] ?? undefined,
+            name: recText.split(':')[0] ?? recText,
             text: recText,
         })
         // Reaction mix: done+comment, comment-only, done-only, none, + reply variants
@@ -504,11 +508,13 @@ async function seed() {
                 fileIds[attachmentCounter % fileIds.length]!,
                 fileIds[(attachmentCounter + 1) % fileIds.length]!,
             ]
+            const impr2Text = pick(IMPRESSION_TEXTS, attachmentCounter + 3)
             const impr2 = await AttachmentsService.create({
                 appointmentId,
                 authorId: psychoId,
                 type: 'impression',
-                text: pick(IMPRESSION_TEXTS, attachmentCounter + 3),
+                name: impr2Text.split(':')[0] ?? impr2Text,
+                text: impr2Text,
                 imageFileIds: imgIds,
             })
             await db`
@@ -529,6 +535,7 @@ async function seed() {
                 appointmentId,
                 authorId: psychos[slot.psychoIdx]!.id,
                 type: 'note',
+                name: 'Початок сесії',
                 text: 'Сесія щойно розпочалася. Клієнт виглядає зосередженим.',
             })
         }

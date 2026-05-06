@@ -85,7 +85,7 @@ export default function SessionAttachment() {
                             <ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />
                         }
                         initialData={{
-                            name: attachment.name ?? '',
+                            name: attachment.name,
                             text: attachment.text ?? '',
                             voiceFiles: attachment.audioFiles,
                             imageFiles: attachment.imageFiles,

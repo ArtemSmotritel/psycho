@@ -190,7 +190,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ removeFileIds: [file1.id] }),
+                body: JSON.stringify({ name: 'Rec with files', removeFileIds: [file1.id] }),
             }),
         )
 
@@ -227,7 +227,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
             await asUser(psycho.id, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
-                body: JSON.stringify({ removeFileIds: ['non-existent-id'] }),
+                body: JSON.stringify({ name: 'Rec', removeFileIds: ['non-existent-id'] }),
             }),
         )
 

@@ -149,7 +149,7 @@ export function AppointmentRecommendationsPanel({
                                             </Button>
                                         }
                                         initialData={{
-                                            name: recommendation.name ?? '',
+                                            name: recommendation.name,
                                             text: recommendation.text ?? '',
                                             voiceFiles: recommendation.audioFiles,
                                             imageFiles: recommendation.imageFiles,

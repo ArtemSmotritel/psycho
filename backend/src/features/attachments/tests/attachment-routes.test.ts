@@ -106,7 +106,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Client impression text',
         })
 
@@ -344,7 +344,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Impression text',
         })
 
@@ -378,7 +378,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Impression text',
         })
 
@@ -450,7 +450,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'My impression',
         })
 
@@ -484,7 +484,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'My impression',
         })
 
@@ -625,7 +625,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Client1 impression',
         })
 
@@ -682,7 +682,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Impression text',
         })
         const recommendation = await AttachmentsService.create({
@@ -774,7 +774,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Impression text',
         })
         await AttachmentsService.completeImpression(impression.id, 'Reflected')
@@ -887,7 +887,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Impression',
         })
         await AttachmentsService.create({
@@ -1001,7 +1001,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Mine',
         })
         const recommendation = await AttachmentsService.create({
@@ -1070,7 +1070,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
             appointmentId: apt.id,
             authorId: client1.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Client1 impression',
         })
 
@@ -1100,7 +1100,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments', () => {
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
-            name: null,
+            name: 'Test impression',
             text: 'Mine',
         })
         const recommendation = await AttachmentsService.create({
@@ -1863,6 +1863,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
+            name: 'My reflection',
             text: 'My reflection',
         })
 
@@ -2065,6 +2066,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
+            name: 'My reflection',
             text: 'My reflection',
         })
 
@@ -2175,6 +2177,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
             appointmentId: apt.id,
             authorId: owner.id,
             type: 'impression',
+            name: 'Owner reflection',
             text: 'Owner reflection',
         })
 
@@ -2204,6 +2207,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
+            name: 'Reflection',
             text: 'Reflection',
         })
         await AttachmentsService.completeImpression(impression.id, 'Done.')
@@ -2239,6 +2243,7 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
             appointmentId: apt.id,
             authorId: client.id,
             type: 'impression',
+            name: 'with image',
             text: 'with image',
             imageFileIds: [file.id],
         })

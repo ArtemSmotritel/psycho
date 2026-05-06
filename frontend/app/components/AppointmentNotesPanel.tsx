@@ -131,7 +131,7 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                                             </Button>
                                         }
                                         initialData={{
-                                            name: note.name ?? '',
+                                            name: note.name,
                                             text: note.text ?? '',
                                             voiceFiles: note.audioFiles,
                                             imageFiles: note.imageFiles,
