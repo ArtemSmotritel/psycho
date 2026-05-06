@@ -118,10 +118,10 @@ describe('ClientAttachmentDetail — impression', () => {
         renderRoute()
 
         await waitFor(() => {
-            expect(screen.getByRole('button', { name: /delete impression/i })).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /delete attachment/i })).toBeInTheDocument()
         })
 
-        await user.click(screen.getByRole('button', { name: /delete impression/i }))
+        await user.click(screen.getByRole('button', { name: /delete attachment/i }))
 
         // confirmation dialog
         const confirmBtn = await screen.findByRole('button', { name: /^delete$/i })
@@ -173,9 +173,8 @@ describe('ClientAttachmentDetail — recommendation', () => {
         renderRoute('/client/appointments/apt-001/attachment/rec-001')
 
         await waitFor(() => {
-            expect(screen.getByText('Status')).toBeInTheDocument()
+            expect(screen.getByLabelText('Done')).toBeChecked()
         })
-        expect(screen.getByText('Done')).toBeInTheDocument()
     })
 
     it('does not render Delete action for recommendation', async () => {
@@ -230,6 +229,9 @@ describe('ClientAttachmentDetail — recommendation', () => {
         await user.type(screen.getByPlaceholderText(/leave a comment/i), 'Worked great!')
         await user.click(screen.getByRole('button', { name: /submit/i }))
 
+        const sendBtn = await screen.findByRole('button', { name: /^send$/i })
+        await user.click(sendBtn)
+
         await waitFor(() => {
             expect(mockReact).toHaveBeenCalledWith('apt-001', 'rec-001', {
                 comment: 'Worked great!',
@@ -259,7 +261,7 @@ describe('ClientAttachmentDetail — recommendation', () => {
         renderRoute('/client/appointments/apt-001/attachment/rec-001')
 
         await waitFor(() => {
-            expect(screen.getByText("Psychologist's reply")).toBeInTheDocument()
+            expect(screen.getByText(/psychologist's reply/i)).toBeInTheDocument()
         })
         expect(screen.getByText('Great progress!')).toBeInTheDocument()
         // No comment textarea once a comment is set
