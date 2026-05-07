@@ -19,6 +19,7 @@ import { RecommendationCard } from '~/components/RecommendationCard'
 import { ImpressionList } from '~/components/ImpressionList'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
 import { toast } from 'sonner'
+import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
@@ -68,8 +69,9 @@ export default function ClientAppointmentDetail() {
                 setImpressions(res.data.impressions)
                 setRecommendations(res.data.recommendations)
             })
-            .catch(() => {
-                // Silently ignore
+            .catch((err) => {
+                logIfNotProd('[appointment-detail] failed to load attachments', err)
+                toast.error('Failed to load appointment details.')
             })
             .finally(() => {
                 setIsLoadingImpressions(false)

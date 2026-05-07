@@ -103,7 +103,6 @@ export function useWhiteboardSync(appointmentId: string): {
             } catch {
                 return
             }
-            console.log(msg)
 
             const parsed = msg as {
                 type: string

@@ -1,8 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { toast } from 'sonner'
 import type { User } from '~/models/user'
 import { auth } from '~/services/auth.service'
-import { setApiRole } from '~/services/api'
+import { API_UNAUTHORIZED_EVENT, apiEvents, setApiRole } from '~/services/api'
 import { userService } from '~/services/user.service'
+import { logIfNotProd } from '~/utils/logger'
 
 interface AuthContextType {
     user: User | null
@@ -17,9 +20,19 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: session, isPending } = auth.useSession()
+    const navigate = useNavigate()
     const [user, setUser] = useState<User | null>(null)
     const [isFetchingUser, setIsFetchingUser] = useState(false)
     const [authResolved, setAuthResolved] = useState(false)
+    const userRef = useRef<User | null>(null)
+    const handledUnauthorizedRef = useRef(false)
+
+    useEffect(() => {
+        userRef.current = user
+        if (user) {
+            handledUnauthorizedRef.current = false
+        }
+    }, [user])
 
     useEffect(() => {
         if (isPending) return
@@ -47,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } as User)
             })
             .catch((err) => {
-                console.error('[auth] getMe failed', err)
+                logIfNotProd('[auth] getMe failed', err)
                 setUser(null)
                 setApiRole(null)
             })
@@ -56,6 +69,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setAuthResolved(true)
             })
     }, [isPending, session])
+
+    useEffect(() => {
+        const handleUnauthorized = () => {
+            if (!userRef.current || handledUnauthorizedRef.current) return
+            handledUnauthorizedRef.current = true
+            auth.signOut().catch((err) => logIfNotProd('[auth] signOut failed', err))
+            setUser(null)
+            setApiRole(null)
+            toast.error('Your session has expired. Please log in again.')
+            navigate('/login')
+        }
+        apiEvents.addEventListener(API_UNAUTHORIZED_EVENT, handleUnauthorized)
+        return () => apiEvents.removeEventListener(API_UNAUTHORIZED_EVENT, handleUnauthorized)
+    }, [navigate])
 
     const logout = useCallback(async () => {
         await auth.signOut()

@@ -11,6 +11,7 @@ import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService } from '~/services/attachment.service'
 import { toast } from 'sonner'
+import { logIfNotProd } from '~/utils/logger'
 import { isAxiosError } from 'axios'
 import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
 import { format } from 'date-fns'
@@ -68,8 +69,9 @@ export default function Session() {
             .then((res) => {
                 setImpressions(res.data.impressions)
             })
-            .catch(() => {
-                // Silently ignore
+            .catch((err) => {
+                logIfNotProd('[psycho-session] failed to load impressions', err)
+                toast.error('Failed to load client impressions.')
             })
             .finally(() => {
                 setIsLoadingImpressions(false)

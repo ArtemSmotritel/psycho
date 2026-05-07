@@ -17,3 +17,16 @@ export function setApiRole(role: 'psycho' | 'client' | null) {
         delete api.defaults.headers.common['Helpsycho-User-Role']
     }
 }
+
+export const apiEvents = new EventTarget()
+export const API_UNAUTHORIZED_EVENT = 'unauthorized'
+
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        if (err?.response?.status === 401) {
+            apiEvents.dispatchEvent(new Event(API_UNAUTHORIZED_EVENT))
+        }
+        return Promise.reject(err)
+    },
+)

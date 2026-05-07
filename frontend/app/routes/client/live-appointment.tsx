@@ -29,6 +29,7 @@ import { formatAppointmentTimeRange } from '~/utils/utils'
 import { ImpressionList } from '~/components/ImpressionList'
 import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
+import { logIfNotProd } from '~/utils/logger'
 
 const Excalidraw = lazy(() =>
     import('@excalidraw/excalidraw').then((module) => ({ default: module.Excalidraw })),
@@ -102,8 +103,10 @@ export default function LiveAppointment() {
             .then((res) => {
                 setAppointment(res.data.appointment)
             })
-            .catch(() => {
+            .catch((err) => {
+                logIfNotProd('[live-appointment] failed to load appointment', err)
                 setAppointment(null)
+                toast.error('Failed to load appointment.')
             })
             .finally(() => {
                 setIsLoading(false)
@@ -119,8 +122,9 @@ export default function LiveAppointment() {
             .then((res) => {
                 setImpressions(res.data.impressions)
             })
-            .catch(() => {
-                // Silently ignore
+            .catch((err) => {
+                logIfNotProd('[live-appointment] failed to load impressions', err)
+                toast.error('Failed to load impressions.')
             })
             .finally(() => {
                 setIsLoadingImpressions(false)
@@ -143,7 +147,9 @@ export default function LiveAppointment() {
                     }
                 })
                 .catch(() => {
-                    // Silently ignore polling errors
+                    // Polling errors are intentionally silent until the
+                    // reconnect-banner UX lands. A 401 here is still picked
+                    // up by the global axios interceptor in services/api.ts.
                 })
         }, 5000)
 
