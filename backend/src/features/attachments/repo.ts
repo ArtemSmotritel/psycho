@@ -4,7 +4,6 @@ import { APPOINTMENT_STATUS_EXPR } from '../appointments/repo'
 import type {
     Attachment,
     AttachmentType,
-    AttachmentWithReaction,
     ImpressionCompletion,
     RecommendationReaction,
 } from './models'
@@ -255,22 +254,6 @@ export const AttachmentsRepo = {
         return (rows as AttachmentChainRow[]).map(rowToChain)
     },
 
-    async listByAuthor(
-        appointmentId: string,
-        type: AttachmentType,
-        authorId: string,
-    ): Promise<Attachment[]> {
-        const rows = await db`
-            SELECT ${db.unsafe(ATTACHMENT_SELECT)}
-            FROM attachments a
-            WHERE a.appointment_id = ${appointmentId}
-              AND a.type = ${type}
-              AND a.author_id = ${authorId}
-            ORDER BY a.created_at ASC
-        `
-        return rows as Attachment[]
-    },
-
     async update(
         id: string,
         params: { name: string | null; text: string | null },
@@ -327,26 +310,6 @@ export const AttachmentsRepo = {
             RETURNING ${db.unsafe(REACTION_COLUMNS)}
         `
         return row as RecommendationReaction
-    },
-
-    async listWithReactions(
-        appointmentId: string,
-        type: AttachmentType,
-        authorId?: string,
-    ): Promise<AttachmentWithReaction[]> {
-        const authorFilter = authorId ? db`AND a.author_id = ${authorId}` : db``
-        const rows = await db`
-            SELECT
-                ${db.unsafe(ATTACHMENT_SELECT)},
-                ${db.unsafe(REACTION_JSON_EXPR)}
-            FROM attachments a
-            LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            WHERE a.appointment_id = ${appointmentId}
-              AND a.type = ${type}
-              ${authorFilter}
-            ORDER BY a.created_at ASC
-        `
-        return rows as AttachmentWithReaction[]
     },
 
     async insertImpressionCompletion(

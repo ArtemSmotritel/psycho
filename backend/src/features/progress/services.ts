@@ -1,5 +1,5 @@
 import { BadRequestError } from 'errors/index'
-import { AttachmentsRepo } from '../attachments/repo'
+import type { Attachment, AttachmentWithReaction } from '../attachments/models'
 import { ClientsRepo } from '../clients/repo'
 import type { AttachmentWithAppointment, ProgressSession } from './models'
 import { ProgressRepo } from './repo'
@@ -23,23 +23,33 @@ async function listSessionsForClient(
     if (!linked) {
         throw new BadRequestError('This psychologist is not in your list.', 'PsychoNotLinked')
     }
-    const appointments = await ProgressRepo.listEndedAppointmentsForPair(clientId, psychoId)
-    return Promise.all(
-        appointments.map(async (apt) => {
-            const [impressions, recommendations] = await Promise.all([
-                AttachmentsRepo.listByAuthor(apt.id, 'impression', clientId),
-                AttachmentsRepo.listWithReactions(apt.id, 'recommendation'),
-            ])
-            return {
-                id: apt.id,
-                startTime: apt.startTime,
-                endTime: apt.endTime,
-                status: apt.status,
-                impressions,
-                recommendations,
-            }
-        }),
-    )
+    const [appointments, impressions, recommendations] = await Promise.all([
+        ProgressRepo.listEndedAppointmentsForPair(clientId, psychoId),
+        ProgressRepo.listClientImpressionsForPair(clientId, psychoId),
+        ProgressRepo.listRecommendationsWithReactionsForPair(clientId, psychoId),
+    ])
+
+    const impressionsByApt = new Map<string, Attachment[]>()
+    for (const row of impressions) {
+        const arr = impressionsByApt.get(row.appointmentId) ?? []
+        arr.push(row)
+        impressionsByApt.set(row.appointmentId, arr)
+    }
+    const recsByApt = new Map<string, AttachmentWithReaction[]>()
+    for (const row of recommendations) {
+        const arr = recsByApt.get(row.appointmentId) ?? []
+        arr.push(row)
+        recsByApt.set(row.appointmentId, arr)
+    }
+
+    return appointments.map((apt) => ({
+        id: apt.id,
+        startTime: apt.startTime,
+        endTime: apt.endTime,
+        status: apt.status,
+        impressions: impressionsByApt.get(apt.id) ?? [],
+        recommendations: recsByApt.get(apt.id) ?? [],
+    }))
 }
 
 export const ProgressService = {

@@ -7,7 +7,7 @@ interface UserOverrides {
 }
 
 // Creates a user via testUtils and saves to DB.
-// databaseHooks.user.create.after fires automatically, inserting clients + psychologists rows.
+// The user_role_rows AFTER INSERT trigger inserts the matching clients + psychologists rows.
 export async function insertTestUser(overrides: UserOverrides = {}) {
     const ctx = await auth.$context
     const user = (ctx as any).test.createUser(overrides)

@@ -4,7 +4,6 @@ import { DB_URL } from 'config/index'
 import { Pool } from 'pg'
 import { log } from './logger'
 import { devLoginPlugin } from './dev-login-plugin'
-import { UsersRepo } from '../features/users/repo'
 
 const isTest = process.env.NODE_ENV === 'test'
 const isProd = process.env.ENV === 'production'
@@ -30,16 +29,6 @@ export const auth = betterAuth({
         },
     },
     plugins: [...(isTest ? [testUtils()] : []), ...(!isProd && !isTest ? [devLoginPlugin()] : [])],
-    databaseHooks: {
-        user: {
-            create: {
-                after: async (user) => {
-                    await UsersRepo.createClientUser(user.id)
-                    await UsersRepo.createPsychoUser(user.id)
-                },
-            },
-        },
-    },
     // advanced: {
     //     database: {
     //         generateId: 'uuid',
