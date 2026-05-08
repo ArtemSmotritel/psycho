@@ -11,6 +11,7 @@ import { useResource } from '~/hooks/useResource'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
 import { Link } from 'react-router'
+import { NotFound } from '~/components/NotFound'
 
 interface ContactItemProps {
     icon: React.ReactNode
@@ -99,7 +100,7 @@ export default function ClientProfile() {
         return (
             <PageContainer>
                 <AppPageHeader text="My Profile" />
-                <p className="text-destructive">{error ?? 'Profile not found.'}</p>
+                <NotFound title={error ?? 'Profile not found.'} />
             </PageContainer>
         )
     }

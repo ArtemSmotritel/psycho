@@ -8,6 +8,7 @@ import { useCurrentClientAttachment } from '~/hooks/useCurrentClientAttachment'
 import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { routes } from '~/lib/routes'
 import { Loading } from '~/components/Loading'
+import { NotFound } from '~/components/NotFound'
 
 export default function ClientAttachmentDetail() {
     useRoleGuard(['client'])
@@ -27,7 +28,7 @@ export default function ClientAttachmentDetail() {
     if (!appointmentId) {
         return (
             <PageContainer>
-                <p>Appointment not found.</p>
+                <NotFound title="Appointment not found." />
             </PageContainer>
         )
     }
@@ -35,7 +36,7 @@ export default function ClientAttachmentDetail() {
     if (!attachment) {
         return (
             <PageContainer>
-                <p>Attachment not found.</p>
+                <NotFound title="Attachment not found." />
             </PageContainer>
         )
     }

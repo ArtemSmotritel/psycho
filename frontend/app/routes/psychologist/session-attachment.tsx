@@ -1,6 +1,7 @@
 import { ArrowRight, User } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { Loading } from '~/components/Loading'
+import { NotFound } from '~/components/NotFound'
 import { ActionItem } from '@/components/ActionsSection'
 import { AttachmentDetail } from '~/components/AttachmentDetail'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
@@ -16,7 +17,7 @@ export default function SessionAttachment() {
     if (isLoading) return <Loading />
 
     if (!attachment) {
-        return <div>Attachment not found</div>
+        return <NotFound title="Attachment not found." />
     }
 
     return (

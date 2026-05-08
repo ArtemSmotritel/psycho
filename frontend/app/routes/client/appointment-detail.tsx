@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { EmptyMessage } from '~/components/EmptyMessage'
+import { NotFound } from '~/components/NotFound'
 import { Loading } from '~/components/Loading'
 import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 
@@ -86,13 +87,13 @@ export default function ClientAppointmentDetail() {
     if (!appointmentId) {
         return (
             <PageContainer>
-                <p>Appointment not found.</p>
+                <NotFound title="Appointment not found." />
             </PageContainer>
         )
     }
 
     if (!appointment) {
-        return <p>Appointment not found.</p>
+        return <NotFound title="Appointment not found." />
     }
 
     if (appointment.status === 'past' || appointment.status === 'missed') {

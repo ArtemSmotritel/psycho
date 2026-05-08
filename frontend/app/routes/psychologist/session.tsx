@@ -23,6 +23,7 @@ import { ImpressionList } from '~/components/ImpressionList'
 import type { Attachment } from '~/models/attachment'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { Loading } from '~/components/Loading'
+import { NotFound } from '~/components/NotFound'
 import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 import { PostSessionFollowUpDialog } from '~/components/PostSessionFollowUpDialog'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
@@ -83,11 +84,11 @@ export default function Session() {
     }
 
     if (!clientId) {
-        return <p>Client not found.</p>
+        return <NotFound title="Client not found." />
     }
 
     if (!appointment) {
-        return <p>Appointment not found.</p>
+        return <NotFound title="Appointment not found." />
     }
 
     if (appointment.status === 'past' || appointment.status === 'missed') {
