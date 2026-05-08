@@ -13,10 +13,20 @@ import {
 } from '../../test-fixtures/appointments'
 import { AttachmentsService } from '../attachments/services'
 import { futureDate } from '../../test-fixtures/dates'
+import { MAX_UPLOAD_BYTES } from './upload-validation'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 
-// Track files written to disk by tests so we can clean them up.
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+const JPEG_SIGNATURE = [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]
+const WEBM_SIGNATURE = [0x1a, 0x45, 0xdf, 0xa3, 0x00, 0x00, 0x00, 0x00]
+const WEBP_SIGNATURE = [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]
+const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d]
+
+function fileFrom(name: string, mime: string, head: number[], tail: number[] = []): File {
+    return new File([new Uint8Array([...head, ...tail])], name, { type: mime })
+}
+
 const uploadedFilesToCleanup: string[] = []
 
 afterEach(async () => {
@@ -39,7 +49,6 @@ async function uploadFileForUser(
     )
     const body = res.status === 201 ? await jsonBody(res) : await jsonBody(res).catch(() => null)
     if (body?.url) {
-        // Track storedName (last URL segment) for cleanup.
         const storedName = body.url.split('/').pop()
         if (storedName) uploadedFilesToCleanup.push(storedName)
     }
@@ -49,7 +58,7 @@ async function uploadFileForUser(
 describe('POST /api/files/upload', () => {
     it('returns 401 for unauthenticated request', async () => {
         const formData = new FormData()
-        formData.append('file', new File(['data'], 'a.txt', { type: 'text/plain' }))
+        formData.append('file', fileFrom('a.png', 'image/png', PNG_SIGNATURE))
 
         const res = await app.request('/api/files/upload', { method: 'POST', body: formData })
         expect(res.status).toBe(401)
@@ -72,8 +81,7 @@ describe('POST /api/files/upload', () => {
 
     it('returns 201 with metadata, inserts a DB row, and writes the file to disk', async () => {
         const user = await insertTestUser()
-        const fileBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
-        const file = new File([fileBytes], 'photo.png', { type: 'image/png' })
+        const file = fileFrom('photo.png', 'image/png', PNG_SIGNATURE)
 
         const { status, body } = await uploadFileForUser(user.id, file)
 
@@ -81,14 +89,12 @@ describe('POST /api/files/upload', () => {
         expect(body).toHaveProperty('id')
         expect(body).toHaveProperty('originalName', 'photo.png')
         expect(body).toHaveProperty('mimeType', 'image/png')
-        // size is BIGINT — Bun's SQL driver returns it as a string.
-        expect(Number(body.size)).toBe(fileBytes.byteLength)
+        expect(Number(body.size)).toBe(PNG_SIGNATURE.length)
         expect(body).toHaveProperty('uploadedAt')
         expect(body.url).toMatch(/^\/api\/files\/[\w-]+\.png$/)
 
         const storedName = body.url.split('/').pop()!
 
-        // Row inserted with the right fields.
         const [row] = await testDb`
             SELECT
                 id,
@@ -103,30 +109,33 @@ describe('POST /api/files/upload', () => {
         expect(row.originalName).toBe('photo.png')
         expect(row.storedName).toBe(storedName)
         expect(row.mimeType).toBe('image/png')
-        expect(Number(row.size)).toBe(fileBytes.byteLength)
+        expect(Number(row.size)).toBe(PNG_SIGNATURE.length)
         expect(row.uploadedBy).toBe(user.id)
 
-        // File actually written to disk with the correct bytes.
         const onDisk = Bun.file(`./uploads/${storedName}`)
         expect(await onDisk.exists()).toBe(true)
         const onDiskBytes = new Uint8Array(await onDisk.arrayBuffer())
-        expect(onDiskBytes).toEqual(fileBytes)
+        expect(onDiskBytes).toEqual(new Uint8Array(PNG_SIGNATURE))
     })
 
-    it('preserves the original file extension in storedName', async () => {
+    it('uses the canonical extension for the detected MIME in storedName', async () => {
         const user = await insertTestUser()
-        const file = new File([new Uint8Array([1, 2, 3])], 'photo.png', { type: 'image/png' })
+        // Upload JPEG bytes with a misleading .png filename — stored extension
+        // should follow the detected content (.jpg), not the original filename.
+        const file = new File([new Uint8Array(JPEG_SIGNATURE)], 'lying.png', { type: 'image/png' })
 
         const { status, body } = await uploadFileForUser(user.id, file)
 
         expect(status).toBe(201)
-        expect(body.url).toMatch(/\.png$/)
+        expect(body.mimeType).toBe('image/jpeg')
+        expect(body.url).toMatch(/\.jpg$/)
+        expect(body.originalName).toBe('lying.png')
     })
 
     it('produces distinct storedNames across uploads', async () => {
         const user = await insertTestUser()
-        const file1 = new File(['a'], 'same.txt', { type: 'text/plain' })
-        const file2 = new File(['b'], 'same.txt', { type: 'text/plain' })
+        const file1 = fileFrom('same.png', 'image/png', PNG_SIGNATURE, [1])
+        const file2 = fileFrom('same.png', 'image/png', PNG_SIGNATURE, [2])
 
         const r1 = await uploadFileForUser(user.id, file1)
         const r2 = await uploadFileForUser(user.id, file2)
@@ -134,6 +143,73 @@ describe('POST /api/files/upload', () => {
         expect(r1.status).toBe(201)
         expect(r2.status).toBe(201)
         expect(r1.body.url).not.toBe(r2.body.url)
+    })
+
+    it('accepts valid WebP files', async () => {
+        const user = await insertTestUser()
+        const file = fileFrom('pic.webp', 'image/webp', WEBP_SIGNATURE)
+
+        const { status, body } = await uploadFileForUser(user.id, file)
+
+        expect(status).toBe(201)
+        expect(body.mimeType).toBe('image/webp')
+    })
+
+    it('accepts WebM audio regardless of how Bun re-derives the declared Content-Type', async () => {
+        // Bun's request.formData() re-derives the part's Content-Type from the
+        // filename extension, so a `.webm` file always arrives at the handler
+        // as `video/webm`. Detection is byte-based so this is fine.
+        const user = await insertTestUser()
+        const file = fileFrom('clip.webm', 'audio/webm', WEBM_SIGNATURE)
+
+        const { status, body } = await uploadFileForUser(user.id, file)
+
+        expect(status).toBe(201)
+        expect(body.mimeType).toBe('audio/webm')
+        expect(body.url).toMatch(/\.webm$/)
+
+        const [row] = await testDb`
+            SELECT mime_type AS "mimeType" FROM files WHERE id = ${body.id}
+        `
+        expect(row.mimeType).toBe('audio/webm')
+    })
+
+    it('returns 400 FileTooLarge when file.size exceeds MAX_UPLOAD_BYTES', async () => {
+        const user = await insertTestUser()
+        // Sized just over MAX so the multipart body still fits under the bodyLimit ceiling
+        // (MAX + 1024). Triggers the service-level size check.
+        const oversize = new Uint8Array(MAX_UPLOAD_BYTES + 100)
+        oversize.set(PNG_SIGNATURE, 0)
+        const file = new File([oversize], 'huge.png', { type: 'image/png' })
+
+        const { status, body } = await uploadFileForUser(user.id, file)
+
+        expect(status).toBe(400)
+        expect(body).toHaveProperty('error', 'FileTooLarge')
+    })
+
+    it('returns 400 from the bodyLimit middleware when the request body itself is too large', async () => {
+        const user = await insertTestUser()
+        // Sized well over MAX + headroom so bodyLimit rejects before parseBody runs.
+        const oversize = new Uint8Array(MAX_UPLOAD_BYTES + 64 * 1024)
+        oversize.set(PNG_SIGNATURE, 0)
+        const file = new File([oversize], 'huge.png', { type: 'image/png' })
+
+        const { status, body } = await uploadFileForUser(user.id, file)
+
+        expect(status).toBe(400)
+        expect(body).toHaveProperty('error', 'FileTooLarge')
+    })
+
+    it('returns 400 UnsupportedFileType when content does not match any allowed signature', async () => {
+        const user = await insertTestUser()
+        // PDF bytes — sniffMime returns null for these.
+        const file = fileFrom('doc.pdf', 'application/pdf', PDF_SIGNATURE)
+
+        const { status, body } = await uploadFileForUser(user.id, file)
+
+        expect(status).toBe(400)
+        expect(body).toHaveProperty('error', 'UnsupportedFileType')
     })
 })
 
@@ -145,7 +221,7 @@ describe('GET /api/files/:filename', () => {
 
     it('returns 200 with the file when requested by the uploader', async () => {
         const user = await insertTestUser()
-        const file = new File(['my-bytes'], 'note.txt', { type: 'text/plain' })
+        const file = fileFrom('note.png', 'image/png', PNG_SIGNATURE)
 
         const upload = await uploadFileForUser(user.id, file)
         expect(upload.status).toBe(201)
@@ -157,8 +233,8 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(200)
-        expect(res.headers.get('Content-Type')).toBe('text/plain;charset=utf-8')
-        expect(await res.text()).toBe('my-bytes')
+        const bytes = new Uint8Array(await res.arrayBuffer())
+        expect(bytes).toEqual(new Uint8Array(PNG_SIGNATURE))
     })
 
     it('returns 200 to the psycho when the file is linked to their appointment attachment', async () => {
@@ -174,8 +250,10 @@ describe('GET /api/files/:filename', () => {
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        // File uploaded by client; psycho has access via the attachment.
-        const upload = await uploadFileForUser(client.id, new File(['shared'], 'shared.txt'))
+        const upload = await uploadFileForUser(
+            client.id,
+            fileFrom('shared.png', 'image/png', PNG_SIGNATURE),
+        )
         expect(upload.status).toBe(201)
         const storedName = upload.body.url.split('/').pop()!
 
@@ -194,7 +272,8 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(200)
-        expect(await res.text()).toBe('shared')
+        const bytes = new Uint8Array(await res.arrayBuffer())
+        expect(bytes).toEqual(new Uint8Array(PNG_SIGNATURE))
     })
 
     it('returns 200 to the client when the file is linked to their appointment attachment', async () => {
@@ -210,8 +289,10 @@ describe('GET /api/files/:filename', () => {
         await startAppointment(apt.id)
         await endAppointment(apt.id)
 
-        // File uploaded by psycho; client has access via the attachment.
-        const upload = await uploadFileForUser(psycho.id, new File(['psycho-bytes'], 'p.txt'))
+        const upload = await uploadFileForUser(
+            psycho.id,
+            fileFrom('reco.png', 'image/png', PNG_SIGNATURE),
+        )
         expect(upload.status).toBe(201)
         const storedName = upload.body.url.split('/').pop()!
 
@@ -230,7 +311,8 @@ describe('GET /api/files/:filename', () => {
         )
 
         expect(res.status).toBe(200)
-        expect(await res.text()).toBe('psycho-bytes')
+        const bytes = new Uint8Array(await res.arrayBuffer())
+        expect(bytes).toEqual(new Uint8Array(PNG_SIGNATURE))
     })
 
     it('returns 404 when the storedName does not exist in DB', async () => {
@@ -250,7 +332,10 @@ describe('GET /api/files/:filename', () => {
         const owner = await insertTestUser({ email: 'owner@test.com' })
         const stranger = await insertTestUser({ email: 'stranger@test.com' })
 
-        const upload = await uploadFileForUser(owner.id, new File(['private'], 'private.txt'))
+        const upload = await uploadFileForUser(
+            owner.id,
+            fileFrom('private.png', 'image/png', PNG_SIGNATURE),
+        )
         expect(upload.status).toBe(201)
         const storedName = upload.body.url.split('/').pop()!
 
@@ -267,7 +352,6 @@ describe('GET /api/files/:filename', () => {
     it('returns 404 when the DB row exists but the file is missing from disk', async () => {
         const user = await insertTestUser()
 
-        // insertTestFile inserts a DB row only; nothing on disk.
         const file = await insertTestFile(user.id, { storedName: 'missing-on-disk.png' })
 
         const res = await app.request(

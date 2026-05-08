@@ -1,24 +1,38 @@
 import type { BunFile, SQL } from 'bun'
 import { randomUUID } from 'crypto'
 import { unlink } from 'node:fs/promises'
-import { extname } from 'path'
-import { NotFoundError } from 'errors/index'
+import { BadRequestError, NotFoundError } from 'errors/index'
 import type { UploadedFile } from './models'
 import { FilesRepo } from './repo'
+import { extensionForMime, MAX_UPLOAD_BYTES, sniffMime } from './upload-validation'
 
 const UPLOAD_DIR = './uploads'
 
 export const FilesService = {
     async uploadForUser(userId: string, file: File): Promise<UploadedFile> {
-        const ext = extname(file.name) || ''
-        const storedName = `${randomUUID()}${ext}`
+        if (file.size > MAX_UPLOAD_BYTES) {
+            throw new BadRequestError('File is too large.', 'FileTooLarge')
+        }
 
-        await Bun.write(`${UPLOAD_DIR}/${storedName}`, await file.arrayBuffer())
+        // The client-supplied MIME and filename extension are unreliable
+        // (Bun's parseBody re-derives Content-Type from the filename, so the
+        // browser's `audio/webm;codecs=opus` arrives as `video/webm`). Trust
+        // only the magic bytes — sniffMime returns null for anything outside
+        // our supported set.
+        const buf = new Uint8Array(await file.arrayBuffer())
+        const detectedMime = sniffMime(buf)
+        if (!detectedMime) {
+            throw new BadRequestError('Unsupported file type.', 'UnsupportedFileType')
+        }
+
+        const storedName = `${randomUUID()}${extensionForMime(detectedMime)}`
+
+        await Bun.write(`${UPLOAD_DIR}/${storedName}`, buf)
 
         const row = await FilesRepo.insert({
             originalName: file.name,
             storedName,
-            mimeType: file.type,
+            mimeType: detectedMime,
             size: file.size,
             uploadedBy: userId,
         })
