@@ -10,10 +10,6 @@ vi.mock('~/services/attachment.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psycho' }),
-}))
-
 vi.mock('~/components/AppointmentNotesPanel', () => ({
     AppointmentNotesPanel: () => <div data-testid="notes-panel" />,
 }))

@@ -6,7 +6,6 @@ import { ClientForm } from '~/components/ClientForm'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { useResource } from '~/hooks/useResource'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
@@ -74,8 +73,6 @@ function ContactItem({ icon, label, value, type }: ContactItemProps) {
 }
 
 export default function ClientProfile() {
-    useRoleGuard(['client'])
-
     const {
         data: client,
         isLoading,

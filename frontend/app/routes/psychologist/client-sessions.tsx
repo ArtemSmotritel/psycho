@@ -14,7 +14,6 @@ import type { Appointment } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 
@@ -39,8 +38,6 @@ type AppointmentsListProps = {
 const ITEMS_PER_PAGE = 4
 
 function AppointmentCard({ appointment, clientId }: AppointmentCardProps) {
-    useRoleGuard(['psycho', 'client'])
-
     return (
         <Link to={routes.psycho.appointment(clientId, appointment.id)} className="block">
             <Card className="hover:bg-accent/50 transition-colors max-w-lg">

@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { SidebarProvider } from '~/components/ui/sidebar'
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 vi.mock('~/services/recommendation.service', () => ({
     recommendationService: {
         reactForClient: vi.fn(),

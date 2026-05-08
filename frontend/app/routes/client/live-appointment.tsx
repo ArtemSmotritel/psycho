@@ -15,7 +15,6 @@ import {
 } from '~/components/ui/sheet'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService } from '~/services/attachment.service'
 import type { AppointmentWithPsycho } from '~/models/appointment'
@@ -36,8 +35,6 @@ const Excalidraw = lazy(() =>
 )
 
 export default function LiveAppointment() {
-    useRoleGuard(['client'])
-
     const { appointmentId } = useParams<{ appointmentId: string }>()
     const navigate = useNavigate()
 

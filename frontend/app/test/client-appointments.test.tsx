@@ -11,10 +11,6 @@ vi.mock('~/services/appointment.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 import ClientAppointments from '~/routes/client/appointments'
 
 function renderWithRouter() {

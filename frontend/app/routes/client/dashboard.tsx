@@ -6,7 +6,6 @@ import { PageContainer } from '~/components/PageContainer'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
 import { RecommendationCard } from '~/components/RecommendationCard'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { useResource } from '~/hooks/useResource'
 import { dashboardService } from '~/services/dashboard.service'
 import { recommendationService } from '~/services/recommendation.service'
@@ -15,8 +14,6 @@ import { formatAppointmentDateTimeRange } from '~/utils/utils'
 import type { ClientDashboardData } from '~/models/dashboard'
 
 export default function ClientDashboard() {
-    useRoleGuard(['client'])
-
     const {
         data,
         isLoading,

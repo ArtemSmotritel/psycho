@@ -7,7 +7,6 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useState, useEffect } from 'react'
 import { Button } from '~/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService } from '~/services/attachment.service'
 import { toast } from 'sonner'
@@ -31,7 +30,6 @@ import { isPostSessionPromptDone, isRecentlyEnded } from '~/utils/post-session-p
 
 export default function Session() {
     const { appointment, isLoading } = useCurrentAppointment()
-    const { userRole } = useRoleGuard(['psycho', 'client'])
     const navigate = useNavigate()
     const { clientId } = useParams<{ clientId: string }>()
     const client = useCurrentClient()
@@ -48,14 +46,14 @@ export default function Session() {
     const [showFollowUp, setShowFollowUp] = useState(false)
 
     useEffect(() => {
-        if (userRole !== 'psycho' || !appointment || appointment.status !== 'past' || !client) {
+        if (!appointment || appointment.status !== 'past' || !client) {
             return
         }
         if (!isRecentlyEnded(appointment.endedAt)) return
         if (isPostSessionPromptDone(appointment.id)) return
         if (client.nextAppointment !== null) return
         setShowFollowUp(true)
-    }, [userRole, appointment, client])
+    }, [appointment, client])
 
     useEffect(() => {
         if (
@@ -224,17 +222,15 @@ export default function Session() {
             )}
 
             <ActionsSection title="Actions">
-                {userRole === 'psycho' && (
-                    <ActionItem
-                        icon={<Play className="h-6" />}
-                        label="Start Appointment"
-                        variant="default"
-                        onClick={handleStartAppointment}
-                        disabled={isStarting}
-                    />
-                )}
+                <ActionItem
+                    icon={<Play className="h-6" />}
+                    label="Start Appointment"
+                    variant="default"
+                    onClick={handleStartAppointment}
+                    disabled={isStarting}
+                />
 
-                {userRole === 'psycho' && appointment.status === 'upcoming' && (
+                {appointment.status === 'upcoming' && (
                     <SessionForm
                         mode="edit"
                         trigger={
@@ -303,7 +299,7 @@ export default function Session() {
                     to={routes.psycho.client(appointment.clientId)}
                 />
 
-                {userRole === 'psycho' && appointment.status === 'upcoming' && (
+                {appointment.status === 'upcoming' && (
                     <ConfirmDeleteButton
                         itemLabel="Appointment"
                         description="Deleting this appointment will also remove any notes, impressions, and recommendations attached to it. This action cannot be undone."

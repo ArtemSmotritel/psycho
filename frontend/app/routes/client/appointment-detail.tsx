@@ -7,7 +7,6 @@ import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { format } from 'date-fns'
 import { formatAppointmentTimeRange } from '~/utils/utils'
 import { recommendationService } from '~/services/recommendation.service'
@@ -27,8 +26,6 @@ import { Loading } from '~/components/Loading'
 import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 
 export default function ClientAppointmentDetail() {
-    useRoleGuard(['client'])
-
     const { appointmentId } = useParams<{ appointmentId: string }>()
     const { appointment, isLoading } = useCurrentClientAppointment()
 

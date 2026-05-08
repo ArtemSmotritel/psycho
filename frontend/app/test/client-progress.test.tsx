@@ -11,10 +11,6 @@ vi.mock('~/services/impression.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psycho' }),
-}))
-
 import ClientProgress from '~/routes/psychologist/client-progress'
 import type { AttachmentWithAppointment } from '~/models/attachment'
 

@@ -14,7 +14,6 @@ import type { AttachmentWithAppointment } from '~/models/attachment'
 import { impressionService } from '~/services/impression.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { formatAppDate, formatAttachmentTitle } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 
@@ -105,8 +104,6 @@ function AppointmentInTimeline({
 const ITEMS_PER_PAGE = 3
 
 export default function ClientProgress({ params }: ClientProgressProps) {
-    useRoleGuard(['psycho'])
-
     const [impressions, setImpressions] = useState<AttachmentWithAppointment[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)

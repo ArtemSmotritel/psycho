@@ -11,10 +11,6 @@ vi.mock('~/services/dashboard.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 import ClientDashboard from '~/routes/client/dashboard'
 import type { ClientDashboardData } from '~/models/dashboard'
 

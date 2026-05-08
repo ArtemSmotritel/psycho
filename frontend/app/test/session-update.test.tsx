@@ -19,10 +19,6 @@ vi.mock('sonner', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psycho' }),
-}))
-
 // Capture the onSubmit and isLoading props passed to the edit SessionForm
 let capturedOnSubmit: ((values: any) => void) | null = null
 let capturedIsLoading: boolean | undefined = undefined

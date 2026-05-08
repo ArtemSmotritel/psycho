@@ -5,14 +5,11 @@ import { AttachmentDetail } from '~/components/AttachmentDetail'
 import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { useCurrentClientAttachment } from '~/hooks/useCurrentClientAttachment'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { routes } from '~/lib/routes'
 import { Loading } from '~/components/Loading'
 import { NotFound } from '~/components/NotFound'
 
 export default function ClientAttachmentDetail() {
-    useRoleGuard(['client'])
-
     const { appointmentId } = useParams<{ appointmentId: string }>()
     const navigate = useNavigate()
     const { attachment, reaction, isLoading, refetch } = useCurrentClientAttachment()

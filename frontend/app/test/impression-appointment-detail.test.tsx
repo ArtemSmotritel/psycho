@@ -21,10 +21,6 @@ vi.mock('~/services/file.service', () => ({
     resolveAttachmentFileIds: vi.fn(async () => ({ audioFileIds: [], imageFileIds: [] })),
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 vi.mock('react-media-recorder', () => ({
     useReactMediaRecorder: () => ({
         status: 'idle',

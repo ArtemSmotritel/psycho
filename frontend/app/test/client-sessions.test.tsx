@@ -10,10 +10,6 @@ vi.mock('~/services/appointment.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psycho' }),
-}))
-
 import ClientSessions from '~/routes/psychologist/client-sessions'
 
 function renderWithRouter(clientId = 'client-123') {

@@ -23,10 +23,6 @@ vi.mock('~/services/recommendation.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 vi.mock('react-router', async (importOriginal) => {
     const actual = await importOriginal<typeof import('react-router')>()
     return {

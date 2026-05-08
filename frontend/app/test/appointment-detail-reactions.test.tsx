@@ -25,10 +25,6 @@ vi.mock('~/services/attachment.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'client' }),
-}))
-
 let mockUseCurrentClientAppointment: () => { appointment: any; isLoading: boolean }
 
 vi.mock('~/hooks/useCurrentClientAppointment', () => ({

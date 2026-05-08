@@ -11,10 +11,6 @@ vi.mock('~/services/dashboard.service', () => ({
     },
 }))
 
-vi.mock('~/hooks/useRoleGuard', () => ({
-    useRoleGuard: () => ({ userRole: 'psycho' }),
-}))
-
 import DashboardOverview from '~/routes/psychologist/dashboard.index'
 import type { PsychoDashboard } from '~/models/dashboard'
 

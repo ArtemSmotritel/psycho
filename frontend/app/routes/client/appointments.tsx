@@ -15,7 +15,6 @@ import { appointmentService } from '~/services/appointment.service'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
 import { PageContainer } from '~/components/PageContainer'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 import { AppPageHeader } from '~/components/AppPageHeader'
@@ -171,8 +170,6 @@ function AppointmentsList({ title, appointments, oldestFirst }: AppointmentsList
 }
 
 export default function ClientAppointments() {
-    useRoleGuard(['client'])
-
     const [appointments, setAppointments] = useState<AppointmentWithPsycho[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)

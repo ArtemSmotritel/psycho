@@ -30,7 +30,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { ConfirmAction } from '~/components/ConfirmAction'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { appointmentService } from '~/services/appointment.service'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
@@ -47,7 +46,6 @@ const Excalidraw = lazy(() =>
 )
 
 export default function LiveSession() {
-    useRoleGuard(['psycho'])
     const { clientId, appointmentId } = useParams<{
         clientId: string
         appointmentId: string

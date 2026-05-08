@@ -5,14 +5,12 @@ import { NotFound } from '~/components/NotFound'
 import { ActionItem } from '@/components/ActionsSection'
 import { AttachmentDetail } from '~/components/AttachmentDetail'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
-import { useRoleGuard } from '~/hooks/useRoleGuard'
 import { routes } from '~/lib/routes'
 
 export default function SessionAttachment() {
     const { attachment, reaction, isLoading, refetch } = useCurrentAttachment()
     const { clientId, appointmentId } = useParams()
     const navigate = useNavigate()
-    useRoleGuard(['psycho'])
 
     if (isLoading) return <Loading />
 
