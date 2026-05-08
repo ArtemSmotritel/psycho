@@ -1,3 +1,4 @@
+import type { SQL } from 'bun'
 import { db } from 'config/db'
 import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from './models'
 
@@ -119,12 +120,17 @@ export const AppointmentsRepo = {
         return (row as Appointment) ?? null
     },
 
-    async findOverlapping(params: FindOverlappingParams): Promise<OverlappingAppointment | null> {
+    async findOverlapping(
+        params: FindOverlappingParams,
+        executor: SQL = db,
+    ): Promise<OverlappingAppointment | null> {
         const { psychoId, clientId, startTime, endTime, excludeAppointmentId } = params
 
-        const excludeFilter = excludeAppointmentId ? db`AND id <> ${excludeAppointmentId}` : db``
+        const excludeFilter = excludeAppointmentId
+            ? executor`AND id <> ${excludeAppointmentId}`
+            : executor``
 
-        const [row] = await db`
+        const [row] = await executor`
             SELECT
                 id,
                 psycho_id AS "psychoId",
@@ -147,6 +153,14 @@ export const AppointmentsRepo = {
         `
 
         return (row as OverlappingAppointment) ?? null
+    },
+
+    async acquireOverlapLocks(executor: SQL, userIdA: string, userIdB: string): Promise<void> {
+        const [first, second] = [userIdA, userIdB].sort()
+        await executor`SELECT pg_advisory_xact_lock(hashtext(${first}))`
+        if (second !== first) {
+            await executor`SELECT pg_advisory_xact_lock(hashtext(${second}))`
+        }
     },
 
     async listForPsychoClient(psychoId: string, clientId: string): Promise<Appointment[]> {
@@ -188,8 +202,8 @@ export const AppointmentsRepo = {
         return rows as AppointmentWithClient[]
     },
 
-    async insert(params: InsertAppointmentParams): Promise<Appointment> {
-        const [row] = await db`
+    async insert(params: InsertAppointmentParams, executor: SQL = db): Promise<Appointment> {
+        const [row] = await executor`
             INSERT INTO appointments (psycho_id, client_id, start_time, end_time, google_meet_link, google_calendar_event_id)
             VALUES (${params.psychoId}, ${params.clientId}, ${params.startTime}, ${params.endTime}, ${params.googleMeetLink ?? null}, ${params.googleCalendarEventId ?? null})
             RETURNING ${db.unsafe(appointmentColumns())}
@@ -197,8 +211,12 @@ export const AppointmentsRepo = {
         return row as Appointment
     },
 
-    async update(appointmentId: string, params: UpdateAppointmentParams): Promise<Appointment> {
-        const [row] = await db`
+    async update(
+        appointmentId: string,
+        params: UpdateAppointmentParams,
+        executor: SQL = db,
+    ): Promise<Appointment> {
+        const [row] = await executor`
             UPDATE appointments
             SET
                 start_time = ${params.startTime},

@@ -1,6 +1,8 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { z } from 'zod/v4'
+import { BadRequestError } from 'errors/index'
 import { appointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyClientRequest, ownsFiles } from '../../middlewares/auth'
 import { createAttachmentClientSchema, listQuerySchemaClient } from './schemas'
@@ -8,11 +10,19 @@ import { AttachmentsService } from './services'
 
 const reactionSchema = z.object({
     done: z.boolean().optional(),
-    comment: z.string().min(1).optional(),
+    comment: z.string().min(1).max(65536).optional(),
 })
 
 const completeSchema = z.object({
-    response: z.string().min(1),
+    response: z.string().min(1).max(65536),
+})
+
+const ATTACHMENT_BODY_LIMIT = 512 * 1024
+const attachmentBodyLimit = bodyLimit({
+    maxSize: ATTACHMENT_BODY_LIMIT,
+    onError: () => {
+        throw new BadRequestError('Request body too large.', 'BodyTooLarge')
+    },
 })
 
 export const clientAttachmentRoutes = new Hono().use(authorized, onlyClientRequest)
@@ -36,6 +46,7 @@ clientAttachmentRoutes.get(
 
 clientAttachmentRoutes.post(
     '/',
+    attachmentBodyLimit,
     zValidator('param', appointmentIdParamSchema),
     zValidator('json', createAttachmentClientSchema),
     ownsFiles,
@@ -72,6 +83,7 @@ clientAttachmentRoutes.get(
 
 clientAttachmentRoutes.patch(
     '/:attachmentId/reaction',
+    attachmentBodyLimit,
     zValidator('param', appointmentIdParamSchema),
     zValidator('json', reactionSchema),
     async (c) => {
@@ -92,6 +104,7 @@ clientAttachmentRoutes.patch(
 
 clientAttachmentRoutes.patch(
     '/:attachmentId/complete',
+    attachmentBodyLimit,
     zValidator('param', appointmentIdParamSchema),
     zValidator('json', completeSchema),
     async (c) => {

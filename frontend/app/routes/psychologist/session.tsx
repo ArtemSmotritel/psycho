@@ -82,6 +82,10 @@ export default function Session() {
         return <Loading text="Loading appointment..." />
     }
 
+    if (!clientId) {
+        return <p>Client not found.</p>
+    }
+
     if (!appointment) {
         return <p>Appointment not found.</p>
     }
@@ -97,19 +101,19 @@ export default function Session() {
                 <p className="text-muted-foreground mb-4">
                     {formatAppointmentTimeRange(appointment)}
                 </p>
-                <AppointmentNotesPanel clientId={clientId!} appointmentId={appointment.id} />
+                <AppointmentNotesPanel clientId={clientId} appointmentId={appointment.id} />
                 <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
                     <ImpressionList
                         impressions={impressions}
                         isLoading={isLoadingImpressions}
-                        clientId={clientId!}
+                        clientId={clientId}
                     />
                 </div>
                 <div className="mt-6">
                     <AppointmentRecommendationsPanel
-                        clientId={clientId!}
+                        clientId={clientId}
                         appointmentId={appointment.id}
                     />
                 </div>
@@ -301,6 +305,7 @@ export default function Session() {
                 {userRole === 'psycho' && appointment.status === 'upcoming' && (
                     <ConfirmDeleteButton
                         itemLabel="Appointment"
+                        description="Deleting this appointment will also remove any notes, impressions, and recommendations attached to it. This action cannot be undone."
                         trigger={
                             <ActionItem
                                 icon={<Trash2 className="h-6" />}

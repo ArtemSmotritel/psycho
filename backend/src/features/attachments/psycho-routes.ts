@@ -1,6 +1,8 @@
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { z } from 'zod/v4'
+import { BadRequestError } from 'errors/index'
 import { clientIdAppointmentIdParamSchema } from 'utils/types'
 import { authorized, onlyPsychoRequest, ownsFiles } from '../../middlewares/auth'
 import {
@@ -11,7 +13,15 @@ import {
 import { AttachmentsService } from './services'
 
 const replySchema = z.object({
-    reply: z.string().min(1),
+    reply: z.string().min(1).max(65536),
+})
+
+const ATTACHMENT_BODY_LIMIT = 512 * 1024
+const attachmentBodyLimit = bodyLimit({
+    maxSize: ATTACHMENT_BODY_LIMIT,
+    onError: () => {
+        throw new BadRequestError('Request body too large.', 'BodyTooLarge')
+    },
 })
 
 export const psychoAttachmentRoutes = new Hono().use(authorized, onlyPsychoRequest)
@@ -36,6 +46,7 @@ psychoAttachmentRoutes.get(
 
 psychoAttachmentRoutes.post(
     '/',
+    attachmentBodyLimit,
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('json', createAttachmentPsychoSchema),
     ownsFiles,
@@ -75,6 +86,7 @@ psychoAttachmentRoutes.get(
 
 psychoAttachmentRoutes.patch(
     '/:attachmentId',
+    attachmentBodyLimit,
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('json', updateAttachmentSchema),
     ownsFiles,
@@ -98,6 +110,7 @@ psychoAttachmentRoutes.patch(
 
 psychoAttachmentRoutes.patch(
     '/:attachmentId/reply',
+    attachmentBodyLimit,
     zValidator('param', clientIdAppointmentIdParamSchema),
     zValidator('json', replySchema),
     async (c) => {

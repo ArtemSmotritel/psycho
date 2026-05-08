@@ -41,7 +41,6 @@ Monorepo with two independent apps: a Bun/Hono REST API (`backend/`) and a Bun/R
 - **API client**: Axios instance in `services/api.ts` with `baseURL: '/api'` and `withCredentials: true`. Domain-specific service files wrap it (e.g. `appointment.service.ts`, `client.service.ts`).
 - **Auth state**: `AuthContext` (`contexts/auth-context.tsx`) + `better-auth/react` client (`services/auth.service.ts`). Note: `auth-context.tsx` currently has hardcoded fake user for development.
 - **Models**: TypeScript interfaces in `app/models/` define frontend data shapes (may differ from DB schema).
-- **Test data**: `app/test-data/` contains fake data used by many routes that haven't been wired to the real API yet.
 
 ### Environment Variables (Backend)
 ```

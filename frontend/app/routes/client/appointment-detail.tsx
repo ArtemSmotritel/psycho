@@ -83,6 +83,14 @@ export default function ClientAppointmentDetail() {
         return <Loading text="Loading appointment..." />
     }
 
+    if (!appointmentId) {
+        return (
+            <PageContainer>
+                <p>Appointment not found.</p>
+            </PageContainer>
+        )
+    }
+
     if (!appointment) {
         return <p>Appointment not found.</p>
     }
@@ -152,7 +160,7 @@ export default function ClientAppointmentDetail() {
                                     recommendation={recommendation}
                                     role="client"
                                     detailHref={routes.client.attachment(
-                                        appointmentId!,
+                                        appointmentId,
                                         recommendation.id,
                                     )}
                                     onToggleDone={async (id, done) => {
@@ -205,7 +213,7 @@ export default function ClientAppointmentDetail() {
     }
 
     if (appointment.status === 'active') {
-        return <Navigate to={routes.client.appointmentLive(appointmentId!)} replace />
+        return <Navigate to={routes.client.appointmentLive(appointmentId)} replace />
     }
 
     // upcoming

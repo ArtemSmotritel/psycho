@@ -24,6 +24,14 @@ export default function ClientAttachmentDetail() {
         )
     }
 
+    if (!appointmentId) {
+        return (
+            <PageContainer>
+                <p>Appointment not found.</p>
+            </PageContainer>
+        )
+    }
+
     if (!attachment) {
         return (
             <PageContainer>
@@ -34,16 +42,16 @@ export default function ClientAttachmentDetail() {
 
     return (
         <PageContainer>
-            <AppPageHeader text="Attachment" linkTo={routes.client.appointment(appointmentId!)} />
+            <AppPageHeader text="Attachment" linkTo={routes.client.appointment(appointmentId)} />
             <AttachmentDetail
                 attachment={attachment}
                 reaction={reaction}
                 role="client"
-                appointmentId={appointmentId!}
+                appointmentId={appointmentId}
                 onAfterMutation={refetch}
-                onAfterDelete={() => navigate(routes.client.appointment(appointmentId!))}
+                onAfterDelete={() => navigate(routes.client.appointment(appointmentId))}
                 extraActions={
-                    <Link to={routes.client.appointment(appointmentId!)}>
+                    <Link to={routes.client.appointment(appointmentId)}>
                         <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
                     </Link>
                 }

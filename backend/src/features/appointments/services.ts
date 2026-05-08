@@ -1,3 +1,5 @@
+import type { SQL } from 'bun'
+import { db } from 'config/db'
 import { BadGatewayError, BadRequestError, ConflictError, NotFoundError } from 'errors/index'
 import { log } from 'utils/logger'
 import {
@@ -53,14 +55,17 @@ const ensureLinked = async (psychoId: string, clientId: string) => {
     }
 }
 
-const throwIfOverlapping = async (params: {
-    psychoId: string
-    clientId: string
-    startTime: string
-    endTime: string
-    excludeAppointmentId?: string
-}) => {
-    const conflict = await AppointmentsRepo.findOverlapping(params)
+const throwIfOverlapping = async (
+    params: {
+        psychoId: string
+        clientId: string
+        startTime: string
+        endTime: string
+        excludeAppointmentId?: string
+    },
+    executor: SQL = db,
+) => {
+    const conflict = await AppointmentsRepo.findOverlapping(params, executor)
     if (conflict) {
         throw new ConflictError(
             'An appointment overlapping this time range already exists.',
@@ -170,19 +175,25 @@ export const AppointmentsService = {
 
         ensureEndAfterStart(startTime, endTime)
         await ensureLinked(psychoId, clientId)
-        await throwIfOverlapping({ psychoId, clientId, startTime, endTime })
 
-        // Insert the DB row first so the appointment exists even if the
-        // Google call fails. Then call Google and patch the row with the
-        // returned link/eventId. Not transactional on purpose — a 3rd-party
-        // call inside a DB transaction would hold locks across network I/O.
-        let appointment = await AppointmentsRepo.insert({
-            psychoId,
-            clientId,
-            startTime,
-            endTime,
-            googleMeetLink: null,
-            googleCalendarEventId: null,
+        // Serialize the overlap check + insert under per-user advisory locks so
+        // concurrent creates that share any participant cannot both pass the check.
+        // Google Meet generation stays outside the tx to avoid holding locks across
+        // network I/O (see the patch step below).
+        let appointment = await db.begin(async (tx) => {
+            await AppointmentsRepo.acquireOverlapLocks(tx, psychoId, clientId)
+            await throwIfOverlapping({ psychoId, clientId, startTime, endTime }, tx)
+            return AppointmentsRepo.insert(
+                {
+                    psychoId,
+                    clientId,
+                    startTime,
+                    endTime,
+                    googleMeetLink: null,
+                    googleCalendarEventId: null,
+                },
+                tx,
+            )
         })
 
         let meetLinkGenerationFailed = false
@@ -241,13 +252,6 @@ export const AppointmentsService = {
         let mergedCalendarEventId = existing.googleCalendarEventId
 
         ensureEndAfterStart(mergedStart, mergedEnd)
-        await throwIfOverlapping({
-            psychoId,
-            clientId: existing.clientId,
-            startTime: mergedStart,
-            endTime: mergedEnd,
-            excludeAppointmentId: appointmentId,
-        })
 
         let meetRescheduleFailed = false
         if (input.rescheduleGoogleMeet === true) {
@@ -283,11 +287,30 @@ export const AppointmentsService = {
             }
         }
 
-        const appointment = await AppointmentsRepo.update(appointmentId, {
-            startTime: mergedStart,
-            endTime: mergedEnd,
-            googleMeetLink: mergedLink,
-            googleCalendarEventId: mergedCalendarEventId,
+        // Serialize overlap check + update under the same per-user advisory locks
+        // used by createForPsycho so concurrent edits can't race past the check.
+        const appointment = await db.begin(async (tx) => {
+            await AppointmentsRepo.acquireOverlapLocks(tx, psychoId, existing.clientId)
+            await throwIfOverlapping(
+                {
+                    psychoId,
+                    clientId: existing.clientId,
+                    startTime: mergedStart,
+                    endTime: mergedEnd,
+                    excludeAppointmentId: appointmentId,
+                },
+                tx,
+            )
+            return AppointmentsRepo.update(
+                appointmentId,
+                {
+                    startTime: mergedStart,
+                    endTime: mergedEnd,
+                    googleMeetLink: mergedLink,
+                    googleCalendarEventId: mergedCalendarEventId,
+                },
+                tx,
+            )
         })
 
         // TODO: EDG-58 — send rescheduled email to client if startTime or endTime changed
