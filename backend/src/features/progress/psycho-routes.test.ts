@@ -18,8 +18,8 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 describe('GET /api/clients/:clientId/progress/impressions', () => {
     it('happy path — returns all impressions across all appointments, each with appointmentStartTime', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const apt1 = await createAppointment({
@@ -79,8 +79,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     })
 
     it('returns 200 with empty array when client has appointments but no impressions', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const apt = await createAppointment({
@@ -107,8 +107,8 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     })
 
     it('returns 400 ClientNotLinked when clientId does not belong to requesting psychologist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const otherClient = await insertTestUser({ email: 'other@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const otherClient = await insertTestUser({ email: 'other@test.com', activeRole: 'client' })
 
         const res = await app.request(
             `/api/clients/${otherClient.id}/progress/impressions`,
@@ -124,10 +124,10 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     })
 
     it('IDOR — impressions from other psychologist-client pairs do not appear', async () => {
-        const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
-        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
-        const client1 = await insertTestUser({ email: 'client1@test.com' })
-        const client2 = await insertTestUser({ email: 'client2@test.com' })
+        const psycho1 = await insertTestUser({ email: 'psycho1@test.com', activeRole: 'psycho' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
+        const client1 = await insertTestUser({ email: 'client1@test.com', activeRole: 'client' })
+        const client2 = await insertTestUser({ email: 'client2@test.com', activeRole: 'client' })
 
         await ClientsService.linkClientToPsycho(client1.id, psycho1.id)
         await ClientsService.linkClientToPsycho(client2.id, psycho2.id)
@@ -180,7 +180,7 @@ describe('GET /api/clients/:clientId/progress/impressions', () => {
     })
 
     it('returns 403 when Helpsycho-User-Role is client', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/some-client/progress/impressions',

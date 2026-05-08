@@ -19,8 +19,8 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:attachmentId (recommendation)', () => {
     it('returns 200 with updated name/text; imageFileIds in body is ignored (unchanged in response)', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -65,8 +65,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('returns 404 when attachmentId belongs to a different appointment', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt1 = await createAppointment({
             psychoId: psycho.id,
@@ -105,9 +105,9 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('returns 404 when recommendation was created by a different psychologist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -138,8 +138,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('returns 400 AppointmentNotActive when upcoming', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -163,8 +163,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('happy path — removeFileIds removes linked files from the recommendation', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -201,8 +201,8 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('removeFileIds with non-existent ids does not fail', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -238,7 +238,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/attachments/:
     })
 
     it('returns 403 with client role header', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/some-client/appointments/some-apt/attachments/some-id',

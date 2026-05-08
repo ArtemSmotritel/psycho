@@ -14,7 +14,7 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 describe('POST /api/invitations', () => {
     it('returns 201 with invitation object on success', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/invitations',
@@ -36,7 +36,7 @@ describe('POST /api/invitations', () => {
     })
 
     it('returns 400 when email is missing', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/invitations',
@@ -51,7 +51,7 @@ describe('POST /api/invitations', () => {
     })
 
     it('returns 400 when email is invalid format', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/invitations',
@@ -66,7 +66,7 @@ describe('POST /api/invitations', () => {
     })
 
     it('returns 201 with existing invitation when a pending invitation already exists', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const existing = await createInvitation(psycho.id, 'client@example.com')
 
         const res = await app.request(
@@ -86,8 +86,8 @@ describe('POST /api/invitations', () => {
     })
 
     it('returns 400 with AlreadyLinked when client is already linked', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -114,7 +114,7 @@ describe('POST /api/invitations', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/invitations',
@@ -131,8 +131,11 @@ describe('POST /api/invitations', () => {
 
 describe('GET /api/invitations', () => {
     it('returns only pending invitations scoped to the requesting psycho, ordered DESC by created_at', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const otherPsycho = await insertTestUser({ email: 'other-psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const otherPsycho = await insertTestUser({
+            email: 'other-psycho@test.com',
+            activeRole: 'psycho',
+        })
 
         const first = await createInvitation(psycho.id, 'first@example.com')
         const second = await createInvitation(psycho.id, 'second@example.com')
@@ -165,7 +168,7 @@ describe('GET /api/invitations', () => {
     })
 
     it('excludes accepted invitations', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const invitation = await createInvitation(psycho.id, 'to-accept@example.com')
         await testDb`UPDATE invitations SET status = 'accepted' WHERE id = ${invitation.id}`
         await createInvitation(psycho.id, 'still-pending@example.com')
@@ -182,7 +185,7 @@ describe('GET /api/invitations', () => {
     })
 
     it('returns empty array when no pending invitations exist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/invitations',
@@ -200,7 +203,7 @@ describe('GET /api/invitations', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/invitations',
@@ -213,7 +216,7 @@ describe('GET /api/invitations', () => {
 
 describe('DELETE /api/invitations/:id', () => {
     it('deletes pending invitation and returns 204', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const invitation = await createInvitation(psycho.id, 'client@example.com')
 
         const res = await app.request(
@@ -228,8 +231,11 @@ describe('DELETE /api/invitations/:id', () => {
     })
 
     it('returns 404 when invitation belongs to another psycho', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const otherPsycho = await insertTestUser({ email: 'other-psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const otherPsycho = await insertTestUser({
+            email: 'other-psycho@test.com',
+            activeRole: 'psycho',
+        })
         const invitation = await createInvitation(otherPsycho.id, 'client@example.com')
 
         const res = await app.request(
@@ -247,7 +253,7 @@ describe('DELETE /api/invitations/:id', () => {
     })
 
     it('returns 404 when invitation id does not exist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/invitations/00000000-0000-0000-0000-000000000000',
@@ -260,8 +266,8 @@ describe('DELETE /api/invitations/:id', () => {
     })
 
     it('returns 400 InvalidStatus when invitation is already accepted', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         // Accept to flip status
@@ -285,8 +291,8 @@ describe('DELETE /api/invitations/:id', () => {
     })
 
     it('after delete, accepting the same token returns 404 NotFound', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         // Delete the invitation
@@ -316,7 +322,7 @@ describe('DELETE /api/invitations/:id', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/invitations/some-id',
@@ -329,8 +335,8 @@ describe('DELETE /api/invitations/:id', () => {
 
 describe('POST /api/invitations/accept', () => {
     it('returns 200 and creates psychologist_clients link on valid token', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         const res = await app.request(
@@ -356,8 +362,8 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('after accept, client appears in GET /api/clients for that psychologist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         // Accept the invitation
@@ -383,7 +389,7 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('returns 400 when token is missing', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/invitations/accept',
@@ -398,7 +404,7 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('returns 404 when token does not exist', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/invitations/accept',
@@ -415,8 +421,8 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('returns 400 with EmailMismatch when user email differs from invited_email', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const wrongUser = await insertTestUser({ email: 'wrong@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const wrongUser = await insertTestUser({ email: 'wrong@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'correct@test.com')
 
         const res = await app.request(
@@ -434,8 +440,8 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('returns 400 when invitation is already accepted', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         // Accept first time
@@ -464,8 +470,8 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('returns 400 with AlreadyLinked when client is already linked to the psychologist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         // Create invitation first, then link — otherwise createInvitation throws AlreadyLinked
         const invitation = await createInvitation(psycho.id, 'client@test.com')
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -494,8 +500,8 @@ describe('POST /api/invitations/accept', () => {
     })
 
     it('works without role header (roleless user after first signup)', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const invitation = await createInvitation(psycho.id, 'client@test.com')
 
         // No role header — simulates a fresh user who just signed up

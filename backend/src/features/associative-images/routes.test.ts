@@ -24,7 +24,7 @@ async function createImage(psychoId: string, name: string = 'Test Image') {
 
 describe('GET /api/associative-images', () => {
     it('returns { images: [] } when psychologist has no images', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/associative-images',
@@ -38,8 +38,8 @@ describe('GET /api/associative-images', () => {
     })
 
     it('returns only images belonging to the requesting psychologist', async () => {
-        const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
-        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
+        const psycho1 = await insertTestUser({ email: 'psycho1@test.com', activeRole: 'psycho' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
         await createImage(psycho1.id, 'Psycho1 Image')
         await createImage(psycho2.id, 'Psycho2 Image')
 
@@ -60,7 +60,7 @@ describe('GET /api/associative-images', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/associative-images',
@@ -75,7 +75,7 @@ describe('GET /api/associative-images', () => {
 
 describe('POST /api/associative-images', () => {
     it('returns 201 with created image on success', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const file = await insertTestFile(psycho.id)
 
         const res = await app.request(
@@ -97,7 +97,7 @@ describe('POST /api/associative-images', () => {
     })
 
     it('returns 400 when name is missing', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
         const file = await insertTestFile(psycho.id)
 
         const res = await app.request(
@@ -113,7 +113,7 @@ describe('POST /api/associative-images', () => {
     })
 
     it('returns 400 when fileId is missing', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/associative-images',
@@ -128,8 +128,8 @@ describe('POST /api/associative-images', () => {
     })
 
     it('returns 403 when fileId belongs to another user', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const other = await insertTestUser({ email: 'other@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const other = await insertTestUser({ email: 'other@test.com', activeRole: 'psycho' })
         const file = await insertTestFile(other.id)
 
         const res = await app.request(
@@ -147,7 +147,7 @@ describe('POST /api/associative-images', () => {
     })
 
     it('returns 403 when fileId does not exist', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/associative-images',
@@ -171,7 +171,7 @@ describe('POST /api/associative-images', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/associative-images',
@@ -186,7 +186,7 @@ describe('POST /api/associative-images', () => {
     })
 
     it('created image appears in subsequent GET list', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const file = await insertTestFile(psycho.id)
 
         await app.request(
@@ -213,7 +213,7 @@ describe('POST /api/associative-images', () => {
 
 describe('PATCH /api/associative-images/:id', () => {
     it('returns 200 with updated image when renaming succeeds', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho.id, 'Old Name')
 
         const res = await app.request(
@@ -231,7 +231,7 @@ describe('PATCH /api/associative-images/:id', () => {
     })
 
     it('returns 404 when image does not exist', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/associative-images/nonexistent',
@@ -246,8 +246,8 @@ describe('PATCH /api/associative-images/:id', () => {
     })
 
     it('returns 404 when image belongs to a different psychologist', async () => {
-        const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
-        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
+        const psycho1 = await insertTestUser({ email: 'psycho1@test.com', activeRole: 'psycho' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho1.id)
 
         const res = await app.request(
@@ -263,7 +263,7 @@ describe('PATCH /api/associative-images/:id', () => {
     })
 
     it('returns 400 when name is missing', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
         const image = await createImage(psycho.id)
 
         const res = await app.request(
@@ -292,7 +292,7 @@ describe('PATCH /api/associative-images/:id', () => {
 
 describe('DELETE /api/associative-images/:id', () => {
     it('returns 204 on successful deletion', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho.id)
 
         const res = await app.request(
@@ -307,7 +307,7 @@ describe('DELETE /api/associative-images/:id', () => {
     })
 
     it('deleted image no longer appears in GET list', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho.id)
 
         await app.request(
@@ -328,7 +328,7 @@ describe('DELETE /api/associative-images/:id', () => {
     })
 
     it('associated file row is also deleted from files table', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho.id)
 
         await app.request(
@@ -344,7 +344,7 @@ describe('DELETE /api/associative-images/:id', () => {
     })
 
     it('returns 404 when image does not exist', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/associative-images/nonexistent',
@@ -358,8 +358,8 @@ describe('DELETE /api/associative-images/:id', () => {
     })
 
     it('returns 404 when image belongs to a different psychologist', async () => {
-        const psycho1 = await insertTestUser({ email: 'psycho1@test.com' })
-        const psycho2 = await insertTestUser({ email: 'psycho2@test.com' })
+        const psycho1 = await insertTestUser({ email: 'psycho1@test.com', activeRole: 'psycho' })
+        const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
         const image = await createImage(psycho1.id)
 
         const res = await app.request(

@@ -17,8 +17,8 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 // ─── helpers ───────────────────��─────────────────��──────────────────────────
 
 async function setupImpressionScenario() {
-    const psycho = await insertTestUser({ email: 'psycho@test.com' })
-    const client = await insertTestUser({ email: 'client@test.com' })
+    const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+    const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
     await ClientsService.linkClientToPsycho(client.id, psycho.id)
     const apt = await createAppointment({
         psychoId: psycho.id,
@@ -119,7 +119,7 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
 
     it('returns 404 when appointment does not belong to client', async () => {
         const { apt, impression } = await setupImpressionScenario()
-        const otherClient = await insertTestUser({ email: 'other@test.com' })
+        const otherClient = await insertTestUser({ email: 'other@test.com', activeRole: 'client' })
 
         const res = await app.request(
             `/api/client/appointments/${apt.id}/attachments/${impression.id}/complete`,
@@ -165,8 +165,8 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
     })
 
     it('returns 404 when attachment type is not impression', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -196,9 +196,9 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
     })
 
     it('returns 404 when impression authored by someone else', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client1 = await insertTestUser({ email: 'client1@test.com' })
-        const client2 = await insertTestUser({ email: 'client2@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client1 = await insertTestUser({ email: 'client1@test.com', activeRole: 'client' })
+        const client2 = await insertTestUser({ email: 'client2@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client1.id, psycho.id)
         await ClientsService.linkClientToPsycho(client2.id, psycho.id)
         const apt = await createAppointment({
@@ -232,7 +232,7 @@ describe('PATCH /api/client/appointments/:appointmentId/attachments/:attachmentI
     })
 
     it('returns 403 for psycho role', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/client/appointments/some-apt/attachments/some-id/complete',

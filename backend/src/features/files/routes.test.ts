@@ -65,7 +65,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('returns 400 BadRequest when file is missing from body', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
 
         const formData = new FormData()
         const res = await app.request(
@@ -80,7 +80,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('returns 201 with metadata, inserts a DB row, and writes the file to disk', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         const file = fileFrom('photo.png', 'image/png', PNG_SIGNATURE)
 
         const { status, body } = await uploadFileForUser(user.id, file)
@@ -119,7 +119,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('uses the canonical extension for the detected MIME in storedName', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         // Upload JPEG bytes with a misleading .png filename — stored extension
         // should follow the detected content (.jpg), not the original filename.
         const file = new File([new Uint8Array(JPEG_SIGNATURE)], 'lying.png', { type: 'image/png' })
@@ -133,7 +133,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('produces distinct storedNames across uploads', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         const file1 = fileFrom('same.png', 'image/png', PNG_SIGNATURE, [1])
         const file2 = fileFrom('same.png', 'image/png', PNG_SIGNATURE, [2])
 
@@ -146,7 +146,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('accepts valid WebP files', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         const file = fileFrom('pic.webp', 'image/webp', WEBP_SIGNATURE)
 
         const { status, body } = await uploadFileForUser(user.id, file)
@@ -159,7 +159,7 @@ describe('POST /api/files/upload', () => {
         // Bun's request.formData() re-derives the part's Content-Type from the
         // filename extension, so a `.webm` file always arrives at the handler
         // as `video/webm`. Detection is byte-based so this is fine.
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         const file = fileFrom('clip.webm', 'audio/webm', WEBM_SIGNATURE)
 
         const { status, body } = await uploadFileForUser(user.id, file)
@@ -175,7 +175,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('returns 400 FileTooLarge when file.size exceeds MAX_UPLOAD_BYTES', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         // Sized just over MAX so the multipart body still fits under the bodyLimit ceiling
         // (MAX + 1024). Triggers the service-level size check.
         const oversize = new Uint8Array(MAX_UPLOAD_BYTES + 100)
@@ -189,7 +189,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('returns 400 from the bodyLimit middleware when the request body itself is too large', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         // Sized well over MAX + headroom so bodyLimit rejects before parseBody runs.
         const oversize = new Uint8Array(MAX_UPLOAD_BYTES + 64 * 1024)
         oversize.set(PNG_SIGNATURE, 0)
@@ -202,7 +202,7 @@ describe('POST /api/files/upload', () => {
     })
 
     it('returns 400 UnsupportedFileType when content does not match any allowed signature', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         // PDF bytes — sniffMime returns null for these.
         const file = fileFrom('doc.pdf', 'application/pdf', PDF_SIGNATURE)
 
@@ -220,7 +220,7 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 200 with the file when requested by the uploader', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
         const file = fileFrom('note.png', 'image/png', PNG_SIGNATURE)
 
         const upload = await uploadFileForUser(user.id, file)
@@ -238,8 +238,8 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 200 to the psycho when the file is linked to their appointment attachment', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -277,8 +277,8 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 200 to the client when the file is linked to their appointment attachment', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
@@ -316,7 +316,7 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 404 when the storedName does not exist in DB', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/files/does-not-exist.txt',
@@ -329,8 +329,8 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 404 when the requester is unrelated to the file', async () => {
-        const owner = await insertTestUser({ email: 'owner@test.com' })
-        const stranger = await insertTestUser({ email: 'stranger@test.com' })
+        const owner = await insertTestUser({ email: 'owner@test.com', activeRole: 'psycho' })
+        const stranger = await insertTestUser({ email: 'stranger@test.com', activeRole: 'psycho' })
 
         const upload = await uploadFileForUser(
             owner.id,
@@ -350,7 +350,7 @@ describe('GET /api/files/:filename', () => {
     })
 
     it('returns 404 when the DB row exists but the file is missing from disk', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'psycho' })
 
         const file = await insertTestFile(user.id, { storedName: 'missing-on-disk.png' })
 

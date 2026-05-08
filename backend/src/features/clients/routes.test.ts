@@ -15,7 +15,7 @@ const CLIENT_HEADER = { 'Helpsycho-User-Role': 'client' }
 
 describe('POST /api/clients', () => {
     it('returns 400 when email is missing from body', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients',
@@ -30,7 +30,7 @@ describe('POST /api/clients', () => {
     })
 
     it('returns 400 with ClientNotFound when no account exists for given email', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients',
@@ -51,8 +51,8 @@ describe('POST /api/clients', () => {
     })
 
     it('returns 400 with AlreadyLinked when client is already in the psychologist list', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -71,8 +71,8 @@ describe('POST /api/clients', () => {
     })
 
     it('returns 201 with client on success', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients',
@@ -100,7 +100,7 @@ describe('POST /api/clients', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients',
@@ -117,9 +117,9 @@ describe('POST /api/clients', () => {
 
 describe('GET /api/clients', () => {
     it('returns list of clients for authenticated psychologist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client1 = await insertTestUser({ email: 'a@test.com', name: 'Alice' })
-        const client2 = await insertTestUser({ email: 'b@test.com', name: 'Bob' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client1 = await insertTestUser({ email: 'a@test.com', name: 'Alice', activeRole: 'client' })
+        const client2 = await insertTestUser({ email: 'b@test.com', name: 'Bob', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client1.id, psycho.id)
         await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
@@ -145,7 +145,7 @@ describe('GET /api/clients', () => {
 
 describe('GET /api/clients (non-psycho role returns 403)', () => {
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients',
@@ -158,8 +158,8 @@ describe('GET /api/clients (non-psycho role returns 403)', () => {
 
 describe('GET /api/clients/:clientId', () => {
     it('returns 200 with client object for known clientId', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com', name: 'Jane Doe' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', name: 'Jane Doe', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -186,7 +186,7 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns 404 for unknown clientId', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients/nonexistent-id',
@@ -199,7 +199,7 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/some-id',
@@ -210,8 +210,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns correct sessionsCount when appointments exist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
@@ -242,8 +242,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns correct lastAppointment (most recent past appointment)', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
@@ -275,8 +275,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns correct nextAppointment (earliest upcoming appointment)', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const a1 = await createAppointment({
@@ -304,8 +304,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns lastAppointment null and nextAppointment null when no appointments exist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -320,8 +320,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns correct impressionsCount', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const appt = await createAppointment({
@@ -348,8 +348,8 @@ describe('GET /api/clients/:clientId', () => {
     })
 
     it('returns correct recommendationsCount', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const appt = await createAppointment({
@@ -387,8 +387,8 @@ describe('GET /api/clients/:clientId', () => {
 
 describe('DELETE /api/clients/:clientId', () => {
     it('returns 204 on happy path', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -400,8 +400,8 @@ describe('DELETE /api/clients/:clientId', () => {
     })
 
     it('returns 404 when relationship does not exist', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -414,8 +414,8 @@ describe('DELETE /api/clients/:clientId', () => {
     })
 
     it('returns 404 when relationship is already disconnected', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
         await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
 
@@ -428,7 +428,7 @@ describe('DELETE /api/clients/:clientId', () => {
     })
 
     it('returns 403 for non-psycho role', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/some-id',
@@ -446,8 +446,8 @@ describe('DELETE /api/clients/:clientId', () => {
 
 describe('PUT /api/clients/:clientId', () => {
     it('returns 200 and updates username, phone, telegram, instagram', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -474,8 +474,8 @@ describe('PUT /api/clients/:clientId', () => {
     })
 
     it('updates name (in user table)', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com', name: 'Old Name' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', name: 'Old Name', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -493,8 +493,8 @@ describe('PUT /api/clients/:clientId', () => {
     })
 
     it('does not update email even if sent in body', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -512,8 +512,8 @@ describe('PUT /api/clients/:clientId', () => {
     })
 
     it('returns full enriched client object after update', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com' })
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -536,7 +536,7 @@ describe('PUT /api/clients/:clientId', () => {
     })
 
     it('returns 404 for unknown clientId', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients/nonexistent-id',
@@ -560,7 +560,7 @@ describe('PUT /api/clients/:clientId', () => {
     })
 
     it('returns 403 for client-role request', async () => {
-        const user = await insertTestUser()
+        const user = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/some-id',
@@ -577,7 +577,7 @@ describe('PUT /api/clients/:clientId', () => {
 
 describe('GET /api/clients/me', () => {
     it('returns 200 with own profile when called with client role', async () => {
-        const client = await insertTestUser({ email: 'client@test.com' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/me',
@@ -596,7 +596,7 @@ describe('GET /api/clients/me', () => {
     })
 
     it('returns 403 when called with psycho role', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients/me',
@@ -612,7 +612,7 @@ describe('GET /api/clients/me', () => {
 
 describe('PUT /api/clients/me', () => {
     it('returns 200 with updated client when called with client role', async () => {
-        const client = await insertTestUser()
+        const client = await insertTestUser({ activeRole: 'client' })
 
         const res = await app.request(
             '/api/clients/me',
@@ -633,7 +633,7 @@ describe('PUT /api/clients/me', () => {
     })
 
     it('returns 403 when called with psycho role', async () => {
-        const psycho = await insertTestUser()
+        const psycho = await insertTestUser({ activeRole: 'psycho' })
 
         const res = await app.request(
             '/api/clients/me',
