@@ -78,19 +78,21 @@ export default function ClientAppointmentDetail() {
     }, [appointmentId, appointment])
 
     if (isLoading) {
-        return <Loading text="Loading appointment..." />
-    }
-
-    if (!appointmentId) {
         return (
             <PageContainer>
-                <NotFound title="Appointment not found." />
+                <AppPageHeader text="Appointment" linkTo={routes.client.appointments} />
+                <Loading text="Loading appointment..." />
             </PageContainer>
         )
     }
 
-    if (!appointment) {
-        return <NotFound title="Appointment not found." />
+    if (!appointmentId || !appointment) {
+        return (
+            <PageContainer>
+                <AppPageHeader text="Appointment" linkTo={routes.client.appointments} />
+                <NotFound title="Appointment not found." />
+            </PageContainer>
+        )
     }
 
     if (appointment.status === 'past' || appointment.status === 'missed') {

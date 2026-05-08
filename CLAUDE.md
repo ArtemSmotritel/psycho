@@ -11,6 +11,7 @@ Do not write code unless asked to explicitly. Perform all tasks fully. Do not fi
 ### Backend (`backend/`)
 ```bash
 bun run dev               # Start dev server with hot reload (port 3000)
+bun run typecheck         # Run tsc --noEmit (type-check only)
 bun run migrate           # Run pending SQL migrations
 bun run migration:create -- --name <name>  # Create a new migration file
 ```

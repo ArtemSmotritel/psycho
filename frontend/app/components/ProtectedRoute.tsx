@@ -20,14 +20,14 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         (!activeRole || !allowedRoles.includes(activeRole))
 
     useEffect(() => {
-        if (isWrongRole) {
+        if (isWrongRole && activeRole) {
             const expected = allowedRoles![0]
             const expectedLabel = expected === 'psycho' ? 'psychologist' : 'client'
             toast.warning(
                 `This page is only accessible to ${expectedLabel}s. Change your role in the sidebar to access the page.`,
             )
         }
-    }, [isWrongRole])
+    }, [isWrongRole, activeRole])
 
     if (isLoading) {
         return <div>Loading...</div>
@@ -38,6 +38,9 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     }
 
     if (isWrongRole) {
+        if (!activeRole) {
+            return <Navigate to={routes.roleSelect} replace />
+        }
         return <Navigate to={routes.login} replace />
     }
 

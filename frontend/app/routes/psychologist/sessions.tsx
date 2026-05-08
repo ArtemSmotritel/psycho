@@ -189,11 +189,25 @@ export default function Sessions() {
     }
 
     if (isLoading) {
-        return <Loading text="Loading appointments..." />
+        return (
+            <ProtectedRoute allowedRoles={['psycho']}>
+                <PageContainer>
+                    <AppPageHeader text="Appointments" />
+                    <Loading text="Loading appointments..." />
+                </PageContainer>
+            </ProtectedRoute>
+        )
     }
 
     if (error) {
-        return <p className="text-destructive">{error}</p>
+        return (
+            <ProtectedRoute allowedRoles={['psycho']}>
+                <PageContainer>
+                    <AppPageHeader text="Appointments" />
+                    <p className="text-destructive">{error}</p>
+                </PageContainer>
+            </ProtectedRoute>
+        )
     }
 
     return (

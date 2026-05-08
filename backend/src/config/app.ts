@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
 import { logger } from 'hono/logger'
+import { ZodError } from 'zod/v4'
 import { AppError } from 'errors/index'
 import { auth } from 'utils/auth'
 import { log } from 'utils/logger'
@@ -53,12 +54,15 @@ app.onError((err, c) => {
         return err.getResponse()
     }
 
-    if (err.name === 'ZodError') {
+    if (err instanceof ZodError) {
         return c.json(
             {
-                success: false,
-                message: 'Validation Failed',
-                errors: err,
+                error: 'ValidationError',
+                message: 'Validation failed',
+                fields: err.issues.map((issue) => ({
+                    path: issue.path.join('.'),
+                    message: issue.message,
+                })),
             },
             400,
         )

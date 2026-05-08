@@ -14,46 +14,36 @@ export default function ClientAttachmentDetail() {
     const navigate = useNavigate()
     const { attachment, reaction, isLoading, refetch } = useCurrentClientAttachment()
 
-    if (isLoading) {
-        return (
-            <PageContainer>
-                <Loading />
-            </PageContainer>
-        )
-    }
-
-    if (!appointmentId) {
-        return (
-            <PageContainer>
-                <NotFound title="Appointment not found." />
-            </PageContainer>
-        )
-    }
-
-    if (!attachment) {
-        return (
-            <PageContainer>
-                <NotFound title="Attachment not found." />
-            </PageContainer>
-        )
-    }
-
     return (
         <PageContainer>
-            <AppPageHeader text="Attachment" linkTo={routes.client.appointment(appointmentId)} />
-            <AttachmentDetail
-                attachment={attachment}
-                reaction={reaction}
-                role="client"
-                appointmentId={appointmentId}
-                onAfterMutation={refetch}
-                onAfterDelete={() => navigate(routes.client.appointment(appointmentId))}
-                extraActions={
-                    <Link to={routes.client.appointment(appointmentId)}>
-                        <ActionItem icon={<ArrowRight className="h-6" />} label="Open Session" />
-                    </Link>
-                }
+            <AppPageHeader
+                text="Attachment"
+                linkTo={appointmentId ? routes.client.appointment(appointmentId) : undefined}
             />
+            {isLoading ? (
+                <Loading />
+            ) : !appointmentId ? (
+                <NotFound title="Appointment not found." />
+            ) : !attachment ? (
+                <NotFound title="Attachment not found." />
+            ) : (
+                <AttachmentDetail
+                    attachment={attachment}
+                    reaction={reaction}
+                    role="client"
+                    appointmentId={appointmentId}
+                    onAfterMutation={refetch}
+                    onAfterDelete={() => navigate(routes.client.appointment(appointmentId))}
+                    extraActions={
+                        <Link to={routes.client.appointment(appointmentId)}>
+                            <ActionItem
+                                icon={<ArrowRight className="h-6" />}
+                                label="Open Session"
+                            />
+                        </Link>
+                    }
+                />
+            )}
         </PageContainer>
     )
 }

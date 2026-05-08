@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios'
 import { api } from './api'
 
 export interface UserApiResponse {
@@ -8,7 +9,7 @@ export interface UserApiResponse {
 }
 
 export const userService = {
-    getMe: () => api.get<UserApiResponse>('/users/me'),
+    getMe: (config?: AxiosRequestConfig) => api.get<UserApiResponse>('/users/me', config),
     setActiveRole: (role: 'psycho' | 'client') =>
         api.patch<UserApiResponse>('/users/me/role', { role }),
 }

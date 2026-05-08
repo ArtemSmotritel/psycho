@@ -14,6 +14,7 @@ import {
     SheetDescription,
 } from '~/components/ui/sheet'
 import { AppPageHeader } from '~/components/AppPageHeader'
+import { Loading } from '~/components/Loading'
 import { PageContainer } from '~/components/PageContainer'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService } from '~/services/attachment.service'
@@ -154,17 +155,31 @@ export default function LiveAppointment() {
     }, [appointment?.status, appointmentId])
 
     if (isLoading) {
-        return <p>Loading appointment...</p>
+        return (
+            <PageContainer>
+                <AppPageHeader
+                    text="Live Session"
+                    linkTo={appointmentId ? routes.client.appointment(appointmentId) : undefined}
+                />
+                <Loading text="Loading appointment..." />
+            </PageContainer>
+        )
     }
 
     if (!appointment || (appointment.status !== 'active' && !showEndedModal)) {
         return (
-            <div className="space-y-4">
-                <p>No active appointment found.</p>
-                <Link to={routes.client.appointment(appointmentId!)}>
-                    <Button variant="default">Back to appointment</Button>
-                </Link>
-            </div>
+            <PageContainer>
+                <AppPageHeader
+                    text="Live Session"
+                    linkTo={appointmentId ? routes.client.appointment(appointmentId) : undefined}
+                />
+                <div className="space-y-4">
+                    <p>No active appointment found.</p>
+                    <Link to={routes.client.appointment(appointmentId!)}>
+                        <Button variant="default">Back to appointment</Button>
+                    </Link>
+                </div>
+            </PageContainer>
         )
     }
 

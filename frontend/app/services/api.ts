@@ -20,12 +20,16 @@ export function setApiRole(role: 'psycho' | 'client' | null) {
 
 export const apiEvents = new EventTarget()
 export const API_UNAUTHORIZED_EVENT = 'unauthorized'
+export const API_ROLE_MISMATCH_EVENT = 'role-mismatch'
 
 api.interceptors.response.use(
     (res) => res,
     (err) => {
-        if (err?.response?.status === 401) {
+        const status = err?.response?.status
+        if (status === 401) {
             apiEvents.dispatchEvent(new Event(API_UNAUTHORIZED_EVENT))
+        } else if (status === 403 && err?.response?.data?.error === 'RoleMismatch') {
+            apiEvents.dispatchEvent(new Event(API_ROLE_MISMATCH_EVENT))
         }
         return Promise.reject(err)
     },
