@@ -31,6 +31,10 @@ export function useCreateAppointment(onSuccess?: () => void) {
                 startTime: formatISO(values.startTime),
                 endTime: formatISO(values.endTime),
                 generateGoogleMeet: values.generateGoogleMeet ?? false,
+                // `fromRequestId` and `acknowledgePingConflict` belong to the
+                // ping-for-session feature (docs/feature-3-implementation-plan.md)
+                // and are accepted but ignored by the backend today. They are
+                // sent in advance so this hook needs no change when Feature 3 ships.
                 ...(values.fromRequestId ? { fromRequestId: values.fromRequestId } : {}),
                 ...(options?.acknowledgePingConflict ? { acknowledgePingConflict: true } : {}),
             })
@@ -43,6 +47,9 @@ export function useCreateAppointment(onSuccess?: () => void) {
             }
             onSuccess?.()
         } catch (err) {
+            // Ping-for-session conflict path (docs/feature-3-implementation-plan.md):
+            // the backend never returns `error: 'PingConflict'` today, so this
+            // branch is dormant scaffolding until Feature 3 lands.
             if (
                 isAxiosError(err) &&
                 err.response?.status === 409 &&

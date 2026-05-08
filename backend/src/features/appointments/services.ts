@@ -121,26 +121,37 @@ export const AppointmentsService = {
         psychoId: string,
         clientId: string,
     ): Promise<Appointment> {
-        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
-        if (!existing) throw new NotFoundError()
+        // Serialize the active-appointment check + markStarted under per-user
+        // advisory locks so two concurrent starts can't both pass the check.
+        return await db.begin(async (tx) => {
+            await AppointmentsRepo.acquireOverlapLocks(tx, psychoId, clientId)
 
-        if (existing.status !== 'upcoming' && existing.status !== 'warning') {
-            throw new BadRequestError(
-                'Only upcoming or warning appointments can be started.',
-                'AppointmentNotStartable',
+            const existing = await AppointmentsRepo.findByIdForPsycho(
+                appointmentId,
+                psychoId,
+                clientId,
+                tx,
             )
-        }
+            if (!existing) throw new NotFoundError()
 
-        const active = await AppointmentsRepo.findActiveByPsycho(psychoId)
-        if (active) {
-            throw new BadRequestError(
-                'End your active appointment before starting a new one.',
-                'AnotherAppointmentActive',
-                { activeAppointmentId: active.id },
-            )
-        }
+            if (existing.status !== 'upcoming' && existing.status !== 'warning') {
+                throw new BadRequestError(
+                    'Only upcoming or warning appointments can be started.',
+                    'AppointmentNotStartable',
+                )
+            }
 
-        return AppointmentsRepo.markStarted(appointmentId)
+            const active = await AppointmentsRepo.findActiveByPsycho(psychoId, tx)
+            if (active) {
+                throw new BadRequestError(
+                    'End your active appointment before starting a new one.',
+                    'AnotherAppointmentActive',
+                    { activeAppointmentId: active.id },
+                )
+            }
+
+            return AppointmentsRepo.markStarted(appointmentId, tx)
+        })
     },
 
     async endForPsycho(
@@ -149,20 +160,29 @@ export const AppointmentsService = {
         clientId: string,
         snapshotDataUrl: string | null,
     ): Promise<Appointment> {
-        const existing = await AppointmentsRepo.findByIdForPsycho(appointmentId, psychoId, clientId)
-        if (!existing) throw new NotFoundError()
+        const appointment = await db.begin(async (tx) => {
+            await AppointmentsRepo.acquireOverlapLocks(tx, psychoId, clientId)
 
-        if (existing.startedAt === null || existing.endedAt !== null) {
-            throw new BadRequestError(
-                'Only active appointments can be ended.',
-                'AppointmentNotEndable',
+            const existing = await AppointmentsRepo.findByIdForPsycho(
+                appointmentId,
+                psychoId,
+                clientId,
+                tx,
             )
-        }
+            if (!existing) throw new NotFoundError()
 
-        const appointment = await AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl)
+            if (existing.startedAt === null || existing.endedAt !== null) {
+                throw new BadRequestError(
+                    'Only active appointments can be ended.',
+                    'AppointmentNotEndable',
+                )
+            }
 
-        // Clearing whiteboard state is best-effort: if it fails, the appointment
-        // is still ended. Log and move on.
+            return AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl, tx)
+        })
+
+        // Clearing whiteboard state is best-effort and runs outside the tx so
+        // we don't hold locks across this call.
         await WhiteboardService.clearState(appointmentId).catch((err) => {
             log.warn('[Appointments] Failed to clear whiteboard state', { appointmentId, err })
         })
@@ -176,10 +196,6 @@ export const AppointmentsService = {
         ensureEndAfterStart(startTime, endTime)
         await ensureLinked(psychoId, clientId)
 
-        // Serialize the overlap check + insert under per-user advisory locks so
-        // concurrent creates that share any participant cannot both pass the check.
-        // Google Meet generation stays outside the tx to avoid holding locks across
-        // network I/O (see the patch step below).
         let appointment = await db.begin(async (tx) => {
             await AppointmentsRepo.acquireOverlapLocks(tx, psychoId, clientId)
             await throwIfOverlapping({ psychoId, clientId, startTime, endTime }, tx)

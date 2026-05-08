@@ -44,6 +44,10 @@ export function SessionForm({
     const currentClient = useCurrentClient()
     const clients = useClientList()
 
+    // Ping-for-session feature (docs/feature-3-implementation-plan.md) — the
+    // backend half is not implemented, so `pingConflict` will never become
+    // non-null and `PingConflictDialog` below never opens. Wired up in advance
+    // so no changes are needed here once Feature 3 ships.
     const { pingConflict, submit, confirmConflict, resetConflict } =
         usePingConflictSubmit<SessionFormValues>({
             onSubmit,

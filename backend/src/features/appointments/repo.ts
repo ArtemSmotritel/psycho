@@ -70,8 +70,9 @@ export const AppointmentsRepo = {
         appointmentId: string,
         psychoId: string,
         clientId: string,
+        executor: SQL = db,
     ): Promise<Appointment | null> {
-        const [row] = await db`
+        const [row] = await executor`
             SELECT ${db.unsafe(appointmentColumns())}
             FROM appointments
             WHERE id = ${appointmentId}
@@ -108,8 +109,8 @@ export const AppointmentsRepo = {
         return (row as Appointment) ?? null
     },
 
-    async findActiveByPsycho(psychoId: string): Promise<Appointment | null> {
-        const [row] = await db`
+    async findActiveByPsycho(psychoId: string, executor: SQL = db): Promise<Appointment | null> {
+        const [row] = await executor`
             SELECT ${db.unsafe(appointmentColumns())}
             FROM appointments
             WHERE psycho_id = ${psychoId}
@@ -243,8 +244,8 @@ export const AppointmentsRepo = {
         return row as Appointment
     },
 
-    async markStarted(appointmentId: string): Promise<Appointment> {
-        const [row] = await db`
+    async markStarted(appointmentId: string, executor: SQL = db): Promise<Appointment> {
+        const [row] = await executor`
             UPDATE appointments
             SET started_at = NOW()
             WHERE id = ${appointmentId}
@@ -256,8 +257,9 @@ export const AppointmentsRepo = {
     async markEnded(
         appointmentId: string,
         snapshotDataUrl: string | null = null,
+        executor: SQL = db,
     ): Promise<Appointment> {
-        const [row] = await db`
+        const [row] = await executor`
             UPDATE appointments
             SET ended_at = NOW(),
                 whiteboard_snapshot_url = ${snapshotDataUrl}

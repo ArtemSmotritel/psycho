@@ -1,3 +1,7 @@
+// Ping-for-session feature (docs/feature-3-implementation-plan.md) — frontend
+// scaffolding only. The backend `appointment_requests` table and routes are
+// not implemented yet, so this dialog never surfaces in practice; kept for
+// when Feature 3 lands.
 import { formatAppDate } from '~/utils/utils'
 import {
     AlertDialog,

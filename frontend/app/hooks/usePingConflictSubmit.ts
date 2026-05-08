@@ -1,3 +1,6 @@
+// Ping-for-session feature (docs/feature-3-implementation-plan.md) — frontend
+// scaffolding only. The backend never throws `PingConflict`, so the conflict
+// branch below is dormant until Feature 3 lands.
 import { useState } from 'react'
 import { PingConflictError, type PingConflict } from '@/components/PingConflictDialog'
 

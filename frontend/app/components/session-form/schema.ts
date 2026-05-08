@@ -10,6 +10,8 @@ export const sessionFormSchema = z
         generateGoogleMeet: z.boolean().default(true).optional(),
         rescheduleGoogleMeet: z.boolean().default(false).optional(),
         googleMeetLink: z.string().optional(),
+        // Ping-for-session (docs/feature-3-implementation-plan.md): backend
+        // not implemented, so `fromRequestId` is never populated today.
         fromRequestId: z.string().optional(),
     })
     .refine((data) => data.endTime > data.startTime, {
@@ -19,6 +21,9 @@ export const sessionFormSchema = z
 
 export type SessionFormValues = z.infer<typeof sessionFormSchema>
 
+// `acknowledgePingConflict` is part of the ping-for-session feature
+// (docs/feature-3-implementation-plan.md); the backend is not yet
+// implemented, so this option is effectively a no-op today.
 export type SessionFormSubmit = (
     values: SessionFormValues,
     options: { acknowledgePingConflict: boolean },
