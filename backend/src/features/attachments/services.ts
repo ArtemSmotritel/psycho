@@ -4,6 +4,7 @@ import type { User } from 'utils/types'
 import { AppointmentsService } from '../appointments/services'
 import { FilesService } from '../files/services'
 import { AttachmentCheck } from './attachment-check'
+import { ATTACHMENT_LIMITS } from './limits'
 import type {
     Attachment,
     AttachmentType,
@@ -37,6 +38,19 @@ async function create(params: {
     ]
 
     return db.begin(async (tx) => {
+        const max = ATTACHMENT_LIMITS[params.type]
+        const count = await AttachmentsRepo.countByTypeForAppointment(
+            params.appointmentId,
+            params.type,
+            tx,
+        )
+        if (count >= max) {
+            throw new BadRequestError(
+                `Maximum number of ${params.type}s for this appointment reached.`,
+                'AttachmentLimitReached',
+                { type: params.type, max },
+            )
+        }
         const { id } = await AttachmentsRepo.insert(
             {
                 appointmentId: params.appointmentId,

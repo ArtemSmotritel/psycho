@@ -77,3 +77,17 @@ export function getDeleteAttachmentErrorMessage(err: unknown): string {
     }
     return 'Failed to delete attachment. Please try again.'
 }
+
+export function getCreateAttachmentErrorMessage(err: unknown, fallback: string): string {
+    if (isAxiosError(err) && err.response?.status === 400) {
+        const data = err.response.data
+        if (data?.error === 'AttachmentLimitReached') {
+            const max = data?.details?.max
+            const type = data?.details?.type
+            return typeof max === 'number' && typeof type === 'string'
+                ? `Maximum number of ${type}s for this appointment reached (${max}).`
+                : 'Maximum number of attachments for this appointment reached.'
+        }
+    }
+    return fallback
+}

@@ -7,8 +7,13 @@ import { Loading } from './Loading'
 import { RecommendationCard } from './RecommendationCard'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
 import { recommendationService } from '~/services/recommendation.service'
-import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
+import {
+    attachmentService,
+    getCreateAttachmentErrorMessage,
+    getDeleteAttachmentErrorMessage,
+} from '~/services/attachment.service'
 import { routes } from '~/lib/routes'
+import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import { useResource } from '~/hooks/useResource'
 import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
 
@@ -51,8 +56,8 @@ export function AppointmentRecommendationsPanel({
             })
             toast.success('Recommendation created.')
             await fetchRecommendations()
-        } catch {
-            toast.error('Failed to create recommendation.')
+        } catch (err) {
+            toast.error(getCreateAttachmentErrorMessage(err, 'Failed to create recommendation.'))
         } finally {
             setIsCreating(false)
         }
@@ -106,13 +111,33 @@ export function AppointmentRecommendationsPanel({
         return <p className="text-destructive">{error}</p>
     }
 
+    const recommendationLimit = ATTACHMENT_LIMITS.recommendation
+    const atLimit = recommendations.length >= recommendationLimit
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Recommendations</h3>
+                <h3 className="text-lg font-semibold">
+                    Recommendations{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                        {recommendations.length}/{recommendationLimit}
+                    </span>
+                </h3>
                 <RecommendationForm
                     mode="create"
-                    trigger={<Button size="sm">Add Recommendation</Button>}
+                    trigger={
+                        <Button
+                            size="sm"
+                            disabled={atLimit}
+                            title={
+                                atLimit
+                                    ? `Maximum ${recommendationLimit} recommendations per appointment reached.`
+                                    : undefined
+                            }
+                        >
+                            Add Recommendation
+                        </Button>
+                    }
                     isLoading={isCreating}
                     onSubmit={handleCreate}
                 />

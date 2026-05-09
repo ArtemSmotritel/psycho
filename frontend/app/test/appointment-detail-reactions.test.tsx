@@ -23,6 +23,7 @@ vi.mock('~/services/attachment.service', () => ({
     attachmentService: {
         listForClient: (...args: any[]) => mockListForClient(...args),
     },
+    getCreateAttachmentErrorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 let mockUseCurrentClientAppointment: () => { appointment: any; isLoading: boolean }

@@ -6,9 +6,14 @@ import { ConfirmDeleteButton } from './ConfirmDeleteButton'
 import { EmptyMessage } from './EmptyMessage'
 import { Loading } from './Loading'
 import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
-import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
+import {
+    attachmentService,
+    getCreateAttachmentErrorMessage,
+    getDeleteAttachmentErrorMessage,
+} from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
+import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import { useResource } from '~/hooks/useResource'
 import type { Attachment } from '~/models/attachment'
 
@@ -46,8 +51,8 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
             })
             toast.success('Note created.')
             await fetchNotes()
-        } catch {
-            toast.error('Failed to create note.')
+        } catch (err) {
+            toast.error(getCreateAttachmentErrorMessage(err, 'Failed to create note.'))
         }
     }
 
@@ -89,14 +94,34 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         return <p className="text-destructive">{error}</p>
     }
 
+    const noteLimit = ATTACHMENT_LIMITS.note
+    const atLimit = notes.length >= noteLimit
+
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Notes</h3>
+                <h3 className="text-lg font-semibold">
+                    Notes{' '}
+                    <span className="text-sm font-normal text-muted-foreground">
+                        {notes.length}/{noteLimit}
+                    </span>
+                </h3>
                 <AttachmentForm
                     type="note"
                     mode="create"
-                    trigger={<Button size="sm">Add Note</Button>}
+                    trigger={
+                        <Button
+                            size="sm"
+                            disabled={atLimit}
+                            title={
+                                atLimit
+                                    ? `Maximum ${noteLimit} notes per appointment reached.`
+                                    : undefined
+                            }
+                        >
+                            Add Note
+                        </Button>
+                    }
                     onSubmit={handleCreate}
                     showLibraryPicker
                 />

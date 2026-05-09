@@ -126,6 +126,20 @@ export const AttachmentsRepo = {
         return row as { id: string }
     },
 
+    async countByTypeForAppointment(
+        appointmentId: string,
+        type: AttachmentType,
+        executor: SQL = db,
+    ): Promise<number> {
+        const [row] = await executor`
+            SELECT COUNT(*)::int AS count
+            FROM attachments
+            WHERE appointment_id = ${appointmentId}
+              AND type = ${type}
+        `
+        return (row as { count: number }).count
+    },
+
     async linkFiles(
         attachmentId: string,
         files: Array<{ fileId: string; fileType: 'image' | 'audio'; position: number }>,

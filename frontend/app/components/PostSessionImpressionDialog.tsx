@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
-import { attachmentService } from '~/services/attachment.service'
+import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
 
@@ -34,9 +34,14 @@ export function PostSessionImpressionDialog({
             })
             toast.success('Impression saved.')
             onSubmitted(res.data.attachment)
-        } catch {
+        } catch (err) {
             submittedRef.current = false
-            toast.error('Failed to submit impression. Please try again.')
+            toast.error(
+                getCreateAttachmentErrorMessage(
+                    err,
+                    'Failed to submit impression. Please try again.',
+                ),
+            )
         }
     }
 

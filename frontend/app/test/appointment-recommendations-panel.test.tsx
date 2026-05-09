@@ -20,6 +20,7 @@ vi.mock('~/services/attachment.service', () => ({
         updateForPsycho: vi.fn(),
     },
     getDeleteAttachmentErrorMessage: () => 'Failed to delete attachment.',
+    getCreateAttachmentErrorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 vi.mock('sonner', () => ({

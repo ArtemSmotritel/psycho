@@ -1408,6 +1408,89 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
         )
         expect(res.status).toBe(401)
     })
+
+    it('returns 400 AttachmentLimitReached when 15 notes already exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        for (let i = 0; i < 15; i++) {
+            await AttachmentsService.create({
+                appointmentId: apt.id,
+                authorId: psycho.id,
+                type: 'note',
+                name: `Note ${i}`,
+            })
+        }
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'note', name: 'Sixteenth' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'AttachmentLimitReached')
+        expect(body).toMatchObject({ type: 'note', max: 15 })
+
+        // recommendation still allowed (per-type limit)
+        const recRes = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'recommendation', name: 'Rec' }),
+            }),
+        )
+        expect(recRes.status).toBe(201)
+    })
+
+    it('returns 400 AttachmentLimitReached when 10 recommendations already exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+
+        for (let i = 0; i < 10; i++) {
+            await AttachmentsService.create({
+                appointmentId: apt.id,
+                authorId: psycho.id,
+                type: 'recommendation',
+                name: `Rec ${i}`,
+            })
+        }
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/attachments`,
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ type: 'recommendation', name: 'Eleventh' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'AttachmentLimitReached')
+        expect(body).toMatchObject({ type: 'recommendation', max: 10 })
+    })
 })
 
 describe('POST /api/client/appointments/:appointmentId/attachments', () => {
@@ -1634,6 +1717,43 @@ describe('POST /api/client/appointments/:appointmentId/attachments', () => {
             body: JSON.stringify({ type: 'impression', text: 'x' }),
         })
         expect(res.status).toBe(401)
+    })
+
+    it('returns 400 AttachmentLimitReached when 10 impressions already exist', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: pastDate(7),
+            endTime: pastDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await endAppointment(apt.id)
+
+        for (let i = 0; i < 10; i++) {
+            await AttachmentsService.create({
+                appointmentId: apt.id,
+                authorId: client.id,
+                type: 'impression',
+                name: `Impression ${i}`,
+            })
+        }
+
+        const res = await app.request(
+            `/api/client/appointments/${apt.id}/attachments`,
+            await asUser(client.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...CLIENT_HEADER },
+                body: JSON.stringify({ type: 'impression', name: 'Eleventh' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'AttachmentLimitReached')
+        expect(body).toMatchObject({ type: 'impression', max: 10 })
     })
 })
 

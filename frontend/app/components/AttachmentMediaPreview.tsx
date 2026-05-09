@@ -19,7 +19,7 @@ function ImageAttachments({ files }: ImageAttachmentsProps) {
         return (
             <EmptyMessage
                 title="No Images"
-                description="This attachment doesn't have any images yet."
+                description="This attachment doesn't have any images."
             />
         )
     }
@@ -51,7 +51,7 @@ function VoiceAttachments({ files }: VoiceAttachmentsProps) {
         return (
             <EmptyMessage
                 title="No Voice Recordings"
-                description="This attachment doesn't have any voice recordings yet."
+                description="This attachment doesn't have any voice recordings."
             />
         )
     }

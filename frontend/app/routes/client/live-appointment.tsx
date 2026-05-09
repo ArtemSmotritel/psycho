@@ -17,7 +17,8 @@ import { AppPageHeader } from '~/components/AppPageHeader'
 import { Loading } from '~/components/Loading'
 import { PageContainer } from '~/components/PageContainer'
 import { appointmentService } from '~/services/appointment.service'
-import { attachmentService } from '~/services/attachment.service'
+import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
+import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
@@ -83,8 +84,13 @@ export default function LiveAppointment() {
                 audioFileIds,
             })
             setImpressions((prev) => [...prev, res.data.attachment])
-        } catch {
-            toast.error('Failed to submit impression. Please try again.')
+        } catch (err) {
+            toast.error(
+                getCreateAttachmentErrorMessage(
+                    err,
+                    'Failed to submit impression. Please try again.',
+                ),
+            )
         }
     }
 
@@ -225,7 +231,10 @@ export default function LiveAppointment() {
                             <SheetTitle>
                                 <div className="flex items-center gap-1.5">
                                     <MessageSquare className="h-4 w-4" />
-                                    My Impressions
+                                    My Impressions{' '}
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        {impressions.length}/{ATTACHMENT_LIMITS.impression}
+                                    </span>
                                 </div>
                             </SheetTitle>
                             <SheetDescription>
@@ -236,7 +245,21 @@ export default function LiveAppointment() {
                             <AttachmentForm
                                 type="impression"
                                 mode="create"
-                                trigger={<Button size="sm">Add Impression</Button>}
+                                trigger={
+                                    <Button
+                                        size="sm"
+                                        disabled={
+                                            impressions.length >= ATTACHMENT_LIMITS.impression
+                                        }
+                                        title={
+                                            impressions.length >= ATTACHMENT_LIMITS.impression
+                                                ? `Maximum ${ATTACHMENT_LIMITS.impression} impressions per appointment reached.`
+                                                : undefined
+                                        }
+                                    >
+                                        Add Impression
+                                    </Button>
+                                }
                                 onSubmit={handleCreateImpression}
                             />
                             <ImpressionList

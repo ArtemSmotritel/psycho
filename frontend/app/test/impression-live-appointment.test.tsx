@@ -20,6 +20,7 @@ vi.mock('~/services/attachment.service', () => ({
         listForClient: (...args: any[]) => mockListForClient(...args),
         createForClient: (...args: any[]) => mockCreateForClient(...args),
     },
+    getCreateAttachmentErrorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 vi.mock('~/services/file.service', () => ({

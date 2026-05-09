@@ -16,6 +16,7 @@ vi.mock('~/services/attachment.service', () => ({
             .mockResolvedValue({ data: { impressions: [], recommendations: [] } }),
         createForClient: vi.fn(),
     },
+    getCreateAttachmentErrorMessage: (_err: unknown, fallback: string) => fallback,
 }))
 
 // Controlled mock for useCurrentClientAppointment so tests can set different states
