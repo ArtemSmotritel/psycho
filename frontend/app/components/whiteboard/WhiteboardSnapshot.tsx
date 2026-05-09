@@ -1,4 +1,4 @@
-import { EmptyMessage } from './common/EmptyMessage'
+import { EmptyMessage } from '../common/EmptyMessage'
 
 interface WhiteboardSnapshotProps {
     url?: string | null

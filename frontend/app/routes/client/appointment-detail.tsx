@@ -17,6 +17,7 @@ import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { AttachmentList } from '~/components/attachments/AttachmentList'
 import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
 import { RecommendationReactionBlock } from '~/components/attachments/recommendations/RecommendationReactionBlock'
 import {
     AttachmentForm,
@@ -27,7 +28,7 @@ import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { NotFound } from '~/components/common/NotFound'
 import { Loading } from '~/components/common/Loading'
-import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
+import { WhiteboardSnapshot } from '~/components/whiteboard/WhiteboardSnapshot'
 
 export default function ClientAppointmentDetail() {
     const { appointmentId } = useParams<{ appointmentId: string }>()
@@ -178,6 +179,18 @@ export default function ClientAppointmentDetail() {
                                     impression.appointmentId,
                                     impression.id,
                                 )}
+                                trailingActions={
+                                    <DeleteAttachmentButton
+                                        role="client"
+                                        appointmentId={appointmentId}
+                                        attachment={impression}
+                                        onSuccess={() =>
+                                            setImpressions((prev) =>
+                                                prev.filter((i) => i.id !== impression.id),
+                                            )
+                                        }
+                                    />
+                                }
                             />
                         )}
                     />

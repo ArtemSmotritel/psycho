@@ -22,7 +22,7 @@ import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
-import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
+import { WhiteboardCursorOverlay } from '~/components/whiteboard/WhiteboardCursorOverlay'
 import {
     AttachmentForm,
     type AttachmentFormSubmitValues,
@@ -32,6 +32,7 @@ import { routes } from '~/lib/routes'
 import { formatAppointmentTimeRange } from '~/utils/utils'
 import { AttachmentList } from '~/components/attachments/AttachmentList'
 import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
 import { PostSessionImpressionDialog } from '~/components/attachments/impressions/PostSessionImpressionDialog'
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
@@ -278,6 +279,18 @@ export default function LiveAppointment() {
                                             impression.appointmentId,
                                             impression.id,
                                         )}
+                                        trailingActions={
+                                            <DeleteAttachmentButton
+                                                role="client"
+                                                appointmentId={appointmentId!}
+                                                attachment={impression}
+                                                onSuccess={() =>
+                                                    setImpressions((prev) =>
+                                                        prev.filter((i) => i.id !== impression.id),
+                                                    )
+                                                }
+                                            />
+                                        }
                                     />
                                 )}
                             />
