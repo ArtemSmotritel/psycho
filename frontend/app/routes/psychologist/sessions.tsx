@@ -7,8 +7,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import type { ColumnDef, ColumnFiltersState, SortingState, FilterFn } from '@tanstack/react-table'
 import {
     flexRender,
@@ -34,10 +34,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
-import { DataTablePagination } from '@/components/DataTablePagination'
+import { DataTablePagination } from '~/components/common/DataTablePagination'
 import type { AppointmentWithClient } from '~/models/appointment'
-import { ProtectedRoute } from '~/components/ProtectedRoute'
-import { Loading } from '~/components/Loading'
+import { ProtectedRoute } from '~/components/common/ProtectedRoute'
+import { Loading } from '~/components/common/Loading'
 import { appointmentService } from '~/services/appointment.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 import { useResource } from '~/hooks/useResource'

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
 import { routes } from '~/lib/routes'
 

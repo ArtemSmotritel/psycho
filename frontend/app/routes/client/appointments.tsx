@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/pagination'
 import type { AppointmentWithPsycho } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
-import { EmptyMessage } from '~/components/EmptyMessage'
-import { Loading } from '~/components/Loading'
-import { PageContainer } from '~/components/PageContainer'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { Loading } from '~/components/common/Loading'
+import { PageContainer } from '~/components/common/PageContainer'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
-import { AppPageHeader } from '~/components/AppPageHeader'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
 
 type AppointmentCardProps = {
     appointment: AppointmentWithPsycho

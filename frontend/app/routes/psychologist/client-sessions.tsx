@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/pagination'
 import type { Appointment } from '~/models/appointment'
 import { appointmentService } from '~/services/appointment.service'
-import { EmptyMessage } from '~/components/EmptyMessage'
-import { Loading } from '~/components/Loading'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { Loading } from '~/components/common/Loading'
 import { formatAppDate, formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 

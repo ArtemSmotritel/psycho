@@ -1,8 +1,8 @@
 import { Video, LogIn } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router'
 import { useEffect, useState } from 'react'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
@@ -22,8 +22,8 @@ import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/At
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
-import { NotFound } from '~/components/NotFound'
-import { Loading } from '~/components/Loading'
+import { NotFound } from '~/components/common/NotFound'
+import { Loading } from '~/components/common/Loading'
 import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
 
 export default function ClientAppointmentDetail() {

@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { associativeImageService } from '~/services/associative-image.service'
 import type { AssociativeImage } from '~/models/associative-image'
-import { EmptyMessage } from './EmptyMessage'
+import { EmptyMessage } from './common/EmptyMessage'
 
 const PAGE_SIZE = 20
 

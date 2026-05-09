@@ -1,6 +1,6 @@
 import { Mic, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { EmptyMessage } from '../EmptyMessage'
+import { EmptyMessage } from '../common/EmptyMessage'
 import { useObjectUrl } from '~/hooks/useObjectUrl'
 import { MAX_VOICE_FILES, isAttachmentFile, type AttachmentFileInput } from './schema'
 

@@ -11,7 +11,7 @@ import { useSidebarItems } from '../hooks/useSidebarItems'
 import { useAuth } from '../contexts/auth-context'
 import { useHasActiveAppointment } from '../hooks/useHasActiveAppointment'
 import { Tooltip, TooltipTrigger, TooltipContent } from '../components/ui/tooltip'
-import { ConfirmAction } from '../components/ConfirmAction'
+import { ConfirmAction } from './common/ConfirmAction'
 import { ArrowLeftRight, LogOut } from 'lucide-react'
 import { routes } from '~/lib/routes'
 

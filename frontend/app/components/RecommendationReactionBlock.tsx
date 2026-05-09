@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Textarea } from '~/components/ui/textarea'
 import { Button } from '~/components/ui/button'
-import { ConfirmAction } from '~/components/ConfirmAction'
+import { ConfirmAction } from '~/components/common/ConfirmAction'
 import type { RecommendationReaction } from '~/models/attachment'
 
 const FINALITY_DESCRIPTION = "This is final — you won't be able to edit it later."

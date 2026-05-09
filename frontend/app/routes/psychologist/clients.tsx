@@ -7,8 +7,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import type { ColumnDef, ColumnFiltersState, SortingState } from '@tanstack/react-table'
 import {
     flexRender,
@@ -29,11 +29,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router'
-import { DataTablePagination } from '@/components/DataTablePagination'
+import { DataTablePagination } from '~/components/common/DataTablePagination'
 import { AddClientByEmailDialog } from '@/components/AddClientByEmailDialog'
 import { clientService } from '~/services/client.service'
 import type { ClientSummary } from '~/models/client'
-import { ProtectedRoute } from '~/components/ProtectedRoute'
+import { ProtectedRoute } from '~/components/common/ProtectedRoute'
 import { routes } from '~/lib/routes'
 
 const columns: ColumnDef<ClientSummary>[] = [

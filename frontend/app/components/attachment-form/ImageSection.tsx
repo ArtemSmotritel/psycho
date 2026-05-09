@@ -1,6 +1,6 @@
 import { Image as ImageIcon, Library } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { EmptyMessage } from '../EmptyMessage'
+import { EmptyMessage } from '../common/EmptyMessage'
 import { AssociativeImagePicker } from '../AssociativeImagePicker'
 import type { AssociativeImage } from '~/models/associative-image'
 import { useObjectUrl } from '~/hooks/useObjectUrl'

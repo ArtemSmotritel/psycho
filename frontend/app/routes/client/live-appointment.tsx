@@ -13,9 +13,9 @@ import {
     SheetTitle,
     SheetDescription,
 } from '~/components/ui/sheet'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { Loading } from '~/components/Loading'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { Loading } from '~/components/common/Loading'
+import { PageContainer } from '~/components/common/PageContainer'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'

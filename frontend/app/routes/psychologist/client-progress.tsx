@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/pagination'
 import type { AttachmentWithAppointment } from '~/models/attachment'
 import { impressionService } from '~/services/impression.service'
-import { EmptyMessage } from '~/components/EmptyMessage'
-import { Loading } from '~/components/Loading'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { Loading } from '~/components/common/Loading'
 import { formatAppDate, formatAttachmentTitle } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
-import { Separator } from '../components/ui/separator'
-import { cn } from '../lib/utils'
-import { SidebarTrigger } from './ui/sidebar'
+import { Separator } from '../ui/separator'
+import { cn } from '../../lib/utils'
+import { SidebarTrigger } from '../ui/sidebar'
 
 interface AppPageHeaderProps {
     text: string

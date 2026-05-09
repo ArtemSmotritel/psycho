@@ -6,8 +6,8 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from '@/components/ui/carousel'
-import { EmptyMessage } from '@/components/EmptyMessage'
-import { ImagePreview } from '~/components/ImagePreview'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { ImagePreview } from '~/components/common/ImagePreview'
 import type { AttachmentFile } from '~/models/attachment'
 
 interface ImageAttachmentsProps {

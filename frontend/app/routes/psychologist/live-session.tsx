@@ -28,7 +28,7 @@ import {
 } from '~/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
-import { ConfirmAction } from '~/components/ConfirmAction'
+import { ConfirmAction } from '~/components/common/ConfirmAction'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { appointmentService } from '~/services/appointment.service'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'

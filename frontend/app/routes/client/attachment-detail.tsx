@@ -2,12 +2,12 @@ import { ArrowRight } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ActionItem } from '@/components/ActionsSection'
 import { AttachmentDetail } from '~/components/AttachmentDetail'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import { useCurrentClientAttachment } from '~/hooks/useCurrentClientAttachment'
 import { routes } from '~/lib/routes'
-import { Loading } from '~/components/Loading'
-import { NotFound } from '~/components/NotFound'
+import { Loading } from '~/components/common/Loading'
+import { NotFound } from '~/components/common/NotFound'
 
 export default function ClientAttachmentDetail() {
     const { appointmentId } = useParams<{ appointmentId: string }>()

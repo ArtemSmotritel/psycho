@@ -8,10 +8,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { PageContainer } from '~/components/PageContainer'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { EmptyMessage } from '~/components/EmptyMessage'
-import { Loading } from '~/components/Loading'
+import { PageContainer } from '~/components/common/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { Loading } from '~/components/common/Loading'
 import { progressService } from '~/services/progress.service'
 import { cn } from '~/lib/utils'
 import { routes } from '~/lib/routes'

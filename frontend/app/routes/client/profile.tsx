@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { ClientForm } from '~/components/ClientForm'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 import { useResource } from '~/hooks/useResource'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
 import { Link } from 'react-router'
-import { NotFound } from '~/components/NotFound'
+import { NotFound } from '~/components/common/NotFound'
 
 interface ContactItemProps {
     icon: React.ReactNode

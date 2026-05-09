@@ -1,6 +1,6 @@
-import { EmptyMessage } from '~/components/EmptyMessage'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
 
 export default function NoPsychologist() {
     return (

@@ -1,5 +1,5 @@
 import { cn } from '~/lib/utils'
-import { Spinner } from './ui/spinner'
+import { Spinner } from '../ui/spinner'
 
 interface LoadingProps {
     text?: string

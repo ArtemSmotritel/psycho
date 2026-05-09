@@ -11,10 +11,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { AppPageHeader } from '~/components/AppPageHeader'
-import { PageContainer } from '~/components/PageContainer'
-import { ProtectedRoute } from '~/components/ProtectedRoute'
-import { ConfirmDeleteButton } from '~/components/ConfirmDeleteButton'
+import { AppPageHeader } from '~/components/common/AppPageHeader'
+import { PageContainer } from '~/components/common/PageContainer'
+import { ProtectedRoute } from '~/components/common/ProtectedRoute'
+import { ConfirmDeleteButton } from '~/components/common/ConfirmDeleteButton'
 import { invitationService } from '~/services/invitation.service'
 import type { Invitation } from '~/models/invitation'
 import { formatAppDate } from '~/utils/utils'
