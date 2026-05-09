@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
-import { ConfirmDeleteButton } from './ConfirmDeleteButton'
-import { EmptyMessage } from './EmptyMessage'
-import { Loading } from './Loading'
-import { RecommendationCard } from './RecommendationCard'
+import { AttachmentList } from './AttachmentList'
+import { AttachmentListItem } from './AttachmentListItem'
+import { DeleteAttachmentButton } from './DeleteAttachmentButton'
+import { EditAttachmentButton } from './EditAttachmentButton'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
+import { RecommendationReactionBlock } from './RecommendationReactionBlock'
 import { recommendationService } from '~/services/recommendation.service'
-import {
-    attachmentService,
-    getCreateAttachmentErrorMessage,
-    getDeleteAttachmentErrorMessage,
-} from '~/services/attachment.service'
+import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
 import { routes } from '~/lib/routes'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import { useResource } from '~/hooks/useResource'
@@ -41,7 +38,6 @@ export function AppointmentRecommendationsPanel({
     )
     const recommendations = data ?? []
     const [isCreating, setIsCreating] = useState(false)
-    const [updatingId, setUpdatingId] = useState<string | null>(null)
 
     const handleCreate = async (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => {
         setIsCreating(true)
@@ -63,37 +59,6 @@ export function AppointmentRecommendationsPanel({
         }
     }
 
-    const handleUpdate = async (
-        recommendationId: string,
-        dto: RecommendationFormCreateDTO | UpdateRecommendationDTO,
-    ) => {
-        setUpdatingId(recommendationId)
-        try {
-            await attachmentService.updateForPsycho(
-                clientId,
-                appointmentId,
-                recommendationId,
-                dto as UpdateRecommendationDTO,
-            )
-            toast.success('Recommendation updated.')
-            await fetchRecommendations()
-        } catch {
-            toast.error('Failed to update recommendation.')
-        } finally {
-            setUpdatingId(null)
-        }
-    }
-
-    const handleDelete = async (recommendationId: string) => {
-        try {
-            await attachmentService.deleteForPsycho(clientId, appointmentId, recommendationId)
-            toast.success('Recommendation deleted.')
-            await fetchRecommendations()
-        } catch (err) {
-            toast.error(getDeleteAttachmentErrorMessage(err))
-        }
-    }
-
     const handleReply = async (id: string, reply: string) => {
         try {
             await recommendationService.replyForPsycho(clientId, appointmentId, id, { reply })
@@ -101,10 +66,6 @@ export function AppointmentRecommendationsPanel({
         } catch {
             toast.error('Failed to submit reply.')
         }
-    }
-
-    if (isLoading) {
-        return <Loading text="Loading recommendations..." />
     }
 
     if (error) {
@@ -143,49 +104,48 @@ export function AppointmentRecommendationsPanel({
                 />
             </div>
 
-            {recommendations.length === 0 ? (
-                <EmptyMessage title="No recommendations yet." />
-            ) : (
-                <div className="space-y-3">
-                    {recommendations.map((recommendation) => (
-                        <RecommendationCard
-                            key={recommendation.id}
-                            recommendation={recommendation}
-                            role="psycho"
-                            detailHref={routes.psycho.attachment(
-                                clientId,
-                                appointmentId,
-                                recommendation.id,
-                            )}
-                            onSubmitReply={handleReply}
-                            actions={
-                                <>
-                                    <RecommendationForm
-                                        mode="edit"
-                                        trigger={
-                                            <Button variant="ghost" size="sm">
-                                                Edit
-                                            </Button>
-                                        }
-                                        initialData={{
-                                            name: recommendation.name,
-                                            text: recommendation.text ?? '',
-                                            voiceFiles: recommendation.audioFiles,
-                                            imageFiles: recommendation.imageFiles,
-                                        }}
-                                        isLoading={updatingId === recommendation.id}
-                                        onSubmit={(dto) => handleUpdate(recommendation.id, dto)}
-                                    />
-                                    <ConfirmDeleteButton
-                                        itemLabel="Recommendation"
-                                        onConfirm={() => handleDelete(recommendation.id)}
-                                    />
-                                </>
-                            }
-                        />
-                    ))}
-                </div>
-            )}
+            <AttachmentList
+                items={recommendations}
+                isLoading={isLoading}
+                loadingText="Loading recommendations..."
+                emptyMessage="No recommendations yet."
+                renderItem={(recommendation) => (
+                    <AttachmentListItem
+                        attachment={recommendation}
+                        detailHref={routes.psycho.attachment(
+                            clientId,
+                            appointmentId,
+                            recommendation.id,
+                        )}
+                        extra={
+                            <RecommendationReactionBlock
+                                role="psycho"
+                                reaction={recommendation.reaction}
+                                attachmentId={recommendation.id}
+                                onSubmitReply={handleReply}
+                            />
+                        }
+                        trailingActions={
+                            <>
+                                <EditAttachmentButton
+                                    role="psycho"
+                                    clientId={clientId}
+                                    appointmentId={appointmentId}
+                                    attachment={recommendation}
+                                    onSuccess={fetchRecommendations}
+                                />
+                                <DeleteAttachmentButton
+                                    role="psycho"
+                                    clientId={clientId}
+                                    appointmentId={appointmentId}
+                                    attachment={recommendation}
+                                    onSuccess={fetchRecommendations}
+                                />
+                            </>
+                        }
+                    />
+                )}
+            />
         </div>
     )
 }

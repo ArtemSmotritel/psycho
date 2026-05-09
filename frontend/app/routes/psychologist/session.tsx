@@ -18,7 +18,8 @@ import { formatAppointmentTimeRange } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
-import { ImpressionList } from '~/components/ImpressionList'
+import { AttachmentList } from '~/components/AttachmentList'
+import { AttachmentListItem } from '~/components/AttachmentListItem'
 import type { Attachment } from '~/models/attachment'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { Loading } from '~/components/Loading'
@@ -104,10 +105,21 @@ export default function Session() {
                 <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Client Impressions</h3>
-                    <ImpressionList
-                        impressions={impressions}
+                    <AttachmentList
+                        items={impressions}
                         isLoading={isLoadingImpressions}
-                        clientId={clientId}
+                        loadingText="Loading impressions..."
+                        emptyMessage="No impressions yet."
+                        renderItem={(impression) => (
+                            <AttachmentListItem
+                                attachment={impression}
+                                detailHref={routes.psycho.attachment(
+                                    clientId,
+                                    impression.appointmentId,
+                                    impression.id,
+                                )}
+                            />
+                        )}
                     />
                 </div>
                 <div className="mt-6">

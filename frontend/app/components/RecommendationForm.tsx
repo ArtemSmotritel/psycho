@@ -1,3 +1,7 @@
+// TODO: Remove once the create flow in `AppointmentRecommendationsPanel` switches to
+// `AttachmentForm` directly. After the AttachmentList refactor (Stage 1)
+// `EditAttachmentButton` uses `AttachmentForm` directly, so this wrapper is now used
+// only for the create flow.
 import { toast } from 'sonner'
 import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
 import { resolveAttachmentFileIds } from '~/services/file.service'

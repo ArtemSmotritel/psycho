@@ -5,7 +5,9 @@ import { AppPageHeader } from '~/components/AppPageHeader'
 import { PageContainer } from '~/components/PageContainer'
 import { EmptyMessage } from '~/components/EmptyMessage'
 import { Loading } from '~/components/Loading'
-import { RecommendationCard } from '~/components/RecommendationCard'
+import { AttachmentList } from '~/components/AttachmentList'
+import { AttachmentListItem } from '~/components/AttachmentListItem'
+import { RecommendationReactionBlock } from '~/components/RecommendationReactionBlock'
 import { useResource } from '~/hooks/useResource'
 import { dashboardService } from '~/services/dashboard.service'
 import { recommendationService } from '~/services/recommendation.service'
@@ -160,23 +162,27 @@ export default function ClientDashboard() {
                         <CardTitle>Pending Recommendations</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {pendingRecommendations.length === 0 ? (
-                            <EmptyMessage title="No pending recommendations" />
-                        ) : (
-                            <div className="space-y-3">
-                                {pendingRecommendations.map((rec) => (
-                                    <RecommendationCard
-                                        key={rec.id}
-                                        recommendation={rec}
-                                        role="client"
-                                        onToggleDone={handleToggleDoneForRec(rec.appointmentId)}
-                                        onSubmitComment={handleSubmitCommentForRec(
-                                            rec.appointmentId,
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        <AttachmentList
+                            items={pendingRecommendations}
+                            emptyMessage="No pending recommendations"
+                            renderItem={(rec) => (
+                                <AttachmentListItem
+                                    attachment={rec}
+                                    detailHref={routes.client.attachment(rec.appointmentId, rec.id)}
+                                    extra={
+                                        <RecommendationReactionBlock
+                                            role="client"
+                                            reaction={rec.reaction}
+                                            attachmentId={rec.id}
+                                            onToggleDone={handleToggleDoneForRec(rec.appointmentId)}
+                                            onSubmitComment={handleSubmitCommentForRec(
+                                                rec.appointmentId,
+                                            )}
+                                        />
+                                    }
+                                />
+                            )}
+                        />
                     </CardContent>
                 </Card>
 

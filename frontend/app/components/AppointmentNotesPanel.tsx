@@ -1,16 +1,11 @@
 import { toast } from 'sonner'
-import { formatAppDate } from '~/utils/utils'
-import { Link } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { ConfirmDeleteButton } from './ConfirmDeleteButton'
-import { EmptyMessage } from './EmptyMessage'
-import { Loading } from './Loading'
 import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
-import {
-    attachmentService,
-    getCreateAttachmentErrorMessage,
-    getDeleteAttachmentErrorMessage,
-} from '~/services/attachment.service'
+import { AttachmentList } from './AttachmentList'
+import { AttachmentListItem } from './AttachmentListItem'
+import { EditAttachmentButton } from './EditAttachmentButton'
+import { DeleteAttachmentButton } from './DeleteAttachmentButton'
+import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
@@ -56,40 +51,6 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
         }
     }
 
-    const handleUpdate = async (
-        noteId: string,
-        values: { name: string; text?: string; removedFileIds?: string[] },
-    ) => {
-        try {
-            await attachmentService.updateForPsycho(clientId, appointmentId, noteId, {
-                name: values.name,
-                text: values.text,
-                removeFileIds:
-                    values.removedFileIds && values.removedFileIds.length > 0
-                        ? values.removedFileIds
-                        : undefined,
-            })
-            toast.success('Note updated.')
-            await fetchNotes()
-        } catch {
-            toast.error('Failed to update note.')
-        }
-    }
-
-    const handleDelete = async (noteId: string) => {
-        try {
-            await attachmentService.deleteForPsycho(clientId, appointmentId, noteId)
-            toast.success('Note deleted.')
-            await fetchNotes()
-        } catch (err) {
-            toast.error(getDeleteAttachmentErrorMessage(err))
-        }
-    }
-
-    if (isLoading) {
-        return <Loading text="Loading notes..." />
-    }
-
     if (error) {
         return <p className="text-destructive">{error}</p>
     }
@@ -127,70 +88,36 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                 />
             </div>
 
-            {notes.length === 0 ? (
-                <EmptyMessage title="No notes yet." />
-            ) : (
-                <div className="space-y-3">
-                    {notes.map((note) => (
-                        <div key={note.id} className="border rounded-md p-3 space-y-1">
-                            <div className="flex items-start justify-between gap-2">
-                                <p className="font-semibold">{note.name}</p>
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <Link
-                                        to={routes.psycho.attachment(
-                                            clientId,
-                                            appointmentId,
-                                            note.id,
-                                        )}
-                                    >
-                                        <Button variant="ghost" size="sm">
-                                            Open
-                                        </Button>
-                                    </Link>
-                                    <AttachmentForm
-                                        type="note"
-                                        mode="edit"
-                                        trigger={
-                                            <Button variant="ghost" size="sm">
-                                                Edit
-                                            </Button>
-                                        }
-                                        initialData={{
-                                            name: note.name,
-                                            text: note.text ?? '',
-                                            voiceFiles: note.audioFiles,
-                                            imageFiles: note.imageFiles,
-                                        }}
-                                        onSubmit={(values) =>
-                                            handleUpdate(note.id, {
-                                                name: values.name,
-                                                text: values.text,
-                                                removedFileIds: values.removedFileIds,
-                                            })
-                                        }
-                                    />
-                                    <ConfirmDeleteButton
-                                        itemLabel="Note"
-                                        onConfirm={() => handleDelete(note.id)}
-                                    />
-                                </div>
-                            </div>
-                            {note.text && (
-                                <p className="text-sm text-muted-foreground">{note.text}</p>
-                            )}
-                            <div className="flex gap-3 text-xs text-muted-foreground">
-                                {note.imageFiles.length > 0 && (
-                                    <span>{note.imageFiles.length} image(s)</span>
-                                )}
-                                {note.audioFiles.length > 0 && (
-                                    <span>{note.audioFiles.length} recording(s)</span>
-                                )}
-                                <span>{formatAppDate(note.createdAt)}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            <AttachmentList
+                items={notes}
+                isLoading={isLoading}
+                loadingText="Loading notes..."
+                emptyMessage="No notes yet."
+                renderItem={(note) => (
+                    <AttachmentListItem
+                        attachment={note}
+                        detailHref={routes.psycho.attachment(clientId, appointmentId, note.id)}
+                        trailingActions={
+                            <>
+                                <EditAttachmentButton
+                                    role="psycho"
+                                    clientId={clientId}
+                                    appointmentId={appointmentId}
+                                    attachment={note}
+                                    onSuccess={fetchNotes}
+                                />
+                                <DeleteAttachmentButton
+                                    role="psycho"
+                                    clientId={clientId}
+                                    appointmentId={appointmentId}
+                                    attachment={note}
+                                    onSuccess={fetchNotes}
+                                />
+                            </>
+                        }
+                    />
+                )}
+            />
         </div>
     )
 }

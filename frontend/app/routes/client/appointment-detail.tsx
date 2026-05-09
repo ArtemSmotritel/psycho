@@ -15,13 +15,13 @@ import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
-import { RecommendationCard } from '~/components/RecommendationCard'
-import { ImpressionList } from '~/components/ImpressionList'
+import { AttachmentList } from '~/components/AttachmentList'
+import { AttachmentListItem } from '~/components/AttachmentListItem'
+import { RecommendationReactionBlock } from '~/components/RecommendationReactionBlock'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
-import { EmptyMessage } from '~/components/EmptyMessage'
 import { NotFound } from '~/components/NotFound'
 import { Loading } from '~/components/Loading'
 import { WhiteboardSnapshot } from '~/components/WhiteboardSnapshot'
@@ -163,73 +163,80 @@ export default function ClientAppointmentDetail() {
                             onSubmit={handleCreateImpression}
                         />
                     </div>
-                    <ImpressionList
-                        impressions={impressions}
+                    <AttachmentList
+                        items={impressions}
                         isLoading={isLoadingImpressions}
-                        clientLinks
+                        loadingText="Loading impressions..."
+                        emptyMessage="No impressions yet."
+                        renderItem={(impression) => (
+                            <AttachmentListItem
+                                attachment={impression}
+                                detailHref={routes.client.attachment(
+                                    impression.appointmentId,
+                                    impression.id,
+                                )}
+                            />
+                        )}
                     />
                 </div>
                 <div className="mt-6 space-y-4">
                     <h3 className="text-lg font-semibold">Recommendations</h3>
-                    {isLoadingRecommendations ? (
-                        <Loading text="Loading recommendations..." />
-                    ) : recommendations.length === 0 ? (
-                        <EmptyMessage title="No recommendations yet." />
-                    ) : (
-                        <div className="space-y-3">
-                            {recommendations.map((recommendation) => (
-                                <RecommendationCard
-                                    key={recommendation.id}
-                                    recommendation={recommendation}
-                                    role="client"
-                                    detailHref={routes.client.attachment(
-                                        appointmentId,
-                                        recommendation.id,
-                                    )}
-                                    onToggleDone={async (id, done) => {
-                                        if (!appointmentId) return
-                                        try {
-                                            await recommendationService.reactForClient(
-                                                appointmentId,
-                                                id,
-                                                {
-                                                    done,
-                                                },
-                                            )
-                                            const res = await attachmentService.listForClient(
-                                                appointmentId,
-                                                'recommendation',
-                                            )
-                                            setRecommendations(res.data.recommendations)
-                                        } catch {
-                                            toast.error('Failed to update. Please try again.')
-                                        }
-                                    }}
-                                    onSubmitComment={async (id, comment) => {
-                                        if (!appointmentId) return
-                                        try {
-                                            await recommendationService.reactForClient(
-                                                appointmentId,
-                                                id,
-                                                {
-                                                    comment,
-                                                },
-                                            )
-                                            const res = await attachmentService.listForClient(
-                                                appointmentId,
-                                                'recommendation',
-                                            )
-                                            setRecommendations(res.data.recommendations)
-                                        } catch {
-                                            toast.error(
-                                                'Failed to submit comment. Please try again.',
-                                            )
-                                        }
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <AttachmentList
+                        items={recommendations}
+                        isLoading={isLoadingRecommendations}
+                        loadingText="Loading recommendations..."
+                        emptyMessage="No recommendations yet."
+                        renderItem={(recommendation) => (
+                            <AttachmentListItem
+                                attachment={recommendation}
+                                detailHref={routes.client.attachment(
+                                    appointmentId,
+                                    recommendation.id,
+                                )}
+                                extra={
+                                    <RecommendationReactionBlock
+                                        role="client"
+                                        reaction={recommendation.reaction}
+                                        attachmentId={recommendation.id}
+                                        onToggleDone={async (id, done) => {
+                                            try {
+                                                await recommendationService.reactForClient(
+                                                    appointmentId,
+                                                    id,
+                                                    { done },
+                                                )
+                                                const res = await attachmentService.listForClient(
+                                                    appointmentId,
+                                                    'recommendation',
+                                                )
+                                                setRecommendations(res.data.recommendations)
+                                            } catch {
+                                                toast.error('Failed to update. Please try again.')
+                                            }
+                                        }}
+                                        onSubmitComment={async (id, comment) => {
+                                            try {
+                                                await recommendationService.reactForClient(
+                                                    appointmentId,
+                                                    id,
+                                                    { comment },
+                                                )
+                                                const res = await attachmentService.listForClient(
+                                                    appointmentId,
+                                                    'recommendation',
+                                                )
+                                                setRecommendations(res.data.recommendations)
+                                            } catch {
+                                                toast.error(
+                                                    'Failed to submit comment. Please try again.',
+                                                )
+                                            }
+                                        }}
+                                    />
+                                }
+                            />
+                        )}
+                    />
                 </div>
             </PageContainer>
         )

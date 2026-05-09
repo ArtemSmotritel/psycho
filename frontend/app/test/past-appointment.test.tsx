@@ -178,7 +178,7 @@ describe('past appointment detail view', () => {
         })
     })
 
-    it('shows loading spinner (via ImpressionList) while impression fetch is in progress', async () => {
+    it('shows loading spinner while impression fetch is in progress', async () => {
         mockUseCurrentAppointment = () => ({ appointment: pastAppointment, isLoading: false })
         // never resolves during the test
         mockListForPsycho.mockReturnValue(new Promise(() => {}))

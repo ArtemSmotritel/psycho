@@ -27,7 +27,8 @@ import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/At
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { formatAppointmentTimeRange } from '~/utils/utils'
-import { ImpressionList } from '~/components/ImpressionList'
+import { AttachmentList } from '~/components/AttachmentList'
+import { AttachmentListItem } from '~/components/AttachmentListItem'
 import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
@@ -262,10 +263,20 @@ export default function LiveAppointment() {
                                 }
                                 onSubmit={handleCreateImpression}
                             />
-                            <ImpressionList
-                                impressions={impressions}
+                            <AttachmentList
+                                items={impressions}
                                 isLoading={isLoadingImpressions}
-                                clientLinks
+                                loadingText="Loading impressions..."
+                                emptyMessage="No impressions yet."
+                                renderItem={(impression) => (
+                                    <AttachmentListItem
+                                        attachment={impression}
+                                        detailHref={routes.client.attachment(
+                                            impression.appointmentId,
+                                            impression.id,
+                                        )}
+                                    />
+                                )}
                             />
                         </div>
                     </SheetContent>
