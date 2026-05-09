@@ -31,7 +31,7 @@ vi.mock('sonner', () => ({
 }))
 
 // Mock heavier components that are not under test
-vi.mock('~/components/ProtectedComponent', () => ({
+vi.mock('~/components/common/ProtectedComponent', () => ({
     ProtectedComponent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 

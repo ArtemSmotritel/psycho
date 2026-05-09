@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
-import { EmptyMessage } from './common/EmptyMessage'
-import { Loading } from './common/Loading'
+import { EmptyMessage } from '~/components/common/EmptyMessage'
+import { Loading } from '~/components/common/Loading'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 
 interface AttachmentListProps<T extends Attachment | AttachmentWithReaction> {

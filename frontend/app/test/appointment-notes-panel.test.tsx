@@ -35,7 +35,7 @@ vi.mock('sonner', () => ({
     },
 }))
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, onConfirm }: any) => (
         <div>
             {trigger}
@@ -46,7 +46,7 @@ vi.mock('~/components/ConfirmAction', () => ({
     ),
 }))
 
-import { AppointmentNotesPanel } from '~/components/AppointmentNotesPanel'
+import { AppointmentNotesPanel } from '~/components/attachments/notes/AppointmentNotesPanel'
 import { toast } from 'sonner'
 
 const sampleNote = {

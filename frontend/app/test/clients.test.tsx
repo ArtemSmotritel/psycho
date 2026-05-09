@@ -25,7 +25,7 @@ vi.mock('~/components/AddClientByEmailDialog', () => ({
     AddClientByEmailDialog: ({ trigger }: { trigger: React.ReactNode }) => <div>{trigger}</div>,
 }))
 
-vi.mock('~/components/AppPageHeader', () => ({
+vi.mock('~/components/common/AppPageHeader', () => ({
     AppPageHeader: ({ text }: { text: string }) => <h1>{text}</h1>,
 }))
 

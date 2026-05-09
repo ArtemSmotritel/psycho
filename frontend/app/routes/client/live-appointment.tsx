@@ -23,13 +23,16 @@ import type { AppointmentWithPsycho } from '~/models/appointment'
 import type { Attachment } from '~/models/attachment'
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
 import { WhiteboardCursorOverlay } from '~/components/WhiteboardCursorOverlay'
-import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
+import {
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+} from '~/components/attachments/AttachmentForm'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { formatAppointmentTimeRange } from '~/utils/utils'
-import { AttachmentList } from '~/components/AttachmentList'
-import { AttachmentListItem } from '~/components/AttachmentListItem'
-import { PostSessionImpressionDialog } from '~/components/PostSessionImpressionDialog'
+import { AttachmentList } from '~/components/attachments/AttachmentList'
+import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { PostSessionImpressionDialog } from '~/components/attachments/impressions/PostSessionImpressionDialog'
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
 

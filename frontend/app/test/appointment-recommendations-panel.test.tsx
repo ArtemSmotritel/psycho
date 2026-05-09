@@ -33,7 +33,7 @@ vi.mock('sonner', () => ({
 // Mock ConfirmAction to bypass the Radix dialog. Each instance exposes a
 // distinct testid keyed on title so different confirmations (delete vs reply)
 // can be targeted independently.
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, description, onConfirm }: any) => (
         <div>
             {trigger}
@@ -47,11 +47,11 @@ vi.mock('~/components/ConfirmAction', () => ({
 }))
 
 // Mock RecommendationForm to bypass dialog
-vi.mock('~/components/RecommendationForm', () => ({
+vi.mock('~/components/attachments/recommendations/RecommendationForm', () => ({
     RecommendationForm: ({ trigger }: any) => <div>{trigger}</div>,
 }))
 
-import { AppointmentRecommendationsPanel } from '~/components/AppointmentRecommendationsPanel'
+import { AppointmentRecommendationsPanel } from '~/components/attachments/recommendations/AppointmentRecommendationsPanel'
 import { toast } from 'sonner'
 
 const sampleRecommendation = {

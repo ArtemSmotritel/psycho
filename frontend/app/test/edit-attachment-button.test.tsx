@@ -26,7 +26,7 @@ vi.mock('sonner', () => ({
     },
 }))
 
-import { EditAttachmentButton } from '~/components/EditAttachmentButton'
+import { EditAttachmentButton } from '~/components/attachments/EditAttachmentButton'
 import { toast } from 'sonner'
 import type { Attachment } from '~/models/attachment'
 

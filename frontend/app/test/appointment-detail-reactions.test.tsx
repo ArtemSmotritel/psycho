@@ -41,7 +41,7 @@ vi.mock('sonner', () => ({
     },
 }))
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, description, onConfirm }: any) => (
         <div>
             {trigger}

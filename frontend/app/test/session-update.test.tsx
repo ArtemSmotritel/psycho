@@ -38,7 +38,7 @@ vi.mock('~/components/SessionForm', () => ({
     },
 }))
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger }: any) => <div>{trigger}</div>,
 }))
 

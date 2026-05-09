@@ -11,7 +11,7 @@ vi.mock('react-media-recorder', () => ({
     }),
 }))
 
-import { AttachmentForm } from '~/components/AttachmentForm'
+import { AttachmentForm } from '~/components/attachments/AttachmentForm'
 
 describe('AttachmentForm — uncontrolled', () => {
     beforeEach(() => {

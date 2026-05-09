@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ActionItem } from '@/components/ActionsSection'
-import { AttachmentDetail } from '~/components/AttachmentDetail'
+import { AttachmentDetail } from '~/components/attachments/AttachmentDetail'
 import { AppPageHeader } from '~/components/common/AppPageHeader'
 import { PageContainer } from '~/components/common/PageContainer'
 import { useCurrentClientAttachment } from '~/hooks/useCurrentClientAttachment'

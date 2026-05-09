@@ -4,7 +4,7 @@ import { getAttachmentDetailCapabilities } from './attachment-detail-capabilitie
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { getAttachmentTypeLabel } from '~/utils/utils'
 import type { Attachment } from '~/models/attachment'
-import { ConfirmDeleteButton } from './common/ConfirmDeleteButton'
+import { ConfirmDeleteButton } from '../common/ConfirmDeleteButton'
 
 type DeleteAttachmentButtonProps =
     | {

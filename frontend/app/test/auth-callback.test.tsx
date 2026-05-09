@@ -62,7 +62,7 @@ describe('AuthCallback', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/login')
     })
 
-    it('redirects to /login when intended_role is missing from sessionStorage', () => {
+    it('redirects to /role-select when intended_role and activeRole are both missing', () => {
         vi.mocked(useAuth).mockReturnValue({
             isLoading: false,
             isAuthenticated: true,
@@ -75,7 +75,7 @@ describe('AuthCallback', () => {
             </MemoryRouter>,
         )
 
-        expect(mockNavigate).toHaveBeenCalledWith('/login')
+        expect(mockNavigate).toHaveBeenCalledWith('/role-select')
         expect(mockSetActiveRole).not.toHaveBeenCalled()
     })
 

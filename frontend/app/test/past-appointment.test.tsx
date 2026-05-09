@@ -10,11 +10,11 @@ vi.mock('~/services/attachment.service', () => ({
     },
 }))
 
-vi.mock('~/components/AppointmentNotesPanel', () => ({
+vi.mock('~/components/attachments/notes/AppointmentNotesPanel', () => ({
     AppointmentNotesPanel: () => <div data-testid="notes-panel" />,
 }))
 
-vi.mock('~/components/AppointmentRecommendationsPanel', () => ({
+vi.mock('~/components/attachments/recommendations/AppointmentRecommendationsPanel', () => ({
     AppointmentRecommendationsPanel: () => <div data-testid="recommendations-panel" />,
 }))
 
@@ -33,7 +33,7 @@ vi.mock('sonner', () => ({
     },
 }))
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger }: any) => <div>{trigger}</div>,
 }))
 

@@ -62,11 +62,11 @@ vi.mock('~/components/ui/sheet', () => ({
     SheetDescription: ({ children }: any) => <p>{children}</p>,
 }))
 
-vi.mock('~/components/AppPageHeader', () => ({
+vi.mock('~/components/common/AppPageHeader', () => ({
     AppPageHeader: ({ text }: any) => <h1>{text}</h1>,
 }))
 
-vi.mock('~/components/PageContainer', () => ({
+vi.mock('~/components/common/PageContainer', () => ({
     PageContainer: ({ children }: any) => <div>{children}</div>,
 }))
 

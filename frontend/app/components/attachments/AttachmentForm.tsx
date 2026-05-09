@@ -20,8 +20,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { useReactMediaRecorder } from 'react-media-recorder'
-import { getAttachmentTypeLabel } from '../utils/utils'
-import { Separator } from './ui/separator'
+import { getAttachmentTypeLabel } from '../../utils/utils'
+import { Separator } from '../ui/separator'
 import { useAttachmentFiles } from '~/hooks/useAttachmentFiles'
 import { useControlledOpen } from '~/hooks/useControlledOpen'
 import {
@@ -30,9 +30,9 @@ import {
     type AttachmentFormProps,
     type AttachmentFormSubmitValues,
     type AttachmentFormValues,
-} from './attachment-form/schema'
-import { VoiceRecordingSection } from './attachment-form/VoiceRecordingSection'
-import { ImageSection } from './attachment-form/ImageSection'
+} from '../attachment-form/schema'
+import { VoiceRecordingSection } from '../attachment-form/VoiceRecordingSection'
+import { ImageSection } from '../attachment-form/ImageSection'
 
 export { isAttachmentFile }
 export type { AttachmentFormSubmitValues }

@@ -32,7 +32,7 @@ vi.mock('react-router', async (importOriginal) => {
 let capturedOnConfirm: (() => void) | null = null
 let capturedTriggerDisabled: boolean | undefined = undefined
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, onConfirm }: any) => {
         capturedOnConfirm = onConfirm
         capturedTriggerDisabled = trigger?.props?.disabled

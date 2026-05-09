@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import { Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
-import { AttachmentForm } from '@/components/AttachmentForm'
-import { AttachmentMediaPreview } from '~/components/AttachmentMediaPreview'
+import { AttachmentForm } from '~/components/attachments/AttachmentForm'
+import { AttachmentMediaPreview } from '~/components/attachments/AttachmentMediaPreview'
 import { ConfirmDeleteButton } from '~/components/common/ConfirmDeleteButton'
-import { RecommendationReactionBlock } from '~/components/RecommendationReactionBlock'
+import { RecommendationReactionBlock } from '~/components/attachments/recommendations/RecommendationReactionBlock'
 import { AttachmentIcon } from '~/utils/componentUtils'
 import { formatAppDate, formatAttachmentTitle, getAttachmentTypeLabel } from '~/utils/utils'
 import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
@@ -13,7 +13,7 @@ import { recommendationService } from '~/services/recommendation.service'
 import {
     getAttachmentDetailCapabilities,
     type AttachmentDetailRole,
-} from '~/components/attachment-detail-capabilities'
+} from '~/components/attachments/attachment-detail-capabilities'
 import type { Attachment, RecommendationReaction } from '~/models/attachment'
 
 interface AttachmentDetailProps {

@@ -15,10 +15,13 @@ import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
-import { AttachmentList } from '~/components/AttachmentList'
-import { AttachmentListItem } from '~/components/AttachmentListItem'
-import { RecommendationReactionBlock } from '~/components/RecommendationReactionBlock'
-import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/AttachmentForm'
+import { AttachmentList } from '~/components/attachments/AttachmentList'
+import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { RecommendationReactionBlock } from '~/components/attachments/recommendations/RecommendationReactionBlock'
+import {
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+} from '~/components/attachments/AttachmentForm'
 import { toast } from 'sonner'
 import { logIfNotProd } from '~/utils/logger'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'

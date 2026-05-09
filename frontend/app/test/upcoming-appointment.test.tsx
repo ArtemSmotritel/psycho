@@ -29,7 +29,7 @@ vi.mock('react-router', async (importOriginal) => {
     }
 })
 
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, onConfirm }: any) => {
         return (
             <div>

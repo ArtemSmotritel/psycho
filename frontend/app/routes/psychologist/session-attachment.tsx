@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { Loading } from '~/components/common/Loading'
 import { NotFound } from '~/components/common/NotFound'
 import { ActionItem } from '@/components/ActionsSection'
-import { AttachmentDetail } from '~/components/AttachmentDetail'
+import { AttachmentDetail } from '~/components/attachments/AttachmentDetail'
 import { useCurrentAttachment } from '~/hooks/useCurrentAttachment'
 import { routes } from '~/lib/routes'
 

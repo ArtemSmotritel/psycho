@@ -22,7 +22,7 @@ vi.mock('sonner', () => ({
 }))
 
 // Bypass the AlertDialog so the test can confirm directly via a known testid.
-vi.mock('~/components/ConfirmAction', () => ({
+vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, onConfirm }: any) => (
         <div>
             {trigger}
@@ -33,7 +33,7 @@ vi.mock('~/components/ConfirmAction', () => ({
     ),
 }))
 
-import { DeleteAttachmentButton } from '~/components/DeleteAttachmentButton'
+import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
 import { toast } from 'sonner'
 import type { Attachment } from '~/models/attachment'
 

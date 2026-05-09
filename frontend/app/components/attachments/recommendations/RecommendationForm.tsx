@@ -3,7 +3,7 @@
 // `EditAttachmentButton` uses `AttachmentForm` directly, so this wrapper is now used
 // only for the create flow.
 import { toast } from 'sonner'
-import { AttachmentForm, type AttachmentFormSubmitValues } from './AttachmentForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from '../AttachmentForm'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import type { AttachmentFile, UpdateRecommendationDTO } from '~/models/attachment'
 
