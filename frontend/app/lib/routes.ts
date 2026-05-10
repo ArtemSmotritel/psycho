@@ -23,7 +23,6 @@ export const routes = {
     },
     client: {
         root: '/client',
-        noPsychologist: '/client/no-psychologist',
         appointments: '/client/appointments',
         progress: '/client/progress',
         appointment: (appointmentId: string) => `/client/appointments/${appointmentId}`,

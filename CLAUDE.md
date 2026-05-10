@@ -40,7 +40,7 @@ Monorepo with two independent apps: a Bun/Hono REST API (`backend/`) and a Bun/R
 - **Framework**: React Router v7 (framework mode). **Styling**: TailwindCSS v4. **UI**: shadcn/ui components in `components/ui/`.
 - **Routes**: Defined in `routes.ts` using React Router's config API. URL structure: `/:role/clients/:clientId/appointments/:appointmentId/...`. The `:role` segment is part of the URL but not used for access control on the frontend — `useRoleGuard` hook uses the auth context user role.
 - **API client**: Axios instance in `services/api.ts` with `baseURL: '/api'` and `withCredentials: true`. Domain-specific service files wrap it (e.g. `appointment.service.ts`, `client.service.ts`).
-- **Auth state**: `AuthContext` (`contexts/auth-context.tsx`) + `better-auth/react` client (`services/auth.service.ts`). Note: `auth-context.tsx` currently has hardcoded fake user for development.
+- **Auth state**: `AuthContext` (`contexts/auth-context.tsx`) + `better-auth/react` client (`services/auth.service.ts`). On session resolve, fetches the user via `userService.getMe()` and tracks `activeRole` (`psycho` | `client` | null). Listens for `API_UNAUTHORIZED_EVENT` and `API_ROLE_MISMATCH_EVENT` to log out or resync.
 - **Models**: TypeScript interfaces in `app/models/` define frontend data shapes (may differ from DB schema).
 
 ### Environment Variables (Backend)

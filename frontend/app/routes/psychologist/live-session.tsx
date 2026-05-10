@@ -2,7 +2,6 @@ import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react
 import { Link, useNavigate, useParams } from 'react-router'
 import {
     Video,
-    LogIn,
     StopCircle,
     PanelRightOpen,
     StickyNote,
@@ -27,7 +26,6 @@ import {
     SheetDescription,
 } from '~/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs'
-import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { ConfirmAction } from '~/components/common/ConfirmAction'
 import { useCurrentAppointment } from '~/hooks/useCurrentAppointment'
 import { appointmentService } from '~/services/appointment.service'

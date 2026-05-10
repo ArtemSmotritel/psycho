@@ -26,7 +26,6 @@ export default [
     layout('routes/client/layout.tsx', [
         route('me', 'routes/client/profile.tsx'),
         route('client', 'routes/client/dashboard.tsx'),
-        route('client/no-psychologist', 'routes/client/no-psychologist.tsx'),
         route('client/appointments', 'routes/client/appointments.tsx'),
         route('client/progress', 'routes/client/progress.tsx'),
         route('client/appointments/:appointmentId', 'routes/client/appointment-detail.tsx'),

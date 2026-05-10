@@ -1,7 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
-    Copy,
     Phone,
     MessageSquare,
     Instagram,
@@ -16,13 +14,13 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ClientForm } from '@/components/ClientForm'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { ConfirmAction } from '~/components/common/ConfirmAction'
+import { ContactItem } from '~/components/common/ContactItem'
 import { Loading } from '~/components/common/Loading'
 import { formatAppDate } from '~/utils/utils'
-import { ProtectedComponent } from '~/components/common/ProtectedComponent'
 import { clientService } from '~/services/client.service'
 import { useCreateAppointment } from '~/hooks/useCreateAppointment'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
@@ -33,72 +31,6 @@ type ClientProfileProps = {
     params: {
         clientId: string
     }
-}
-
-interface ContactItemProps {
-    icon: React.ReactNode
-    label: string
-    value?: string | null
-    onCopy: () => void
-    type?: 'telegram' | 'instagram' | 'email' | 'phone'
-}
-
-function ContactItem({ icon, label, value, onCopy, type }: ContactItemProps) {
-    const displayValue = value || '-'
-
-    // Helper function to get the appropriate link based on type
-    const getLink = () => {
-        if (!value) return null
-
-        switch (type) {
-            case 'telegram': {
-                const telegramUsername = value.startsWith('@') ? value.slice(1) : value
-                return `https://t.me/${telegramUsername}`
-            }
-            case 'instagram': {
-                const instagramUsername = value.startsWith('@') ? value.slice(1) : value
-                return `https://instagram.com/${instagramUsername}`
-            }
-            case 'email':
-                return `mailto:${value}`
-            case 'phone':
-                return `tel:${value.replace(/\s+/g, '')}`
-            default:
-                return null
-        }
-    }
-
-    const link = getLink()
-
-    return (
-        <div className="flex items-center justify-between flex-wrap">
-            <div className="flex items-center space-x-2">
-                {icon}
-                <span className="font-medium">{label}:</span>
-            </div>
-            <div className="flex items-center space-x-1">
-                {link ? (
-                    <Link
-                        to={link}
-                        target={type === 'email' || type === 'phone' ? undefined : '_blank'}
-                        rel={
-                            type === 'email' || type === 'phone' ? undefined : 'noopener noreferrer'
-                        }
-                        className="hover:underline"
-                    >
-                        {displayValue}
-                    </Link>
-                ) : (
-                    <span>{displayValue}</span>
-                )}
-                {value && (
-                    <Button variant="ghost" size="icon" onClick={onCopy}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
-        </div>
-    )
 }
 
 export default function ClientProfile({ params }: ClientProfileProps) {
@@ -250,25 +182,23 @@ export default function ClientProfile({ params }: ClientProfileProps) {
                     onSubmit={handleEditClient}
                 />
 
-                <ProtectedComponent allowedRoles={['psycho']}>
-                    <SessionForm
-                        mode="add"
-                        trigger={
-                            <ActionItem
-                                icon={<Calendar className="h-6 w-6" />}
-                                label="Schedule Session"
-                            />
-                        }
-                        initialData={{
-                            clientId: params.clientId,
-                            ...(client.lastAppointment
-                                ? nextSameWeekdayOccurrence(client.lastAppointment)
-                                : {}),
-                        }}
-                        isLoading={isCreatingAppointment}
-                        onSubmit={handleAddSession}
-                    />
-                </ProtectedComponent>
+                <SessionForm
+                    mode="add"
+                    trigger={
+                        <ActionItem
+                            icon={<Calendar className="h-6 w-6" />}
+                            label="Schedule Session"
+                        />
+                    }
+                    initialData={{
+                        clientId: params.clientId,
+                        ...(client.lastAppointment
+                            ? nextSameWeekdayOccurrence(client.lastAppointment)
+                            : {}),
+                    }}
+                    isLoading={isCreatingAppointment}
+                    onSubmit={handleAddSession}
+                />
 
                 <ActionItem
                     icon={<TrendingUp className="h-6 w-6" />}

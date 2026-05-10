@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
-export type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
 
 export interface ActionItemProps {
     icon: ReactNode

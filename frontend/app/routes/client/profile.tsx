@@ -1,76 +1,15 @@
 import { toast } from 'sonner'
-import { Phone, MessageSquare, Instagram, Mail, Edit, Copy } from 'lucide-react'
+import { Phone, MessageSquare, Instagram, Mail, Edit } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
 import { ClientForm } from '~/components/ClientForm'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { AppPageHeader } from '~/components/common/AppPageHeader'
 import { PageContainer } from '~/components/common/PageContainer'
+import { ContactItem } from '~/components/common/ContactItem'
 import { useResource } from '~/hooks/useResource'
 import { clientService } from '~/services/client.service'
 import type { Client } from '~/models/client'
-import { Link } from 'react-router'
 import { NotFound } from '~/components/common/NotFound'
-
-interface ContactItemProps {
-    icon: React.ReactNode
-    label: string
-    value?: string | null
-    type?: 'telegram' | 'instagram' | 'phone'
-}
-
-function ContactItem({ icon, label, value, type }: ContactItemProps) {
-    const displayValue = value || '-'
-
-    const getLink = () => {
-        if (!value) return null
-        switch (type) {
-            case 'telegram': {
-                const username = value.startsWith('@') ? value.slice(1) : value
-                return `https://t.me/${username}`
-            }
-            case 'instagram': {
-                const username = value.startsWith('@') ? value.slice(1) : value
-                return `https://instagram.com/${username}`
-            }
-            case 'phone':
-                return `tel:${value.replace(/\s+/g, '')}`
-            default:
-                return null
-        }
-    }
-
-    const link = getLink()
-
-    const copyToClipboard = () => {
-        if (!value) return
-        navigator.clipboard.writeText(value)
-        toast.success(`${label} copied to clipboard.`)
-    }
-
-    return (
-        <div className="flex items-center justify-between flex-wrap">
-            <div className="flex items-center space-x-2">
-                {icon}
-                <span className="font-medium">{label}:</span>
-            </div>
-            <div className="flex items-center space-x-1">
-                {link ? (
-                    <Link to={link} className="hover:underline">
-                        {displayValue}
-                    </Link>
-                ) : (
-                    <span>{displayValue}</span>
-                )}
-                {value && (
-                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                )}
-            </div>
-        </div>
-    )
-}
 
 export default function ClientProfile() {
     const {

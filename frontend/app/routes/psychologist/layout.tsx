@@ -1,19 +1,5 @@
-import { Outlet } from 'react-router'
-import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar'
-import { AppSidebar } from '../../components/AppSidebar'
-import { ProtectedRoute } from '../../components/common/ProtectedRoute'
+import { RoleLayout } from '~/components/common/RoleLayout'
 
 export default function PsychologistLayout() {
-    return (
-        <ProtectedRoute allowedRoles={['psycho']}>
-            <SidebarProvider>
-                <div className="flex h-screen w-full">
-                    <AppSidebar />
-                    <SidebarInset>
-                        <Outlet />
-                    </SidebarInset>
-                </div>
-            </SidebarProvider>
-        </ProtectedRoute>
-    )
+    return <RoleLayout role="psycho" />
 }

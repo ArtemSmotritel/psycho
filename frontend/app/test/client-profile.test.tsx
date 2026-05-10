@@ -30,11 +30,6 @@ vi.mock('sonner', () => ({
     },
 }))
 
-// Mock heavier components that are not under test
-vi.mock('~/components/common/ProtectedComponent', () => ({
-    ProtectedComponent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-
 vi.mock('~/components/ClientForm', () => ({
     ClientForm: ({ trigger }: { trigger: React.ReactNode }) => <div>{trigger}</div>,
 }))

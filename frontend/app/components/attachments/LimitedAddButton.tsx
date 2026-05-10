@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { Button } from '~/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 
 interface LimitedAddButtonProps extends Omit<
     ComponentProps<typeof Button>,
@@ -19,14 +20,27 @@ export function LimitedAddButton({
     ...rest
 }: LimitedAddButtonProps) {
     const atLimit = count >= limit
+
+    if (!atLimit) {
+        return (
+            <Button {...rest} size="sm">
+                {label}
+            </Button>
+        )
+    }
+
     return (
-        <Button
-            {...rest}
-            size="sm"
-            disabled={atLimit}
-            title={atLimit ? `Maximum ${limit} ${tooltipNoun} per appointment reached.` : undefined}
-        >
-            {label}
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span>
+                    <Button {...rest} size="sm" disabled>
+                        {label}
+                    </Button>
+                </span>
+            </TooltipTrigger>
+            <TooltipContent>
+                Maximum {limit} {tooltipNoun} per appointment reached.
+            </TooltipContent>
+        </Tooltip>
     )
 }
