@@ -30,6 +30,10 @@ vi.mock('sonner', () => ({
     },
 }))
 
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => 'psycho',
+}))
+
 // Mock ConfirmAction to bypass the Radix dialog. Each instance exposes a
 // distinct testid keyed on title so different confirmations (delete vs reply)
 // can be targeted independently.

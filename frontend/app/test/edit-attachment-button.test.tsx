@@ -26,6 +26,12 @@ vi.mock('sonner', () => ({
     },
 }))
 
+const mockUseUserRole = vi.fn<() => 'psycho' | 'client' | null>(() => 'psycho')
+
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => mockUseUserRole(),
+}))
+
 import { EditAttachmentButton } from '~/components/attachments/EditAttachmentButton'
 import { toast } from 'sonner'
 import type { Attachment } from '~/models/attachment'
@@ -52,14 +58,16 @@ const impressionAttachment: Attachment = {
 describe('EditAttachmentButton', () => {
     beforeEach(() => {
         mockUpdateForPsycho.mockReset()
+        mockUseUserRole.mockReset()
+        mockUseUserRole.mockReturnValue('psycho')
         vi.mocked(toast.success).mockReset?.()
         vi.mocked(toast.error).mockReset?.()
     })
 
-    it('returns null for role="client" (clients cannot edit any attachment type)', () => {
+    it('returns null when role=client (clients cannot edit any attachment type)', () => {
+        mockUseUserRole.mockReturnValue('client')
         const { container } = render(
             <EditAttachmentButton
-                role="client"
                 appointmentId="apt-001"
                 attachment={{ ...noteAttachment, type: 'recommendation' }}
                 onSuccess={vi.fn()}
@@ -68,10 +76,23 @@ describe('EditAttachmentButton', () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it('returns null for role="psycho" + type=impression (psychos cannot edit impressions)', () => {
+    it('returns null when role is null (unauthenticated)', () => {
+        mockUseUserRole.mockReturnValue(null)
         const { container } = render(
             <EditAttachmentButton
-                role="psycho"
+                clientId="client-001"
+                appointmentId="apt-001"
+                attachment={noteAttachment}
+                onSuccess={vi.fn()}
+            />,
+        )
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    it('returns null when role=psycho + type=impression (psychos cannot edit impressions)', () => {
+        mockUseUserRole.mockReturnValue('psycho')
+        const { container } = render(
+            <EditAttachmentButton
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={impressionAttachment}
@@ -81,11 +102,23 @@ describe('EditAttachmentButton', () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it('renders the default Edit trigger and opens the dialog when role="psycho" + type=note', async () => {
+    it('returns null when role=psycho but clientId is missing', () => {
+        mockUseUserRole.mockReturnValue('psycho')
+        const { container } = render(
+            <EditAttachmentButton
+                appointmentId="apt-001"
+                attachment={noteAttachment}
+                onSuccess={vi.fn()}
+            />,
+        )
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    it('renders the default Edit trigger and opens the dialog when role=psycho + type=note', async () => {
         const user = userEvent.setup()
+        mockUseUserRole.mockReturnValue('psycho')
         render(
             <EditAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}
@@ -107,11 +140,11 @@ describe('EditAttachmentButton', () => {
     it('calls updateForPsycho on submit and toasts success + onSuccess', async () => {
         const user = userEvent.setup()
         const onSuccess = vi.fn()
+        mockUseUserRole.mockReturnValue('psycho')
         mockUpdateForPsycho.mockResolvedValue({ data: { attachment: noteAttachment } })
 
         render(
             <EditAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}
@@ -148,11 +181,11 @@ describe('EditAttachmentButton', () => {
     it('toasts error and does not call onSuccess when updateForPsycho rejects', async () => {
         const user = userEvent.setup()
         const onSuccess = vi.fn()
+        mockUseUserRole.mockReturnValue('psycho')
         mockUpdateForPsycho.mockRejectedValue(new Error('boom'))
 
         render(
             <EditAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}
@@ -173,9 +206,9 @@ describe('EditAttachmentButton', () => {
     })
 
     it('renders a custom trigger when one is provided', () => {
+        mockUseUserRole.mockReturnValue('psycho')
         render(
             <EditAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}

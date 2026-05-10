@@ -21,6 +21,12 @@ vi.mock('sonner', () => ({
     },
 }))
 
+const mockUseUserRole = vi.fn<() => 'psycho' | 'client' | null>(() => 'psycho')
+
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => mockUseUserRole(),
+}))
+
 // Bypass the AlertDialog so the test can confirm directly via a known testid.
 vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, onConfirm }: any) => (
@@ -55,14 +61,16 @@ describe('DeleteAttachmentButton', () => {
         mockDeleteForPsycho.mockReset()
         mockDeleteForClient.mockReset()
         mockGetDeleteAttachmentErrorMessage.mockClear()
+        mockUseUserRole.mockReset()
+        mockUseUserRole.mockReturnValue('psycho')
         vi.mocked(toast.success).mockReset?.()
         vi.mocked(toast.error).mockReset?.()
     })
 
-    it('returns null for role="psycho" + type=impression', () => {
+    it('returns null when role=psycho + type=impression', () => {
+        mockUseUserRole.mockReturnValue('psycho')
         const { container } = render(
             <DeleteAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={{ ...noteAttachment, type: 'impression' }}
@@ -72,10 +80,34 @@ describe('DeleteAttachmentButton', () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it('returns null for role="client" + type=note (clients cannot delete notes)', () => {
+    it('returns null when role=client + type=note (clients cannot delete notes)', () => {
+        mockUseUserRole.mockReturnValue('client')
         const { container } = render(
             <DeleteAttachmentButton
-                role="client"
+                appointmentId="apt-001"
+                attachment={noteAttachment}
+                onSuccess={vi.fn()}
+            />,
+        )
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    it('returns null when role is null (unauthenticated)', () => {
+        mockUseUserRole.mockReturnValue(null)
+        const { container } = render(
+            <DeleteAttachmentButton
+                appointmentId="apt-001"
+                attachment={noteAttachment}
+                onSuccess={vi.fn()}
+            />,
+        )
+        expect(container).toBeEmptyDOMElement()
+    })
+
+    it('returns null when role=psycho but clientId is missing', () => {
+        mockUseUserRole.mockReturnValue('psycho')
+        const { container } = render(
+            <DeleteAttachmentButton
                 appointmentId="apt-001"
                 attachment={noteAttachment}
                 onSuccess={vi.fn()}
@@ -87,11 +119,11 @@ describe('DeleteAttachmentButton', () => {
     it('dispatches deleteForPsycho on confirm and toasts success + onSuccess for psycho/note', async () => {
         const user = userEvent.setup()
         const onSuccess = vi.fn()
+        mockUseUserRole.mockReturnValue('psycho')
         mockDeleteForPsycho.mockResolvedValue(undefined)
 
         render(
             <DeleteAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}
@@ -114,11 +146,11 @@ describe('DeleteAttachmentButton', () => {
     it('dispatches deleteForClient on confirm for client/impression', async () => {
         const user = userEvent.setup()
         const onSuccess = vi.fn()
+        mockUseUserRole.mockReturnValue('client')
         mockDeleteForClient.mockResolvedValue(undefined)
 
         render(
             <DeleteAttachmentButton
-                role="client"
                 appointmentId="apt-001"
                 attachment={{ ...noteAttachment, type: 'impression' }}
                 onSuccess={onSuccess}
@@ -141,11 +173,11 @@ describe('DeleteAttachmentButton', () => {
         const user = userEvent.setup()
         const onSuccess = vi.fn()
         const failure = new Error('boom')
+        mockUseUserRole.mockReturnValue('psycho')
         mockDeleteForPsycho.mockRejectedValue(failure)
 
         render(
             <DeleteAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={{ ...noteAttachment, type: 'recommendation' }}
@@ -163,9 +195,9 @@ describe('DeleteAttachmentButton', () => {
     })
 
     it('renders the custom trigger when provided', () => {
+        mockUseUserRole.mockReturnValue('psycho')
         render(
             <DeleteAttachmentButton
-                role="psycho"
                 clientId="client-001"
                 appointmentId="apt-001"
                 attachment={noteAttachment}

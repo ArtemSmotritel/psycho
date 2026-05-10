@@ -6,29 +6,35 @@ import { getAttachmentDetailCapabilities } from './attachment-detail-capabilitie
 import { attachmentService } from '~/services/attachment.service'
 import { getAttachmentTypeLabel } from '~/utils/utils'
 import type { Attachment } from '~/models/attachment'
+import { useUserRole } from '~/contexts/auth-context'
+import { logIfNotProd } from '~/utils/logger'
 
-type EditAttachmentButtonProps =
-    | {
-          role: 'psycho'
-          clientId: string
-          appointmentId: string
-          attachment: Attachment
-          trigger?: ReactNode
-          onSuccess: () => void
-      }
-    | {
-          role: 'client'
-          appointmentId: string
-          attachment: Attachment
-          trigger?: ReactNode
-          onSuccess: () => void
-      }
+interface EditAttachmentButtonProps {
+    appointmentId: string
+    attachment: Attachment
+    clientId?: string
+    trigger?: ReactNode
+    onSuccess: () => void
+}
 
-export function EditAttachmentButton(props: EditAttachmentButtonProps) {
-    const capabilities = getAttachmentDetailCapabilities(props.role, props.attachment)
-    if (!capabilities.canEdit || props.role !== 'psycho') return null
+export function EditAttachmentButton({
+    appointmentId,
+    attachment,
+    clientId,
+    trigger,
+    onSuccess,
+}: EditAttachmentButtonProps) {
+    const role = useUserRole()
+    if (!role) return null
 
-    const { clientId, appointmentId, attachment, trigger, onSuccess } = props
+    const capabilities = getAttachmentDetailCapabilities(role, attachment)
+    if (!capabilities.canEdit) return null
+
+    if (!clientId) {
+        logIfNotProd('[EditAttachmentButton] role=psycho requires a clientId; rendering nothing.')
+        return null
+    }
+
     const typeLabel = getAttachmentTypeLabel(attachment.type)
 
     const handleSubmit = async (values: AttachmentFormSubmitValues) => {

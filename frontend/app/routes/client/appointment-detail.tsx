@@ -181,7 +181,6 @@ export default function ClientAppointmentDetail() {
                                 )}
                                 trailingActions={
                                     <DeleteAttachmentButton
-                                        role="client"
                                         appointmentId={appointmentId}
                                         attachment={impression}
                                         onSuccess={() =>

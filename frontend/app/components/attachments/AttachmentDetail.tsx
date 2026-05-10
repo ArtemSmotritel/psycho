@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react'
 import { Edit, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
-import { AttachmentForm } from '~/components/attachments/AttachmentForm'
 import { AttachmentMediaPreview } from '~/components/attachments/AttachmentMediaPreview'
-import { ConfirmDeleteButton } from '~/components/common/ConfirmDeleteButton'
+import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
+import { EditAttachmentButton } from '~/components/attachments/EditAttachmentButton'
 import { RecommendationReactionBlock } from '~/components/attachments/recommendations/RecommendationReactionBlock'
 import { AttachmentIcon } from '~/utils/componentUtils'
 import { formatAppDate, formatAttachmentTitle, getAttachmentTypeLabel } from '~/utils/utils'
-import { attachmentService, getDeleteAttachmentErrorMessage } from '~/services/attachment.service'
 import { recommendationService } from '~/services/recommendation.service'
 import {
     getAttachmentDetailCapabilities,
@@ -38,41 +36,6 @@ export function AttachmentDetail({
     onAfterDelete,
 }: AttachmentDetailProps) {
     const capabilities = getAttachmentDetailCapabilities(role, attachment)
-
-    const handleEdit = async (values: {
-        name: string
-        text?: string
-        removedFileIds: string[]
-    }) => {
-        if (role !== 'psycho' || !clientId) return
-        if (attachment.type !== 'note' && attachment.type !== 'recommendation') return
-        try {
-            await attachmentService.updateForPsycho(clientId, appointmentId, attachment.id, {
-                name: values.name,
-                text: values.text,
-                removeFileIds: values.removedFileIds.length > 0 ? values.removedFileIds : undefined,
-            })
-            toast.success('Attachment updated.')
-            onAfterMutation()
-        } catch {
-            toast.error('Failed to update attachment. Please try again.')
-        }
-    }
-
-    const handleDelete = async () => {
-        try {
-            if (role === 'psycho') {
-                if (!clientId) return
-                await attachmentService.deleteForPsycho(clientId, appointmentId, attachment.id)
-            } else {
-                await attachmentService.deleteForClient(appointmentId, attachment.id)
-            }
-            toast.success('Attachment deleted.')
-            onAfterDelete()
-        } catch (err) {
-            toast.error(getDeleteAttachmentErrorMessage(err))
-        }
-    }
 
     const handleToggleDone = async (id: string, done: boolean) => {
         await recommendationService.reactForClient(appointmentId, id, { done })
@@ -104,38 +67,32 @@ export function AttachmentDetail({
             </div>
 
             <ActionsSection title="Actions">
-                {capabilities.canEdit && (
-                    <AttachmentForm
-                        type={attachment.type}
-                        trigger={
-                            <ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />
-                        }
-                        initialData={{
-                            name: attachment.name,
-                            text: attachment.text ?? '',
-                            voiceFiles: attachment.audioFiles,
-                            imageFiles: attachment.imageFiles,
-                        }}
-                        onSubmit={handleEdit}
-                    />
-                )}
+                <EditAttachmentButton
+                    clientId={clientId}
+                    appointmentId={appointmentId}
+                    attachment={attachment}
+                    trigger={
+                        <ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />
+                    }
+                    onSuccess={onAfterMutation}
+                />
 
                 {extraActions}
 
-                {capabilities.canDelete && (
-                    <ConfirmDeleteButton
-                        itemLabel="Attachment"
-                        trigger={
-                            <ActionItem
-                                icon={<Trash2 className="h-6" />}
-                                label="Delete Attachment"
-                                variant="outline"
-                                className="text-destructive hover:text-destructive"
-                            />
-                        }
-                        onConfirm={handleDelete}
-                    />
-                )}
+                <DeleteAttachmentButton
+                    clientId={clientId}
+                    appointmentId={appointmentId}
+                    attachment={attachment}
+                    trigger={
+                        <ActionItem
+                            icon={<Trash2 className="h-6" />}
+                            label="Delete Attachment"
+                            variant="outline"
+                            className="text-destructive hover:text-destructive"
+                        />
+                    }
+                    onSuccess={onAfterDelete}
+                />
             </ActionsSection>
 
             <div className="space-y-8">

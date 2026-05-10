@@ -35,6 +35,10 @@ vi.mock('sonner', () => ({
     },
 }))
 
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => 'psycho',
+}))
+
 vi.mock('~/components/common/ConfirmAction', () => ({
     ConfirmAction: ({ trigger, title, onConfirm }: any) => (
         <div>

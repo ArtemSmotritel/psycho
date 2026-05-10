@@ -100,14 +100,12 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
                         trailingActions={
                             <>
                                 <EditAttachmentButton
-                                    role="psycho"
                                     clientId={clientId}
                                     appointmentId={appointmentId}
                                     attachment={note}
                                     onSuccess={fetchNotes}
                                 />
                                 <DeleteAttachmentButton
-                                    role="psycho"
                                     clientId={clientId}
                                     appointmentId={appointmentId}
                                     attachment={note}

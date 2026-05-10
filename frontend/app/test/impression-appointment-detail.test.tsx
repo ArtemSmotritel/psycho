@@ -46,6 +46,10 @@ vi.mock('sonner', () => ({
     },
 }))
 
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => 'client',
+}))
+
 import ClientAppointmentDetail from '~/routes/client/appointment-detail'
 import { toast } from 'sonner'
 

@@ -128,14 +128,12 @@ export function AppointmentRecommendationsPanel({
                         trailingActions={
                             <>
                                 <EditAttachmentButton
-                                    role="psycho"
                                     clientId={clientId}
                                     appointmentId={appointmentId}
                                     attachment={recommendation}
                                     onSuccess={fetchRecommendations}
                                 />
                                 <DeleteAttachmentButton
-                                    role="psycho"
                                     clientId={clientId}
                                     appointmentId={appointmentId}
                                     attachment={recommendation}

@@ -38,6 +38,10 @@ vi.mock('sonner', () => ({
     },
 }))
 
+vi.mock('~/contexts/auth-context', () => ({
+    useUserRole: () => 'client',
+}))
+
 import ClientAttachmentDetail from '~/routes/client/attachment-detail'
 import { toast } from 'sonner'
 

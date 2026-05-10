@@ -281,7 +281,6 @@ export default function LiveAppointment() {
                                         )}
                                         trailingActions={
                                             <DeleteAttachmentButton
-                                                role="client"
                                                 appointmentId={appointmentId!}
                                                 attachment={impression}
                                                 onSuccess={() =>
