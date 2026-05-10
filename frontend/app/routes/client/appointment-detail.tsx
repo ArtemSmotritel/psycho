@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { AppPageHeader } from '~/components/common/AppPageHeader'
 import { PageContainer } from '~/components/common/PageContainer'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
 import { ActionsSection, ActionItem } from '~/components/ActionsSection'
 import { useCurrentClientAppointment } from '~/hooks/useCurrentClientAppointment'
 import { format } from 'date-fns'
@@ -17,6 +16,8 @@ import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import type { Attachment, AttachmentWithReaction } from '~/models/attachment'
 import { AttachmentList } from '~/components/attachments/AttachmentList'
 import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { AttachmentListHeader } from '~/components/attachments/AttachmentListHeader'
+import { LimitedAddButton } from '~/components/attachments/LimitedAddButton'
 import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
 import { RecommendationReactionBlock } from '~/components/attachments/recommendations/RecommendationReactionBlock'
 import {
@@ -141,32 +142,26 @@ export default function ClientAppointmentDetail() {
                 <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
 
                 <div className="mt-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">
-                            My Impressions{' '}
-                            <span className="text-sm font-normal text-muted-foreground">
-                                {impressions.length}/{ATTACHMENT_LIMITS.impression}
-                            </span>
-                        </h3>
-                        <AttachmentForm
-                            type="impression"
-                            mode="create"
-                            trigger={
-                                <Button
-                                    size="sm"
-                                    disabled={impressions.length >= ATTACHMENT_LIMITS.impression}
-                                    title={
-                                        impressions.length >= ATTACHMENT_LIMITS.impression
-                                            ? `Maximum ${ATTACHMENT_LIMITS.impression} impressions per appointment reached.`
-                                            : undefined
-                                    }
-                                >
-                                    Add Impression
-                                </Button>
-                            }
-                            onSubmit={handleCreateImpression}
-                        />
-                    </div>
+                    <AttachmentListHeader
+                        title="My Impressions"
+                        count={impressions.length}
+                        limit={ATTACHMENT_LIMITS.impression}
+                        action={
+                            <AttachmentForm
+                                type="impression"
+                                mode="create"
+                                trigger={
+                                    <LimitedAddButton
+                                        count={impressions.length}
+                                        limit={ATTACHMENT_LIMITS.impression}
+                                        label="Add Impression"
+                                        tooltipNoun="impressions"
+                                    />
+                                }
+                                onSubmit={handleCreateImpression}
+                            />
+                        }
+                    />
                     <AttachmentList
                         items={impressions}
                         isLoading={isLoadingImpressions}
@@ -195,7 +190,7 @@ export default function ClientAppointmentDetail() {
                     />
                 </div>
                 <div className="mt-6 space-y-4">
-                    <h3 className="text-lg font-semibold">Recommendations</h3>
+                    <AttachmentListHeader title="Recommendations" />
                     <AttachmentList
                         items={recommendations}
                         isLoading={isLoadingRecommendations}

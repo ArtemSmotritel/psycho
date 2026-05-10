@@ -32,6 +32,8 @@ import { routes } from '~/lib/routes'
 import { formatAppointmentTimeRange } from '~/utils/utils'
 import { AttachmentList } from '~/components/attachments/AttachmentList'
 import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { AttachmentCountBadge } from '~/components/attachments/AttachmentCountBadge'
+import { LimitedAddButton } from '~/components/attachments/LimitedAddButton'
 import { DeleteAttachmentButton } from '~/components/attachments/DeleteAttachmentButton'
 import { PostSessionImpressionDialog } from '~/components/attachments/impressions/PostSessionImpressionDialog'
 import { toast } from 'sonner'
@@ -237,9 +239,10 @@ export default function LiveAppointment() {
                                 <div className="flex items-center gap-1.5">
                                     <MessageSquare className="h-4 w-4" />
                                     My Impressions{' '}
-                                    <span className="text-sm font-normal text-muted-foreground">
-                                        {impressions.length}/{ATTACHMENT_LIMITS.impression}
-                                    </span>
+                                    <AttachmentCountBadge
+                                        count={impressions.length}
+                                        limit={ATTACHMENT_LIMITS.impression}
+                                    />
                                 </div>
                             </SheetTitle>
                             <SheetDescription>
@@ -251,19 +254,12 @@ export default function LiveAppointment() {
                                 type="impression"
                                 mode="create"
                                 trigger={
-                                    <Button
-                                        size="sm"
-                                        disabled={
-                                            impressions.length >= ATTACHMENT_LIMITS.impression
-                                        }
-                                        title={
-                                            impressions.length >= ATTACHMENT_LIMITS.impression
-                                                ? `Maximum ${ATTACHMENT_LIMITS.impression} impressions per appointment reached.`
-                                                : undefined
-                                        }
-                                    >
-                                        Add Impression
-                                    </Button>
+                                    <LimitedAddButton
+                                        count={impressions.length}
+                                        limit={ATTACHMENT_LIMITS.impression}
+                                        label="Add Impression"
+                                        tooltipNoun="impressions"
+                                    />
                                 }
                                 onSubmit={handleCreateImpression}
                             />

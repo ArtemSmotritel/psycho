@@ -20,6 +20,7 @@ import { AppointmentNotesPanel } from '~/components/attachments/notes/Appointmen
 import { AppointmentRecommendationsPanel } from '~/components/attachments/recommendations/AppointmentRecommendationsPanel'
 import { AttachmentList } from '~/components/attachments/AttachmentList'
 import { AttachmentListItem } from '~/components/attachments/AttachmentListItem'
+import { AttachmentListHeader } from '~/components/attachments/AttachmentListHeader'
 import type { Attachment } from '~/models/attachment'
 import { AppointmentStatusBadge } from '~/components/AppointmentStatusBadge'
 import { Loading } from '~/components/common/Loading'
@@ -104,7 +105,7 @@ export default function Session() {
                 <AppointmentNotesPanel clientId={clientId} appointmentId={appointment.id} />
                 <WhiteboardSnapshot url={appointment.whiteboardSnapshotUrl} />
                 <div className="mt-6 space-y-4">
-                    <h3 className="text-lg font-semibold">Client Impressions</h3>
+                    <AttachmentListHeader title="Client Impressions" />
                     <AttachmentList
                         items={impressions}
                         isLoading={isLoadingImpressions}

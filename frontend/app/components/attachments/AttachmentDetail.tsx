@@ -71,9 +71,7 @@ export function AttachmentDetail({
                     clientId={clientId}
                     appointmentId={appointmentId}
                     attachment={attachment}
-                    trigger={
-                        <ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />
-                    }
+                    trigger={<ActionItem icon={<Edit className="h-6" />} label="Edit Attachment" />}
                     onSuccess={onAfterMutation}
                 />
 

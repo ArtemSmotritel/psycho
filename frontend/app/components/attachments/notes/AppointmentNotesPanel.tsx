@@ -1,8 +1,9 @@
 import { toast } from 'sonner'
-import { Button } from '~/components/ui/button'
 import { AttachmentForm, type AttachmentFormSubmitValues } from '../AttachmentForm'
 import { AttachmentList } from '../AttachmentList'
 import { AttachmentListItem } from '../AttachmentListItem'
+import { AttachmentListHeader } from '../AttachmentListHeader'
+import { LimitedAddButton } from '../LimitedAddButton'
 import { EditAttachmentButton } from '../EditAttachmentButton'
 import { DeleteAttachmentButton } from '../DeleteAttachmentButton'
 import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
@@ -56,37 +57,30 @@ export function AppointmentNotesPanel({ clientId, appointmentId }: AppointmentNo
     }
 
     const noteLimit = ATTACHMENT_LIMITS.note
-    const atLimit = notes.length >= noteLimit
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                    Notes{' '}
-                    <span className="text-sm font-normal text-muted-foreground">
-                        {notes.length}/{noteLimit}
-                    </span>
-                </h3>
-                <AttachmentForm
-                    type="note"
-                    mode="create"
-                    trigger={
-                        <Button
-                            size="sm"
-                            disabled={atLimit}
-                            title={
-                                atLimit
-                                    ? `Maximum ${noteLimit} notes per appointment reached.`
-                                    : undefined
-                            }
-                        >
-                            Add Note
-                        </Button>
-                    }
-                    onSubmit={handleCreate}
-                    showLibraryPicker
-                />
-            </div>
+            <AttachmentListHeader
+                title="Notes"
+                count={notes.length}
+                limit={noteLimit}
+                action={
+                    <AttachmentForm
+                        type="note"
+                        mode="create"
+                        trigger={
+                            <LimitedAddButton
+                                count={notes.length}
+                                limit={noteLimit}
+                                label="Add Note"
+                                tooltipNoun="notes"
+                            />
+                        }
+                        onSubmit={handleCreate}
+                        showLibraryPicker
+                    />
+                }
+            />
 
             <AttachmentList
                 items={notes}

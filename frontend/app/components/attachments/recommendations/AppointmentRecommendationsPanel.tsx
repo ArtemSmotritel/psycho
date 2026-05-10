@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '~/components/ui/button'
 import { AttachmentList } from '../AttachmentList'
 import { AttachmentListItem } from '../AttachmentListItem'
+import { AttachmentListHeader } from '../AttachmentListHeader'
+import { LimitedAddButton } from '../LimitedAddButton'
 import { DeleteAttachmentButton } from '../DeleteAttachmentButton'
 import { EditAttachmentButton } from '../EditAttachmentButton'
 import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
@@ -73,36 +74,29 @@ export function AppointmentRecommendationsPanel({
     }
 
     const recommendationLimit = ATTACHMENT_LIMITS.recommendation
-    const atLimit = recommendations.length >= recommendationLimit
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                    Recommendations{' '}
-                    <span className="text-sm font-normal text-muted-foreground">
-                        {recommendations.length}/{recommendationLimit}
-                    </span>
-                </h3>
-                <RecommendationForm
-                    mode="create"
-                    trigger={
-                        <Button
-                            size="sm"
-                            disabled={atLimit}
-                            title={
-                                atLimit
-                                    ? `Maximum ${recommendationLimit} recommendations per appointment reached.`
-                                    : undefined
-                            }
-                        >
-                            Add Recommendation
-                        </Button>
-                    }
-                    isLoading={isCreating}
-                    onSubmit={handleCreate}
-                />
-            </div>
+            <AttachmentListHeader
+                title="Recommendations"
+                count={recommendations.length}
+                limit={recommendationLimit}
+                action={
+                    <RecommendationForm
+                        mode="create"
+                        trigger={
+                            <LimitedAddButton
+                                count={recommendations.length}
+                                limit={recommendationLimit}
+                                label="Add Recommendation"
+                                tooltipNoun="recommendations"
+                            />
+                        }
+                        isLoading={isCreating}
+                        onSubmit={handleCreate}
+                    />
+                }
+            />
 
             <AttachmentList
                 items={recommendations}

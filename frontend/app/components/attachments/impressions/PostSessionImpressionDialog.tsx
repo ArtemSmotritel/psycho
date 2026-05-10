@@ -1,6 +1,9 @@
 import { useRef } from 'react'
 import { toast } from 'sonner'
-import { AttachmentForm, type AttachmentFormSubmitValues } from '~/components/attachments/AttachmentForm'
+import {
+    AttachmentForm,
+    type AttachmentFormSubmitValues,
+} from '~/components/attachments/AttachmentForm'
 import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
 import { resolveAttachmentFileIds } from '~/services/file.service'
 import type { Attachment } from '~/models/attachment'
