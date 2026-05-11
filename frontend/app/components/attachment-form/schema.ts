@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import type { AttachmentFile } from '~/models/attachment'
+import type { AttachmentFile, AttachmentType } from '~/models/attachment'
 
 export const MAX_VOICE_FILES = 3
 export const MAX_IMAGE_FILES = 9
@@ -18,8 +18,6 @@ export const attachmentFormSchema = z.object({
 })
 
 export type AttachmentFormValues = z.infer<typeof attachmentFormSchema>
-
-export type AttachmentType = 'note' | 'recommendation' | 'impression'
 
 export type AttachmentFormSubmitValues = AttachmentFormValues & {
     removedFileIds: string[]

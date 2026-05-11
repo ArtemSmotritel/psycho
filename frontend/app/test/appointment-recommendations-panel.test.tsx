@@ -50,9 +50,9 @@ vi.mock('~/components/common/ConfirmAction', () => ({
     ),
 }))
 
-// Mock RecommendationForm to bypass dialog
-vi.mock('~/components/attachments/recommendations/RecommendationForm', () => ({
-    RecommendationForm: ({ trigger }: any) => <div>{trigger}</div>,
+// Mock AttachmentForm to bypass dialog
+vi.mock('~/components/attachments/AttachmentForm', () => ({
+    AttachmentForm: ({ trigger }: any) => <div>{trigger}</div>,
 }))
 
 import { AppointmentRecommendationsPanel } from '~/components/attachments/recommendations/AppointmentRecommendationsPanel'

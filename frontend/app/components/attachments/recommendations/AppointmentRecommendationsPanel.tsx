@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { toast } from 'sonner'
 import { AttachmentList } from '../AttachmentList'
 import { AttachmentListItem } from '../AttachmentListItem'
@@ -6,14 +5,15 @@ import { AttachmentListHeader } from '../AttachmentListHeader'
 import { LimitedAddButton } from '../LimitedAddButton'
 import { DeleteAttachmentButton } from '../DeleteAttachmentButton'
 import { EditAttachmentButton } from '../EditAttachmentButton'
-import { RecommendationForm, type RecommendationFormCreateDTO } from './RecommendationForm'
+import { AttachmentForm, type AttachmentFormSubmitValues } from '../AttachmentForm'
 import { RecommendationReactionBlock } from './RecommendationReactionBlock'
 import { recommendationService } from '~/services/recommendation.service'
 import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
+import { resolveAttachmentFileIds } from '~/services/file.service'
 import { routes } from '~/lib/routes'
 import { ATTACHMENT_LIMITS } from '~/lib/attachment-limits'
 import { useResource } from '~/hooks/useResource'
-import type { AttachmentWithReaction, UpdateRecommendationDTO } from '~/models/attachment'
+import type { AttachmentWithReaction } from '~/models/attachment'
 
 interface AppointmentRecommendationsPanelProps {
     clientId: string
@@ -38,25 +38,30 @@ export function AppointmentRecommendationsPanel({
         { initial: [], errorMessage: 'Failed to load recommendations.' },
     )
     const recommendations = data ?? []
-    const [isCreating, setIsCreating] = useState(false)
 
-    const handleCreate = async (dto: RecommendationFormCreateDTO | UpdateRecommendationDTO) => {
-        setIsCreating(true)
+    const handleCreate = async (values: AttachmentFormSubmitValues) => {
+        let audioFileIds: string[]
+        let imageFileIds: string[]
         try {
-            const create = dto as RecommendationFormCreateDTO
+            const res = await resolveAttachmentFileIds(values)
+            audioFileIds = res.audioFileIds
+            imageFileIds = res.imageFileIds
+        } catch {
+            toast.error('Failed to upload files. Please try again.')
+            return
+        }
+        try {
             await attachmentService.createForPsycho(clientId, appointmentId, {
                 type: 'recommendation',
-                name: create.name,
-                text: create.text,
-                imageFileIds: create.imageFileIds,
-                audioFileIds: create.audioFileIds,
+                name: values.name,
+                text: values.text,
+                imageFileIds,
+                audioFileIds,
             })
             toast.success('Recommendation created.')
             await fetchRecommendations()
         } catch (err) {
             toast.error(getCreateAttachmentErrorMessage(err, 'Failed to create recommendation.'))
-        } finally {
-            setIsCreating(false)
         }
     }
 
@@ -82,7 +87,8 @@ export function AppointmentRecommendationsPanel({
                 count={recommendations.length}
                 limit={recommendationLimit}
                 action={
-                    <RecommendationForm
+                    <AttachmentForm
+                        type="recommendation"
                         mode="create"
                         trigger={
                             <LimitedAddButton
@@ -92,7 +98,7 @@ export function AppointmentRecommendationsPanel({
                                 tooltipNoun="recommendations"
                             />
                         }
-                        isLoading={isCreating}
+                        showLibraryPicker
                         onSubmit={handleCreate}
                     />
                 }
