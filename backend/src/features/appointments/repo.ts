@@ -272,4 +272,13 @@ export const AppointmentsRepo = {
     async deleteById(appointmentId: string): Promise<void> {
         await db`DELETE FROM appointments WHERE id = ${appointmentId}`
     },
+
+    async findClientId(appointmentId: string, executor: SQL = db): Promise<string | null> {
+        const [row] = await executor`
+            SELECT client_id AS "clientId"
+            FROM appointments
+            WHERE id = ${appointmentId}
+        `
+        return (row as { clientId: string })?.clientId ?? null
+    },
 } as const

@@ -1,7 +1,9 @@
 import { db } from 'config/db'
 import { BadRequestError, ConflictError, NotFoundError } from 'errors/index'
 import type { User } from 'utils/types'
+import { AppointmentsRepo } from '../appointments/repo'
 import { AppointmentsService } from '../appointments/services'
+import { NotificationsService } from '../notifications/services'
 import { FilesService } from '../files/services'
 import { AttachmentCheck } from './attachment-check'
 import { ATTACHMENT_LIMITS } from './limits'
@@ -62,6 +64,21 @@ async function create(params: {
             tx,
         )
         await AttachmentsRepo.linkFiles(id, fileLinks, tx)
+
+        if (params.type === 'recommendation') {
+            const clientId = await AppointmentsRepo.findClientId(params.appointmentId, tx)
+            if (clientId) {
+                await NotificationsService.enqueueRecCreated(
+                    {
+                        recipientUserId: clientId,
+                        appointmentId: params.appointmentId,
+                        attachmentId: id,
+                    },
+                    tx,
+                )
+            }
+        }
+
         return (await AttachmentsRepo.findById(id, tx))!
     })
 }
