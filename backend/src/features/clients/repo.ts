@@ -8,58 +8,64 @@ import type {
     PsychologistSummary,
 } from './models'
 
-const clientFullColumns = `
-    c.user_id AS id,
-    u.name,
-    u.email,
-    u.image,
-    c.username,
-    c.phone,
-    c.telegram,
-    c.instagram,
-    u."createdAt" AS "registrationDate",
-    (SELECT COUNT(*)::int FROM appointments WHERE client_id = c.user_id) AS "sessionsCount",
-    (
-        SELECT COUNT(*)::int
-        FROM attachments a
-        JOIN appointments ap ON ap.id = a.appointment_id
-        WHERE ap.client_id = c.user_id AND a.type = 'impression'
-    ) AS "impressionsCount",
-    (
-        SELECT COUNT(*)::int
-        FROM attachments a
-        JOIN appointments ap ON ap.id = a.appointment_id
-        WHERE ap.client_id = c.user_id AND a.type = 'recommendation'
-    ) AS "recommendationsCount",
-    (
-        SELECT json_build_object(
-            'id', ap.id,
-            'startTime', ap.start_time,
-            'endTime', ap.end_time
-        )
-        FROM appointments ap
-        WHERE ap.client_id = c.user_id
-          AND ap.ended_at IS NOT NULL
-        ORDER BY ap.start_time DESC
-        LIMIT 1
-    ) AS "lastAppointment",
-    (
-        SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
-        FROM appointments ap
-        WHERE ap.client_id = c.user_id
-          AND ap.started_at IS NULL
-          AND ap.start_time > NOW()
-        ORDER BY ap.start_time ASC
-        LIMIT 1
-    ) AS "nextAppointment"
-`
-
 const clientBasicColumns = `c.user_id AS id, u.email, u.name, u.image`
 
 export const ClientsRepo = {
-    async findById(id: string): Promise<Client | null> {
+    // When psychoId is provided, the appointment-derived aggregates are scoped
+    // to that psychologist so one psycho never sees another's appointment data.
+    async findById(id: string, psychoId?: string): Promise<Client | null> {
+        const psychoFilter = () => (psychoId ? db`AND ap.psycho_id = ${psychoId}` : db``)
         const [row] = await db`
-            SELECT ${db.unsafe(clientFullColumns)}
+            SELECT
+                c.user_id AS id,
+                u.name,
+                u.email,
+                u.image,
+                c.username,
+                c.phone,
+                c.telegram,
+                c.instagram,
+                u."createdAt" AS "registrationDate",
+                (
+                    SELECT COUNT(*)::int
+                    FROM appointments ap
+                    WHERE ap.client_id = c.user_id ${psychoFilter()}
+                ) AS "sessionsCount",
+                (
+                    SELECT COUNT(*)::int
+                    FROM attachments a
+                    JOIN appointments ap ON ap.id = a.appointment_id
+                    WHERE ap.client_id = c.user_id AND a.type = 'impression' ${psychoFilter()}
+                ) AS "impressionsCount",
+                (
+                    SELECT COUNT(*)::int
+                    FROM attachments a
+                    JOIN appointments ap ON ap.id = a.appointment_id
+                    WHERE ap.client_id = c.user_id AND a.type = 'recommendation' ${psychoFilter()}
+                ) AS "recommendationsCount",
+                (
+                    SELECT json_build_object(
+                        'id', ap.id,
+                        'startTime', ap.start_time,
+                        'endTime', ap.end_time
+                    )
+                    FROM appointments ap
+                    WHERE ap.client_id = c.user_id
+                      AND ap.ended_at IS NOT NULL
+                      ${psychoFilter()}
+                    ORDER BY ap.start_time DESC
+                    LIMIT 1
+                ) AS "lastAppointment",
+                (
+                    SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
+                    FROM appointments ap
+                    WHERE ap.client_id = c.user_id
+                      AND ap.started_at IS NULL
+                      AND ap.start_time > NOW()
+                      ${psychoFilter()}
+                    ORDER BY ap.start_time ASC
+                    LIMIT 1
+                ) AS "nextAppointment"
             FROM clients c
             INNER JOIN "user" u ON u.id = c.user_id
             WHERE c.user_id = ${id}

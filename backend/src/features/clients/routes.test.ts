@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
+import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from './services'
 import {
     createAppointment,
@@ -70,6 +71,26 @@ describe('POST /api/clients', () => {
         expect(body).toHaveProperty('message', 'This client is already in your list.')
     })
 
+    it('returns 400 with SelfLinkNotAllowed when psycho adds their own email', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+
+        const res = await app.request(
+            '/api/clients',
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ email: 'psycho@test.com' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'SelfLinkNotAllowed')
+        const rows =
+            await testDb`SELECT 1 FROM psychologist_clients WHERE psycho_id = ${psycho.id} AND client_id = ${psycho.id}`
+        expect(rows).toHaveLength(0)
+    })
+
     it('returns 201 with client on success', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
@@ -118,8 +139,16 @@ describe('POST /api/clients', () => {
 describe('GET /api/clients', () => {
     it('returns list of clients for authenticated psychologist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client1 = await insertTestUser({ email: 'a@test.com', name: 'Alice', activeRole: 'client' })
-        const client2 = await insertTestUser({ email: 'b@test.com', name: 'Bob', activeRole: 'client' })
+        const client1 = await insertTestUser({
+            email: 'a@test.com',
+            name: 'Alice',
+            activeRole: 'client',
+        })
+        const client2 = await insertTestUser({
+            email: 'b@test.com',
+            name: 'Bob',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client1.id, psycho.id)
         await ClientsService.linkClientToPsycho(client2.id, psycho.id)
 
@@ -159,7 +188,11 @@ describe('GET /api/clients (non-psycho role returns 403)', () => {
 describe('GET /api/clients/:clientId', () => {
     it('returns 200 with client object for known clientId', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client@test.com', name: 'Jane Doe', activeRole: 'client' })
+        const client = await insertTestUser({
+            email: 'client@test.com',
+            name: 'Jane Doe',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -333,9 +366,24 @@ describe('GET /api/clients/:clientId', () => {
         await startAppointment(appt.id)
         await endAppointment(appt.id)
 
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 1' })
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 2' })
-        await AttachmentsService.create({ appointmentId: appt.id, authorId: psycho.id, type: 'impression', name: 'imp 3' })
+        await AttachmentsService.create({
+            appointmentId: appt.id,
+            authorId: psycho.id,
+            type: 'impression',
+            name: 'imp 1',
+        })
+        await AttachmentsService.create({
+            appointmentId: appt.id,
+            authorId: psycho.id,
+            type: 'impression',
+            name: 'imp 2',
+        })
+        await AttachmentsService.create({
+            appointmentId: appt.id,
+            authorId: psycho.id,
+            type: 'impression',
+            name: 'imp 3',
+        })
 
         const res = await app.request(
             `/api/clients/${client.id}`,
@@ -382,6 +430,113 @@ describe('GET /api/clients/:clientId', () => {
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
         expect(body.client).toHaveProperty('recommendationsCount', 2)
+    })
+
+    it('scopes all aggregates to the requesting psycho when the client has another psycho', async () => {
+        const psychoA = await insertTestUser({ email: 'psychoA@test.com', activeRole: 'psycho' })
+        const psychoB = await insertTestUser({ email: 'psychoB@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psychoA.id)
+        await ClientsService.linkClientToPsycho(client.id, psychoB.id)
+
+        // Past appointments: B's is more recent than A's
+        const pastA = await createAppointment({
+            psychoId: psychoA.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        })
+        const pastB = await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(pastA.id)
+        await endAppointment(pastA.id)
+        await startAppointment(pastB.id)
+        await endAppointment(pastB.id)
+
+        // Upcoming appointments: B's is earlier than A's
+        const upcomingA = await createAppointment({
+            psychoId: psychoA.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
+        })
+        await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        })
+
+        await AttachmentsService.create({
+            appointmentId: pastA.id,
+            authorId: psychoA.id,
+            type: 'impression',
+            name: 'imp A',
+        })
+        await AttachmentsService.create({
+            appointmentId: pastB.id,
+            authorId: psychoB.id,
+            type: 'impression',
+            name: 'imp B',
+        })
+        await AttachmentsService.create({
+            appointmentId: pastB.id,
+            authorId: psychoB.id,
+            type: 'recommendation',
+            name: 'rec B',
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psychoA.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        // Only psychoA's appointments/attachments count — nothing from psychoB leaks
+        expect(body.client).toHaveProperty('sessionsCount', 2)
+        expect(body.client).toHaveProperty('impressionsCount', 1)
+        expect(body.client).toHaveProperty('recommendationsCount', 0)
+        expect(body.client.lastAppointment.id).toBe(pastA.id)
+        expect(body.client.nextAppointment.id).toBe(upcomingA.id)
+    })
+
+    it('returns null lastAppointment/nextAppointment when only another psycho has appointments', async () => {
+        const psychoA = await insertTestUser({ email: 'psychoA@test.com', activeRole: 'psycho' })
+        const psychoB = await insertTestUser({ email: 'psychoB@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psychoA.id)
+        await ClientsService.linkClientToPsycho(client.id, psychoB.id)
+
+        const pastB = await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+        })
+        await startAppointment(pastB.id)
+        await endAppointment(pastB.id)
+        await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psychoA.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.client).toHaveProperty('sessionsCount', 0)
+        expect(body.client.lastAppointment).toBeNull()
+        expect(body.client.nextAppointment).toBeNull()
     })
 })
 
@@ -475,7 +630,11 @@ describe('PUT /api/clients/:clientId', () => {
 
     it('updates name (in user table)', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client@test.com', name: 'Old Name', activeRole: 'client' })
+        const client = await insertTestUser({
+            email: 'client@test.com',
+            name: 'Old Name',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const res = await app.request(
@@ -533,6 +692,36 @@ describe('PUT /api/clients/:clientId', () => {
         expect(body.client).toHaveProperty('recommendationsCount')
         expect(body.client).toHaveProperty('lastAppointment')
         expect(body.client).toHaveProperty('nextAppointment')
+    })
+
+    it('scopes aggregates in the update response to the requesting psycho', async () => {
+        const psychoA = await insertTestUser({ email: 'psychoA@test.com', activeRole: 'psycho' })
+        const psychoB = await insertTestUser({ email: 'psychoB@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psychoA.id)
+        await ClientsService.linkClientToPsycho(client.id, psychoB.id)
+        await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        })
+
+        const res = await app.request(
+            `/api/clients/${client.id}`,
+            await asUser(psychoA.id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ username: 'scoped_user' }),
+            }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.client.username).toBe('scoped_user')
+        // psychoB's appointment must not appear in psychoA's view
+        expect(body.client).toHaveProperty('sessionsCount', 0)
+        expect(body.client.nextAppointment).toBeNull()
     })
 
     it('returns 404 for unknown clientId', async () => {
@@ -593,6 +782,35 @@ describe('GET /api/clients/me', () => {
             id: client.id,
             email: 'client@test.com',
         })
+    })
+
+    it('returns aggregates across all psychologists for the client themself', async () => {
+        const psychoA = await insertTestUser({ email: 'psychoA@test.com', activeRole: 'psycho' })
+        const psychoB = await insertTestUser({ email: 'psychoB@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psychoA.id)
+        await ClientsService.linkClientToPsycho(client.id, psychoB.id)
+        await createAppointment({
+            psychoId: psychoA.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        })
+        await createAppointment({
+            psychoId: psychoB.id,
+            clientId: client.id,
+            startTime: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+            endTime: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
+        })
+
+        const res = await app.request(
+            '/api/clients/me',
+            await asUser(client.id, { headers: { ...CLIENT_HEADER } }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.client).toHaveProperty('sessionsCount', 2)
     })
 
     it('returns 403 when called with psycho role', async () => {

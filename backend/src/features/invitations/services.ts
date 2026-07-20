@@ -26,6 +26,9 @@ export const InvitationsService = {
         const normalizedEmail = email.toLowerCase().trim()
 
         const existingUserId = await UsersRepo.findIdByEmail(normalizedEmail)
+        if (existingUserId === psychoId) {
+            throw new BadRequestError('You cannot add yourself as a client.', 'SelfLinkNotAllowed')
+        }
         if (existingUserId) {
             const alreadyLinked = await ClientsRepo.isLinkedToPsycho(existingUserId, psychoId)
             if (alreadyLinked) {
@@ -77,6 +80,13 @@ export const InvitationsService = {
             throw new BadRequestError(
                 'Please sign in with the email this invitation was sent to.',
                 'EmailMismatch',
+            )
+        }
+
+        if (userId === invitation.psychologistId) {
+            throw new BadRequestError(
+                'You cannot accept your own invitation.',
+                'SelfLinkNotAllowed',
             )
         }
 

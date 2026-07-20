@@ -21,7 +21,10 @@ describe('GET /api/client/progress/psychologists', () => {
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const psycho1 = await insertTestUser({ email: 'psycho1@test.com', activeRole: 'psycho' })
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
-        const unlinkedPsycho = await insertTestUser({ email: 'unlinked@test.com', activeRole: 'psycho' })
+        const unlinkedPsycho = await insertTestUser({
+            email: 'unlinked@test.com',
+            activeRole: 'psycho',
+        })
 
         await ClientsService.linkClientToPsycho(client.id, psycho1.id)
         await ClientsService.linkClientToPsycho(client.id, psycho2.id)

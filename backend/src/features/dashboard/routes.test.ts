@@ -36,7 +36,10 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('returns 200 with zeroed counts and empty arrays when psychologist has no clients and no appointments', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-empty@test.com', activeRole: 'psycho' })
+        const psycho = await insertTestUser({
+            email: 'psycho-empty@test.com',
+            activeRole: 'psycho',
+        })
 
         const res = await app.request(
             '/api/psycho/dashboard',
@@ -60,8 +63,14 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('happy path: returns correct shape when psychologist has clients, upcoming, past, and active appointments', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-happy@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client-happy@test.com', activeRole: 'client' })
+        const psycho = await insertTestUser({
+            email: 'psycho-happy@test.com',
+            activeRole: 'psycho',
+        })
+        const client = await insertTestUser({
+            email: 'client-happy@test.com',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         // Past appointment
@@ -111,8 +120,14 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('activeAppointment is null when no appointment has been started but not ended', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-noactive@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client-noactive@test.com', activeRole: 'client' })
+        const psycho = await insertTestUser({
+            email: 'psycho-noactive@test.com',
+            activeRole: 'psycho',
+        })
+        const client = await insertTestUser({
+            email: 'client-noactive@test.com',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         await createAppointment({
@@ -135,8 +150,14 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('activeAppointment is populated with clientName when exactly one appointment is active', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-active@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client-active@test.com', activeRole: 'client' })
+        const psycho = await insertTestUser({
+            email: 'psycho-active@test.com',
+            activeRole: 'psycho',
+        })
+        const client = await insertTestUser({
+            email: 'client-active@test.com',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const active = await createAppointment({
@@ -163,8 +184,14 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('upcomingAppointments is limited to 5 and ordered ascending by start_time', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-limit@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client-limit@test.com', activeRole: 'client' })
+        const psycho = await insertTestUser({
+            email: 'psycho-limit@test.com',
+            activeRole: 'psycho',
+        })
+        const client = await insertTestUser({
+            email: 'client-limit@test.com',
+            activeRole: 'client',
+        })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
         const startTimes = [
@@ -205,10 +232,16 @@ describe('GET /api/psycho/dashboard', () => {
     })
 
     it('recentClients is limited to 5', async () => {
-        const psycho = await insertTestUser({ email: 'psycho-rclients@test.com', activeRole: 'psycho' })
+        const psycho = await insertTestUser({
+            email: 'psycho-rclients@test.com',
+            activeRole: 'psycho',
+        })
 
         for (let i = 1; i <= 6; i++) {
-            const client = await insertTestUser({ email: `recent-client-${i}@test.com`, activeRole: 'client' })
+            const client = await insertTestUser({
+                email: `recent-client-${i}@test.com`,
+                activeRole: 'client',
+            })
             await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
             const apt = await createAppointment({

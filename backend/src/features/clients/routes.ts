@@ -45,8 +45,9 @@ clientRoutes.get('/', async (c) => {
 })
 
 clientRoutes.get('/:clientId', onlyLinkedClient, async (c) => {
+    const user = c.get('user')
     const clientId = c.req.param('clientId')
-    const client = await ClientsService.getById(clientId)
+    const client = await ClientsService.getById(clientId, user.id)
     return c.json({ client }, 200)
 })
 
@@ -62,9 +63,10 @@ clientRoutes.put(
     onlyLinkedClient,
     zValidator('json', updateClientSchema),
     async (c) => {
+        const user = c.get('user')
         const clientId = c.req.param('clientId')
         const params = c.req.valid('json')
-        const client = await ClientsService.updateProfile(clientId, params)
+        const client = await ClientsService.updateProfile(clientId, params, user.id)
         return c.json({ client }, 200)
     },
 )

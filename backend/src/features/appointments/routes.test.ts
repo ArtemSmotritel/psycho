@@ -183,13 +183,13 @@ describe('POST /api/clients/:clientId/appointments', () => {
         expect(body).toHaveProperty('conflictParticipant', 'psycho')
     })
 
-    it('returns 409 AppointmentConflict when client has an overlapping appointment with another psycho', async () => {
+    it('returns 409 AppointmentConflict without the appointment id when client overlaps with another psycho', async () => {
         const psychoA = await insertTestUser({ email: 'psychoA@test.com', activeRole: 'psycho' })
         const psychoB = await insertTestUser({ email: 'psychoB@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psychoA.id)
         await ClientsService.linkClientToPsycho(client.id, psychoB.id)
-        const existing = await createAppointment({
+        await createAppointment({
             psychoId: psychoA.id,
             clientId: client.id,
             startTime: futureDate(7, 10),
@@ -211,7 +211,8 @@ describe('POST /api/clients/:clientId/appointments', () => {
         expect(res.status).toBe(409)
         const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AppointmentConflict')
-        expect(body).toHaveProperty('conflictingAppointmentId', existing.id)
+        // The conflicting appointment belongs to psychoA — its id must not leak to psychoB
+        expect(body).not.toHaveProperty('conflictingAppointmentId')
         expect(body).toHaveProperty('conflictParticipant', 'client')
     })
 
@@ -935,6 +936,9 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId', () => {
         const psycho2 = await insertTestUser({ email: 'psycho2@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        // psycho2 is linked to the client too, so this tests appointment
+        // ownership, not the link check (which returns 400 ClientNotLinked)
+        await ClientsService.linkClientToPsycho(client.id, psycho2.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -1871,5 +1875,137 @@ describe('GET /api/psycho/appointments/all', () => {
         )
 
         expect(res.status).toBe(403)
+    })
+})
+
+describe('PATCH appointment: overlap is checked before Google Calendar is touched', () => {
+    it('returns 409 AppointmentConflict (not 502) when rescheduleGoogleMeet is true and the new time conflicts', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt1 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7, 10),
+            endTime: futureDate(7, 11),
+        })
+        const originalStart = futureDate(7, 14)
+        const apt2 = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: originalStart,
+            endTime: futureDate(7, 15),
+        })
+        // With an event id set and no Google account, any Calendar call fails
+        // with 502 — so getting a 409 proves the overlap check ran first.
+        await testDb`UPDATE appointments SET google_calendar_event_id = 'evt-order-test' WHERE id = ${apt2.id}`
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt2.id}`,
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({
+                    startTime: futureDate(7, 10),
+                    endTime: futureDate(7, 11),
+                    rescheduleGoogleMeet: true,
+                }),
+            }),
+        )
+
+        expect(res.status).toBe(409)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'AppointmentConflict')
+        expect(body).toHaveProperty('conflictingAppointmentId', apt1.id)
+        // times and event id are untouched
+        const [row] =
+            await testDb`SELECT start_time, google_calendar_event_id FROM appointments WHERE id = ${apt2.id}`
+        expect(new Date(row.start_time).toISOString()).toBe(new Date(originalStart).toISOString())
+        expect(row.google_calendar_event_id).toBe('evt-order-test')
+    })
+})
+
+describe('appointment access after client unlink', () => {
+    it('returns 400 ClientNotLinked for GET, PATCH, DELETE and start once the client is unlinked', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
+
+        const requests = [
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+            await asUser(psycho.id, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ startTime: futureDate(8), endTime: futureDate(8, 11) }),
+            }),
+            await asUser(psycho.id, { method: 'DELETE', headers: PSYCHO_HEADER }),
+        ]
+        for (const init of requests) {
+            const res = await app.request(`/api/clients/${client.id}/appointments/${apt.id}`, init)
+            expect(res.status).toBe(400)
+            const body = await jsonBody(res)
+            expect(body).toHaveProperty('error', 'ClientNotLinked')
+        }
+
+        const startRes = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/start`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
+        expect(startRes.status).toBe(400)
+        const startBody = await jsonBody(startRes)
+        expect(startBody).toHaveProperty('error', 'ClientNotLinked')
+    })
+
+    it('still allows ending an active appointment after the client is unlinked', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await startAppointment(apt.id)
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}/end`,
+            await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.appointment).toHaveProperty('status', 'past')
+    })
+
+    it('restores by-id access when the client is re-linked', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await ClientsService.unlinkClientFromPsycho(client.id, psycho.id)
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments/${apt.id}`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.appointment).toHaveProperty('id', apt.id)
     })
 })

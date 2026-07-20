@@ -122,7 +122,11 @@ describe('GET /api/client/dashboard', () => {
     })
 
     it('activeAppointment is returned when client has a started but not ended appointment', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Active', activeRole: 'psycho' })
+        const psycho = await insertTestUser({
+            email: 'psycho@test.com',
+            name: 'Dr. Active',
+            activeRole: 'psycho',
+        })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 
@@ -334,7 +338,11 @@ describe('GET /api/client/dashboard', () => {
     })
 
     it('psychologists is returned in the happy path with correct shape', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com', name: 'Dr. Smith', activeRole: 'psycho' })
+        const psycho = await insertTestUser({
+            email: 'psycho@test.com',
+            name: 'Dr. Smith',
+            activeRole: 'psycho',
+        })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
 

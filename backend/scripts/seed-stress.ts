@@ -488,7 +488,9 @@ async function seed() {
             })
             await AttachmentsRepo.setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))
         } else if (mode === 1) {
-            await AttachmentsRepo.upsertReaction(rec.id, { comment: pick(CLIENT_COMMENTS, attachmentCounter) })
+            await AttachmentsRepo.upsertReaction(rec.id, {
+                comment: pick(CLIENT_COMMENTS, attachmentCounter),
+            })
         } else if (mode === 2) {
             await AttachmentsRepo.upsertReaction(rec.id, { done: true })
             await AttachmentsRepo.setReply(rec.id, pick(PSYCHO_REPLIES, attachmentCounter))

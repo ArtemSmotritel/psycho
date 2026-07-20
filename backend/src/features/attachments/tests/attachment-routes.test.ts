@@ -919,6 +919,9 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         const psycho2 = await insertTestUser({ email: 'p2@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'c@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho2.id)
+        // psycho1 is linked too, so this tests appointment ownership,
+        // not the link check (which returns 400 ClientNotLinked)
+        await ClientsService.linkClientToPsycho(client.id, psycho1.id)
         const apt = await createAppointment({
             psychoId: psycho2.id,
             clientId: client.id,
@@ -941,6 +944,9 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         const otherClient = await insertTestUser({ email: 'other@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        // otherClient is linked too, so this tests the clientId/appointment
+        // mismatch, not the link check (which returns 400 ClientNotLinked)
+        await ClientsService.linkClientToPsycho(otherClient.id, psycho.id)
         const apt = await createAppointment({
             psychoId: psycho.id,
             clientId: client.id,
@@ -1364,6 +1370,9 @@ describe('POST /api/clients/:clientId/appointments/:appointmentId/attachments', 
         const psycho2 = await insertTestUser({ email: 'p2@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho2.id)
+        // psycho1 is linked too, so this tests appointment ownership,
+        // not the link check (which returns 400 ClientNotLinked)
+        await ClientsService.linkClientToPsycho(client.id, psycho1.id)
         const apt = await createAppointment({
             psychoId: psycho2.id,
             clientId: client.id,

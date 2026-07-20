@@ -4,8 +4,8 @@ import type { Client, ClientProfileUpdate, ClientSummary } from './models'
 import { ClientsRepo } from './repo'
 
 export const ClientsService = {
-    async getById(id: string): Promise<Client> {
-        const client = await ClientsRepo.findById(id)
+    async getById(id: string, psychoId?: string): Promise<Client> {
+        const client = await ClientsRepo.findById(id, psychoId)
         if (!client) throw new NotFoundError()
         return client
     },
@@ -14,13 +14,17 @@ export const ClientsService = {
         return ClientsRepo.listForPsycho(psychoId)
     },
 
-    async updateProfile(id: string, params: ClientProfileUpdate): Promise<Client> {
+    async updateProfile(
+        id: string,
+        params: ClientProfileUpdate,
+        psychoId?: string,
+    ): Promise<Client> {
         const { name, ...contactFields } = params
         await ClientsRepo.updateProfileFields(id, contactFields)
         if (name !== undefined) {
             await ClientsRepo.updateUserName(id, name)
         }
-        const client = await ClientsRepo.findById(id)
+        const client = await ClientsRepo.findById(id, psychoId)
         if (!client) throw new NotFoundError()
         return client
     },
@@ -32,6 +36,10 @@ export const ClientsService = {
                 'No account found for this email. Ask your client to register first.',
                 'ClientNotFound',
             )
+        }
+
+        if (client.id === psychoId) {
+            throw new BadRequestError('You cannot add yourself as a client.', 'SelfLinkNotAllowed')
         }
 
         const alreadyLinked = await ClientsRepo.isLinkedToPsycho(client.id, psychoId)

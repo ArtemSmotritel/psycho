@@ -345,7 +345,7 @@ export default function ClientProgress() {
                 <AppPageHeader text="Progress" />
                 <EmptyMessage
                     title="No psychologists linked"
-                    description="Link a psychologist to start tracking your progress."
+                    description="Ask your psychologist to invite you to start tracking your progress."
                 />
             </PageContainer>
         )

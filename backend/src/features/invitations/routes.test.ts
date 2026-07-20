@@ -5,6 +5,7 @@ import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from '../clients/services'
 import { InvitationsService } from './services'
+import { InvitationsRepo } from './repo'
 
 const createInvitation = (psychoId: string, email: string) =>
     InvitationsService.createForPsycho(psychoId, email)
@@ -102,6 +103,23 @@ describe('POST /api/invitations', () => {
         expect(res.status).toBe(400)
         const body = await jsonBody(res)
         expect(body).toHaveProperty('error', 'AlreadyLinked')
+    })
+
+    it('returns 400 with SelfLinkNotAllowed when psycho invites their own email', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+
+        const res = await app.request(
+            '/api/invitations',
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ email: 'psycho@test.com' }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'SelfLinkNotAllowed')
     })
 
     it('returns 401 for unauthenticated request', async () => {
@@ -518,5 +536,26 @@ describe('POST /api/invitations/accept', () => {
         const body = await jsonBody(res)
         expect(body).toHaveProperty('psychologistId', psycho.id)
         expect(body).toHaveProperty('clientId', client.id)
+    })
+
+    it('returns 400 SelfLinkNotAllowed when accepting an invitation to your own email', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        // Insert directly via the repo: the service refuses to create self-invitations,
+        // but a stale one (e.g. created before the guard) must still be unacceptable.
+        const invitation = await InvitationsRepo.insert(psycho.id, 'psycho@test.com')
+
+        // No role header — accept works for any role, like the roleless-user test
+        const res = await app.request(
+            '/api/invitations/accept',
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: invitation.token }),
+            }),
+        )
+
+        expect(res.status).toBe(400)
+        const body = await jsonBody(res)
+        expect(body).toHaveProperty('error', 'SelfLinkNotAllowed')
     })
 })
