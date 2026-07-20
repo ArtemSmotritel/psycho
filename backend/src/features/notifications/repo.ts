@@ -1,6 +1,12 @@
 import type { SQL } from 'bun'
 import { db } from 'config/db'
-import type { EnqueueParams, OutboxContext, OutboxRow, Variant } from './models'
+import type {
+    AppointmentEmailContext,
+    EnqueueParams,
+    InvitationEmailContext,
+    OutboxRow,
+    Variant,
+} from './models'
 
 const MAX_ATTEMPTS = 3
 
@@ -9,8 +15,10 @@ const OUTBOX_COLUMNS = `
     type,
     variant,
     recipient_user_id AS "recipientUserId",
+    recipient_email AS "recipientEmail",
     appointment_id AS "appointmentId",
     attachment_id AS "attachmentId",
+    invitation_id AS "invitationId",
     status,
     attempts,
     last_error AS "lastError",
@@ -44,13 +52,15 @@ function recBand(executor: SQL, variant: Variant) {
 export const NotificationsRepo = {
     async enqueue(params: EnqueueParams, executor: SQL = db): Promise<void> {
         await executor`
-            INSERT INTO email_outbox (type, variant, recipient_user_id, appointment_id, attachment_id, scheduled_for)
+            INSERT INTO email_outbox (type, variant, recipient_user_id, recipient_email, appointment_id, attachment_id, invitation_id, scheduled_for)
             VALUES (
                 ${params.type},
                 ${params.variant ?? null},
-                ${params.recipientUserId},
+                ${params.recipientUserId ?? null},
+                ${params.recipientEmail ?? null},
                 ${params.appointmentId ?? null},
                 ${params.attachmentId ?? null},
+                ${params.invitationId ?? null},
                 COALESCE(${params.scheduledFor ?? null}, NOW())
             )
             ON CONFLICT DO NOTHING
@@ -70,7 +80,10 @@ export const NotificationsRepo = {
         return rows as OutboxRow[]
     },
 
-    async findContext(id: string, executor: SQL = db): Promise<OutboxContext | null> {
+    async findAppointmentContext(
+        id: string,
+        executor: SQL = db,
+    ): Promise<AppointmentEmailContext | null> {
         const [row] = await executor`
             SELECT
                 o.id,
@@ -88,7 +101,26 @@ export const NotificationsRepo = {
             LEFT JOIN appointments a ON a.id = o.appointment_id
             WHERE o.id = ${id}
         `
-        return (row as OutboxContext) ?? null
+        return (row as AppointmentEmailContext) ?? null
+    },
+
+    async findInvitationContext(
+        id: string,
+        executor: SQL = db,
+    ): Promise<InvitationEmailContext | null> {
+        const [row] = await executor`
+            SELECT
+                o.id,
+                o.recipient_email AS "recipientEmail",
+                u.name AS "psychoName",
+                i.token,
+                i.status AS "invitationStatus"
+            FROM email_outbox o
+            JOIN invitations i ON i.id = o.invitation_id
+            JOIN "user" u ON u.id = i.psychologist_id
+            WHERE o.id = ${id}
+        `
+        return (row as InvitationEmailContext) ?? null
     },
 
     async markSent(id: string, executor: SQL = db): Promise<void> {

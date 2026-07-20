@@ -1,11 +1,11 @@
 import type { SQL } from 'bun'
 import { db } from 'config/db'
 import { log } from 'utils/logger'
+import { DEFINITIONS } from './definitions'
 import { emailService } from './email-service'
-import type { EnqueueParams, OutboxContext } from './models'
+import type { EnqueueParams } from './models'
 import { SCHEDULED } from './producers'
 import { NotificationsRepo } from './repo'
-import { templates } from './templates'
 
 const SENDER_BATCH = 50
 
@@ -29,35 +29,27 @@ async function runDecisionTick(): Promise<void> {
     }
 }
 
-/** True if the row references an appointment that no longer renders a meaningful email. */
-function isStale(ctx: OutboxContext): boolean {
-    // Reminder types need a live, not-yet-started appointment. rec_created may stand alone.
-    if (ctx.type === 'session_reminder' || ctx.type === 'rec_reminder') {
-        if (!ctx.appointmentStartTime) return true
-        if (ctx.appointmentStartedAt) return true
-    }
-    return false
-}
-
 /**
- * Sender tick (every 1 min): claim pending rows, re-fetch + re-validate context, render and
- * send. Send first, then record state. A transport failure is recorded, never thrown.
+ * Sender tick (every 1 min): claim pending rows, re-fetch + re-validate context via the
+ * row's type definition, render and send. Send first, then record state. A transport
+ * failure is recorded, never thrown.
  */
 async function runSenderTick(): Promise<void> {
     const pending = await NotificationsRepo.claimPending(SENDER_BATCH)
     for (const row of pending) {
-        const ctx = await NotificationsRepo.findContext(row.id)
+        const def = DEFINITIONS[row.type]
+        const ctx = await def?.getContext(row)
         if (!ctx) {
-            // recipient or row vanished — nothing to send.
+            // recipient or referenced entity vanished — nothing to send.
             await NotificationsRepo.markSkipped(row.id)
             continue
         }
-        if (isStale(ctx)) {
+        if (def.isStale?.(ctx)) {
             await NotificationsRepo.markSkipped(row.id)
             continue
         }
         try {
-            const { subject, html, text } = templates[ctx.type](ctx)
+            const { subject, html, text } = def.render(ctx)
             await emailService.send({ to: ctx.recipientEmail, subject, html, text })
             await NotificationsRepo.markSent(row.id)
         } catch (err) {
@@ -86,8 +78,26 @@ async function enqueueRecCreated(
     await NotificationsRepo.enqueue(row, executor)
 }
 
+/**
+ * Transactional enqueue for a newly created invitation. Called from within the
+ * invitation-insert transaction so the email can never be lost.
+ */
+async function enqueueInvitationCreated(
+    params: { invitationId: string; recipientEmail: string },
+    executor: SQL = db,
+): Promise<void> {
+    const row: EnqueueParams = {
+        type: 'invitation_created',
+        recipientEmail: params.recipientEmail,
+        invitationId: params.invitationId,
+        variant: null,
+    }
+    await NotificationsRepo.enqueue(row, executor)
+}
+
 export const NotificationsService = {
     runDecisionTick,
     runSenderTick,
     enqueueRecCreated,
+    enqueueInvitationCreated,
 } as const

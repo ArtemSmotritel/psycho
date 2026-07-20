@@ -2,11 +2,12 @@ import { db } from 'config/db'
 import { BadRequestError, NotFoundError } from 'errors/index'
 import { ClientsRepo } from '../clients/repo'
 import { ClientsService } from '../clients/services'
+import { NotificationsService } from '../notifications/services'
 import { UsersRepo } from '../users/repo'
 import type { Invitation } from './models'
 import { InvitationsRepo } from './repo'
 
-const buildInviteLink = (token: string): string => {
+export const buildInviteLink = (token: string): string => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
     return `${frontendUrl}/invite?token=${token}`
 }
@@ -42,7 +43,14 @@ export const InvitationsService = {
         )
         if (existing) return withInviteLink(existing)
 
-        const created = await InvitationsRepo.insert(psychoId, normalizedEmail)
+        const created = await db.begin(async (tx) => {
+            const invitation = await InvitationsRepo.insert(psychoId, normalizedEmail, tx)
+            await NotificationsService.enqueueInvitationCreated(
+                { invitationId: invitation.id, recipientEmail: normalizedEmail },
+                tx,
+            )
+            return invitation
+        })
         return withInviteLink(created)
     },
 

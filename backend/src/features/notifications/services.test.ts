@@ -5,6 +5,7 @@ import { createAppointment } from '../../test-fixtures/appointments'
 import { ClientsService } from '../clients/services'
 import { AttachmentsService } from '../attachments/services'
 import { AttachmentsRepo } from '../attachments/repo'
+import { InvitationsService } from '../invitations/services'
 import { emailService } from './email-service'
 import { NotificationsService } from './services'
 
@@ -15,9 +16,11 @@ const HOUR = 60 * 60 * 1000
 interface OutboxRecord {
     type: string
     variant: string | null
-    recipient_user_id: string
+    recipient_user_id: string | null
+    recipient_email: string | null
     appointment_id: string | null
     attachment_id: string | null
+    invitation_id: string | null
     status: string
     attempts: number
 }
@@ -200,6 +203,88 @@ describe('rec_created transactional hook', () => {
             name: 'Session note',
             text: 'Notes',
         })
+
+        expect(await outbox()).toHaveLength(0)
+    })
+})
+
+describe('invitation_created transactional hook', () => {
+    it('enqueues an invitation_created row addressed to the raw invited email', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+
+        const invitation = await InvitationsService.createForPsycho(
+            psycho.id,
+            'invited@example.com',
+        )
+
+        const rows = await outbox()
+        expect(rows).toHaveLength(1)
+        expect(rows[0]).toMatchObject({
+            type: 'invitation_created',
+            recipient_user_id: null,
+            recipient_email: 'invited@example.com',
+            invitation_id: invitation.id,
+            variant: null,
+            status: 'pending',
+        })
+    })
+
+    it('does not enqueue a second email when the same pending invitation is re-created', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+
+        await InvitationsService.createForPsycho(psycho.id, 'invited@example.com')
+        await InvitationsService.createForPsycho(psycho.id, 'invited@example.com')
+
+        expect(await outbox()).toHaveLength(1)
+    })
+
+    it('sender tick sends the invite email and marks the row sent', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const invitation = await InvitationsService.createForPsycho(
+            psycho.id,
+            'invited@example.com',
+        )
+
+        const spy = spyOn(emailService, 'send')
+        try {
+            await NotificationsService.runSenderTick()
+
+            expect(spy).toHaveBeenCalledTimes(1)
+            const message = spy.mock.calls[0][0]
+            expect(message.to).toBe('invited@example.com')
+            expect(message.text).toContain(invitation.token)
+        } finally {
+            spy.mockRestore()
+        }
+
+        const rows = await outbox()
+        expect(rows).toHaveLength(1)
+        expect(rows[0].status).toBe('sent')
+    })
+
+    it('skips the row when the invitation is no longer pending at send time', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const invitation = await InvitationsService.createForPsycho(
+            psycho.id,
+            'invited@example.com',
+        )
+        await testDb`UPDATE invitations SET status = 'accepted' WHERE id = ${invitation.id}`
+
+        await NotificationsService.runSenderTick()
+
+        const rows = await outbox()
+        expect(rows).toHaveLength(1)
+        expect(rows[0].status).toBe('skipped')
+    })
+
+    it('deleting the invitation cascades its pending email away', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const invitation = await InvitationsService.createForPsycho(
+            psycho.id,
+            'invited@example.com',
+        )
+
+        await InvitationsService.deleteForPsycho(psycho.id, invitation.id)
 
         expect(await outbox()).toHaveLength(0)
     })

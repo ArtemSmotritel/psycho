@@ -40,8 +40,12 @@ export const InvitationsRepo = {
         return rows as Invitation[]
     },
 
-    async insert(psychoId: string, normalizedEmail: string): Promise<Invitation> {
-        const [row] = await db`
+    async insert(
+        psychoId: string,
+        normalizedEmail: string,
+        executor: SQL = db,
+    ): Promise<Invitation> {
+        const [row] = await executor`
             INSERT INTO invitations (psychologist_id, invited_email)
             VALUES (${psychoId}, ${normalizedEmail})
             RETURNING ${db.unsafe(columns)}

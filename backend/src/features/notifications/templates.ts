@@ -1,4 +1,5 @@
-import type { NotificationType, OutboxContext } from './models'
+import { buildInviteLink } from '../invitations/services'
+import type { AppointmentEmailContext, InvitationEmailContext } from './models'
 
 export interface RenderedEmail {
     subject: string
@@ -27,6 +28,7 @@ function render(
     heading: string,
     lines: Array<{ text: string; href?: string }>,
     link: string,
+    linkLabel = 'Перейти до застосунку',
 ): RenderedEmail {
     const html = `
         <div style="font-family: sans-serif; line-height: 1.5; color: #1a1a1a;">
@@ -38,7 +40,7 @@ function render(
                         : `<p>${l.text}</p>`,
                 )
                 .join('\n')}
-            <p><a href="${link}">Перейти до застосунку</a></p>
+            <p><a href="${link}">${linkLabel}</a></p>
         </div>
     `.trim()
     const text = [
@@ -46,13 +48,13 @@ function render(
         '',
         ...lines.map((l) => (l.href ? `${l.text} ${l.href}` : l.text)),
         '',
-        `Перейти до застосунку: ${link}`,
+        `${linkLabel}: ${link}`,
     ].join('\n')
     return { subject, html, text }
 }
 
-export const templates: Record<NotificationType, (ctx: OutboxContext) => RenderedEmail> = {
-    session_reminder(ctx) {
+export const templates = {
+    session_reminder(ctx: AppointmentEmailContext) {
         const when = ctx.appointmentStartTime ? formatKyiv(ctx.appointmentStartTime) : ''
         const lines: Array<{ text: string; href?: string }> = [
             { text: `Нагадуємо про сесію, що відбудеться ${when} (за київським часом).` },
@@ -85,4 +87,15 @@ export const templates: Record<NotificationType, (ctx: OutboxContext) => Rendere
             appLink('client'),
         )
     },
-}
+
+    invitation_created(ctx: InvitationEmailContext) {
+        const who = ctx.psychoName ? `Психолог ${ctx.psychoName}` : 'Психолог'
+        return render(
+            'Вас запрошено до Helpsycho',
+            'Запрошення до Helpsycho',
+            [{ text: `${who} запрошує вас приєднатися як клієнт.` }],
+            buildInviteLink(ctx.token),
+            'Прийняти запрошення',
+        )
+    },
+} as const
