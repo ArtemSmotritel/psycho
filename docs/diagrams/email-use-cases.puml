@@ -1,0 +1,72 @@
+@startuml
+
+!define scolor #D5F5E3
+!define tcolor #FDEBD0
+
+actor "Timer" as t
+actor "Psychologist" as p
+actor "Client" as c
+actor "Invited person\n(no account)" as g
+actor "Email service" as mail
+
+rectangle "Email Notifications" as en {
+  usecase "Remind about upcoming session\n(24 h and 1 h before start)" as UC1 <<s>>
+  usecase "Remind about undone recommendations\n(2 d and 1 d before next session)" as UC2 <<s>>
+  usecase "Notify client about\na new recommendation" as UC3 <<t>>
+  usecase "Send invitation\nto join as a client" as UC4 <<t>>
+
+  usecase "Deliver email" as D
+  usecase "Skip email that is\nno longer relevant" as SK
+  usecase "Retry failed delivery\n(up to 3 attempts)" as RT
+}
+
+t --> UC1
+t --> UC2
+p --> UC3 : creates a\nrecommendation
+p --> UC4 : invites by\nemail address
+
+UC1 -- c : recipient
+UC1 -- p : recipient
+UC2 -- c : recipient
+UC3 -- c : recipient
+UC4 -- g : recipient
+
+UC1 ..> D : <<include>>
+UC2 ..> D : <<include>>
+UC3 ..> D : <<include>>
+UC4 ..> D : <<include>>
+
+SK ..> D : <<extend>>
+RT ..> D : <<extend>>
+
+D -- mail
+
+note bottom of en
+  Constraints:
+  - all emails are in Ukrainian, times are shown in the Europe/Kyiv timezone
+  - minimal personal data in the body; a deep link leads back to the app
+  - each reminder is sent at most once per session, recipient and interval
+  - the undone-recommendations reminder is sent only if the client has
+    at least one recommendation not marked as done
+  - a reminder is skipped if the session was cancelled or has already started;
+    an invitation email is skipped if the invitation is no longer pending
+  - recommendation and invitation emails are recorded atomically with the
+    action that caused them, so they cannot be lost
+  - after 3 failed delivery attempts the email is marked as failed
+end note
+
+' Use case color settings
+skinparam usecase {
+  BackgroundColor<<s>> scolor
+  BackgroundColor<<t>> tcolor
+  BorderColor black
+}
+
+' Legend
+rectangle "Legend" {
+  usecase "Scheduled (time-driven) use cases" <<s>>
+  usecase "Transactional (event-driven) use cases" <<t>>
+  usecase "Shared delivery use cases"
+}
+
+@enduml

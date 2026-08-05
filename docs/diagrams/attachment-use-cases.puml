@@ -1,0 +1,71 @@
+@startuml
+
+!define pcolor #FEE3D6
+!define ccolor #D6EAF8
+
+actor "Psychologist" as p
+actor "Client" as c
+
+rectangle "Note Management" as n {
+  usecase "Add text to note" as NT <<p>>
+  usecase "Attach up to 9 images to note" as NI <<p>>
+  usecase "Attach up to 3 voice messages to note" as NV <<p>>
+  usecase "Edit note" as NE <<p>>
+  usecase "Delete note" as ND <<p>>
+  usecase "View notes attached to a session" as NVW <<p>>
+}
+
+rectangle "Recommendation Management" as r {
+  usecase "Add text to recommendation" as RT <<p>>
+  usecase "Attach up to 9 images to recommendation" as RI <<p>>
+  usecase "Attach up to 3 voice messages to recommendation" as RV <<p>>
+  usecase "Edit recommendation" as RE <<p>>
+  usecase "Delete recommendation" as RD <<p>>
+  usecase "Reply to client's response (once)" as RRP <<p>>
+  usecase "Mark recommendation as resolved" as RM <<c>>
+  usecase "Respond to recommendation (once)" as CRR <<c>>
+  usecase "View recommendations attached to a session" as CRVW
+}
+
+rectangle "Impression Management" as i {
+  usecase "Add text to impression" as IT <<c>>
+  usecase "Attach up to 9 images to impression" as II <<c>>
+  usecase "Attach up to 3 voice messages to impression" as IV <<c>>
+  usecase "Delete impression" as ID <<c>>
+  usecase "Complete impression with a response" as IC <<c>>
+  usecase "View impressions attached to a session" as IVW
+  usecase "View impressions on the Progress page" as IP
+}
+
+p -> n : CRUD manipulations
+p -> r : CRUD manipulations
+p -> i : R manipulations (view only)
+
+c --> i : CRD manipulations
+c --> r : R manipulations + respond
+
+note bottom of r
+  Constraints:
+  - attachments can be created only for active or past sessions
+  - files can be attached only at creation; editing can only remove them
+  - per-session limits: 15 notes, 10 recommendations, 10 impressions
+  - a recommendation with a client response cannot be deleted
+  - an impression with a completion cannot be deleted
+  - creating a recommendation sends an email notification to the client
+end note
+
+' Use case color settings
+skinparam usecase {
+  BackgroundColor<<p>> pcolor
+  BackgroundColor<<c>> ccolor
+  BorderColor black
+}
+
+' Legend
+rectangle "Legend" {
+  usecase "Psychologist-only use cases" <<p>>
+  usecase "Client-only use cases" <<c>>
+  usecase "Shared use cases"
+}
+
+@enduml

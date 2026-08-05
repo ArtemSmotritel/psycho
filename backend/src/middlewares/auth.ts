@@ -52,7 +52,10 @@ export const setUserRole = createMiddleware(async (c, next) => {
     const user = c.get('user')
     if (user && role) {
         const dbUser = await UsersRepo.findById(user.id)
-        if (dbUser?.activeRole && dbUser.activeRole !== role) {
+        if (!dbUser) {
+            throw new UnauthorizedError()
+        }
+        if (dbUser.activeRole !== role) {
             throw new ForbiddenError('Role header does not match your active role.', 'RoleMismatch')
         }
     }
@@ -132,42 +135,40 @@ type OwnsFilesInput = {
  * Verifies all file IDs in the request body (imageFileIds, audioFileIds) were uploaded by the current user.
  * Must be used after `authorized`.
  */
-export const ownsFiles = createMiddleware<
-    MiddlewareVariable<'user', User>,
-    string,
-    OwnsFilesInput
->(async (c, next) => {
-    const user = c.get('user')
+export const ownsFiles = createMiddleware<MiddlewareVariable<'user', User>, string, OwnsFilesInput>(
+    async (c, next) => {
+        const user = c.get('user')
 
-    let body: OwnsFilesBody
-    try {
-        body = c.req.valid('json')
-    } catch {
+        let body: OwnsFilesBody
+        try {
+            body = c.req.valid('json')
+        } catch {
+            await next()
+            return
+        }
+
+        const fileIds: string[] = []
+        if (Array.isArray(body.imageFileIds)) {
+            fileIds.push(...body.imageFileIds)
+        }
+        if (Array.isArray(body.audioFileIds)) {
+            fileIds.push(...body.audioFileIds)
+        }
+        if (Array.isArray(body.removeFileIds)) {
+            fileIds.push(...body.removeFileIds)
+        }
+
+        if (fileIds.length === 0) {
+            await next()
+            return
+        }
+
+        const unowned = await FilesRepo.findIdsNotOwnedBy(fileIds, user.id)
+
+        if (unowned.length > 0) {
+            throw new ForbiddenError('You do not own all referenced files.')
+        }
+
         await next()
-        return
-    }
-
-    const fileIds: string[] = []
-    if (Array.isArray(body.imageFileIds)) {
-        fileIds.push(...body.imageFileIds)
-    }
-    if (Array.isArray(body.audioFileIds)) {
-        fileIds.push(...body.audioFileIds)
-    }
-    if (Array.isArray(body.removeFileIds)) {
-        fileIds.push(...body.removeFileIds)
-    }
-
-    if (fileIds.length === 0) {
-        await next()
-        return
-    }
-
-    const unowned = await FilesRepo.findIdsNotOwnedBy(fileIds, user.id)
-
-    if (unowned.length > 0) {
-        throw new ForbiddenError('You do not own all referenced files.')
-    }
-
-    await next()
-})
+    },
+)

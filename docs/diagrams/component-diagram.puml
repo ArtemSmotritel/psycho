@@ -1,0 +1,221 @@
+@startuml
+' ДОДАТОК Г — Діаграма компонентів (уточнена архітектура)
+' Уточнення попередньої архітектури (діаграма пакетів, додаток И / package7)
+' за результатами детального проєктування (підрозділ 2.7).
+' Серверні сервіси названі англійською — узгоджено з діаграмою послідовності
+' (додаток Е: SessionAttachmentService, FileStorageService).
+' Нотатки, враження та рекомендації — це типи вкладень сесії, які обробляє
+' єдиний Session Attachment Service (підрозділ 2.6.3).
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+' вужчі компоненти: довгі назви переносяться на кілька рядків
+skinparam wrapWidth 110
+
+' ---- Компонування (не змінює змісту діаграми) ----
+' шари розгортаються зліва направо: актори → клієнт → сервер → сховища/зовнішні
+left to right direction
+' ортогональні лінії замість діагональних
+skinparam linetype polyline
+' компактний режим для формату A4: менший шрифт і щільніші відступи
+skinparam defaultFontSize 13
+skinparam nodesep 15
+skinparam ranksep 45
+
+actor "Психолог" as psycho
+actor "Клієнт" as clientActor
+
+together {
+package "Клієнтська частина (браузер)" <<subsystem>> {
+    together {
+    component "Автентифікація та вибір ролі" as cAuth
+    component "Інтерфейс психолога" as cPsyUI
+    component "Інтерфейс клієнта" as cCliUI
+    }
+    together {
+    component "Інтерактивна дошка" as cBoard
+    component "API-клієнт" as cApi
+    }
+}
+
+
+}
+
+package "Серверна частина (застосунок)" <<subsystem>> {
+    together {
+      component "HTTP API\n(маршрути та контроль доступу)" as sHttp
+      component "Realtime Connection Gateway" as sGateway
+
+      component "Scheduler (cron)" as sCron
+      component "Notification Service" as sNotif
+      component "Whiteboard Service" as sWhiteboard
+    }
+
+    together {
+    component "Auth Service\n(автентифікація та ролі)" as sAuth
+    component "Session Attachment Service" as sAttach
+    component "Session Service" as sSessions
+    }
+    together {
+    component "Users Service" as sUsers
+    component "Client Service" as sClients
+    component "Invitation Service" as sInvites
+
+    component "File Storage Service" as sFiles
+    component "Associative Image Service" as sImages
+    component "Dashboard Service" as sDash
+    component "Progress Service" as sProgress
+    }
+}
+
+package "База даних" <<subsystem>> {
+    component "Користувачі" <<data>> as dUsers
+    component "Клієнти" <<data>> as dClients
+    component "Запрошення" <<data>> as dInvites
+    component "Сесії\n(зі станом дошки)" <<data>> as dSessions
+    component "Вкладення" <<data>> as dAttach
+    component "Асоціативні зображення" <<data>> as dImages
+    component "Файли (метадані)" <<data>> as dFiles
+    component "Сповіщення" <<data>> as dNotifications
+}
+
+package "Зовнішні сервіси" <<subsystem>> {
+    component "Google OAuth 2.0" as extOAuth
+    component "Google Calendar API" as extCalendar
+    component "Поштовий сервіс" as extMail
+}
+
+package "Файлове сховище" <<subsystem>> {
+    ' єдине сховище двійкових даних; метадані файлів зберігаються в БД
+    component "Завантажені файли\n(двійкові дані)" <<data>> as fFiles
+}
+
+
+' ---- Канали взаємодії клієнт–сервер (два окремі канали, підрозділ 2.7) ----
+interface "REST API\n(запити статичних даних)" as iRest
+interface "WebSocket\n(обмін у реальному часі)" as iWs
+
+cApi --( iRest
+iRest -- sHttp
+cBoard --( iWs
+iWs -- sGateway
+
+' ---- Актори ----
+psycho --> cAuth
+psycho --> cPsyUI
+clientActor --> cAuth
+clientActor --> cCliUI
+
+' ---- Клієнтська частина ----
+' інтерфейси ролей об'єднують профіль клієнта, історію сесій з прогресом,
+' розклад та вкладення сесій (деталізацію наведено в розділі 2)
+cPsyUI ..> cBoard
+cCliUI ..> cBoard
+' усі клієнтські компоненти звертаються до сервера через спільний
+' інтерфейс API-клієнта (кулька-гніздо замість окремих залежностей)
+interface " " as iApi
+iApi -- cApi
+cAuth --( iApi
+cPsyUI --( iApi
+cCliUI --( iApi
+
+' ---- Серверна частина ----
+' HTTP API та шлюз реального часу перевіряють сесію й роль через Auth Service
+sHttp ..> sAuth
+sGateway ..> sAuth
+sHttp ..> sUsers
+sHttp ..> sClients
+sHttp ..> sInvites
+sHttp ..> sSessions
+' нотатки, враження та рекомендації — типи вкладень,
+' які обробляє єдиний сервіс (підрозділ 2.6.3)
+sHttp ..> sAttach
+sHttp ..> sFiles
+sHttp ..> sImages
+sHttp ..> sDash
+sHttp ..> sProgress
+
+' шлюз перевіряє право доступу до сесії й веде спільний стан дошки
+sGateway ..> sSessions
+sGateway ..> sWhiteboard
+' завершення сесії очищує стан дошки
+sSessions ..> sWhiteboard
+
+' спільний інтерфейс файлових операцій
+interface " " as iFileOps
+iFileOps -- sFiles
+sAttach --( iFileOps
+sImages --( iFileOps
+
+' сповіщення електронною поштою (підрозділ 2.6.4): планувальник запускає
+' такти Notification Service (черга листів за шаблоном transactional outbox)
+sCron ..> sNotif
+' Invitation Service ставить листи-запрошення в чергу сповіщень
+sInvites .> sNotif
+' додавання рекомендації-вкладення ставить сповіщення клієнту в чергу
+sAttach .> sNotif
+
+' ---- Доступ до даних ----
+' кожне сховище надає власний інтерфейс доступу до даних
+interface " " as iUsersData
+interface " " as iClientsData
+interface " " as iInvitesData
+interface " " as iSessionsData
+interface " " as iAttachData
+interface " " as iImagesData
+interface " " as iFilesData
+interface " " as iNotificationsData
+iUsersData -- dUsers
+iClientsData -- dClients
+iInvitesData -- dInvites
+iSessionsData -- dSessions
+iAttachData -- dAttach
+iImagesData -- dImages
+iFilesData -- dFiles
+iNotificationsData -- dNotifications
+
+sUsers --( iUsersData
+sClients --( iClientsData
+sInvites --( iInvitesData
+sSessions --( iSessionsData
+' стан дошки зберігається у сховищі сесій (підрозділ 2.6)
+sWhiteboard --( iSessionsData
+sAttach --( iAttachData
+sImages --( iImagesData
+sFiles --( iFilesData
+' сервіс сповіщень формує листи власними запитами до даних,
+' а не через інші сервіси (черга, отримувачі, сесії та рекомендації)
+sNotif --( iNotificationsData
+sNotif --( iUsersData
+sNotif --( iSessionsData
+sNotif --( iAttachData
+sNotif --( iInvitesData
+' дашборди та прогрес не мають власних даних — обчислюються з наявних
+sDash --( iSessionsData
+sDash --( iAttachData
+sDash --( iClientsData
+sProgress --( iSessionsData
+sProgress --( iAttachData
+
+' ---- Файлове сховище ----
+interface " " as iFiles
+iFiles -up- fFiles
+sFiles -up-( iFiles
+
+' ---- Зовнішні сервіси ----
+' кожен зовнішній сервіс надає власний інтерфейс
+interface " " as iOAuth
+interface " " as iCalendar
+interface " " as iMail
+iOAuth -- extOAuth
+iCalendar -- extCalendar
+iMail -- extMail
+' автентифікацію через зовнішнього провайдера веде Auth Service
+sAuth --( iOAuth
+sSessions --( iCalendar
+' листи (зокрема запрошення) надсилає лише Notification Service
+sNotif --( iMail
+
+@enduml

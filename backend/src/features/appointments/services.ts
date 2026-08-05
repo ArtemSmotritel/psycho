@@ -119,6 +119,10 @@ export const AppointmentsService = {
         return appointment
     },
 
+    async getForParticipant(appointmentId: string, userId: string): Promise<Appointment | null> {
+        return AppointmentsRepo.findByIdForParticipant(appointmentId, userId)
+    },
+
     async startForPsycho(
         appointmentId: string,
         psychoId: string,

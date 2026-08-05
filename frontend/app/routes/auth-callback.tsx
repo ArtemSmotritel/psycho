@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '~/contexts/auth-context'
 import { invitationService } from '~/services/invitation.service'
@@ -6,57 +6,49 @@ import { invitationService } from '~/services/invitation.service'
 export default function AuthCallback() {
     const { isLoading, isAuthenticated, activeRole, setActiveRole } = useAuth()
     const navigate = useNavigate()
+    const handledRef = useRef(false)
 
     useEffect(() => {
         if (isLoading) return
+        if (handledRef.current) return
 
         if (!isAuthenticated) {
             navigate('/login')
             return
         }
 
-        // Check for pending invitation token (from /invite flow)
         const invitationToken = sessionStorage.getItem('invitation_token')
         if (invitationToken) {
+            handledRef.current = true
             sessionStorage.removeItem('invitation_token')
             sessionStorage.removeItem('intended_role')
             invitationService
                 .accept(invitationToken)
                 .then(() => setActiveRole('client'))
                 .then(() => navigate('/client'))
-                .catch(() => {
-                    // If acceptance fails, fall through to normal flow
-                    navigate('/login')
-                })
+                .catch(() => navigate('/login'))
             return
         }
 
-        // Existing flow: check active role or intended role
+        const intendedRole = sessionStorage.getItem('intended_role') as 'psycho' | 'client' | null
+        sessionStorage.removeItem('intended_role')
+
+        if (intendedRole === 'psycho' || intendedRole === 'client') {
+            handledRef.current = true
+            setActiveRole(intendedRole)
+                .then(() => navigate(intendedRole === 'psycho' ? '/psycho' : '/client'))
+                .catch(() => navigate('/login'))
+            return
+        }
+
+        handledRef.current = true
         if (activeRole === 'psycho') {
             navigate('/psycho')
         } else if (activeRole === 'client') {
             navigate('/client')
         } else {
-            navigate('/login')
-        }
-
-        const intendedRole = sessionStorage.getItem('intended_role')
-        sessionStorage.removeItem('intended_role')
-
-        if (!intendedRole) {
             navigate('/role-select')
-            return
         }
-
-        setActiveRole(intendedRole as 'psycho' | 'client').then(() => {
-            if (intendedRole === 'psycho') {
-                navigate('/psycho')
-            } else if (intendedRole === 'client') {
-                navigate('/client')
-            } else {
-                navigate('/login')
-            }
-        })
     }, [isLoading, isAuthenticated, activeRole, navigate, setActiveRole])
 
     return (

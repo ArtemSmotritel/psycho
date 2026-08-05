@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Do not write code unless asked to explicitly. Perform all tasks fully. Do not finish until the task is complete.
 
+**Review first.** Present the proposed design, plan or draft for review *before* doing the work, rather than producing the artifact and explaining afterwards. The point is to steer direction early, before effort is spent.
+
+**Scope plans to the work being asked for now.** Do not include numbered steps for follow-up work that will be triggered later — even when a multi-step migration (add new → swap frontend → remove legacy) is the obvious eventual shape. Mention deferred phases under an "Out of scope" heading so the relationship is clear, but keep them out of the implementation steps. Each phase is planned and executed as its own focused unit.
+
+**Prefer extending an existing abstraction over adding an ad-hoc helper** — even when the helper would be a one-liner. Before proposing a new repo method or glue function to bridge two abstractions, check whether one of them could be extended to cover the case directly, and propose that path first. A new helper is fine when no existing abstraction owns the concern; ad-hoc glue next to an abstraction that already owns it is a smell.
+
+**Verify against the code.** Where code and prose (paper, plans, docs) disagree, the code wins.
+
 ## Commands
 
 ### Backend (`backend/`)
@@ -29,6 +37,7 @@ bun run typecheck   # Type generation + tsc check
 Monorepo with two independent apps: a Bun/Hono REST API (`backend/`) and a Bun/React Router v7 SPA (`frontend/`). No shared packages between them.
 
 ### Backend (`backend/src/`)
+- **Layering rules**: `docs/backend-feature-conventions.md` is authoritative — read it before drafting any plan for backend feature work. In short: routes do zod validation, auth middleware, exactly one service call, return HTTP (no business validation, no try/catch, no repo or db imports); services own business validation, `db.begin` transactions, external APIs and filesystem effects, and throw `AppError` subclasses with specific `code`s the frontend branches on; repos are raw SQL only, return `T | null`, never throw, and alias snake_case → camelCase in the SQL. Modules are exported as frozen `const` namespaces (`<Feature>Service`, `<Feature>Repo`). Single-resource responses use envelopes (`{ client }`); list responses return the service result directly.
 - **Runtime**: Bun. **Framework**: Hono. **Database**: PostgreSQL via Bun's native `SQL` template literal client (no ORM).
 - **Auth**: `better-auth` with Google OAuth. On user creation, both a `clients` row and a `psychologists` row are automatically created via `databaseHooks`.
 - **Role system**: The frontend sends a custom header `Helpsycho-User-Role` with value `psycho` or `client`. The `setUserRole` middleware reads this and sets `c.get('role')`. Guard middlewares `onlyPsychoRequest` / `onlyClientRequest` enforce access.
@@ -60,3 +69,11 @@ ENV                   # Set to "production" to hide stack traces
 ## Code Style
 - Backend & Frontend uses Prettier (config in root `.prettierrc.json`): 4-space indent, semicolons, trailing commas.
   - run `bunx prettier -w ./backend` & `bunx prettier -w ./frontend` from the repo root to apply the prettier format
+
+### Logging
+- **Frontend**: never call `console.error` / `console.log` directly. Use `logIfNotProd` from `frontend/app/utils/logger.ts` — a single env-aware helper is the centralized place to evolve logging behaviour (silencing in prod, a future Sentry hookup). Keep its API extensible if new levels are needed.
+- **Backend**: has its own `backend/src/utils/logger.ts` (`log.warn`, etc.). Don't conflate the two — the `logIfNotProd` rule is frontend-only.
+
+## Thesis / paper work
+
+This repo also carries the bachelor's thesis the codebase exists to support. When writing paper prose, section text or diagram specs, read `docs/CLAUDE.md` first — it holds the writing rules and the current state of each chapter.

@@ -1,0 +1,376 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="component-diagram" name="Діаграма компонентів">
+    <mxGraphModel dx="2348" dy="1302" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="actPsycho" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" value="Психолог" vertex="1">
+          <mxGeometry height="70" width="40" x="30" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="actClient" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" value="Клієнт" vertex="1">
+          <mxGeometry height="70" width="40" x="30" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="pkgClient" parent="1" style="rounded=0;html=1;whiteSpace=wrap;verticalAlign=top;fontStyle=1;container=1;collapsible=0;fillColor=none;" value="Клієнтська частина (браузер)" vertex="1">
+          <mxGeometry height="420" width="320" x="150" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="cAuth" parent="pkgClient" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Автентифікація та вибір ролі" vertex="1">
+          <mxGeometry height="50" width="220" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="cPsyUI" parent="pkgClient" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Інтерфейс психолога" vertex="1">
+          <mxGeometry height="50" width="220" x="20" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cCliUI" parent="pkgClient" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Інтерфейс клієнта" vertex="1">
+          <mxGeometry height="50" width="220" x="20" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="cBoard" parent="pkgClient" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Інтерактивна дошка" vertex="1">
+          <mxGeometry height="50" width="220" x="20" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="cApi" parent="pkgClient" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="API-клієнт" vertex="1">
+          <mxGeometry height="50" width="220" x="20" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="iApi" parent="pkgClient" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="270" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="iRest" parent="1" style="ellipse;html=1;fillColor=#ffffff;verticalLabelPosition=bottom;verticalAlign=top;" value="REST API&lt;br&gt;(запити статичних даних)" vertex="1">
+          <mxGeometry height="24" width="24" x="505" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="iWs" parent="1" style="ellipse;html=1;fillColor=#ffffff;verticalLabelPosition=bottom;verticalAlign=top;" value="WebSocket&lt;br&gt;(обмін у реальному часі)" vertex="1">
+          <mxGeometry height="24" width="24" x="505" y="173" as="geometry" />
+        </mxCell>
+        <mxCell id="pkgServer" parent="1" style="rounded=0;html=1;whiteSpace=wrap;verticalAlign=top;fontStyle=1;container=1;collapsible=0;fillColor=none;" value="Серверна частина (застосунок)" vertex="1">
+          <mxGeometry height="1190" width="370" x="550" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sHttp" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="HTTP API&lt;br&gt;(маршрути та контроль доступу)" vertex="1">
+          <mxGeometry height="60" width="261.17647058823525" x="32.647058823529406" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sGateway" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Realtime Connection Gateway" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="sUsers" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Users Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="sClients" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Client Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="sInvites" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Invitation Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="sSessions" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Session Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="sNotes" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Notes Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="sImpressions" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Impression Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="sRecs" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Recommendation Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="sAttach" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Session Attachment Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="sFiles" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="File Storage Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="sImages" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Associative Image Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="sDash" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Dashboard Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="890" as="geometry" />
+        </mxCell>
+        <mxCell id="sProgress" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Progress Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="sReminders" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Reminder Service" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="sCron" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Scheduler (cron)" vertex="1">
+          <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="iAttachments" parent="pkgServer" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="26.11764705882353" x="310.1470588235294" y="693" as="geometry" />
+        </mxCell>
+        <mxCell id="iFileOps" parent="pkgServer" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="26.11764705882353" x="310.1470588235294" y="763" as="geometry" />
+        </mxCell>
+        <mxCell id="pkgDb" parent="1" style="rounded=0;html=1;whiteSpace=wrap;verticalAlign=top;fontStyle=1;container=1;collapsible=0;fillColor=none;" value="База даних" vertex="1">
+          <mxGeometry height="560" width="300" x="1040" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dUsers" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Користувачі" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dClients" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Клієнти" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="dInvites" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Запрошення" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="dSessions" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Сесії (зі станом дошки)" vertex="1">
+          <mxGeometry height="60" width="220" x="40" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="dAttach" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Вкладення" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="dImages" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Асоціативні зображення" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="dNotifications" parent="pkgDb" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Сповіщення" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="iUsersData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="93" as="geometry" />
+        </mxCell>
+        <mxCell id="iClientsData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="163" as="geometry" />
+        </mxCell>
+        <mxCell id="iInvitesData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="233" as="geometry" />
+        </mxCell>
+        <mxCell id="iSessionsData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="308" as="geometry" />
+        </mxCell>
+        <mxCell id="iAttachData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="383" as="geometry" />
+        </mxCell>
+        <mxCell id="iImagesData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="453" as="geometry" />
+        </mxCell>
+        <mxCell id="iNotificationsData" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="523" as="geometry" />
+        </mxCell>
+        <mxCell id="pkgFiles" parent="1" style="rounded=0;html=1;whiteSpace=wrap;verticalAlign=top;fontStyle=1;container=1;collapsible=0;fillColor=none;" value="Файлове сховище" vertex="1">
+          <mxGeometry height="200" width="300" x="1040" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="fAttach" parent="pkgFiles" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Файли вкладень" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fImages" parent="pkgFiles" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="«data»&lt;br&gt;Файли асоціативних зображень" vertex="1">
+          <mxGeometry height="60" width="220" x="40" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="iAttachFiles" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="713" as="geometry" />
+        </mxCell>
+        <mxCell id="iImageFiles" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="788" as="geometry" />
+        </mxCell>
+        <mxCell id="pkgExt" parent="1" style="rounded=0;html=1;whiteSpace=wrap;verticalAlign=top;fontStyle=1;container=1;collapsible=0;fillColor=none;" value="Зовнішні сервіси" vertex="1">
+          <mxGeometry height="270" width="300" x="1040" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="extOAuth" parent="pkgExt" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Google OAuth 2.0" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="extCalendar" parent="pkgExt" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Google Calendar API" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="extMail" parent="pkgExt" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Поштовий сервіс" vertex="1">
+          <mxGeometry height="50" width="220" x="40" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="iOAuth" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="973" as="geometry" />
+        </mxCell>
+        <mxCell id="iCalendar" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="1043" as="geometry" />
+        </mxCell>
+        <mxCell id="iMail" parent="1" style="ellipse;html=1;fillColor=#ffffff;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="975" y="1113" as="geometry" />
+        </mxCell>
+        <mxCell id="e01" edge="1" parent="1" source="actPsycho" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;" target="cAuth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e02" edge="1" parent="1" source="actPsycho" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;" target="cPsyUI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e03" edge="1" parent="1" source="actClient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;" target="cAuth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e04" edge="1" parent="1" source="actClient" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;" target="cCliUI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e05" edge="1" parent="1" source="cPsyUI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="cBoard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e06" edge="1" parent="1" source="cCliUI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="cBoard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="cApi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="iApi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="cAuth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iApi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="cPsyUI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iApi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="cCliUI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iApi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" edge="1" parent="1" source="cApi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iRest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" edge="1" parent="1" source="iRest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="sHttp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="cBoard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iWs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" edge="1" parent="1" source="iWs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="sGateway">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e25" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sUsers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e26" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sClients">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e27" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sInvites">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e28" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sSessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e29" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sNotes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e30" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sImpressions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e31" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sRecs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e32" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sImages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e33" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sDash">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" edge="1" parent="1" source="sHttp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sProgress">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e35" edge="1" parent="1" source="sGateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sSessions" value="перевірка доступу,&lt;br&gt;збереження стану дошки">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e36" edge="1" parent="1" source="sAttach" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="iAttachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e37" edge="1" parent="1" source="sNotes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e38" edge="1" parent="1" source="sImpressions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e39" edge="1" parent="1" source="sRecs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e40" edge="1" parent="1" source="sFiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="iFileOps">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e41" edge="1" parent="1" source="sAttach" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iFileOps">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e42" edge="1" parent="1" source="sImages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iFileOps">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e43" edge="1" parent="1" source="sCron" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sReminders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e44" edge="1" parent="1" source="sReminders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sUsers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e45" edge="1" parent="1" source="sReminders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sSessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e46" edge="1" parent="1" source="sReminders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" target="sRecs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e47" edge="1" parent="1" source="iUsersData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dUsers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e48" edge="1" parent="1" source="iClientsData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dClients">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e49" edge="1" parent="1" source="iInvitesData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dInvites">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e50" edge="1" parent="1" source="iSessionsData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dSessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e51" edge="1" parent="1" source="iAttachData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dAttach">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e52" edge="1" parent="1" source="iImagesData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dImages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e53" edge="1" parent="1" source="iNotificationsData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="dNotifications">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e54" edge="1" parent="1" source="sUsers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iUsersData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e55" edge="1" parent="1" source="sClients" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iClientsData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e56" edge="1" parent="1" source="sInvites" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iInvitesData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e57" edge="1" parent="1" source="sSessions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iSessionsData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e58" edge="1" parent="1" source="sAttach" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e59" edge="1" parent="1" source="sImages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iImagesData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e60" edge="1" parent="1" source="sReminders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iNotificationsData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e61" edge="1" parent="1" source="sDash" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iSessionsData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e62" edge="1" parent="1" source="sDash" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e63" edge="1" parent="1" source="sProgress" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iSessionsData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e64" edge="1" parent="1" source="sProgress" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachData">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e65" edge="1" parent="1" source="iAttachFiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="fAttach">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e66" edge="1" parent="1" source="iImageFiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="fImages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e67" edge="1" parent="1" source="sFiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iAttachFiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e68" edge="1" parent="1" source="sFiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iImageFiles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e69" edge="1" parent="1" source="iOAuth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="extOAuth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e70" edge="1" parent="1" source="iCalendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="extCalendar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e71" edge="1" parent="1" source="iMail" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" target="extMail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e72" edge="1" parent="1" source="sUsers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iOAuth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e73" edge="1" parent="1" source="sSessions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iCalendar" value="посилання&lt;br&gt;Google Meet">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e74" edge="1" parent="1" source="sInvites" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iMail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e75" edge="1" parent="1" source="sReminders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=halfCircle;endFill=0;endSize=10;" target="iMail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

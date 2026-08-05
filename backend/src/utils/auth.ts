@@ -29,11 +29,14 @@ export const auth = betterAuth({
         },
     },
     plugins: [...(isTest ? [testUtils()] : []), ...(!isProd && !isTest ? [devLoginPlugin()] : [])],
-    // advanced: {
-    //     database: {
-    //         generateId: 'uuid',
-    //     },
-    // },
+    advanced: {
+        useSecureCookies: isProd,
+        defaultCookieAttributes: {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: isProd,
+        },
+    },
 })
 
 log.info(process.env.GOOGLE_REDIRECT_URI as string)
