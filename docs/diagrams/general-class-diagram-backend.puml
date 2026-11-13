@@ -1,0 +1,151 @@
+@startuml
+' Рисунок 1. Загальна діаграма класів: серверна частина (підрозділ 3.3.5).
+' Рівень деталізації: один блок на домен (папка backend/src/features).
+' Усередині блоку — імена класів шарів: маршрути, сервіс, репозиторій.
+' Ланцюжок маршрут -> сервіс -> репозиторій усередині домену не малюється стрілками.
+' Стрілки показують лише звʼязки між доменами та із зовнішніми системами.
+' Повний перелік стрілок між класами: docs/diagrams/specs/general-class-diagram.md.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName "Times New Roman"
+skinparam nodesep 60
+skinparam ranksep 70
+hide circle
+hide methods
+
+class "users" as users <<домен>> {
+    UserRoutes
+    UsersService
+    UsersRepo
+}
+
+class "clients" as clients <<домен>> {
+    ClientSelfRoutes
+    ClientRoutes
+    ClientsService
+    ClientsRepo
+}
+
+class "invitations" as invitations <<домен>> {
+    InvitationRoutes
+    InvitationsService
+    InvitationsRepo
+}
+
+class "appointments" as appointments <<домен>> {
+    AppointmentRoutes
+    PsychoAppointmentRoutes
+    ClientAppointmentRoutes
+    AppointmentsService
+    AppointmentsRepo
+    GoogleMeetClient
+}
+
+class "whiteboard" as whiteboard <<домен>> {
+    WhiteboardRoutes
+    WhiteboardService
+    WhiteboardRepo
+}
+
+class "attachments" as attachments <<домен>> {
+    PsychoAttachmentRoutes
+    ClientAttachmentRoutes
+    AttachmentsService
+    AttachmentCheck
+    AttachmentsRepo
+}
+
+class "files" as files <<домен>> {
+    FileRoutes
+    FilesService
+    FilesRepo
+}
+
+class "associative-images" as images <<домен>> {
+    AssociativeImageRoutes
+    AssociativeImagesService
+    AssociativeImagesRepo
+}
+
+class "dashboard" as dashboard <<домен>> {
+    PsychoDashboardRoutes
+    ClientDashboardRoutes
+    DashboardService
+    DashboardRepo
+}
+
+class "progress" as progress <<домен>> {
+    PsychoProgressRoutes
+    ClientProgressRoutes
+    ProgressService
+    ProgressRepo
+}
+
+class "notifications" as notifications <<домен>> {
+    NotificationsCron
+    NotificationsService
+    ScheduledProducers
+    NotificationDefinitions
+    EmailTemplates
+    EmailService
+    NotificationsRepo
+}
+
+class "Спільні модулі" as shared <<модуль>> {
+    Server
+    App
+    AuthMiddlewares
+    BetterAuth
+    Db
+}
+
+class "PostgreSQL" as postgres <<зовнішня система>>
+class "Файлове сховище" as storage <<зовнішня система>>
+class "Google Calendar API" as gcal <<зовнішня система>>
+class "Google OAuth" as goauth <<зовнішня система>>
+class "Brevo" as brevo <<зовнішня система>>
+
+note bottom of shared
+  App підключає всі класи Routes усіх доменів.
+  AuthMiddlewares використовують усі класи Routes;
+  вони напряму читають UsersRepo, ClientsRepo, FilesRepo.
+  Db використовують усі репозиторії та п'ять сервісів
+  (appointments, attachments, invitations,
+  associative-images, notifications) для транзакцій.
+end note
+
+' ---- Звʼязки між доменами ----
+appointments ..> whiteboard : WhiteboardService
+appointments ..> clients : ClientsRepo
+whiteboard ..> appointments : AppointmentsService
+attachments ..> appointments : AppointmentsService,\nфрагмент SQL
+attachments ..> files : FilesService
+attachments ..> notifications : NotificationsService
+invitations ..> clients : ClientsService, ClientsRepo
+invitations ..> notifications : NotificationsService
+invitations ..> users : UsersRepo
+images ..> files : FilesService, FilesRepo
+dashboard ..> clients : ClientsRepo
+dashboard ..> appointments : фрагмент SQL
+dashboard ..> attachments : фрагмент SQL
+progress ..> clients : ClientsRepo
+progress ..> attachments : фрагмент SQL
+notifications ..> invitations : buildInviteLink
+
+' ---- Спільні модулі ----
+shared ..> users : UsersRepo
+shared ..> clients : ClientsRepo
+shared ..> files : FilesRepo
+shared ..> notifications : NotificationsCron
+whiteboard ..> shared : BetterAuth
+
+' ---- Зовнішні системи ----
+shared ..> postgres : Db
+shared ..> goauth : BetterAuth
+files ..> storage
+appointments ..> gcal : GoogleMeetClient
+notifications ..> brevo : EmailService
+
+@enduml

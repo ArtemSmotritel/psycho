@@ -67,7 +67,7 @@
         <mxCell id="sRecs" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Recommendation Service" vertex="1">
           <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="610" as="geometry" />
         </mxCell>
-        <mxCell id="sAttach" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Session Attachment Service" vertex="1">
+        <mxCell id="sAttach" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="Attachments Service" vertex="1">
           <mxGeometry height="50" width="261.17647058823525" x="32.647058823529406" y="680" as="geometry" />
         </mxCell>
         <mxCell id="sFiles" parent="pkgServer" style="shape=module;jettyWidth=8;jettyHeight=4;whiteSpace=wrap;html=1;align=center;" value="File Storage Service" vertex="1">

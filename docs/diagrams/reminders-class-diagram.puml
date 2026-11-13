@@ -1,0 +1,80 @@
+@startuml
+' Локальна діаграма класів пакета «Сповіщення» (підрозділ 3.3.3).
+' Платформозалежний рівень (PSM): відображає реалізацію з
+' backend/src/features/notifications/{cron,services,producers,definitions,
+' templates,email-service,repo,models}.ts.
+' У коді модулі — заморожені const-обʼєкти та функції; на діаграмі вони
+' змодельовані класами (<<module>>). Реєстри SCHEDULED і DEFINITIONS показані
+' класами ScheduledProducer і NotificationDefinition.
+' Літеру додатка узгодити з фінальним порядком додатків.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName "Times New Roman"
+hide empty members
+
+class NotificationsCron <<module>> {
+    + registerNotificationCrons(): void
+    - safeTick(name, run): Promise<void>
+}
+
+class NotificationsService <<module>> {
+    - SENDER_BATCH: number = 50
+    + runDecisionTick(): Promise<void>
+    + runSenderTick(): Promise<void>
+    + enqueueRecCreated(params, executor): Promise<void>
+    + enqueueInvitationCreated(params, executor): Promise<void>
+}
+
+class ScheduledProducer <<registry>> {
+    + type: NotificationType
+    + variants: Variant[]
+    + find(variant): Promise<ReminderCandidate[]>
+}
+
+class NotificationDefinition <<registry>> {
+    + getContext(row): Promise<Ctx | null>
+    + isStale(ctx): boolean
+    + render(ctx): RenderedEmail
+}
+
+class NotificationsRepo <<module>> {
+    - MAX_ATTEMPTS: number = 3
+    + enqueue(params, executor): Promise<void>
+    + claimPending(limit, executor): Promise<OutboxRow[]>
+    + markSent(id, executor): Promise<void>
+    + markFailed(id, error, executor): Promise<void>
+    + markSkipped(id, executor): Promise<void>
+    + findSessionReminderCandidates(variant, executor): Promise<ReminderCandidate[]>
+    + findRecReminderCandidates(variant, executor): Promise<ReminderCandidate[]>
+    + findAppointmentContext(id, executor): Promise<AppointmentEmailContext | null>
+    + findInvitationContext(id, executor): Promise<InvitationEmailContext | null>
+}
+
+class EmailService <<module>> {
+    + send(message: EmailMessage): Promise<void>
+}
+
+class OutboxRow <<interface>> {
+    + id: string
+    + type: NotificationType
+    + variant: Variant | null
+    + status: OutboxStatus
+    + attempts: number
+    + scheduledFor: string
+}
+
+class "Brevo" as Brevo <<third-party>>
+
+NotificationsCron --> NotificationsService : кожні 10 хв і 1 хв
+NotificationsService --> ScheduledProducer : вибір кандидатів
+NotificationsService --> NotificationDefinition : підготовка листа
+NotificationsService --> NotificationsRepo
+NotificationsService --> EmailService
+ScheduledProducer ..> NotificationsRepo
+NotificationDefinition ..> NotificationsRepo
+NotificationsRepo --> OutboxRow
+EmailService ..> Brevo
+
+@enduml

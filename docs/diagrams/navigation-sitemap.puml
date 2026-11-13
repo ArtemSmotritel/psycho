@@ -1,0 +1,85 @@
+----------
+@startuml
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor black
+}
+skinparam defaultFontSize 13
+hide empty description
+skinparam wrapWidth 160
+
+' ---- Психолог ----
+
+state "Психолог" as Psycho {
+  state "П0 Бокова панель" as P0
+  state "П1 Дашборд\n(/psycho)" as P1
+  state "П2 Клієнти\n(/psycho/clients)" as P2
+  state "П3 Профіль клієнта\n(/psycho/clients/:clientId)" as P3
+  state "П3а Прогрес клієнта\n(/psycho/clients/:clientId/progress)" as P3a
+  state "П3б Сесії клієнта\n(/psycho/clients/:clientId/appointments)" as P3b
+  state "П4 Деталі сесії\n(/psycho/clients/:clientId/appointments/:appointmentId)" as P4
+  state "П5 Жива сесія\n(/psycho/clients/:clientId/appointments/:appointmentId/live)" as P5
+  state "П6 Перегляд вкладення\n(/psycho/clients/:clientId/appointments/:appointmentId/attachment/:attachmentId)" as P6
+  state "П7 Запрошення\n(/psycho/invitations)" as P7
+  state "П8 Сесії — розклад\n(/psycho/appointments)" as P8
+  state "П9 Бібліотека асоціативних зображень\n(/psycho/associative-images)" as P9
+}
+[*] --> P0
+P0 --> P1 : пункт меню
+P0 --> P2 : пункт меню
+P0 --> P7 : пункт меню
+P0 --> P8 : пункт меню
+P0 --> P9 : пункт меню
+P1 --> P5 : «Go to appointment»\n[сесія триває]
+P1 --> P4 : «View» біля найближчої сесії
+P1 --> P3 : «View profile» біля клієнта
+P2 --> P3 : натискання на клієнта у списку
+P3 --> P3a : вкладка «Прогрес»
+P3 --> P3b : вкладка «Сесії»
+P3b --> P4 : натискання на рядок сесії
+P4 --> P5 : перехід до живої сесії [сесія активна]
+P4 --> P6 : перехід до вкладення сесії
+P8 --> P4 : «View appointment details»
+P8 --> P3 : «View client profile»
+P6 --> P3 : «Open Client Profile»
+P6 --> P4 : «Open Session»
+
+@enduml
+-----
+@startuml
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor black
+}
+skinparam defaultFontSize 15
+hide empty description
+skinparam wrapWidth 160
+
+state "Клієнт" as Client {
+  state "К0 Бокова панель" as K0
+  state "К1 Дашборд\n(/client)" as K1
+  state "К2 Мій профіль\n(/me)" as K2
+  state "К3 Сесії\n(/client/appointments)" as K3
+  state "К4 Деталі сесії\n(/client/appointments/:appointmentId)" as K4
+  state "К5 Жива сесія\n(/client/appointments/:appointmentId/live)" as K5
+  state "К6 Перегляд вкладення\n(/client/appointments/:appointmentId/attachment/:attachmentId)" as K6
+  state "К7 Прогрес\n(/client/progress)" as K7
+}
+
+' ---- Клієнт ----
+[*] --> K0
+K0 --> K1 : пункт меню
+K0 --> K2 : пункт меню
+K0 --> K3 : пункт меню
+K0 --> K7 : пункт меню
+K1 --> K5 : «Join now»\n[сесія триває]
+K1 -> K4 : «View appointment»
+K1 --> K3 : «View all appointments»
+K1 --> K1 : позначити рекомендацію виконаною\nабо залишити коментар
+K3 --> K4 : натискання на рядок сесії
+K4 --> K5 : перехід до живої сесії [сесія активна]
+K4 --> K6 : перехід до вкладення сесії
+K7 --> K4 : натискання на позначення\nрекомендації чи враження
+@enduml

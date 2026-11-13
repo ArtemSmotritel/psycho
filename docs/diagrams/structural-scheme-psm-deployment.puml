@@ -11,7 +11,7 @@ skinparam packageStyle rectangle
 skinparam wrapWidth 130
 left to right direction
 skinparam linetype polyline
-skinparam defaultFontSize 12
+skinparam defaultFontSize 14
 skinparam nodesep 14
 skinparam ranksep 45
 
@@ -38,7 +38,7 @@ node "Сервер застосунку — один процес Bun\n(HTTP API
     component "Invitation Service" as sInvites
     component "Session Service" as sSessions
     component "Whiteboard Service" as sWhiteboard
-    component "Session Attachment Service" as sAttach
+    component "Attachments Service" as sAttach
     component "File Storage Service" as sFiles
     component "Associative Image Service" as sImages
     component "Dashboard Service" as sDash
@@ -46,12 +46,6 @@ node "Сервер застосунку — один процес Bun\n(HTTP API
 
     component "Репозиторії\n(доступ до даних, SQL-запити)" as sRepo
 }
-
-note bottom of appServer
-    Розгортання в один екземпляр: внутрішньопроцесний cron
-    (такти черги листів) і локальне файлове сховище не
-    поділяються між репліками.
-end note
 
 database "PostgreSQL\n(зовнішній екземпляр)" <<subsystem>> {
     component "Схема даних\n(користувачі, сесії, вкладення,\nзображення, файли, сповіщення)" <<data>> as dSchema
@@ -127,8 +121,8 @@ sProgress ..> sRepo
 sNotif ..> sRepo
 
 interface "Bun SQL" as iBunSql
-iBunSql -- dSchema
-sRepo --( iBunSql
+iBunSql -left- dSchema
+sRepo -up-( iBunSql
 
 ' Better Auth веде власний доступ до тієї ж БД через окремий драйвер
 interface "node-postgres (pg Pool)" as iPg

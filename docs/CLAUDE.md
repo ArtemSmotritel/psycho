@@ -7,7 +7,7 @@ Rules for writing the bachelor's thesis this repo supports. Read this before pro
 **«Система підтримки віддаленої роботи психолога»** — bachelor's thesis, Cherkasy National University, ОП "Програмна інженерія", supervisor ст. викл. Порубльов І.М.
 
 - Methodology and formatting rules: `requirements.md` at the repo root (ДСТУ 3008:2015 + faculty rules). A similar reference thesis is in `example.md`.
-- **`paper2.md`** (repo root) is the current working copy. The **Google Doc** held by Artem is the master. `paper.md` is the deleted old version; `action-plan-v2.md` audits that old file and is partially outdated — consult with care.
+- **`paper.md`** (repo root) is the current working copy. The **Google Doc** held by Artem is the master.
 - **Code is authoritative** when it conflicts with the paper text. Verify facts against `backend/` and `frontend/` before writing them.
 
 ## Delivery format

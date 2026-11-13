@@ -1,0 +1,28 @@
+@startuml
+title Діаграма станів запису черги листів (email_outbox)
+
+skinparam state {
+  BackgroundColor #FDFDFD
+  BorderColor black
+}
+hide empty description
+
+state "Очікує" as pending
+state "Надіслано" as sent
+state "Пропущено" as skipped
+state "Не вдалося" as failed
+state attempts <<choice>>
+
+[*] --> pending : створити()\n[немає запису з тим самим\nтипом, сесією, одержувачем\nі варіантом]
+
+pending --> sent : надіслати_успішно()\n/ sent_at = зараз
+pending --> skipped : подія втратила актуальність\n[сесія розпочалась/зникла\nабо рекомендація виконана]
+pending --> attempts : надіслати_невдало(помилка)\n/ спроби++, last_error = помилка
+attempts --> pending : [спроби < 3]
+attempts --> failed : [спроби >= 3]
+
+sent --> [*]
+skipped --> [*]
+failed --> [*]
+
+@enduml

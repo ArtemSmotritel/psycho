@@ -36,7 +36,7 @@ package "Серверна частина\n(TypeScript, Bun, Hono)" <<subsystem>>
     component "Invitation Service" as sInvites
     component "Session Service" as sSessions
     component "Whiteboard Service" as sWhiteboard
-    component "Session Attachment Service" as sAttach
+    component "Attachments Service" as sAttach
     component "File Storage Service" as sFiles
     component "Associative Image Service" as sImages
     component "Dashboard Service" as sDash

@@ -1,0 +1,86 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Блок-схема" id="d1">
+    <mxGraphModel dx="1036" dy="584" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="S" parent="1" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Початок" vertex="1">
+          <mxGeometry height="30" width="100" x="250" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="I" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Ввід: psychoId, email" vertex="1">
+          <mxGeometry height="30" width="220" x="190" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="P1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="email = trim(lower(email));&lt;br&gt;userId = пошук користувача за email" vertex="1">
+          <mxGeometry height="40" width="230" x="185" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D1" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="userId == psychoId&lt;br&gt;або userId уже клієнт?" vertex="1">
+          <mxGeometry height="70" width="230" x="185" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Є відкладене запрошення&lt;br&gt;для psychoId та email?" vertex="1">
+          <mxGeometry height="85" width="230" x="185" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="T" parent="1" style="shape=process;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Транзакція: зберегти запрошення;&lt;br&gt;поставити лист у чергу" vertex="1">
+          <mxGeometry height="40" width="250" x="175" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="O3" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Вивід: нове запрошення з посиланням" vertex="1">
+          <mxGeometry height="40" width="210" x="195" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="O1" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Вивід: відмова" vertex="1">
+          <mxGeometry height="40" width="140" x="460" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="O2" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Вивід: наявне запрошення" vertex="1">
+          <mxGeometry height="40" width="180" x="470" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="E" parent="1" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" value="Кінець" vertex="1">
+          <mxGeometry height="30" width="90" x="255" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="S" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="I" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="I" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="P1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="P1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="D1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="D1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="D2" value="Ні">
+          <mxGeometry relative="1" x="-0.3333" y="10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="D2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="T" value="Ні">
+          <mxGeometry relative="1" x="-0.1429" y="10" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="T" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="O3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="O3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="E" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="D1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="O1" value="Так">
+          <mxGeometry relative="1" x="-0.8182" y="15" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="D2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;" target="O2" value="Так">
+          <mxGeometry relative="1" x="-0.9551" y="13" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="O1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" target="E" value="">
+          <mxGeometry relative="1" x="0.0013" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="225" />
+              <mxPoint x="670" y="565" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="O2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=classic;strokeColor=#000000;fontFamily=Times New Roman;fontSize=13;exitX=0.5;exitY=1;entryX=1;entryY=0.5;exitDx=0;exitDy=0;" target="E" value="">
+          <mxGeometry relative="1" x="-0.1758" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

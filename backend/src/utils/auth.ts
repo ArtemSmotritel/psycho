@@ -8,6 +8,8 @@ import { devLoginPlugin } from './dev-login-plugin'
 const isTest = process.env.NODE_ENV === 'test'
 const isProd = process.env.ENV === 'production'
 
+log.info(`${process.env.FRONTEND_URL} afdd`);
+
 export const auth = betterAuth({
     database: new Pool({
         connectionString: DB_URL,
