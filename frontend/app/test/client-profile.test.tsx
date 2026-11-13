@@ -59,12 +59,12 @@ vi.mock('~/hooks/useCurrentClient', () => ({
 import ClientProfile from '~/routes/psychologist/client-profile'
 import { toast } from 'sonner'
 
-function renderWithRouter(clientId = 'client-123', role = 'psycho') {
+function renderWithRouter(clientId = 'client-123') {
     return render(
-        <MemoryRouter initialEntries={[`/${role}/clients/${clientId}`]}>
+        <MemoryRouter initialEntries={[`/psycho/clients/${clientId}`]}>
             <Routes>
                 <Route
-                    path="/:role/clients/:clientId"
+                    path="/psycho/clients/:clientId"
                     element={<ClientProfile params={{ clientId }} />}
                 />
             </Routes>
@@ -115,9 +115,9 @@ describe('ClientProfile — Remove client action', () => {
         })
     })
 
-    it('navigates to /:role/clients on successful removal', async () => {
+    it('navigates to the clients list on successful removal', async () => {
         mockRemove.mockResolvedValue({})
-        renderWithRouter('client-123', 'psycho')
+        renderWithRouter('client-123')
         fireEvent.click(screen.getByRole('button', { name: /remove client/i }))
         await waitFor(() => {
             expect(screen.getByRole('alertdialog')).toBeInTheDocument()

@@ -1,6 +1,6 @@
 import type { SQL } from 'bun'
 import { BadRequestError, NotFoundError } from 'errors/index'
-import type { Client, ClientProfileUpdate, ClientSummary } from './models'
+import type { Client, ClientListItem, ClientProfileUpdate, ClientSummary } from './models'
 import { ClientsRepo } from './repo'
 
 export const ClientsService = {
@@ -10,7 +10,7 @@ export const ClientsService = {
         return client
     },
 
-    async listForPsycho(psychoId: string): Promise<ClientSummary[]> {
+    async listForPsycho(psychoId: string): Promise<ClientListItem[]> {
         return ClientsRepo.listForPsycho(psychoId)
     },
 

@@ -4,7 +4,6 @@ import {
     MessageSquare,
     Instagram,
     Mail,
-    Edit,
     Calendar,
     History,
     TrendingUp,
@@ -13,8 +12,7 @@ import {
     UserMinus,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { ClientForm } from '@/components/ClientForm'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { SessionForm } from '@/components/SessionForm'
 import { ActionsSection, ActionItem } from '@/components/ActionsSection'
 import { ConfirmAction } from '~/components/common/ConfirmAction'
@@ -35,7 +33,6 @@ type ClientProfileProps = {
 
 export default function ClientProfile({ params }: ClientProfileProps) {
     const navigate = useNavigate()
-    const { role } = useParams<{ role: string }>()
     const { handleCreate: handleAddSession, isCreating: isCreatingAppointment } =
         useCreateAppointment()
     const client = useCurrentClient()
@@ -47,19 +44,10 @@ export default function ClientProfile({ params }: ClientProfileProps) {
         toast.success(`${label} has been copied to your clipboard.`)
     }
 
-    const handleEditClient = async (values: any) => {
-        try {
-            await clientService.updateForPsycho(client.id, values)
-            toast.success('Client updated.')
-        } catch {
-            toast.error('Failed to update client. Please try again.')
-        }
-    }
-
     const handleRemoveClient = async () => {
         try {
             await clientService.deleteForPsycho(client.id)
-            navigate(`/${role}/clients`)
+            navigate(routes.psycho.clients)
         } catch {
             toast.error('Failed to remove client. Please try again.')
         }
@@ -168,20 +156,6 @@ export default function ClientProfile({ params }: ClientProfileProps) {
             </div>
 
             <ActionsSection title="Actions">
-                <ClientForm
-                    mode="edit"
-                    trigger={<ActionItem icon={<Edit className="h-6 w-6" />} label="Edit client" />}
-                    initialData={{
-                        username: client.username ?? undefined,
-                        name: client.name,
-                        email: client.email,
-                        phone: client.phone ?? undefined,
-                        telegram: client.telegram ?? undefined,
-                        instagram: client.instagram ?? undefined,
-                    }}
-                    onSubmit={handleEditClient}
-                />
-
                 <SessionForm
                     mode="add"
                     trigger={

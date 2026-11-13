@@ -17,6 +17,8 @@ export interface Client {
 
 export type ClientSummary = Pick<Client, 'id' | 'name' | 'email' | 'image'>
 
+export type ClientListItem = ClientSummary & Pick<Client, 'lastAppointment' | 'nextAppointment'>
+
 export type PsychologistSummary = Pick<Client, 'id' | 'name' | 'email' | 'image'>
 
 export type ClientProfileUpdate = Partial<

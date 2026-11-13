@@ -16,6 +16,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -31,7 +32,6 @@ const formSchema = z.object({
         message: 'Username must be at least 2 characters.',
     }),
     name: z.string().optional(),
-    email: z.string().email().optional().or(z.literal('')),
     phone: z.string().optional(),
     telegram: z
         .string()
@@ -59,10 +59,11 @@ interface ClientFormProps {
     mode: 'add' | 'edit'
     trigger: React.ReactNode
     initialData?: Partial<FormValues>
+    email?: string
     onSubmit: (values: FormValues) => Promise<void>
 }
 
-export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormProps) {
+export function ClientForm({ mode, trigger, initialData, email, onSubmit }: ClientFormProps) {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -71,7 +72,6 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
         defaultValues: {
             username: '',
             name: '',
-            email: '',
             phone: '',
             telegram: '',
             instagram: '',
@@ -131,19 +131,10 @@ export function ClientForm({ mode, trigger, initialData, onSubmit }: ClientFormP
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="john@example.com" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="space-y-2">
+                            <Label htmlFor="client-form-email">Email</Label>
+                            <Input id="client-form-email" value={email ?? ''} disabled readOnly />
+                        </div>
                         <FormField
                             control={form.control}
                             name="phone"

@@ -28,15 +28,35 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { DataTablePagination } from '~/components/common/DataTablePagination'
 import { AddClientByEmailDialog } from '@/components/AddClientByEmailDialog'
 import { clientService } from '~/services/client.service'
-import type { ClientSummary } from '~/models/client'
+import type { ClientListItem } from '~/models/client'
+import { formatAppDate } from '~/utils/utils'
 import { ProtectedRoute } from '~/components/common/ProtectedRoute'
 import { routes } from '~/lib/routes'
 
-const columns: ColumnDef<ClientSummary>[] = [
+function AppointmentLinkCell({
+    clientId,
+    appointment,
+}: {
+    clientId: string
+    appointment: { id: string; startTime: string } | null
+}) {
+    if (!appointment) return '-'
+    return (
+        <Link
+            to={routes.psycho.appointment(clientId, appointment.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="underline-offset-4 hover:underline"
+        >
+            {formatAppDate(appointment.startTime)}
+        </Link>
+    )
+}
+
+const columns: ColumnDef<ClientListItem>[] = [
     {
         id: 'index',
         header: '#',
@@ -73,27 +93,21 @@ const columns: ColumnDef<ClientSummary>[] = [
         },
     },
     {
-        accessorKey: 'upcomingAppointment',
+        id: 'nextAppointment',
+        accessorFn: (client) => client.nextAppointment?.startTime ?? null,
         header: 'Upcoming Appointment',
         cell: ({ row }) => {
-            const val = row.getValue('upcomingAppointment') as string | null | undefined
-            return val ?? '-'
+            const client = row.original
+            return <AppointmentLinkCell clientId={client.id} appointment={client.nextAppointment} />
         },
     },
     {
-        accessorKey: 'lastAppointment',
+        id: 'lastAppointment',
+        accessorFn: (client) => client.lastAppointment?.startTime ?? null,
         header: 'Last Appointment',
         cell: ({ row }) => {
-            const val = row.getValue('lastAppointment') as string | null | undefined
-            return val ?? '-'
-        },
-    },
-    {
-        accessorKey: 'appointmentsCount',
-        header: 'Appointments Count',
-        cell: ({ row }) => {
-            const val = row.getValue('appointmentsCount') as number | undefined
-            return val ?? '-'
+            const client = row.original
+            return <AppointmentLinkCell clientId={client.id} appointment={client.lastAppointment} />
         },
     },
     {
@@ -138,7 +152,7 @@ const columns: ColumnDef<ClientSummary>[] = [
 
 export default function Clients() {
     const navigate = useNavigate()
-    const [data, setData] = useState<ClientSummary[]>([])
+    const [data, setData] = useState<ClientListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [sorting, setSorting] = useState<SortingState>([])

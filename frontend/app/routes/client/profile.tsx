@@ -115,11 +115,11 @@ export default function ClientProfile() {
                     initialData={{
                         username: client.username ?? undefined,
                         name: client.name,
-                        email: client.email,
                         phone: client.phone ?? undefined,
                         telegram: client.telegram ?? undefined,
                         instagram: client.instagram ?? undefined,
                     }}
+                    email={client.email}
                     onSubmit={handleEdit}
                 />
             </ActionsSection>

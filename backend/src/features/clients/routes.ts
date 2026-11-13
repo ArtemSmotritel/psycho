@@ -58,6 +58,8 @@ clientRoutes.post('/', zValidator('json', addClientSchema), async (c) => {
     return c.json({ client }, 201)
 })
 
+// TODO: Ignore and delete in the future. A psychologist must not edit a client's profile.
+// The client edits their own profile through PUT /api/clients/me. The frontend no longer calls this route.
 clientRoutes.put(
     '/:clientId',
     onlyLinkedClient,

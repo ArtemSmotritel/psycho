@@ -3,12 +3,41 @@ import { db } from 'config/db'
 import type {
     Client,
     ClientContactFieldsUpdate,
+    ClientListItem,
     ClientSummary,
     PsychologistClientLink,
     PsychologistSummary,
 } from './models'
 
+type PsychoFilter = Bun.SQL.Query<any>
+
 const clientBasicColumns = `c.user_id AS id, u.email, u.name, u.image`
+
+// Correlated subqueries: the surrounding query must alias the clients table as `c`.
+const lastAppointmentSql = (psychoFilter: PsychoFilter) => db`(
+    SELECT json_build_object(
+        'id', ap.id,
+        'startTime', ap.start_time,
+        'endTime', ap.end_time
+    )
+    FROM appointments ap
+    WHERE ap.client_id = c.user_id
+      AND ap.ended_at IS NOT NULL
+      ${psychoFilter}
+    ORDER BY ap.start_time DESC
+    LIMIT 1
+)`
+
+const nextAppointmentSql = (psychoFilter: PsychoFilter) => db`(
+    SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
+    FROM appointments ap
+    WHERE ap.client_id = c.user_id
+      AND ap.started_at IS NULL
+      AND ap.start_time > NOW()
+      ${psychoFilter}
+    ORDER BY ap.start_time ASC
+    LIMIT 1
+)`
 
 export const ClientsRepo = {
     // When psychoId is provided, the appointment-derived aggregates are scoped
@@ -43,29 +72,8 @@ export const ClientsRepo = {
                     JOIN appointments ap ON ap.id = a.appointment_id
                     WHERE ap.client_id = c.user_id AND a.type = 'recommendation' ${psychoFilter()}
                 ) AS "recommendationsCount",
-                (
-                    SELECT json_build_object(
-                        'id', ap.id,
-                        'startTime', ap.start_time,
-                        'endTime', ap.end_time
-                    )
-                    FROM appointments ap
-                    WHERE ap.client_id = c.user_id
-                      AND ap.ended_at IS NOT NULL
-                      ${psychoFilter()}
-                    ORDER BY ap.start_time DESC
-                    LIMIT 1
-                ) AS "lastAppointment",
-                (
-                    SELECT json_build_object('id', ap.id, 'startTime', ap.start_time)
-                    FROM appointments ap
-                    WHERE ap.client_id = c.user_id
-                      AND ap.started_at IS NULL
-                      AND ap.start_time > NOW()
-                      ${psychoFilter()}
-                    ORDER BY ap.start_time ASC
-                    LIMIT 1
-                ) AS "nextAppointment"
+                ${lastAppointmentSql(psychoFilter())} AS "lastAppointment",
+                ${nextAppointmentSql(psychoFilter())} AS "nextAppointment"
             FROM clients c
             INNER JOIN "user" u ON u.id = c.user_id
             WHERE c.user_id = ${id}
@@ -83,9 +91,16 @@ export const ClientsRepo = {
         return (row as ClientSummary) ?? null
     },
 
-    async listForPsycho(psychoId: string): Promise<ClientSummary[]> {
+    async listForPsycho(psychoId: string): Promise<ClientListItem[]> {
+        const psychoFilter = db`AND ap.psycho_id = ${psychoId}`
         const rows = await db`
-            SELECT u.id, u.name, u.email, u.image
+            SELECT
+                u.id,
+                u.name,
+                u.email,
+                u.image,
+                ${lastAppointmentSql(psychoFilter)} AS "lastAppointment",
+                ${nextAppointmentSql(psychoFilter)} AS "nextAppointment"
             FROM clients c
             INNER JOIN psychologist_clients pc
               ON pc.psycho_id = ${psychoId}
@@ -93,7 +108,7 @@ export const ClientsRepo = {
              AND pc.disconnected_at IS NULL
             INNER JOIN "user" u ON u.id = c.user_id
         `
-        return rows as ClientSummary[]
+        return rows as ClientListItem[]
     },
 
     async listPsychologistsForClient(clientId: string): Promise<PsychologistSummary[]> {
