@@ -41,4 +41,6 @@ export interface SessionFormProps {
     description?: string
     cancelLabel?: string
     submitLabel?: string
+    /** Disables the client field. Use with `initialData.clientId`. */
+    lockClient?: boolean
 }

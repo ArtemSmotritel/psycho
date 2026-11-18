@@ -15,7 +15,7 @@ export const appointmentService = {
             data,
         ),
     getListForPsycho: (clientId: string) =>
-        api.get<{ appointments: Appointment[] }>(psychoAppt(clientId)),
+        api.get<{ appointments: AppointmentWithClient[] }>(psychoAppt(clientId)),
     getByIdForPsycho: (clientId: string, appointmentId: string) =>
         api.get<{ appointment: Appointment }>(psychoAppt(clientId, appointmentId)),
     updateForPsycho: (clientId: string, appointmentId: string, data: UpdateAppointmentDTO) =>

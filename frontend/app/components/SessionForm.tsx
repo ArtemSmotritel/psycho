@@ -39,6 +39,7 @@ export function SessionForm({
     description,
     cancelLabel,
     submitLabel,
+    lockClient,
 }: SessionFormProps) {
     const [open, setOpen] = useControlledOpen(externalOpen, onOpenChange)
     const currentClient = useCurrentClient()
@@ -102,7 +103,11 @@ export function SessionForm({
                                 name="endTime"
                                 label="End Time"
                             />
-                            <SessionClientSelector form={form} clients={clients} />
+                            <SessionClientSelector
+                                form={form}
+                                clients={clients}
+                                disabled={lockClient}
+                            />
                             <SessionGoogleMeetFields
                                 control={form.control}
                                 mode={mode}

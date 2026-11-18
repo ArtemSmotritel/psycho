@@ -14,11 +14,17 @@ vi.mock('~/services/client.service', () => ({
 }))
 
 import { SessionForm } from '~/components/SessionForm'
+import type { SessionFormProps } from '~/components/session-form/schema'
 
-function renderForm(onSubmit = vi.fn()) {
+function renderForm(onSubmit = vi.fn(), extraProps: Partial<SessionFormProps> = {}) {
     render(
         <MemoryRouter>
-            <SessionForm mode="add" trigger={<button>Open Form</button>} onSubmit={onSubmit} />
+            <SessionForm
+                mode="add"
+                trigger={<button>Open Form</button>}
+                onSubmit={onSubmit}
+                {...extraProps}
+            />
         </MemoryRouter>,
     )
     fireEvent.click(screen.getByRole('button', { name: /open form/i }))
@@ -48,6 +54,16 @@ describe('SessionForm', () => {
         await waitFor(() => {
             expect(screen.getByText(/schedule new appointment/i)).toBeInTheDocument()
         })
+    })
+
+    it('keeps the client selector enabled by default', async () => {
+        renderForm()
+        expect(await screen.findByRole('combobox')).toBeEnabled()
+    })
+
+    it('disables the client selector when lockClient is set', async () => {
+        renderForm(vi.fn(), { lockClient: true })
+        expect(await screen.findByRole('combobox')).toBeDisabled()
     })
 
     it('renders submit button labeled "Schedule Appointment" in add mode', async () => {

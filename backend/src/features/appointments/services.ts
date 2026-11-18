@@ -81,9 +81,9 @@ const throwIfOverlapping = async (
 }
 
 export const AppointmentsService = {
-    async listForPsycho(psychoId: string, clientId: string): Promise<Appointment[]> {
+    async listForPsycho(psychoId: string, clientId: string): Promise<AppointmentWithClient[]> {
         await ensureLinked(psychoId, clientId)
-        return AppointmentsRepo.listForPsychoClient(psychoId, clientId)
+        return AppointmentsRepo.listForPsycho(psychoId, clientId)
     },
 
     async listForClient(clientId: string): Promise<AppointmentWithPsycho[]> {
@@ -91,7 +91,7 @@ export const AppointmentsService = {
     },
 
     async listAllForPsycho(psychoId: string): Promise<AppointmentWithClient[]> {
-        return AppointmentsRepo.listAllForPsycho(psychoId)
+        return AppointmentsRepo.listForPsycho(psychoId)
     },
 
     async getActiveForPsycho(psychoId: string): Promise<Appointment | null> {

@@ -860,6 +860,71 @@ describe('GET /api/clients/:clientId/appointments', () => {
         expect(body.appointments).toEqual([])
     })
 
+    it('includes clientName and attachment counts on every appointment', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const client = await insertTestUser({
+            email: 'client@test.com',
+            name: 'Test Client',
+            activeRole: 'client',
+        })
+        await ClientsService.linkClientToPsycho(client.id, psycho.id)
+        const apt = await createAppointment({
+            psychoId: psycho.id,
+            clientId: client.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await testDb`
+            INSERT INTO attachments (appointment_id, author_id, type, name, text)
+            VALUES (${apt.id}, ${psycho.id}, 'note', 'Note', 'Text')
+        `
+
+        const res = await app.request(
+            `/api/clients/${client.id}/appointments`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.appointments).toHaveLength(1)
+        expect(body.appointments[0]).toMatchObject({
+            clientName: 'Test Client',
+            notesCount: 1,
+            impressionsCount: 0,
+            recommendationsCount: 0,
+        })
+    })
+
+    it('returns only the appointments of the requested client', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const clientA = await insertTestUser({ email: 'a@test.com', activeRole: 'client' })
+        const clientB = await insertTestUser({ email: 'b@test.com', activeRole: 'client' })
+        await ClientsService.linkClientToPsycho(clientA.id, psycho.id)
+        await ClientsService.linkClientToPsycho(clientB.id, psycho.id)
+        const aptA = await createAppointment({
+            psychoId: psycho.id,
+            clientId: clientA.id,
+            startTime: futureDate(7),
+            endTime: futureDate(7, 11),
+        })
+        await createAppointment({
+            psychoId: psycho.id,
+            clientId: clientB.id,
+            startTime: futureDate(8),
+            endTime: futureDate(8, 11),
+        })
+
+        const res = await app.request(
+            `/api/clients/${clientA.id}/appointments`,
+            await asUser(psycho.id, { headers: PSYCHO_HEADER }),
+        )
+
+        expect(res.status).toBe(200)
+        const body = await jsonBody(res)
+        expect(body.appointments).toHaveLength(1)
+        expect(body.appointments[0].id).toBe(aptA.id)
+    })
+
     it('returns 400 ClientNotLinked when client is not linked to psychologist', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })

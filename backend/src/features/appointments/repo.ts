@@ -164,17 +164,6 @@ export const AppointmentsRepo = {
         }
     },
 
-    async listForPsychoClient(psychoId: string, clientId: string): Promise<Appointment[]> {
-        const rows = await db`
-            SELECT ${db.unsafe(appointmentColumns())}
-            FROM appointments
-            WHERE psycho_id = ${psychoId}
-              AND client_id = ${clientId}
-            ORDER BY start_time DESC
-        `
-        return rows as Appointment[]
-    },
-
     async listForClient(clientId: string): Promise<AppointmentWithPsycho[]> {
         const rows = await db`
             SELECT ${db.unsafe(appointmentColumns('a.'))},
@@ -187,7 +176,8 @@ export const AppointmentsRepo = {
         return rows as AppointmentWithPsycho[]
     },
 
-    async listAllForPsycho(psychoId: string): Promise<AppointmentWithClient[]> {
+    async listForPsycho(psychoId: string, clientId?: string): Promise<AppointmentWithClient[]> {
+        const clientFilter = clientId ? db`AND a.client_id = ${clientId}` : db``
         const rows = await db`
             SELECT ${db.unsafe(appointmentColumns('a.'))},
                 u.name AS "clientName",
@@ -198,6 +188,7 @@ export const AppointmentsRepo = {
             JOIN "user" u ON u.id = a.client_id
             JOIN psychologist_clients pc ON pc.client_id = a.client_id AND pc.psycho_id = a.psycho_id AND pc.disconnected_at IS NULL
             WHERE a.psycho_id = ${psychoId}
+            ${clientFilter}
             ORDER BY a.start_time DESC
         `
         return rows as AppointmentWithClient[]

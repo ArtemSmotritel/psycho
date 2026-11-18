@@ -19,9 +19,10 @@ import type { SessionFormValues } from './schema'
 interface SessionClientSelectorProps {
     form: UseFormReturn<SessionFormValues>
     clients: ClientSummary[]
+    disabled?: boolean
 }
 
-export function SessionClientSelector({ form, clients }: SessionClientSelectorProps) {
+export function SessionClientSelector({ form, clients, disabled }: SessionClientSelectorProps) {
     const [clientOpen, setClientOpen] = useState(false)
     const [searchValue, setSearchValue] = useState('')
 
@@ -43,6 +44,7 @@ export function SessionClientSelector({ form, clients }: SessionClientSelectorPr
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={clientOpen}
+                                    disabled={disabled}
                                     className={cn(
                                         'w-full justify-between',
                                         !field.value && 'text-muted-foreground',
