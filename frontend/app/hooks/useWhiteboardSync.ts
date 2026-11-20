@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
+import { useOptionalSidebar } from '~/components/ui/sidebar'
+
+// Matches the `duration-200` width transition of the sidebar gap in components/ui/sidebar.tsx.
+const SIDEBAR_TRANSITION_MS = 200
 
 /** Lightweight signature of an element array: "id@version" entries sorted and joined. */
 function elementSignature(els: readonly ExcalidrawElement[]): string {
@@ -201,6 +205,20 @@ export function useWhiteboardSync(appointmentId: string): {
         },
         [],
     )
+
+    // Excalidraw refreshes its stored canvas offsets only when its container changes size.
+    // A sidebar toggle can move the container without resizing it (centered, max-width page),
+    // so the offsets go stale and pointer input lands in the wrong place.
+    const sidebarState = useOptionalSidebar()?.state
+    const previousSidebarStateRef = useRef(sidebarState)
+    useEffect(() => {
+        if (previousSidebarStateRef.current === sidebarState) return
+        previousSidebarStateRef.current = sidebarState
+        const timeout = setTimeout(() => {
+            excalidrawAPIRef.current?.refresh()
+        }, SIDEBAR_TRANSITION_MS + 50)
+        return () => clearTimeout(timeout)
+    }, [sidebarState])
 
     return { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors, connected }
 }

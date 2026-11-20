@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 // WebSocket mock — jsdom does not provide a working WebSocket constructor.
 // We define a class-based mock and track the most recently constructed instance via lastWs.
@@ -46,11 +46,13 @@ class MockWebSocket {
 vi.stubGlobal('WebSocket', MockWebSocket)
 
 import { useWhiteboardSync } from '~/hooks/useWhiteboardSync'
+import { SidebarProvider, useSidebar } from '~/components/ui/sidebar'
 
 function makeExcalidrawAPIMock() {
     return {
         updateScene: vi.fn(),
         addFiles: vi.fn(),
+        refresh: vi.fn(),
         getAppState: vi.fn().mockReturnValue({
             scrollX: 0,
             scrollY: 0,
@@ -329,5 +331,47 @@ describe('useWhiteboardSync', () => {
         unmount()
 
         expect(lastWs!.close).toHaveBeenCalled()
+    })
+
+    describe('sidebar toggle', () => {
+        function renderInsideSidebar() {
+            return renderHook(
+                () => ({ sync: useWhiteboardSync('apt-123'), sidebar: useSidebar() }),
+                { wrapper: SidebarProvider },
+            )
+        }
+
+        beforeEach(() => {
+            vi.useFakeTimers()
+        })
+
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
+        it('refreshes Excalidraw offsets once after the sidebar transition ends', () => {
+            const api = makeExcalidrawAPIMock()
+            const { result } = renderInsideSidebar()
+            act(() => result.current.sync.setExcalidrawAPI(api as any))
+
+            act(() => result.current.sidebar.toggleSidebar())
+            expect(api.refresh).not.toHaveBeenCalled()
+
+            act(() => {
+                vi.advanceTimersByTime(300)
+            })
+            expect(api.refresh).toHaveBeenCalledTimes(1)
+        })
+
+        it('does not refresh on mount', () => {
+            const api = makeExcalidrawAPIMock()
+            const { result } = renderInsideSidebar()
+            act(() => result.current.sync.setExcalidrawAPI(api as any))
+
+            act(() => {
+                vi.advanceTimersByTime(1000)
+            })
+            expect(api.refresh).not.toHaveBeenCalled()
+        })
     })
 })
