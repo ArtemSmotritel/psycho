@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { isAxiosError } from 'axios'
 import { appointmentService } from '~/services/appointment.service'
 import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
+import { getAppointmentConflictMessage } from '~/utils/utils'
 
 interface CreateAppointmentValues {
     clientId: string
@@ -57,6 +58,11 @@ export function useCreateAppointment(onSuccess?: () => void) {
             ) {
                 const conflictingPings: PingConflict[] = err.response.data.conflictingPings ?? []
                 throw new PingConflictError(conflictingPings)
+            }
+            const conflictMessage = getAppointmentConflictMessage(err)
+            if (conflictMessage) {
+                toast.error(conflictMessage)
+                return
             }
             toast.error('Failed to schedule appointment. Please try again.')
         } finally {

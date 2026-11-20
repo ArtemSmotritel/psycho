@@ -14,7 +14,7 @@ import { logIfNotProd } from '~/utils/logger'
 import { isAxiosError } from 'axios'
 import { PingConflictError, type PingConflict } from '~/components/PingConflictDialog'
 import { format } from 'date-fns'
-import { formatAppointmentTimeRange } from '~/utils/utils'
+import { formatAppointmentTimeRange, getAppointmentConflictMessage } from '~/utils/utils'
 import { routes } from '~/lib/routes'
 import { AppointmentNotesPanel } from '~/components/attachments/notes/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/attachments/recommendations/AppointmentRecommendationsPanel'
@@ -289,6 +289,11 @@ export default function Session() {
                                     const conflictingPings: PingConflict[] =
                                         err.response.data.conflictingPings ?? []
                                     throw new PingConflictError(conflictingPings)
+                                }
+                                const conflictMessage = getAppointmentConflictMessage(err)
+                                if (conflictMessage) {
+                                    toast.error(conflictMessage)
+                                    return
                                 }
                                 toast.error('Failed to update appointment. Please try again.')
                             } finally {
