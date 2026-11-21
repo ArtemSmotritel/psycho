@@ -12,7 +12,6 @@ import { WhiteboardRooms, type Room, type RoomConnection } from './rooms'
 const incomingMessageSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal('sync'),
-        versions: z.record(z.string(), z.tuple([z.number().int().min(0), z.number().int()])),
         fileIds: z.array(z.string()).max(MAX_ROOM_FILES),
     }),
     z.object({ type: z.literal('elements'), elements: z.array(z.unknown()) }),
@@ -78,7 +77,7 @@ whiteboardRoutes.get(
         return {
             onOpen(_, ws) {
                 const rawWs = ws.raw as ServerWebSocket<unknown>
-                const connection = WhiteboardRooms.createConnection(rawWs, userId, userName)
+                const connection = WhiteboardRooms.createConnection(rawWs, userName)
                 conn = connection
 
                 ready = WhiteboardRooms.join(appointmentId, connection)
@@ -103,10 +102,15 @@ whiteboardRoutes.get(
                     return
                 }
 
-                queue = queue.then(async () => {
-                    const room = await ready
-                    if (room) WhiteboardRooms.handle(room, connection, message)
-                })
+                // A thrown error must not stop the queue, or the connection would silently ignore all later messages.
+                queue = queue
+                    .then(async () => {
+                        const room = await ready
+                        if (room) WhiteboardRooms.handle(room, connection, message)
+                    })
+                    .catch((err) => {
+                        log.error('[Whiteboard] Failed to handle message', { appointmentId, err })
+                    })
             },
 
             onClose() {

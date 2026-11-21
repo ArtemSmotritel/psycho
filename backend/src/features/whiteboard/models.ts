@@ -23,26 +23,20 @@ export interface WhiteboardState {
 }
 
 export type IncomingWhiteboardMessage =
-    | { type: 'sync'; versions: Record<string, ElementVersion>; fileIds: string[] }
+    | { type: 'sync'; fileIds: string[] }
     | { type: 'elements'; elements: unknown[] }
     | { type: 'files'; files: Record<string, unknown> }
     | { type: 'cursor'; x: number; y: number }
 
 export type OutgoingWhiteboardMessage =
-    | {
-          type: 'sync_reply'
-          elements: WhiteboardElement[]
-          want: string[]
-          wantFiles: string[]
-      }
+    | { type: 'sync_reply'; elements: WhiteboardElement[]; wantFiles: string[] }
     | { type: 'elements'; elements: WhiteboardElement[] }
     | { type: 'files'; files: WhiteboardFiles }
     | {
           type: 'cursor'
           x: number
           y: number
-          userId: string
           userName: string
           connectionId: string
       }
-    | { type: 'leave'; userId: string; connectionId: string }
+    | { type: 'leave'; connectionId: string }

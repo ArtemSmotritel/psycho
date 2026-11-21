@@ -4,6 +4,7 @@ import { Button } from '~/components/ui/button'
 import { AssociativeImageBrowser } from '../AssociativeImageBrowser'
 import { useAssociativeImageBrowser } from '~/hooks/useAssociativeImageBrowser'
 import type { AssociativeImage } from '~/models/associative-image'
+import { ImageTooLargeError, prepareImageForWhiteboard } from '~/utils/whiteboard-image'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 
 interface WhiteboardImageInsertProps {
@@ -15,33 +16,31 @@ async function insertImageOntoCanvas(
     api: ExcalidrawImperativeAPI,
 ): Promise<void> {
     const response = await fetch(image.imageUrl, { credentials: 'include' })
-    const blob = await response.blob()
+    // The library keeps the original. The board gets a copy that follows the same size rule
+    // as Excalidraw's own image tool, so the whiteboard server accepts it.
+    const prepared = await prepareImageForWhiteboard(await response.blob())
 
     const dataURL = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onloadend = () => resolve(reader.result as string)
         reader.onerror = reject
-        reader.readAsDataURL(blob)
-    })
-
-    const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-        const img = new Image()
-        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
-        img.src = dataURL
+        reader.readAsDataURL(prepared.blob)
     })
 
     const MAX_DIM = 400
-    const scale = Math.min(MAX_DIM / dimensions.width, MAX_DIM / dimensions.height, 1)
-    const width = dimensions.width * scale
-    const height = dimensions.height * scale
+    const scale = Math.min(MAX_DIM / prepared.width, MAX_DIM / prepared.height, 1)
+    const width = prepared.width * scale
+    const height = prepared.height * scale
 
-    const fileId = `assoc-${image.id}-${Date.now()}`
+    // One id for each library image. A second insert of the same image reuses the stored
+    // file, because the library never replaces the content of an image.
+    const fileId = `assoc-${image.id}`
 
     api.addFiles([
         {
             id: fileId as any,
             dataURL: dataURL as any,
-            mimeType: blob.type as any,
+            mimeType: prepared.blob.type as any,
             created: Date.now(),
         },
     ])
@@ -76,8 +75,10 @@ export function WhiteboardImageInsert({ excalidrawAPI }: WhiteboardImageInsertPr
         try {
             await insertImageOntoCanvas(image, excalidrawAPI)
             toast.success(`Inserted "${image.name}" onto the whiteboard.`)
-        } catch {
-            toast.error('Failed to insert image.')
+        } catch (error) {
+            toast.error(
+                error instanceof ImageTooLargeError ? error.message : 'Failed to insert image.',
+            )
         } finally {
             setInsertingId(null)
         }

@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, setSystemTime } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
 import { websocket } from 'config/websocket'
 import { testDb } from '../../test-fixtures/db'
@@ -6,7 +6,7 @@ import { futureDate } from '../../test-fixtures/dates'
 import { createAppointment, startAppointment } from '../../test-fixtures/appointments'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { ClientsService } from '../clients/services'
-import { SAVE_DEBOUNCE_MS, SAVE_MAX_WAIT_MS } from './limits'
+import { MAX_MESSAGES_PER_WINDOW, SAVE_DELAY_MS } from './limits'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 
@@ -18,7 +18,6 @@ beforeAll(() => {
 })
 
 afterEach(async () => {
-    setSystemTime()
     await Promise.all(openSockets.splice(0).map((s) => s.close()))
 })
 
@@ -101,9 +100,9 @@ class TestSocket {
         return this.closeInfo
     }
 
-    /** Sends `sync` with an empty map and returns the reply. */
+    /** Sends `sync` with no files and returns the reply. */
     async syncEmpty() {
-        this.send({ type: 'sync', versions: {}, fileIds: [] })
+        this.send({ type: 'sync', fileIds: [] })
         return this.take('sync_reply')
     }
 
@@ -218,7 +217,7 @@ describe('whiteboard WebSocket: sync and merge', () => {
 
         const reply = await a.syncEmpty()
 
-        expect(reply).toEqual({ type: 'sync_reply', elements: [], want: [], wantFiles: [] })
+        expect(reply).toEqual({ type: 'sync_reply', elements: [], wantFiles: [] })
     })
 
     it('relays accepted elements to the other user and not back to the sender', async () => {
@@ -283,7 +282,7 @@ describe('whiteboard WebSocket: sync and merge', () => {
         expect(await b.expectNone('elements')).toBe(true)
     })
 
-    it('lets a reconnecting client push offline edits and receive missed ones', async () => {
+    it('sends the whole scene on sync and accepts the reconnecting client resending its own', async () => {
         const { apt, psychoHeaders, clientHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
         const b = await TestSocket.connect(apt.id, clientHeaders)
@@ -292,22 +291,21 @@ describe('whiteboard WebSocket: sync and merge', () => {
         a.send({ type: 'elements', elements: [el('shared', 1), el('missed-by-b', 1)] })
         await b.take('elements')
 
-        // b reconnects holding an old "shared" and an offline-only element.
+        // b reconnects after a changed "shared". b holds an offline-only element.
         await b.close()
         a.send({ type: 'elements', elements: [el('shared', 3)] })
         const b2 = await TestSocket.connect(apt.id, clientHeaders)
-        b2.send({
-            type: 'sync',
-            versions: { shared: [1, 1], offline: [1, 1] },
-            fileIds: [],
-        })
-        const reply = await b2.take('sync_reply')
-
+        const reply = await b2.syncEmpty()
         expect(reply.elements.map((e: any) => `${e.id}@${e.version}`).sort()).toEqual([
             'missed-by-b@1',
             'shared@3',
         ])
-        expect(reply.want).toEqual(['offline'])
+
+        // The client resends an element that the server lacks and one that the server holds.
+        b2.send({ type: 'elements', elements: [el('offline', 1), el('shared', 3)] })
+        const relayed = await a.take('elements')
+        expect(relayed.elements.map((e: any) => e.id)).toEqual(['offline'])
+        expect(await a.expectNone('elements')).toBe(true)
     })
 
     it('shares one room when two users join an empty board at the same moment', async () => {
@@ -324,18 +322,40 @@ describe('whiteboard WebSocket: sync and merge', () => {
         expect((await b.take('elements')).elements[0].id).toBe('e1')
     })
 
+    it('keeps one room when a user closes while another joins the same room load', async () => {
+        const { apt, psychoHeaders, clientHeaders } = await setupSession()
+        let a!: TestSocket
+        let b!: TestSocket
+        // The lock holds the room load, so a closes while a and b both wait for it.
+        await testDb.begin(async (tx) => {
+            await tx`LOCK TABLE whiteboard_files IN ACCESS EXCLUSIVE MODE`
+            // a joins first, so its join step runs first when the load ends.
+            a = await TestSocket.connect(apt.id, psychoHeaders)
+            b = await TestSocket.connect(apt.id, clientHeaders)
+            await a.close()
+            await Bun.sleep(100)
+        })
+        await b.syncEmpty()
+        const c = await TestSocket.connect(apt.id, psychoHeaders)
+        await c.syncEmpty()
+
+        b.send({ type: 'elements', elements: [el('e1', 1)] })
+
+        expect((await c.take('elements')).elements[0].id).toBe('e1')
+    })
+
     it('handles a message that arrives right after the socket opens', async () => {
         const { apt, psychoHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
 
         // No wait between open and the first message.
-        a.send({ type: 'sync', versions: {}, fileIds: [] })
+        a.send({ type: 'sync', fileIds: [] })
 
         expect((await a.take('sync_reply')).type).toBe('sync_reply')
     })
 
     it('relays cursors with the sender connection id and sends leave on disconnect', async () => {
-        const { apt, psychoHeaders, clientHeaders, psycho } = await setupSession()
+        const { apt, psychoHeaders, clientHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
         const b = await TestSocket.connect(apt.id, clientHeaders)
         await a.syncEmpty()
@@ -343,7 +363,8 @@ describe('whiteboard WebSocket: sync and merge', () => {
 
         a.send({ type: 'cursor', x: 10, y: 20 })
         const cursor = await b.take('cursor')
-        expect(cursor).toMatchObject({ x: 10, y: 20, userId: psycho.id })
+        expect(cursor).toMatchObject({ x: 10, y: 20, userName: expect.any(String) })
+        expect(cursor).not.toHaveProperty('userId')
         expect(typeof cursor.connectionId).toBe('string')
 
         await a.close()
@@ -374,17 +395,33 @@ describe('whiteboard WebSocket: files', () => {
         )
 
         const late = await TestSocket.connect(apt.id, psychoHeaders)
-        late.send({ type: 'sync', versions: {}, fileIds: [] })
+        late.send({ type: 'sync', fileIds: [] })
         const files = await late.take('files')
         expect(Object.keys(files.files)).toEqual(['f1'])
         await late.take('sync_reply')
+    })
+
+    it('sends each missing file in its own message', async () => {
+        const { apt, psychoHeaders } = await setupSession()
+        const a = await TestSocket.connect(apt.id, psychoHeaders)
+        await a.syncEmpty()
+        a.send({ type: 'files', files: { f1: img('f1') } })
+        a.send({ type: 'files', files: { f2: img('f2') } })
+        await a.expectNone('files', 100)
+
+        const b = await TestSocket.connect(apt.id, psychoHeaders)
+        b.send({ type: 'sync', fileIds: [] })
+
+        expect(Object.keys((await b.take('files')).files)).toEqual(['f1'])
+        expect(Object.keys((await b.take('files')).files)).toEqual(['f2'])
+        await b.take('sync_reply')
     })
 
     it('asks the client for files that the server lacks', async () => {
         const { apt, psychoHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
 
-        a.send({ type: 'sync', versions: {}, fileIds: ['only-on-client'] })
+        a.send({ type: 'sync', fileIds: ['only-on-client'] })
 
         expect((await a.take('sync_reply')).wantFiles).toEqual(['only-on-client'])
     })
@@ -403,6 +440,20 @@ describe('whiteboard WebSocket: limits', () => {
         expect((await b.take('elements')).elements.map((e: any) => e.id)).toEqual(['good'])
     })
 
+    it('relays a large element without closing', async () => {
+        const { apt, psychoHeaders, clientHeaders } = await setupSession()
+        const a = await TestSocket.connect(apt.id, psychoHeaders)
+        const b = await TestSocket.connect(apt.id, clientHeaders)
+        await a.syncEmpty()
+        await b.syncEmpty()
+
+        a.send({ type: 'elements', elements: [el('big', 1, 1, { text: 'x'.repeat(7 * 1024 * 1024) })] })
+
+        const relayed = await b.take('elements', 8000)
+        expect(relayed.elements.map((e: any) => e.id)).toEqual(['big'])
+        expect(a.closeInfo).toBeNull()
+    }, 15000)
+
     it('closes a connection that keeps sending invalid messages', async () => {
         const { apt, psychoHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
@@ -414,8 +465,21 @@ describe('whiteboard WebSocket: limits', () => {
     })
 })
 
+describe('whiteboard WebSocket: rate limit', () => {
+    it('closes a connection that sends too many messages in one window', async () => {
+        const { apt, psychoHeaders } = await setupSession()
+        const a = await TestSocket.connect(apt.id, psychoHeaders)
+        await a.syncEmpty()
+
+        for (let i = 0; i < MAX_MESSAGES_PER_WINDOW + 50; i++)
+            a.send({ type: 'cursor', x: 1, y: 1 })
+
+        expect(await a.waitClosed()).toEqual({ code: 1013, reason: 'RateLimited' })
+    })
+})
+
 describe('whiteboard WebSocket: saving', () => {
-    it('saves ordered elements when the last user leaves', async () => {
+    it('saves elements when the last user leaves', async () => {
         const { apt, psychoHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
         await a.syncEmpty()
@@ -431,7 +495,7 @@ describe('whiteboard WebSocket: saving', () => {
             () => readElements(apt.id),
             (v) => v !== null,
         )
-        expect(saved!.map((e) => e.id)).toEqual(['first', 'second'])
+        expect(saved!.map((e) => e.id)).toEqual(['second', 'first'])
     })
 
     it('loads saved state into a new room', async () => {
@@ -452,28 +516,57 @@ describe('whiteboard WebSocket: saving', () => {
         expect(reply.elements.map((e: any) => `${e.id}@${e.version}`)).toEqual(['e1@4'])
     })
 
-    it('saves within the maximum wait even when changes never pause', async () => {
+    it('saves after the delay even when changes never pause', async () => {
         const { apt, psychoHeaders } = await setupSession()
         const a = await TestSocket.connect(apt.id, psychoHeaders)
         await a.syncEmpty()
 
-        a.send({ type: 'elements', elements: [el('e1', 1)] })
-        await Bun.sleep(100)
-        // Jump the clock to just before the maximum wait. The next change must save soon,
-        // well before a new full debounce period passes.
-        setSystemTime(new Date(Date.now() + SAVE_MAX_WAIT_MS - 1000))
-        a.send({ type: 'elements', elements: [el('e1', 2)] })
-
-        expect(SAVE_DEBOUNCE_MS).toBeGreaterThan(1500)
         const started = Date.now()
+        let version = 1
+        a.send({ type: 'elements', elements: [el('e1', version)] })
+        // A change every second must not restart the timer.
+        const sender = setInterval(() => {
+            version++
+            a.send({ type: 'elements', elements: [el('e1', version)] })
+        }, 1000)
+        try {
+            const saved = await waitFor(
+                () => readElements(apt.id),
+                (v) => v !== null,
+                SAVE_DELAY_MS + 1500,
+            )
+            expect(saved![0].version).toBeGreaterThanOrEqual(1)
+            expect(Date.now() - started).toBeLessThan(SAVE_DELAY_MS + 1500)
+        } finally {
+            clearInterval(sender)
+        }
+    }, 15000)
+
+    it('keeps work after a failed save and stores it when the last user leaves', async () => {
+        const { apt, psychoHeaders } = await setupSession()
+        const a = await TestSocket.connect(apt.id, psychoHeaders)
+        await a.syncEmpty()
+
+        // A missing files table makes the save fail. The elements must stay unsaved.
+        await testDb`ALTER TABLE whiteboard_files RENAME TO whiteboard_files_broken`
+        try {
+            a.send({ type: 'files', files: { f1: img('f1') } })
+            a.send({ type: 'elements', elements: [el('e1', 1)] })
+            await Bun.sleep(SAVE_DELAY_MS + 500)
+            expect(await readElements(apt.id)).toBeNull()
+        } finally {
+            await testDb`ALTER TABLE whiteboard_files_broken RENAME TO whiteboard_files`
+        }
+
+        await a.close()
+
         const saved = await waitFor(
             () => readElements(apt.id),
             (v) => v !== null,
-            2500,
         )
-        expect(saved![0].version).toBe(2)
-        expect(Date.now() - started).toBeLessThan(SAVE_DEBOUNCE_MS)
-    })
+        expect(saved!.map((e) => e.id)).toEqual(['e1'])
+        expect(await readFileIds(apt.id)).toEqual(['f1'])
+    }, 15000)
 })
 
 describe('whiteboard WebSocket: appointment end', () => {
@@ -495,9 +588,9 @@ describe('whiteboard WebSocket: appointment end', () => {
 
         expect(await a.waitClosed()).toEqual({ code: 1000, reason: 'AppointmentEnded' })
         expect(await b.waitClosed()).toEqual({ code: 1000, reason: 'AppointmentEnded' })
-        // Wait past the debounce. A pending save must not resurrect the state.
-        await Bun.sleep(SAVE_DEBOUNCE_MS + 500)
+        // Wait past the save delay. A pending save must not resurrect the state.
+        await Bun.sleep(SAVE_DELAY_MS + 500)
         expect(await readElements(apt.id)).toBeNull()
         expect(await readFileIds(apt.id)).toEqual([])
-    })
+    }, 15000)
 })

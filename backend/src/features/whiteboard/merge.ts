@@ -1,8 +1,8 @@
 import {
-    FILES_CHUNK_BYTES,
     MAX_ELEMENT_ID_LENGTH,
     MAX_FILE_BYTES,
     MAX_ROOM_ELEMENTS,
+    MAX_ROOM_FILE_BYTES,
     MAX_ROOM_FILES,
 } from './limits'
 import type { ElementVersion, WhiteboardElement, WhiteboardFile, WhiteboardFiles } from './models'
@@ -107,6 +107,8 @@ export const mergeFiles = (
 ): { added: WhiteboardFiles; rejected: number } => {
     const added: WhiteboardFiles = {}
     let rejected = 0
+    let roomBytes = 0
+    for (const file of current.values()) roomBytes += file.dataURL.length
     for (const [fileId, raw] of Object.entries(incoming)) {
         const file = parseFile(fileId, raw)
         if (!file) {
@@ -115,97 +117,36 @@ export const mergeFiles = (
         }
         // A file id identifies immutable content. An existing id is never replaced.
         if (current.has(fileId)) continue
-        if (current.size >= MAX_ROOM_FILES) {
+        if (
+            current.size >= MAX_ROOM_FILES ||
+            roomBytes + file.dataURL.length > MAX_ROOM_FILE_BYTES
+        ) {
             rejected++
             continue
         }
+        roomBytes += file.dataURL.length
         current.set(fileId, file)
         added[fileId] = file
     }
     return { added, rejected }
 }
 
-/**
- * Orders elements by their fractional `index`. Elements without an index (old clients)
- * keep their insertion order and go after the indexed ones.
- */
-export const orderElements = (elements: Iterable<WhiteboardElement>): WhiteboardElement[] => {
-    const indexed: WhiteboardElement[] = []
-    const unindexed: WhiteboardElement[] = []
-    for (const element of elements) {
-        if (typeof element.index === 'string') indexed.push(element)
-        else unindexed.push(element)
-    }
-    indexed.sort((a, b) => {
-        const left = a.index as string
-        const right = b.index as string
-        return left < right ? -1 : left > right ? 1 : 0
-    })
-    return [...indexed, ...unindexed]
-}
-
-export interface SyncDiff {
-    /** Server elements that the client lacks or holds at an older revision. */
-    elements: WhiteboardElement[]
-    /** Ids for which the client holds a newer revision, or that the server lacks. */
-    want: string[]
+export interface FileDiff {
     /** Server files that the client lacks. */
-    missingFiles: WhiteboardFiles
+    missing: WhiteboardFiles
     /** File ids that the client holds and the server lacks. */
-    wantFiles: string[]
+    wanted: string[]
 }
 
-export const diffSync = (
-    elements: Map<string, WhiteboardElement>,
+export const diffFiles = (
     files: Map<string, WhiteboardFile>,
-    clientVersions: Record<string, ElementVersion>,
     clientFileIds: readonly string[],
-): SyncDiff => {
-    const send: WhiteboardElement[] = []
-    const want: string[] = []
-
-    for (const element of elements.values()) {
-        const clientVersion = clientVersions[element.id]
-        if (!clientVersion) {
-            send.push(element)
-            continue
-        }
-        const serverVersion = versionOf(element)
-        if (decide(clientVersion, serverVersion) === 'accept') send.push(element)
-        else if (decide(serverVersion, clientVersion) === 'accept') want.push(element.id)
-    }
-    for (const id of Object.keys(clientVersions)) {
-        if (!elements.has(id)) want.push(id)
-    }
-
+): FileDiff => {
     const clientFiles = new Set(clientFileIds)
-    const missingFiles: WhiteboardFiles = {}
+    const missing: WhiteboardFiles = {}
     for (const [fileId, file] of files) {
-        if (!clientFiles.has(fileId)) missingFiles[fileId] = file
+        if (!clientFiles.has(fileId)) missing[fileId] = file
     }
-    const wantFiles = clientFileIds.filter((fileId) => !files.has(fileId))
-
-    return { elements: orderElements(send), want, missingFiles, wantFiles }
-}
-
-/** Splits files into groups whose payload stays near `maxBytes`. A single large file gets its own group. */
-export const chunkFiles = (
-    files: WhiteboardFiles,
-    maxBytes: number = FILES_CHUNK_BYTES,
-): WhiteboardFiles[] => {
-    const chunks: WhiteboardFiles[] = []
-    let current: WhiteboardFiles = {}
-    let currentBytes = 0
-    for (const [fileId, file] of Object.entries(files)) {
-        const size = file.dataURL.length
-        if (currentBytes > 0 && currentBytes + size > maxBytes) {
-            chunks.push(current)
-            current = {}
-            currentBytes = 0
-        }
-        current[fileId] = file
-        currentBytes += size
-    }
-    if (currentBytes > 0 || Object.keys(current).length > 0) chunks.push(current)
-    return chunks
+    const wanted = clientFileIds.filter((fileId) => !files.has(fileId))
+    return { missing, wanted }
 }

@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import {
-    chunkFiles,
-    decide,
-    diffSync,
-    mergeElements,
-    mergeFiles,
-    orderElements,
-    parseElement,
-} from './merge'
+import { decide, diffFiles, mergeElements, mergeFiles, parseElement } from './merge'
+import { MAX_FILE_BYTES, MAX_ROOM_FILE_BYTES } from './limits'
 import type { WhiteboardElement, WhiteboardFile } from './models'
 
 const el = (id: string, version: number, versionNonce = 1, extra = {}): WhiteboardElement => ({
@@ -135,64 +128,41 @@ describe('mergeFiles', () => {
     })
 })
 
-describe('orderElements', () => {
-    it('sorts by fractional index and puts unindexed elements last', () => {
-        const ordered = orderElements([
-            el('c', 1, 1),
-            el('b', 1, 1, { index: 'a2' }),
-            el('a', 1, 1, { index: 'a1' }),
-        ])
-        expect(ordered.map((e) => e.id)).toEqual(['a', 'b', 'c'])
-    })
-})
-
-describe('diffSync', () => {
-    const server = new Map<string, WhiteboardElement>([
-        ['a', el('a', 3)],
-        ['b', el('b', 1)],
+describe('diffFiles', () => {
+    const files = new Map<string, WhiteboardFile>([
+        ['f1', file('f1')],
+        ['f2', file('f2')],
     ])
 
-    it('sends everything to a client with an empty map', () => {
-        const diff = diffSync(server, new Map(), {}, [])
-        expect(diff.elements.map((e) => e.id).sort()).toEqual(['a', 'b'])
-        expect(diff.want).toEqual([])
-    })
-
-    it('sends older client elements, wants newer ones and unknown ids', () => {
-        const diff = diffSync(server, new Map(), { a: [1, 1], b: [4, 1], z: [1, 1] }, [])
-        expect(diff.elements.map((e) => e.id)).toEqual(['a'])
-        expect(diff.want.sort()).toEqual(['b', 'z'])
-    })
-
-    it('sends and wants nothing when both sides match', () => {
-        const diff = diffSync(server, new Map(), { a: [3, 1], b: [1, 1] }, [])
-        expect(diff.elements).toEqual([])
-        expect(diff.want).toEqual([])
+    it('sends every file to a client that holds none', () => {
+        const diff = diffFiles(files, [])
+        expect(Object.keys(diff.missing)).toEqual(['f1', 'f2'])
+        expect(diff.wanted).toEqual([])
     })
 
     it('diffs files by id in both directions', () => {
-        const files = new Map<string, WhiteboardFile>([
-            ['f1', file('f1')],
-            ['f2', file('f2')],
-        ])
-        const diff = diffSync(new Map(), files, {}, ['f2', 'f3'])
-        expect(Object.keys(diff.missingFiles)).toEqual(['f1'])
-        expect(diff.wantFiles).toEqual(['f3'])
+        const diff = diffFiles(files, ['f2', 'f3'])
+        expect(Object.keys(diff.missing)).toEqual(['f1'])
+        expect(diff.wanted).toEqual(['f3'])
+    })
+
+    it('sends and wants nothing when both sides match', () => {
+        const diff = diffFiles(files, ['f1', 'f2'])
+        expect(diff.missing).toEqual({})
+        expect(diff.wanted).toEqual([])
     })
 })
 
-describe('chunkFiles', () => {
-    it('splits files into groups under the byte limit', () => {
-        const chunks = chunkFiles({ a: file('a', 60), b: file('b', 60), c: file('c', 30) }, 100)
-        expect(chunks.map((c) => Object.keys(c))).toEqual([['a'], ['b', 'c']])
-    })
+describe('size limits', () => {
+    it('rejects a file that would push the room above the room file limit', () => {
+        const room = new Map<string, WhiteboardFile>()
+        const fileCount = MAX_ROOM_FILE_BYTES / MAX_FILE_BYTES
+        const incoming: Record<string, unknown> = {}
+        for (let i = 0; i <= fileCount; i++) incoming[`f${i}`] = file(`f${i}`, MAX_FILE_BYTES)
 
-    it('puts one oversized file in its own group', () => {
-        const chunks = chunkFiles({ a: file('a', 500) }, 100)
-        expect(chunks).toHaveLength(1)
-    })
+        const { added, rejected } = mergeFiles(room, incoming)
 
-    it('returns no groups for no files', () => {
-        expect(chunkFiles({})).toEqual([])
+        expect(Object.keys(added)).toHaveLength(fileCount)
+        expect(rejected).toBe(1)
     })
 })

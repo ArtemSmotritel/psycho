@@ -133,7 +133,8 @@ const openSocket = () =>
         lastWs!.onopen?.(new Event('open'))
     })
 
-// Excalidraw loads through a dynamic import and applies on the next animation frame.
+// Excalidraw loads through a dynamic import and is ready on the next animation frame.
+// The hook opens the socket only after that.
 const attachApi = async (
     result: { current: { setExcalidrawAPI: (api: any) => void } },
     api: any,
@@ -147,6 +148,48 @@ const attachApi = async (
 const sentMessages = () =>
     (lastWs!.send as ReturnType<typeof vi.fn>).mock.calls.map((c) => JSON.parse(c[0] as string))
 
+// Renders the hook and attaches the Excalidraw API, so the hook opens its socket.
+const renderReady = async (scene: any[] = []) => {
+    const hook = renderHook(() => useWhiteboardSync('apt-123'))
+    const api = makeExcalidrawAPIMock(scene)
+    await attachApi(hook.result, api)
+    return { ...hook, api }
+}
+
+const closeSocket = (code = 1006) =>
+    act(() => {
+        lastWs!.readyState = MockWebSocket.CLOSED
+        lastWs!.onclose?.(new CloseEvent('close', { code }))
+    })
+
+// The hook sends on a 50 ms interval, so a change goes out on the next tick.
+const waitForTick = () =>
+    act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 120))
+    })
+
+const clearSent = () => (lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
+
+// Changes the mock scene and tells the hook, as Excalidraw does, then waits for the next tick.
+const changeScene = async (
+    hook: {
+        result: { current: { onWhiteboardChange: () => void } }
+        api: { scene: any[]; files: any }
+    },
+    elements: any[],
+    files: Record<string, unknown> = {},
+) => {
+    hook.api.scene = elements
+    hook.api.files = files
+    act(() => hook.result.current.onWhiteboardChange())
+    await waitForTick()
+}
+
+const sentElementIds = () =>
+    sentMessages()
+        .filter((m) => m.type === 'elements')
+        .flatMap((m) => m.elements.map((e: any) => e.id))
+
 describe('useWhiteboardSync', () => {
     beforeEach(() => {
         lastWs = null
@@ -154,113 +197,67 @@ describe('useWhiteboardSync', () => {
         constructorLastUrl = ''
     })
 
-    it('constructs WebSocket with the correct URL derived from VITE_API_URL', () => {
-        renderHook(() => useWhiteboardSync('apt-123'))
+    it('constructs WebSocket with the correct URL derived from VITE_API_URL', async () => {
+        await renderReady()
 
         expect(constructorCallCount).toBe(1)
         expect(constructorLastUrl).toBe('ws://localhost:3000/api/whiteboard/apt-123')
     })
 
-    it('sets connected to true when WS onopen fires', () => {
+    it('does not open the socket until Excalidraw is ready', async () => {
         const { result } = renderHook(() => useWhiteboardSync('apt-123'))
+        expect(constructorCallCount).toBe(0)
+
+        await attachApi(result, makeExcalidrawAPIMock())
+
+        expect(constructorCallCount).toBe(1)
+    })
+
+    it('sets connected to true when WS onopen fires', async () => {
+        const { result } = await renderReady()
 
         expect(result.current.connected).toBe(false)
-
-        act(() => {
-            lastWs!.readyState = MockWebSocket.OPEN
-            lastWs!.onopen?.(new Event('open'))
-        })
+        openSocket()
 
         expect(result.current.connected).toBe(true)
     })
 
-    it('sets connected to false and clears remoteCursors when WS onclose fires', () => {
-        const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-
-        act(() => {
-            lastWs!.readyState = MockWebSocket.OPEN
-            lastWs!.onopen?.(new Event('open'))
-        })
-
+    it('sets connected to false and clears remoteCursors when WS onclose fires', async () => {
+        const { result } = await renderReady()
+        openSocket()
         expect(result.current.connected).toBe(true)
 
-        act(() => {
-            lastWs!.readyState = MockWebSocket.CLOSED
-            lastWs!.onclose?.(new CloseEvent('close'))
-        })
+        closeSocket()
 
         expect(result.current.connected).toBe(false)
         expect(result.current.remoteCursors.size).toBe(0)
     })
 
-    it('sets connected to false when WS onerror fires', () => {
-        const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-
-        act(() => {
-            lastWs!.readyState = MockWebSocket.OPEN
-            lastWs!.onopen?.(new Event('open'))
-        })
-
-        act(() => {
-            lastWs!.onerror?.(new Event('error'))
-        })
-
-        expect(result.current.connected).toBe(false)
-    })
-
     describe('sync on connect', () => {
-        it('sends sync with the versions and file ids of the local scene when the socket opens', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('a', 3, 7), el('b', 1, 2)])
+        it('sends sync with the file ids of the local scene when the socket opens', async () => {
+            const { api } = await renderReady([el('a', 3, 7)])
             api.files = { f1: { id: 'f1' } }
-            await attachApi(result, api)
 
             openSocket()
 
-            expect(sentMessages()).toEqual([
-                { type: 'sync', versions: { a: [3, 7], b: [1, 2] }, fileIds: ['f1'] },
-            ])
-        })
-
-        it('sends sync with an empty map when Excalidraw is not ready yet', () => {
-            renderHook(() => useWhiteboardSync('apt-123'))
-
-            openSocket()
-
-            expect(sentMessages()).toEqual([{ type: 'sync', versions: {}, fileIds: [] }])
+            expect(sentMessages()).toEqual([{ type: 'sync', fileIds: ['f1'] }])
         })
 
         it('merges the sync reply into the scene without clearing the undo history', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('local', 1)])
-            await attachApi(result, api)
+            const { api } = await renderReady([el('local', 1)])
             openSocket()
 
-            send({ type: 'sync_reply', elements: [el('remote', 1)], want: [], wantFiles: [] })
+            send({ type: 'sync_reply', elements: [el('remote', 1)], wantFiles: [] })
 
             expect(api.updateScene).toHaveBeenCalledTimes(1)
             expect(api.updateScene.mock.calls[0]![0].captureUpdate).toBe('NEVER')
             expect(api.scene.map((e) => e.id).sort()).toEqual(['local', 'remote'])
         })
-
-        it('buffers messages that arrive before Excalidraw is ready and applies them in order', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            openSocket()
-            send({ type: 'sync_reply', elements: [el('a', 1)], want: [], wantFiles: [] })
-            send({ type: 'elements', elements: [el('a', 2)] })
-
-            const api = makeExcalidrawAPIMock()
-            await attachApi(result, api)
-
-            expect(api.scene.map((e) => `${e.id}@${e.version}`)).toEqual(['a@2'])
-        })
     })
 
     describe('remote elements', () => {
         it('keeps a local element that is newer than the remote one', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('a', 5, 1, { x: 99 })])
-            await attachApi(result, api)
+            const { api } = await renderReady([el('a', 5, 1, { x: 99 })])
             openSocket()
 
             send({ type: 'elements', elements: [el('a', 2, 1, { x: 1 })] })
@@ -269,9 +266,7 @@ describe('useWhiteboardSync', () => {
         })
 
         it('keeps both strokes when two users draw at the same time', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('mine', 1)])
-            await attachApi(result, api)
+            const { api } = await renderReady([el('mine', 1)])
             openSocket()
 
             send({ type: 'elements', elements: [el('theirs', 1)] })
@@ -280,9 +275,7 @@ describe('useWhiteboardSync', () => {
         })
 
         it('adds files from a files message', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock()
-            await attachApi(result, api)
+            const { api } = await renderReady()
             openSocket()
             const files = { 'file-2': { id: 'file-2', dataURL: 'data:image/png;base64,...' } }
 
@@ -293,8 +286,9 @@ describe('useWhiteboardSync', () => {
     })
 
     describe('cursor and leave messages', () => {
-        it('tracks cursors by connection id and removes them on leave', () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
+        it('tracks cursors by connection id and removes them on leave', async () => {
+            const { result } = await renderReady()
+            openSocket()
 
             send({
                 type: 'cursor',
@@ -322,146 +316,192 @@ describe('useWhiteboardSync', () => {
 
     describe('onWhiteboardChange', () => {
         const syncedHook = async (scene: any[] = []) => {
-            const hook = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock(scene)
-            await attachApi(hook.result, api)
+            const hook = await renderReady(scene)
             openSocket()
-            send({ type: 'sync_reply', elements: [], want: [], wantFiles: [] })
-            ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
-            return { ...hook, api }
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            await waitForTick()
+            clearSent()
+            return hook
         }
 
         it('sends only changed elements, as a delta', async () => {
-            const { result } = await syncedHook()
+            const hook = await syncedHook()
 
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1)] as any, {} as any, {})
-            })
+            await changeScene(hook, [el('a', 1)])
 
             expect(sentMessages()).toEqual([{ type: 'elements', elements: [el('a', 1)] }])
         })
 
         it('does not send an element again until its version changes', async () => {
-            const { result } = await syncedHook()
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1)] as any, {} as any, {})
-            })
-            await act(async () => {
-                await new Promise((resolve) => setTimeout(resolve, 80))
-            })
-            ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
+            const hook = await syncedHook()
+            await changeScene(hook, [el('a', 1)])
+            clearSent()
 
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1), el('b', 1)] as any, {} as any, {})
-            })
+            await changeScene(hook, [el('a', 1), el('b', 1)])
 
             expect(sentMessages()).toEqual([{ type: 'elements', elements: [el('b', 1)] }])
         })
 
+        it('sends nothing on a tick when nothing changed', async () => {
+            const hook = await syncedHook()
+            await changeScene(hook, [el('a', 1)])
+            clearSent()
+
+            await waitForTick()
+
+            expect(sentMessages()).toEqual([])
+        })
+
         it('does not echo an element that it just received', async () => {
-            const { result } = await syncedHook()
+            const hook = await syncedHook()
             send({ type: 'elements', elements: [el('remote', 4)] })
 
-            act(() => {
-                result.current.onWhiteboardChange([el('remote', 4)] as any, {} as any, {})
-            })
+            act(() => hook.result.current.onWhiteboardChange())
+            await waitForTick()
 
             expect(sentMessages()).toEqual([])
         })
 
         it('sends no elements for an empty scene', async () => {
-            const { result } = await syncedHook()
+            const hook = await syncedHook()
 
-            act(() => {
-                result.current.onWhiteboardChange([] as any, {} as any, {})
-            })
+            await changeScene(hook, [])
 
             expect(sentMessages()).toEqual([])
         })
 
         it('sends new files before the elements, and each file once', async () => {
-            const { result } = await syncedHook()
+            const hook = await syncedHook()
             const file = { id: 'file-a', dataURL: 'data:image/png;base64,aaa' }
 
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1)] as any, {} as any, {
-                    'file-a': file as any,
-                })
-            })
+            await changeScene(hook, [el('a', 1)], { 'file-a': file })
             expect(sentMessages().map((m) => m.type)).toEqual(['files', 'elements'])
+            clearSent()
 
-            await act(async () => {
-                await new Promise((resolve) => setTimeout(resolve, 80))
-            })
-            ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 2)] as any, {} as any, {
-                    'file-a': file as any,
-                })
-            })
+            await changeScene(hook, [el('a', 2)], { 'file-a': file })
             expect(sentMessages().map((m) => m.type)).toEqual(['elements'])
         })
 
-        it('holds local changes until the sync reply arrives', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            openSocket()
-            ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
+        it('sends each new file in its own message', async () => {
+            const hook = await syncedHook()
+            const fileA = { id: 'file-a', dataURL: 'data:image/png;base64,aaa' }
+            const fileB = { id: 'file-b', dataURL: 'data:image/png;base64,bbb' }
 
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1)] as any, {} as any, {})
-            })
-            expect(sentMessages()).toEqual([])
+            await changeScene(hook, [el('a', 1)], { 'file-a': fileA, 'file-b': fileB })
 
-            await attachApi(result, makeExcalidrawAPIMock([el('a', 1)]))
-            send({ type: 'sync_reply', elements: [], want: ['a'], wantFiles: [] })
-
-            expect(sentMessages()).toEqual([{ type: 'elements', elements: [el('a', 1)] }])
+            expect(sentMessages().map((m) => m.type)).toEqual(['files', 'files', 'elements'])
+            expect(sentMessages().map((m) => Object.keys(m.files ?? {}))).toEqual([
+                ['file-a'],
+                ['file-b'],
+                [],
+            ])
         })
 
-        it('sends the elements that the server wants after a sync reply', async () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('offline', 2), el('known', 1)])
-            await attachApi(result, api)
-            openSocket()
-            act(() => {
-                result.current.onWhiteboardChange(api.scene as any, {} as any, {})
-            })
-            ;(lastWs!.send as ReturnType<typeof vi.fn>).mockClear()
+        it('splits a large change into messages of at most 500 elements', async () => {
+            const hook = await syncedHook()
+            const many = Array.from({ length: 501 }, (_, i) => el(`e${i}`, 1))
 
-            send({ type: 'sync_reply', elements: [], want: ['offline'], wantFiles: [] })
+            await changeScene(hook, many)
+
+            expect(sentMessages().map((m) => m.elements.length)).toEqual([500, 1])
+        })
+
+        it('keeps a file above the size limit on this screen and sends the others', async () => {
+            const hook = await syncedHook()
+            const huge = { id: 'huge', dataURL: 'x'.repeat(8 * 1024 * 1024 + 1) }
+            const small = { id: 'small', dataURL: 'data:image/png;base64,aaa' }
+
+            await changeScene(hook, [el('a', 1)], { huge, small })
+            expect(
+                sentMessages()
+                    .filter((m) => m.type === 'files')
+                    .map((m) => Object.keys(m.files)),
+            ).toEqual([['small']])
+            clearSent()
+
+            // The huge file is not tried again on the next change.
+            await changeScene(hook, [el('a', 2)], { huge, small })
+            expect(sentMessages().map((m) => m.type)).toEqual(['elements'])
+        })
+
+        it('does not send a file above the size limit even when the sync reply asks for it', async () => {
+            const hook = await syncedHook()
+            const huge = { id: 'huge', dataURL: 'x'.repeat(8 * 1024 * 1024 + 1) }
+            await changeScene(hook, [], { huge })
+            clearSent()
+
+            send({ type: 'sync_reply', elements: [], wantFiles: ['huge'] })
+            await waitForTick()
+
+            expect(sentMessages()).toEqual([])
+        })
+
+        it('holds local changes until the sync reply arrives, including an element drawn after sync was sent', async () => {
+            const hook = await renderReady()
+            openSocket()
+            clearSent()
+
+            // The user draws after the sync message went out and before the reply.
+            await changeScene(hook, [el('drawn', 1)])
+            expect(sentMessages()).toEqual([])
+
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            await waitForTick()
+
+            expect(sentMessages()).toEqual([{ type: 'elements', elements: [el('drawn', 1)] }])
+        })
+
+        it('sends the local elements that the sync reply lacks and not the ones it holds', async () => {
+            const hook = await renderReady([el('offline', 2), el('held', 1)])
+            act(() => hook.result.current.onWhiteboardChange())
+            openSocket()
+            clearSent()
+
+            send({ type: 'sync_reply', elements: [el('held', 1)], wantFiles: [] })
+            await waitForTick()
 
             expect(sentMessages()).toEqual([{ type: 'elements', elements: [el('offline', 2)] }])
         })
 
-        it('does not send if WS is not open', () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
+        it('sends again the files that the sync reply asks for', async () => {
+            const hook = await syncedHook()
+            const file = { id: 'file-a', dataURL: 'data:image/png;base64,aaa' }
+            await changeScene(hook, [], { 'file-a': file })
+            clearSent()
 
-            act(() => {
-                result.current.onWhiteboardChange([el('a', 1)] as any, {} as any, {})
-            })
+            send({ type: 'sync_reply', elements: [], wantFiles: ['file-a'] })
+            await waitForTick()
+
+            expect(sentMessages()).toEqual([{ type: 'files', files: { 'file-a': file } }])
+        })
+
+        it('does not send if WS is not open', async () => {
+            const hook = await renderReady()
+
+            await changeScene(hook, [el('a', 1)])
 
             expect(lastWs!.send).not.toHaveBeenCalled()
         })
     })
 
     describe('reconnect', () => {
-        beforeEach(() => {
-            vi.useFakeTimers()
-        })
-
         afterEach(() => {
             vi.useRealTimers()
         })
 
-        it('opens a new socket after an unexpected close and syncs again', () => {
-            renderHook(() => useWhiteboardSync('apt-123'))
+        // The socket opens after a dynamic import, so the API attaches under real timers first.
+        const readyWithFakeTimers = async (scene: any[] = []) => {
+            const hook = await renderReady(scene)
+            vi.useFakeTimers()
+            return hook
+        }
+
+        it('opens a new socket after an unexpected close and syncs again', async () => {
+            await readyWithFakeTimers()
             openSocket()
             const first = lastWs
 
-            act(() => {
-                lastWs!.readyState = MockWebSocket.CLOSED
-                lastWs!.onclose?.(new CloseEvent('close', { code: 1006 }))
-            })
+            closeSocket(1006)
             expect(constructorCallCount).toBe(1)
 
             act(() => {
@@ -471,20 +511,17 @@ describe('useWhiteboardSync', () => {
             expect(lastWs).not.toBe(first)
 
             openSocket()
-            expect(sentMessages()).toEqual([{ type: 'sync', versions: {}, fileIds: [] }])
+            expect(sentMessages()).toEqual([{ type: 'sync', fileIds: [] }])
         })
 
         it.each([
             [1008, 'rejected by the server'],
             [1000, 'closed because the appointment ended'],
-        ])('does not reconnect after close code %i (%s)', (code) => {
-            renderHook(() => useWhiteboardSync('apt-123'))
+        ])('does not reconnect after close code %i (%s)', async (code) => {
+            await readyWithFakeTimers()
             openSocket()
 
-            act(() => {
-                lastWs!.readyState = MockWebSocket.CLOSED
-                lastWs!.onclose?.(new CloseEvent('close', { code }))
-            })
+            closeSocket(code)
             act(() => {
                 vi.advanceTimersByTime(30_000)
             })
@@ -492,13 +529,97 @@ describe('useWhiteboardSync', () => {
             expect(constructorCallCount).toBe(1)
         })
 
-        it('does not reconnect after unmount', () => {
-            const { unmount } = renderHook(() => useWhiteboardSync('apt-123'))
+        it('reconnects after the server closes it for a rate limit (1013)', async () => {
+            await readyWithFakeTimers()
             openSocket()
+
+            closeSocket(1013)
             act(() => {
-                lastWs!.readyState = MockWebSocket.CLOSED
-                lastWs!.onclose?.(new CloseEvent('close', { code: 1006 }))
+                vi.advanceTimersByTime(1000)
             })
+
+            expect(constructorCallCount).toBe(2)
+        })
+
+        it('keeps growing the delay while the server accepts and then closes the socket', async () => {
+            await readyWithFakeTimers()
+            openSocket()
+            closeSocket(1013)
+            act(() => {
+                vi.advanceTimersByTime(500)
+            })
+            expect(constructorCallCount).toBe(2)
+
+            // The second socket opens and closes with no sync reply, so the delay is 500 to 1000 ms.
+            openSocket()
+            closeSocket(1013)
+            act(() => {
+                vi.advanceTimersByTime(400)
+            })
+            expect(constructorCallCount).toBe(2)
+            act(() => {
+                vi.advanceTimersByTime(600)
+            })
+            expect(constructorCallCount).toBe(3)
+        })
+
+        it('resets the delay after a sync reply', async () => {
+            await readyWithFakeTimers()
+            openSocket()
+            closeSocket(1013)
+            act(() => {
+                vi.advanceTimersByTime(500)
+            })
+            expect(constructorCallCount).toBe(2)
+
+            openSocket()
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            closeSocket(1013)
+            act(() => {
+                vi.advanceTimersByTime(500)
+            })
+
+            expect(constructorCallCount).toBe(3)
+        })
+
+        it('ignores a late close and a late message from a socket that the hook disposed', async () => {
+            const hook = renderHook(({ id }) => useWhiteboardSync(id), {
+                initialProps: { id: 'apt-1' },
+            })
+            const api = makeExcalidrawAPIMock()
+            await attachApi(hook.result, api)
+            openSocket()
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            const first = lastWs!
+
+            // The appointment changes. A new socket opens and syncs.
+            hook.rerender({ id: 'apt-2' })
+            expect(lastWs).not.toBe(first)
+            openSocket()
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+
+            // The old socket reports its close and delivers a message late.
+            act(() => {
+                first.onclose?.(new CloseEvent('close', { code: 1006 }))
+                first.onmessage?.(
+                    new MessageEvent('message', {
+                        data: JSON.stringify({ type: 'elements', elements: [el('old', 1)] }),
+                    }),
+                )
+            })
+            expect(hook.result.current.connected).toBe(true)
+            expect(api.scene).toEqual([])
+
+            // The new connection still sends local changes.
+            clearSent()
+            await changeScene({ result: hook.result, api }, [el('new', 1)])
+            expect(sentElementIds()).toEqual(['new'])
+        })
+
+        it('does not reconnect after unmount', async () => {
+            const { unmount } = await readyWithFakeTimers()
+            openSocket()
+            closeSocket(1006)
 
             unmount()
             act(() => {
@@ -508,69 +629,80 @@ describe('useWhiteboardSync', () => {
             expect(constructorCallCount).toBe(1)
         })
 
-        it('holds local changes while disconnected and sends them after the next sync reply', async () => {
-            vi.useRealTimers()
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
-            const api = makeExcalidrawAPIMock([el('a', 1)])
-            await attachApi(result, api)
+        it('holds local changes while disconnected and sends them, with the rest, after the next sync reply', async () => {
+            const hook = await renderReady([el('a', 1)])
             openSocket()
-            send({ type: 'sync_reply', elements: [], want: [], wantFiles: [] })
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            await changeScene(hook, [el('a', 1)])
+            expect(sentElementIds()).toEqual(['a'])
 
             // The socket drops. The user keeps drawing.
-            act(() => {
-                lastWs!.readyState = MockWebSocket.CLOSED
-                lastWs!.onclose?.(new CloseEvent('close', { code: 1006 }))
-            })
-            act(() => {
-                result.current.onWhiteboardChange(
-                    [el('a', 1), el('offline', 1)] as any,
-                    {} as any,
-                    {},
-                )
-            })
+            closeSocket(1006)
+            await changeScene(hook, [el('a', 1), el('offline', 1)])
             const firstWs = lastWs!
-            expect(firstWs.send).toHaveBeenCalledTimes(1) // only the first sync
+            expect(firstWs.send).toHaveBeenCalledTimes(2) // the first sync and the first elements
 
             await act(async () => {
                 await new Promise((resolve) => setTimeout(resolve, 1100))
             })
             expect(lastWs).not.toBe(firstWs)
             openSocket()
-            expect(sentMessages()[0]).toMatchObject({ type: 'sync' })
-            send({ type: 'sync_reply', elements: [], want: ['offline'], wantFiles: [] })
+            expect(sentMessages()[0]).toEqual({ type: 'sync', fileIds: [] })
+            await waitForTick()
+            expect(sentElementIds()).toEqual([])
+            send({ type: 'sync_reply', elements: [], wantFiles: [] })
+            await waitForTick()
 
-            expect(
-                sentMessages()
-                    .filter((m) => m.type === 'elements')
-                    .flatMap((m) => m.elements.map((e: any) => e.id)),
-            ).toContain('offline')
+            // The client forgot what it sent. The server ignores the duplicate.
+            expect(sentElementIds().sort()).toEqual(['a', 'offline'])
         })
     })
 
     describe('onPointerUpdate', () => {
-        it('sends { type: cursor, x, y } over WS when open', () => {
-            const { result } = renderHook(() => useWhiteboardSync('apt-123'))
+        const sentCursors = () => sentMessages().filter((m) => m.type === 'cursor')
+
+        it('sends only the latest pointer position on the interval', async () => {
+            const { result } = await renderReady()
+            openSocket()
 
             act(() => {
-                lastWs!.readyState = MockWebSocket.OPEN
-                lastWs!.onopen?.(new Event('open'))
+                for (const x of [1, 2, 3]) {
+                    result.current.onPointerUpdate({ pointer: { x, y: x * 10 } })
+                }
             })
+            expect(sentCursors()).toEqual([])
+            await waitForTick()
+
+            expect(sentCursors()).toEqual([{ type: 'cursor', x: 3, y: 30 }])
+        })
+
+        it('does not send the same position twice', async () => {
+            const { result } = await renderReady()
+            openSocket()
+            act(() => {
+                result.current.onPointerUpdate({ pointer: { x: 5, y: 6 } })
+            })
+            await waitForTick()
+
+            await waitForTick()
+
+            expect(sentCursors()).toHaveLength(1)
+        })
+
+        it('sends nothing while the socket is not open', async () => {
+            const { result } = await renderReady()
 
             act(() => {
-                result.current.onPointerUpdate({
-                    pointer: { x: 50, y: 75 },
-                    button: 'none',
-                })
+                result.current.onPointerUpdate({ pointer: { x: 5, y: 6 } })
             })
+            await waitForTick()
 
-            expect(lastWs!.send).toHaveBeenCalledWith(
-                JSON.stringify({ type: 'cursor', x: 50, y: 75 }),
-            )
+            expect(lastWs!.send).not.toHaveBeenCalled()
         })
     })
 
-    it('calls ws.close on unmount', () => {
-        const { unmount } = renderHook(() => useWhiteboardSync('apt-123'))
+    it('calls ws.close on unmount', async () => {
+        const { unmount } = await renderReady()
 
         unmount()
 
