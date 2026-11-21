@@ -57,8 +57,6 @@ export interface MergeResult {
     accepted: WhiteboardElement[]
     /** Server copies that beat the sender's revision. Send these back to the sender only. */
     stale: WhiteboardElement[]
-    /** Count of elements that failed validation or exceeded a limit. */
-    rejected: number
 }
 
 export const mergeElements = (
@@ -67,20 +65,13 @@ export const mergeElements = (
 ): MergeResult => {
     const accepted = new Map<string, WhiteboardElement>()
     const stale = new Map<string, WhiteboardElement>()
-    let rejected = 0
 
     for (const raw of incoming) {
         const element = parseElement(raw)
-        if (!element) {
-            rejected++
-            continue
-        }
+        if (!element) continue
         const existing = current.get(element.id)
         if (!existing) {
-            if (current.size >= MAX_ROOM_ELEMENTS) {
-                rejected++
-                continue
-            }
+            if (current.size >= MAX_ROOM_ELEMENTS) continue
             current.set(element.id, element)
             accepted.set(element.id, element)
             stale.delete(element.id)
@@ -98,37 +89,32 @@ export const mergeElements = (
         }
     }
 
-    return { accepted: [...accepted.values()], stale: [...stale.values()], rejected }
+    return { accepted: [...accepted.values()], stale: [...stale.values()] }
 }
 
 export const mergeFiles = (
     current: Map<string, WhiteboardFile>,
     incoming: Record<string, unknown>,
-): { added: WhiteboardFiles; rejected: number } => {
+): WhiteboardFiles => {
     const added: WhiteboardFiles = {}
-    let rejected = 0
     let roomBytes = 0
     for (const file of current.values()) roomBytes += file.dataURL.length
     for (const [fileId, raw] of Object.entries(incoming)) {
         const file = parseFile(fileId, raw)
-        if (!file) {
-            rejected++
-            continue
-        }
+        if (!file) continue
         // A file id identifies immutable content. An existing id is never replaced.
         if (current.has(fileId)) continue
         if (
             current.size >= MAX_ROOM_FILES ||
             roomBytes + file.dataURL.length > MAX_ROOM_FILE_BYTES
         ) {
-            rejected++
             continue
         }
         roomBytes += file.dataURL.length
         current.set(fileId, file)
         added[fileId] = file
     }
-    return { added, rejected }
+    return added
 }
 
 export interface FileDiff {

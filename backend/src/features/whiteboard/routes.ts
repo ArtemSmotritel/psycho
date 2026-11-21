@@ -94,13 +94,11 @@ whiteboardRoutes.get(
 
             onMessage(event) {
                 const connection = conn
-                if (!connection) return
+                if (!connection || connection.closed) return
+                if (!WhiteboardRooms.allowMessage(connection)) return
 
                 const message = parseMessage(event.data.toString())
-                if (!message) {
-                    WhiteboardRooms.rejectMessage(connection)
-                    return
-                }
+                if (!message) return
 
                 // A thrown error must not stop the queue, or the connection would silently ignore all later messages.
                 queue = queue

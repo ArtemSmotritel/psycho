@@ -89,11 +89,11 @@ describe('mergeElements', () => {
         expect(result.stale).toEqual([])
     })
 
-    it('counts invalid elements and still merges the valid ones', () => {
+    it('drops invalid elements and still merges the valid ones', () => {
         const room = new Map<string, WhiteboardElement>()
         const result = mergeElements(room, [el('a', 1), { id: 5 }, 'junk'])
-        expect(result.rejected).toBe(2)
-        expect(room.has('a')).toBe(true)
+        expect(result.accepted.map((e) => e.id)).toEqual(['a'])
+        expect(room.size).toBe(1)
     })
 
     it('gives the same result for any message order', () => {
@@ -111,20 +111,18 @@ describe('mergeElements', () => {
 describe('mergeFiles', () => {
     it('adds new files and never replaces an existing id', () => {
         const room = new Map<string, WhiteboardFile>([['f1', file('f1', 5)]])
-        const { added, rejected } = mergeFiles(room, { f1: file('f1', 99), f2: file('f2') })
+        const added = mergeFiles(room, { f1: file('f1', 99), f2: file('f2') })
         expect(Object.keys(added)).toEqual(['f2'])
-        expect(rejected).toBe(0)
         expect(room.get('f1')!.dataURL.length).toBe(5)
     })
 
     it('rejects a file whose id does not match its key or that has no dataURL', () => {
         const room = new Map<string, WhiteboardFile>()
-        const { added, rejected } = mergeFiles(room, {
+        const added = mergeFiles(room, {
             a: file('b'),
             c: { id: 'c' },
         })
         expect(added).toEqual({})
-        expect(rejected).toBe(2)
     })
 })
 
@@ -160,9 +158,8 @@ describe('size limits', () => {
         const incoming: Record<string, unknown> = {}
         for (let i = 0; i <= fileCount; i++) incoming[`f${i}`] = file(`f${i}`, MAX_FILE_BYTES)
 
-        const { added, rejected } = mergeFiles(room, incoming)
+        const added = mergeFiles(room, incoming)
 
         expect(Object.keys(added)).toHaveLength(fileCount)
-        expect(rejected).toBe(1)
     })
 })

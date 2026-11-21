@@ -10,6 +10,6 @@ Bun.serve({
 })
 
 registerNotificationCrons()
-WhiteboardRooms.startBackgroundTasks()
+WhiteboardRooms.registerShutdownFlush()
 
 console.log(`🚀 Hono is running on http://localhost:3000`)

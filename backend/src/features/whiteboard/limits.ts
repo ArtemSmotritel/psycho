@@ -16,7 +16,6 @@ export const MAX_ROOM_FILE_BYTES = 64 * 1024 * 1024
 // A connection that sends more messages than this in one window gets closed. It reconnects and syncs.
 export const RATE_WINDOW_MS = 1_000
 export const MAX_MESSAGES_PER_WINDOW = 300
-export const MAX_INVALID_MESSAGES = 20
 
 // Save scheduling. The first change starts the timer. A failed save retries after the retry delay.
 export const SAVE_DELAY_MS = 5_000

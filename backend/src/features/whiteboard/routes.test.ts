@@ -454,15 +454,6 @@ describe('whiteboard WebSocket: limits', () => {
         expect(a.closeInfo).toBeNull()
     }, 15000)
 
-    it('closes a connection that keeps sending invalid messages', async () => {
-        const { apt, psychoHeaders } = await setupSession()
-        const a = await TestSocket.connect(apt.id, psychoHeaders)
-        await a.syncEmpty()
-
-        for (let i = 0; i < 25; i++) a.send({ type: 'nonsense' })
-
-        expect(await a.waitClosed()).toMatchObject({ code: 1008, reason: 'InvalidMessages' })
-    })
 })
 
 describe('whiteboard WebSocket: rate limit', () => {
@@ -473,6 +464,16 @@ describe('whiteboard WebSocket: rate limit', () => {
 
         for (let i = 0; i < MAX_MESSAGES_PER_WINDOW + 50; i++)
             a.send({ type: 'cursor', x: 1, y: 1 })
+
+        expect(await a.waitClosed()).toEqual({ code: 1013, reason: 'RateLimited' })
+    })
+
+    it('also limits frames that fail validation', async () => {
+        const { apt, psychoHeaders } = await setupSession()
+        const a = await TestSocket.connect(apt.id, psychoHeaders)
+        await a.syncEmpty()
+
+        for (let i = 0; i < MAX_MESSAGES_PER_WINDOW + 50; i++) a.send({ type: 'nonsense' })
 
         expect(await a.waitClosed()).toEqual({ code: 1013, reason: 'RateLimited' })
     })

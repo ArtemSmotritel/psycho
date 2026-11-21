@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 import { log } from 'utils/logger'
 import {
     MAX_ELEMENTS_PER_MESSAGE,
-    MAX_INVALID_MESSAGES,
     MAX_MESSAGES_PER_WINDOW,
     MAX_ROOM_ELEMENTS,
     RATE_WINDOW_MS,
@@ -30,7 +29,6 @@ export interface RoomConnection {
     closed: boolean
     windowStart: number
     windowCount: number
-    invalidCount: number
 }
 
 export interface Room {
@@ -207,17 +205,11 @@ const closeConnection = (conn: RoomConnection, code: number, reason: string): vo
     }
 }
 
-const noteInvalid = (conn: RoomConnection, count: number): void => {
-    conn.invalidCount += count
-    if (conn.invalidCount > MAX_INVALID_MESSAGES) {
-        closeConnection(conn, 1008, 'InvalidMessages')
-    }
-}
-
 /**
  * Returns false and closes the connection when it sent too many messages in the current window.
  * The socket closes instead of dropping messages, so the client reconnects and syncs
  * and never stays out of sync without noticing.
+ * The route calls this for every frame, before it parses the frame, so a flood of invalid frames is also limited.
  */
 const allowMessage = (conn: RoomConnection): boolean => {
     const now = Date.now()
@@ -238,16 +230,12 @@ const handleMessage = (
     conn: RoomConnection,
     message: IncomingWhiteboardMessage,
 ): void => {
-    if (room.ended || conn.closed || !allowMessage(conn)) return
+    if (room.ended || conn.closed) return
 
     switch (message.type) {
         case 'elements': {
-            if (message.elements.length > MAX_ELEMENTS_PER_MESSAGE) {
-                noteInvalid(conn, message.elements.length)
-                return
-            }
-            const { accepted, stale, rejected } = mergeElements(room.elements, message.elements)
-            if (rejected > 0) noteInvalid(conn, rejected)
+            if (message.elements.length > MAX_ELEMENTS_PER_MESSAGE) return
+            const { accepted, stale } = mergeElements(room.elements, message.elements)
             if (accepted.length > 0) {
                 room.dirty = true
                 scheduleSave(room)
@@ -259,8 +247,7 @@ const handleMessage = (
         }
 
         case 'files': {
-            const { added, rejected } = mergeFiles(room.files, message.files)
-            if (rejected > 0) noteInvalid(conn, rejected)
+            const added = mergeFiles(room.files, message.files)
             const addedFiles = Object.values(added)
             if (addedFiles.length > 0) {
                 for (const file of addedFiles) room.unsavedFiles.set(file.id, file)
@@ -299,10 +286,11 @@ const handleMessage = (
 }
 
 // ---------------------------------------------------------------------------
-// Background tasks
+// Shutdown
 // ---------------------------------------------------------------------------
 
-const backgroundStarted = Symbol.for('helpsycho.whiteboard.background')
+// A hot reload runs `index.ts` again. This flag on `globalThis` stops it from adding the signal handlers twice.
+const shutdownFlushRegistered = Symbol.for('helpsycho.whiteboard.shutdown-flush')
 
 export const WhiteboardRooms = {
     createConnection(ws: Socket, userName: string): RoomConnection {
@@ -313,7 +301,6 @@ export const WhiteboardRooms = {
             closed: false,
             windowStart: Date.now(),
             windowCount: 0,
-            invalidCount: 0,
         }
     },
 
@@ -331,10 +318,7 @@ export const WhiteboardRooms = {
 
     handle: handleMessage,
 
-    /** Counts a message that failed validation. Closes the connection after too many. */
-    rejectMessage(conn: RoomConnection): void {
-        noteInvalid(conn, 1)
-    },
+    allowMessage,
 
     leave(room: Room, conn: RoomConnection): void {
         if (!room.connections.delete(conn)) return
@@ -372,11 +356,11 @@ export const WhiteboardRooms = {
         )
     },
 
-    /** Starts the shutdown flush. Safe to call more than once. */
-    startBackgroundTasks(): void {
+    /** Saves every room on SIGTERM and SIGINT, then exits. Safe to call more than once. */
+    registerShutdownFlush(): void {
         const globals = globalThis as Record<symbol, unknown>
-        if (globals[backgroundStarted]) return
-        globals[backgroundStarted] = true
+        if (globals[shutdownFlushRegistered]) return
+        globals[shutdownFlushRegistered] = true
 
         const shutdown = () => {
             void WhiteboardRooms.flushAll().finally(() => process.exit(0))
