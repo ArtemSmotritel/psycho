@@ -368,7 +368,4 @@ export const WhiteboardRooms = {
         process.once('SIGTERM', shutdown)
         process.once('SIGINT', shutdown)
     },
-
-    /** Test helper: the number of rooms in memory. */
-    roomCount: () => rooms.size,
 } as const

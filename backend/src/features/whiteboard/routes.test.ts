@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test'
 import { app } from 'config/app'
+import { db } from 'config/db'
 import { websocket } from 'config/websocket'
 import { testDb } from '../../test-fixtures/db'
 import { futureDate } from '../../test-fixtures/dates'
@@ -7,6 +8,7 @@ import { createAppointment, startAppointment } from '../../test-fixtures/appoint
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { ClientsService } from '../clients/services'
 import { MAX_MESSAGES_PER_WINDOW, SAVE_DELAY_MS } from './limits'
+import { WhiteboardRepo } from './repo'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
 
@@ -447,13 +449,15 @@ describe('whiteboard WebSocket: limits', () => {
         await a.syncEmpty()
         await b.syncEmpty()
 
-        a.send({ type: 'elements', elements: [el('big', 1, 1, { text: 'x'.repeat(7 * 1024 * 1024) })] })
+        a.send({
+            type: 'elements',
+            elements: [el('big', 1, 1, { text: 'x'.repeat(7 * 1024 * 1024) })],
+        })
 
         const relayed = await b.take('elements', 8000)
         expect(relayed.elements.map((e: any) => e.id)).toEqual(['big'])
         expect(a.closeInfo).toBeNull()
     }, 15000)
-
 })
 
 describe('whiteboard WebSocket: rate limit', () => {
@@ -594,4 +598,40 @@ describe('whiteboard WebSocket: appointment end', () => {
         expect(await readElements(apt.id)).toBeNull()
         expect(await readFileIds(apt.id)).toEqual([])
     }, 15000)
+
+    it('leaves no file behind when a save that adds a file is still open at the end', async () => {
+        const { apt, psycho, client } = await setupSession()
+
+        // A save that inserted a file and has not committed yet.
+        let fileInserted!: () => void
+        const inserted = new Promise<void>((resolve) => (fileInserted = resolve))
+        let commitSave!: () => void
+        const hold = new Promise<void>((resolve) => (commitSave = resolve))
+        const save = db.begin(async (tx) => {
+            await WhiteboardRepo.insertFile(apt.id, img('f1'), tx)
+            fileInserted()
+            await hold
+        })
+        await inserted
+
+        let endFinished = false
+        const end = Promise.resolve(
+            app.request(
+                `/api/clients/${client.id}/appointments/${apt.id}/end`,
+                await asUser(psycho.id, { method: 'PATCH', headers: PSYCHO_HEADER }),
+            ),
+        ).then((res) => {
+            endFinished = true
+            return res
+        })
+
+        // The end waits for the save, because the save holds the appointment row.
+        await Bun.sleep(300)
+        expect(endFinished).toBe(false)
+
+        commitSave()
+        await save
+        expect((await end).status).toBe(200)
+        expect(await readFileIds(apt.id)).toEqual([])
+    })
 })

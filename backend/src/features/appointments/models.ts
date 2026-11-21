@@ -9,7 +9,8 @@ export interface Appointment {
     status: 'upcoming' | 'active' | 'past' | 'warning' | 'missed'
     googleMeetLink: string | null
     googleCalendarEventId: string | null
-    whiteboardSnapshotUrl: string | null
+    /** Only the detail queries and the end response select it. Lists and the dashboard leave it out. */
+    whiteboardSnapshotUrl?: string | null
     createdAt: string
 }
 

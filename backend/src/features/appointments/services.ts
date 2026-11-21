@@ -191,17 +191,18 @@ export const AppointmentsService = {
                 )
             }
 
-            return AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl, tx)
+            const ended = await AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl, tx)
+            // Same tx as the end, so a failure cannot leave stored whiteboard data behind.
+            // A save that is still in flight cannot write after this: its writes check
+            // `ended_at IS NULL`, and its file insert locks the appointment row.
+            await WhiteboardService.clearState(appointmentId, tx)
+            return ended
         })
 
-        // Closing the live room and clearing whiteboard state are best-effort and run
-        // outside the tx so we don't hold locks across these calls. The room closes first,
-        // so no pending save can write the state back after it is cleared.
+        // Closing the live room is best-effort and runs outside the tx. It only frees memory
+        // and closes the sockets. The stored state is already cleared.
         await WhiteboardRooms.closeRoom(appointmentId).catch((err) => {
             log.warn('[Appointments] Failed to close whiteboard room', { appointmentId, err })
-        })
-        await WhiteboardService.clearState(appointmentId).catch((err) => {
-            log.warn('[Appointments] Failed to clear whiteboard state', { appointmentId, err })
         })
 
         return appointment

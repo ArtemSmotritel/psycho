@@ -12,7 +12,11 @@ export const APPOINTMENT_STATUS_EXPR = `
     END
 `
 
-export const appointmentColumns = (prefix = '') => `
+// The snapshot is a data URL of up to 2.8 MB. Select it only for a query that serves a page that shows it.
+export const appointmentColumns = (
+    prefix = '',
+    { withSnapshot = false }: { withSnapshot?: boolean } = {},
+) => `
     ${prefix}id,
     ${prefix}psycho_id AS "psychoId",
     ${prefix}client_id AS "clientId",
@@ -23,7 +27,7 @@ export const appointmentColumns = (prefix = '') => `
     ${APPOINTMENT_STATUS_EXPR} AS "status",
     ${prefix}google_meet_link AS "googleMeetLink",
     ${prefix}google_calendar_event_id AS "googleCalendarEventId",
-    ${prefix}whiteboard_snapshot_url AS "whiteboardSnapshotUrl",
+    ${withSnapshot ? `${prefix}whiteboard_snapshot_url AS "whiteboardSnapshotUrl",` : ''}
     ${prefix}created_at AS "createdAt"
 `
 
@@ -73,7 +77,7 @@ export const AppointmentsRepo = {
         executor: SQL = db,
     ): Promise<Appointment | null> {
         const [row] = await executor`
-            SELECT ${db.unsafe(appointmentColumns())}
+            SELECT ${db.unsafe(appointmentColumns('', { withSnapshot: true }))}
             FROM appointments
             WHERE id = ${appointmentId}
               AND psycho_id = ${psychoId}
@@ -87,7 +91,7 @@ export const AppointmentsRepo = {
         clientId: string,
     ): Promise<AppointmentWithPsycho | null> {
         const [row] = await db`
-            SELECT ${db.unsafe(appointmentColumns('a.'))},
+            SELECT ${db.unsafe(appointmentColumns('a.', { withSnapshot: true }))},
                    u.name AS "psychoName"
             FROM appointments a
             JOIN "user" u ON u.id = a.psycho_id
@@ -255,7 +259,7 @@ export const AppointmentsRepo = {
             SET ended_at = NOW(),
                 whiteboard_snapshot_url = ${snapshotDataUrl}
             WHERE id = ${appointmentId}
-            RETURNING ${db.unsafe(appointmentColumns())}
+            RETURNING ${db.unsafe(appointmentColumns('', { withSnapshot: true }))}
         `
         return row as Appointment
     },

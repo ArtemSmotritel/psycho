@@ -8,7 +8,7 @@ export interface Appointment {
     endedAt: string | null
     status: 'upcoming' | 'active' | 'past' | 'warning' | 'missed'
     googleMeetLink: string | null
-    whiteboardSnapshotUrl: string | null
+    whiteboardSnapshotUrl?: string | null
     createdAt: string
 }
 

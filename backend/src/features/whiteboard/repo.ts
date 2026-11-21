@@ -53,6 +53,9 @@ export const WhiteboardRepo = {
         `
     },
 
+    // FOR UPDATE locks the appointment row until the save commits. The end of the appointment
+    // updates the same row, so it waits for this insert, or this insert sees that it ended and adds nothing.
+    // Without the lock, a file could commit after the end cleared the files.
     async insertFile(
         appointmentId: string,
         file: WhiteboardFile,
@@ -64,6 +67,7 @@ export const WhiteboardRepo = {
             FROM appointments
             WHERE id = ${appointmentId}
               AND ended_at IS NULL
+            FOR UPDATE
             ON CONFLICT (appointment_id, file_id) DO NOTHING
         `
     },

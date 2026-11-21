@@ -1,3 +1,4 @@
+import type { SQL } from 'bun'
 import { db } from 'config/db'
 import type { WhiteboardElement, WhiteboardFile, WhiteboardState } from './models'
 import { WhiteboardRepo } from './repo'
@@ -25,7 +26,8 @@ export const WhiteboardService = {
         })
     },
 
-    async clearState(appointmentId: string): Promise<void> {
-        await WhiteboardRepo.clearState(appointmentId)
+    // Pass `tx` to clear inside the caller's transaction, so the clear and the end of the appointment commit together.
+    async clearState(appointmentId: string, tx?: SQL): Promise<void> {
+        await WhiteboardRepo.clearState(appointmentId, tx)
     },
 } as const
