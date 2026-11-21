@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { log } from 'utils/logger'
 import {
+    MAX_CONNECTIONS_PER_USER,
     MAX_ELEMENTS_PER_MESSAGE,
     MAX_MESSAGES_PER_WINDOW,
     MAX_ROOM_ELEMENTS,
@@ -25,6 +26,7 @@ interface Socket {
 export interface RoomConnection {
     id: string
     ws: Socket
+    userId: string
     userName: string
     closed: boolean
     windowStart: number
@@ -293,10 +295,11 @@ const handleMessage = (
 const shutdownFlushRegistered = Symbol.for('helpsycho.whiteboard.shutdown-flush')
 
 export const WhiteboardRooms = {
-    createConnection(ws: Socket, userName: string): RoomConnection {
+    createConnection(ws: Socket, userId: string, userName: string): RoomConnection {
         return {
             id: randomUUID(),
             ws,
+            userId,
             userName,
             closed: false,
             windowStart: Date.now(),
@@ -308,11 +311,23 @@ export const WhiteboardRooms = {
      * Adds the connection to its room. Returns null if the room ended during the load.
      * A connection that closed during the load is added too. Its `leave` call removes it and evicts
      * the room if it is idle, so one place owns eviction and a room that other joiners share stays in the map.
+     *
+     * If the user then has more than `MAX_CONNECTIONS_PER_USER` connections in the room, the oldest
+     * ones close with 1008 `Replaced`. The code must be one that the client never reconnects after.
+     * A reconnecting code would make two tabs drop each other in a loop.
      */
     async join(appointmentId: string, conn: RoomConnection): Promise<Room | null> {
         const room = await getRoom(appointmentId)
         if (room.ended) return null
         room.connections.add(conn)
+
+        // A Set iterates in insertion order, so the first connections of the user are the oldest.
+        const own = [...room.connections].filter((other) => other.userId === conn.userId)
+        for (const old of own.slice(0, Math.max(0, own.length - MAX_CONNECTIONS_PER_USER))) {
+            closeConnection(old, 1008, 'Replaced')
+            // Remove it now. The socket close event arrives later, and `leave` ignores a second call.
+            WhiteboardRooms.leave(room, old)
+        }
         return room
     },
 

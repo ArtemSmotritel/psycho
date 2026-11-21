@@ -17,6 +17,11 @@ export const MAX_ROOM_FILE_BYTES = 64 * 1024 * 1024
 export const RATE_WINDOW_MS = 1_000
 export const MAX_MESSAGES_PER_WINDOW = 300
 
+// Connections of one user in one room. Above this, the server drops the oldest one.
+// The value is above 1 because a user can have several tabs, and a reconnecting client
+// briefly holds two sockets.
+export const MAX_CONNECTIONS_PER_USER = 5
+
 // Save scheduling. The first change starts the timer. A failed save retries after the retry delay.
 export const SAVE_DELAY_MS = 5_000
 export const SAVE_RETRY_MS = 30_000

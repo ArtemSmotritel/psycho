@@ -7,7 +7,7 @@ import { futureDate } from '../../test-fixtures/dates'
 import { createAppointment, startAppointment } from '../../test-fixtures/appointments'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { ClientsService } from '../clients/services'
-import { MAX_MESSAGES_PER_WINDOW, SAVE_DELAY_MS } from './limits'
+import { MAX_CONNECTIONS_PER_USER, MAX_MESSAGES_PER_WINDOW, SAVE_DELAY_MS } from './limits'
 import { WhiteboardRepo } from './repo'
 
 const PSYCHO_HEADER = { 'Helpsycho-User-Role': 'psycho' }
@@ -480,6 +480,52 @@ describe('whiteboard WebSocket: rate limit', () => {
         for (let i = 0; i < MAX_MESSAGES_PER_WINDOW + 50; i++) a.send({ type: 'nonsense' })
 
         expect(await a.waitClosed()).toEqual({ code: 1013, reason: 'RateLimited' })
+    })
+})
+
+describe('whiteboard WebSocket: connections per user', () => {
+    it('drops the oldest connection of a user that goes over the limit', async () => {
+        const { apt, psychoHeaders, clientHeaders } = await setupSession()
+        const client = await TestSocket.connect(apt.id, clientHeaders)
+        await client.syncEmpty()
+
+        // Each sync reply proves the join finished, so the sockets join in this order.
+        const sockets: TestSocket[] = []
+        for (let i = 0; i < MAX_CONNECTIONS_PER_USER + 2; i++) {
+            const socket = await TestSocket.connect(apt.id, psychoHeaders)
+            await socket.syncEmpty()
+            sockets.push(socket)
+        }
+
+        // The two oldest are dropped with a code that the frontend never reconnects after.
+        expect(await sockets[0]!.waitClosed()).toEqual({ code: 1008, reason: 'Replaced' })
+        expect(await sockets[1]!.waitClosed()).toEqual({ code: 1008, reason: 'Replaced' })
+
+        // The newest ones stay open and still work. The other participant is not affected.
+        for (const socket of sockets.slice(2)) {
+            expect(socket.closeInfo).toBeNull()
+            await socket.syncEmpty()
+        }
+        expect(client.closeInfo).toBeNull()
+        await client.syncEmpty()
+    })
+
+    it('tells the other users that a dropped connection left', async () => {
+        const { apt, psychoHeaders, clientHeaders } = await setupSession()
+        const client = await TestSocket.connect(apt.id, clientHeaders)
+        await client.syncEmpty()
+
+        const oldest = await TestSocket.connect(apt.id, psychoHeaders)
+        await oldest.syncEmpty()
+        oldest.send({ type: 'cursor', x: 1, y: 2 })
+        const { connectionId } = await client.take('cursor')
+
+        for (let i = 0; i < MAX_CONNECTIONS_PER_USER; i++) {
+            const socket = await TestSocket.connect(apt.id, psychoHeaders)
+            await socket.syncEmpty()
+        }
+
+        expect((await client.take('leave')).connectionId).toBe(connectionId)
     })
 })
 

@@ -77,7 +77,7 @@ whiteboardRoutes.get(
         return {
             onOpen(_, ws) {
                 const rawWs = ws.raw as ServerWebSocket<unknown>
-                const connection = WhiteboardRooms.createConnection(rawWs, userName)
+                const connection = WhiteboardRooms.createConnection(rawWs, userId, userName)
                 conn = connection
 
                 ready = WhiteboardRooms.join(appointmentId, connection)
