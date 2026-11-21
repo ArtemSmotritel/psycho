@@ -8,6 +8,7 @@ import {
     rescheduleGoogleCalendarEvent,
 } from 'utils/google-meet'
 import { ClientsRepo } from '../clients/repo'
+import { WhiteboardRooms } from '../whiteboard/rooms'
 import { WhiteboardService } from '../whiteboard/services'
 import type { Appointment, AppointmentWithClient, AppointmentWithPsycho } from './models'
 import { AppointmentsRepo } from './repo'
@@ -193,8 +194,12 @@ export const AppointmentsService = {
             return AppointmentsRepo.markEnded(appointmentId, snapshotDataUrl, tx)
         })
 
-        // Clearing whiteboard state is best-effort and runs outside the tx so
-        // we don't hold locks across this call.
+        // Closing the live room and clearing whiteboard state are best-effort and run
+        // outside the tx so we don't hold locks across these calls. The room closes first,
+        // so no pending save can write the state back after it is cleared.
+        await WhiteboardRooms.closeRoom(appointmentId).catch((err) => {
+            log.warn('[Appointments] Failed to close whiteboard room', { appointmentId, err })
+        })
         await WhiteboardService.clearState(appointmentId).catch((err) => {
             log.warn('[Appointments] Failed to clear whiteboard state', { appointmentId, err })
         })

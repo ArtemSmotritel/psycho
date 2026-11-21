@@ -1,100 +1,53 @@
 import type { ServerWebSocket } from 'bun'
 import { Hono } from 'hono'
+import { z } from 'zod/v4'
 import { upgradeWebSocket } from 'config/websocket'
 import { auth } from 'utils/auth'
 import { log } from 'utils/logger'
 import { AppointmentsService } from '../appointments/services'
-import type {
-    IncomingWhiteboardMessage,
-    OutgoingWhiteboardMessage,
-    WhiteboardElement,
-    WhiteboardState,
-} from './models'
-import { WhiteboardService } from './services'
+import { MAX_ROOM_FILES } from './limits'
+import type { IncomingWhiteboardMessage } from './models'
+import { WhiteboardRooms, type Room, type RoomConnection } from './rooms'
 
-interface RoomConnection {
-    ws: ServerWebSocket<unknown>
-    userId: string
-    userName: string
-}
-
-interface Room {
-    connections: Set<RoomConnection>
-    state: WhiteboardState
-}
-
-const SAVE_DEBOUNCE_MS = 3000
-
-const rooms = new Map<string, Room>()
-const saveTimers = new Map<string, Timer>()
-
-const scheduleSave = (appointmentId: string, room: Room) => {
-    const existing = saveTimers.get(appointmentId)
-    if (existing) clearTimeout(existing)
-    saveTimers.set(
-        appointmentId,
-        setTimeout(() => {
-            saveTimers.delete(appointmentId)
-            WhiteboardService.saveState(appointmentId, room.state).catch((err) => {
-                log.error('[Whiteboard] Failed to save state', { appointmentId, err })
-            })
-        }, SAVE_DEBOUNCE_MS),
-    )
-}
-
-const flushPendingSave = (appointmentId: string, room: Room) => {
-    const pending = saveTimers.get(appointmentId)
-    if (!pending) return
-    clearTimeout(pending)
-    saveTimers.delete(appointmentId)
-    WhiteboardService.saveState(appointmentId, room.state).catch((err) => {
-        log.error('[Whiteboard] Failed to save state on close', { appointmentId, err })
-    })
-}
+const incomingMessageSchema = z.discriminatedUnion('type', [
+    z.object({
+        type: z.literal('sync'),
+        versions: z.record(z.string(), z.tuple([z.number().int().min(0), z.number().int()])),
+        fileIds: z.array(z.string()).max(MAX_ROOM_FILES),
+    }),
+    z.object({ type: z.literal('elements'), elements: z.array(z.unknown()) }),
+    z.object({ type: z.literal('files'), files: z.record(z.string(), z.unknown()) }),
+    z.object({ type: z.literal('cursor'), x: z.number(), y: z.number() }),
+])
 
 const parseMessage = (raw: string): IncomingWhiteboardMessage | null => {
-    let parsed: unknown
+    let json: unknown
     try {
-        parsed = JSON.parse(raw)
+        json = JSON.parse(raw)
     } catch {
         return null
     }
-    if (!parsed || typeof parsed !== 'object') return null
-    const msg = parsed as { type?: unknown }
-    switch (msg.type) {
-        case 'elements': {
-            const m = parsed as { elements?: unknown }
-            return Array.isArray(m.elements)
-                ? { type: 'elements', elements: m.elements as WhiteboardElement[] }
-                : null
-        }
-        case 'files': {
-            const m = parsed as { files?: unknown }
-            return m.files && typeof m.files === 'object'
-                ? { type: 'files', files: m.files as Record<string, unknown> }
-                : null
-        }
-        case 'cursor': {
-            const m = parsed as { x?: unknown; y?: unknown }
-            return typeof m.x === 'number' && typeof m.y === 'number'
-                ? { type: 'cursor', x: m.x, y: m.y }
-                : null
-        }
-        default:
-            return null
-    }
+    const result = incomingMessageSchema.safeParse(json)
+    return result.success ? (result.data as IncomingWhiteboardMessage) : null
 }
 
-const broadcast = (
-    room: Room,
-    sender: RoomConnection,
-    message: OutgoingWhiteboardMessage,
-): void => {
-    const payload = JSON.stringify(message)
-    for (const conn of room.connections) {
-        if (conn !== sender) conn.ws.send(payload)
-    }
+// A browser always sends `Origin` on a WebSocket upgrade, and cookies ride along.
+// Reject another site's page. A client that sends no `Origin` is not a browser.
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+    const allowed = process.env.FRONTEND_URL
+    if (!origin || !allowed) return true
+    return origin === allowed
 }
+
+// A handler set that closes the socket on open. The upgrade itself must still succeed,
+// so the client can read the close code and reason.
+const rejectUpgrade = (reason: string) => ({
+    onOpen(_: unknown, ws: { close(code?: number, reason?: string): void }) {
+        ws.close(1008, reason)
+    },
+    onMessage() {},
+    onClose() {},
+})
 
 export const whiteboardRoutes = new Hono()
 
@@ -103,101 +56,66 @@ whiteboardRoutes.get(
     upgradeWebSocket(async (c) => {
         const appointmentId = c.req.param('appointmentId')!
 
+        if (!isAllowedOrigin(c.req.header('origin'))) return rejectUpgrade('Forbidden')
+
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session) {
-            return {
-                onOpen(_, ws) {
-                    ws.close(1008, 'Unauthorized')
-                },
-                onMessage() {},
-                onClose() {},
-            }
-        }
+        if (!session) return rejectUpgrade('Unauthorized')
 
         const userId = session.user.id
         const userName = session.user.name ?? 'Anonymous'
         const appointment = await AppointmentsService.getForParticipant(appointmentId, userId)
 
         if (!appointment || appointment.status !== 'active') {
-            return {
-                onOpen(_, ws) {
-                    ws.close(1008, appointment ? 'AppointmentNotActive' : 'NotFound')
-                },
-                onMessage() {},
-                onClose() {},
-            }
+            return rejectUpgrade(appointment ? 'AppointmentNotActive' : 'NotFound')
         }
 
-        let thisConnection: RoomConnection | null = null
+        let conn: RoomConnection | null = null
+        let ready: Promise<Room | null> = Promise.resolve(null)
+        // Messages run one after another and only after the room is ready.
+        // A message that arrives during the room load waits. It is never dropped.
+        let queue: Promise<void> = Promise.resolve()
 
         return {
             onOpen(_, ws) {
                 const rawWs = ws.raw as ServerWebSocket<unknown>
-                thisConnection = { ws: rawWs, userId, userName }
+                const connection = WhiteboardRooms.createConnection(rawWs, userId, userName)
+                conn = connection
 
-                const initRoom = async () => {
-                    let room = rooms.get(appointmentId)
-                    if (!room) {
-                        const state = await WhiteboardService.loadState(appointmentId)
-                        room = { connections: new Set(), state }
-                        rooms.set(appointmentId, room)
-                    }
-                    room.connections.add(thisConnection!)
-
-                    const initMessage: OutgoingWhiteboardMessage = {
-                        type: 'scene_init',
-                        elements: room.state.elements,
-                        files: room.state.files,
-                    }
-                    rawWs.send(JSON.stringify(initMessage))
-                }
-
-                initRoom().catch((err) => {
-                    log.error('[Whiteboard] Failed to init room', { appointmentId, err })
-                    rawWs.close(1011, 'InternalError')
-                })
+                ready = WhiteboardRooms.join(appointmentId, connection)
+                    .then((room) => {
+                        if (!room && !connection.closed) rawWs.close(1008, 'AppointmentNotActive')
+                        return room
+                    })
+                    .catch((err) => {
+                        log.error('[Whiteboard] Failed to join room', { appointmentId, err })
+                        rawWs.close(1011, 'InternalError')
+                        return null
+                    })
             },
 
-            onMessage(event, _ws) {
-                if (!thisConnection) return
-                const room = rooms.get(appointmentId)
-                if (!room) return
+            onMessage(event) {
+                const connection = conn
+                if (!connection) return
 
-                const msg = parseMessage(event.data.toString())
-                if (!msg) return
-
-                if (msg.type === 'elements') {
-                    room.state.elements = msg.elements
-                    scheduleSave(appointmentId, room)
-                    broadcast(room, thisConnection, msg)
+                const message = parseMessage(event.data.toString())
+                if (!message) {
+                    WhiteboardRooms.rejectMessage(connection)
                     return
                 }
 
-                if (msg.type === 'files') {
-                    room.state.files = { ...room.state.files, ...msg.files }
-                    scheduleSave(appointmentId, room)
-                    broadcast(room, thisConnection, msg)
-                    return
-                }
-
-                broadcast(room, thisConnection, {
-                    type: 'cursor',
-                    x: msg.x,
-                    y: msg.y,
-                    userId: thisConnection.userId,
-                    userName: thisConnection.userName,
+                queue = queue.then(async () => {
+                    const room = await ready
+                    if (room) WhiteboardRooms.handle(room, connection, message)
                 })
             },
 
             onClose() {
-                if (!thisConnection) return
-                const room = rooms.get(appointmentId)
-                if (!room) return
-                room.connections.delete(thisConnection)
-                if (room.connections.size === 0) {
-                    flushPendingSave(appointmentId, room)
-                    rooms.delete(appointmentId)
-                }
+                const connection = conn
+                if (!connection) return
+                connection.closed = true
+                void ready.then((room) => {
+                    if (room) WhiteboardRooms.leave(room, connection)
+                })
             },
         }
     }),

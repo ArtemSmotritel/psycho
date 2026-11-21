@@ -1,11 +1,6 @@
 import type { SQL } from 'bun'
 import { db } from 'config/db'
-import type { WhiteboardElement, WhiteboardFiles, WhiteboardState } from './models'
-
-interface WhiteboardRow {
-    whiteboardElements: WhiteboardElement[] | string | null
-    whiteboardFiles: WhiteboardFiles | string | null
-}
+import type { WhiteboardElement, WhiteboardFile, WhiteboardFiles, WhiteboardState } from './models'
 
 const parseJsonb = <T>(value: T | string | null): T | null => {
     if (value === null) return null
@@ -15,38 +10,73 @@ const parseJsonb = <T>(value: T | string | null): T | null => {
 export const WhiteboardRepo = {
     async findStateByAppointmentId(appointmentId: string): Promise<WhiteboardState | null> {
         const [row] = await db`
-            SELECT whiteboard_elements AS "whiteboardElements",
-                   whiteboard_files    AS "whiteboardFiles"
+            SELECT whiteboard_elements AS "whiteboardElements"
             FROM appointments
             WHERE id = ${appointmentId}
         `
         if (!row) return null
-        const r = row as WhiteboardRow
+
+        const fileRows = (await db`
+            SELECT file_id AS "fileId", data
+            FROM whiteboard_files
+            WHERE appointment_id = ${appointmentId}
+            ORDER BY created_at, file_id
+        `) as { fileId: string; data: string }[]
+
+        const files: WhiteboardFiles = {}
+        for (const fileRow of fileRows) {
+            files[fileRow.fileId] = JSON.parse(fileRow.data) as WhiteboardFile
+        }
+
         return {
-            elements: parseJsonb<WhiteboardElement[]>(r.whiteboardElements) ?? [],
-            files: parseJsonb<WhiteboardFiles>(r.whiteboardFiles) ?? {},
+            elements:
+                parseJsonb<WhiteboardElement[]>(
+                    (row as { whiteboardElements: WhiteboardElement[] | string | null })
+                        .whiteboardElements,
+                ) ?? [],
+            files,
         }
     },
 
-    async updateState(
+    // The `ended_at IS NULL` guards stop a late save from writing state back
+    // to an appointment that already ended and had its whiteboard cleared.
+    async updateElements(
         appointmentId: string,
-        state: WhiteboardState,
+        elements: WhiteboardElement[],
         executor: SQL = db,
     ): Promise<void> {
         await executor`
             UPDATE appointments
-            SET whiteboard_elements = ${JSON.stringify(state.elements)}::jsonb,
-                whiteboard_files    = ${JSON.stringify(state.files)}::jsonb
+            SET whiteboard_elements = ${JSON.stringify(elements)}::jsonb
             WHERE id = ${appointmentId}
+              AND ended_at IS NULL
+        `
+    },
+
+    async insertFile(
+        appointmentId: string,
+        file: WhiteboardFile,
+        executor: SQL = db,
+    ): Promise<void> {
+        await executor`
+            INSERT INTO whiteboard_files (appointment_id, file_id, data)
+            SELECT id, ${file.id}, ${JSON.stringify(file)}
+            FROM appointments
+            WHERE id = ${appointmentId}
+              AND ended_at IS NULL
+            ON CONFLICT (appointment_id, file_id) DO NOTHING
         `
     },
 
     async clearState(appointmentId: string, executor: SQL = db): Promise<void> {
         await executor`
             UPDATE appointments
-            SET whiteboard_elements = NULL,
-                whiteboard_files    = NULL
+            SET whiteboard_elements = NULL
             WHERE id = ${appointmentId}
+        `
+        await executor`
+            DELETE FROM whiteboard_files
+            WHERE appointment_id = ${appointmentId}
         `
     },
 } as const

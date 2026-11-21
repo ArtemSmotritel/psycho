@@ -1457,7 +1457,7 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         expect(body.appointment).toHaveProperty('whiteboardSnapshotUrl', null)
     })
 
-    it('clears whiteboard_elements and whiteboard_files on end', async () => {
+    it('clears whiteboard elements and files on end', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -1472,9 +1472,12 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         // Seed whiteboard state directly
         await testDb`
             UPDATE appointments
-            SET whiteboard_elements = ${JSON.stringify([{ id: 'el1', type: 'rectangle' }])}::jsonb,
-                whiteboard_files    = ${JSON.stringify({ 'file-1': { id: 'file-1' } })}::jsonb
+            SET whiteboard_elements = ${JSON.stringify([{ id: 'el1', type: 'rectangle' }])}::jsonb
             WHERE id = ${apt.id}
+        `
+        await testDb`
+            INSERT INTO whiteboard_files (appointment_id, file_id, data)
+            VALUES (${apt.id}, 'file-1', ${JSON.stringify({ id: 'file-1' })})
         `
 
         await app.request(
@@ -1483,10 +1486,13 @@ describe('PATCH /api/clients/:clientId/appointments/:appointmentId/end', () => {
         )
 
         const [row] = await testDb`
-            SELECT whiteboard_elements, whiteboard_files FROM appointments WHERE id = ${apt.id}
+            SELECT whiteboard_elements FROM appointments WHERE id = ${apt.id}
+        `
+        const fileRows = await testDb`
+            SELECT file_id FROM whiteboard_files WHERE appointment_id = ${apt.id}
         `
         expect(row.whiteboard_elements).toBeNull()
-        expect(row.whiteboard_files).toBeNull()
+        expect(fileRows).toHaveLength(0)
     })
 
     it('returns 404 when appointment does not exist', async () => {
