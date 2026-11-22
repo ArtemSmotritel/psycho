@@ -1,12 +1,7 @@
 import type { SQL } from 'bun'
 import { db } from 'config/db'
 import { APPOINTMENT_STATUS_EXPR } from '../appointments/repo'
-import type {
-    Attachment,
-    AttachmentType,
-    ImpressionCompletion,
-    RecommendationReaction,
-} from './models'
+import type { Attachment, AttachmentType, RecommendationReaction } from './models'
 
 export const ATTACHMENT_SELECT = `
     a.id,
@@ -62,17 +57,6 @@ export const REACTION_JSON_EXPR = `
     END AS reaction
 `
 
-export const COMPLETION_JSON_EXPR = `
-    CASE
-        WHEN ic.attachment_id IS NOT NULL THEN json_build_object(
-            'attachmentId', ic.attachment_id,
-            'clientResponse', ic.client_response,
-            'createdAt', ic.created_at
-        )
-        ELSE NULL
-    END AS completion
-`
-
 const REACTION_COLUMNS = `
     attachment_id AS "attachmentId",
     done,
@@ -87,18 +71,16 @@ export interface AttachmentChain {
     attachment: Attachment
     appointmentStatus: AppointmentStatus
     reaction: RecommendationReaction | null
-    completion: ImpressionCompletion | null
 }
 
 type AttachmentChainRow = Attachment & {
     appointmentStatus: AppointmentStatus
     reaction: RecommendationReaction | null
-    completion: ImpressionCompletion | null
 }
 
 function rowToChain(row: AttachmentChainRow): AttachmentChain {
-    const { appointmentStatus, reaction, completion, ...attachment } = row
-    return { attachment, appointmentStatus, reaction, completion }
+    const { appointmentStatus, reaction, ...attachment } = row
+    return { attachment, appointmentStatus, reaction }
 }
 
 export const AttachmentsRepo = {
@@ -173,12 +155,10 @@ export const AttachmentsRepo = {
         const [row] = await db`
             SELECT ${db.unsafe(ATTACHMENT_SELECT)},
                    ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                   ${db.unsafe(REACTION_JSON_EXPR)},
-                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+                   ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             JOIN appointments ap ON ap.id = a.appointment_id
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
             WHERE a.id = ${attachmentId}
               AND ap.id = ${appointmentId}
               AND ap.client_id = ${clientId}
@@ -196,12 +176,10 @@ export const AttachmentsRepo = {
         const [row] = await db`
             SELECT ${db.unsafe(ATTACHMENT_SELECT)},
                    ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                   ${db.unsafe(REACTION_JSON_EXPR)},
-                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+                   ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             JOIN appointments ap ON ap.id = a.appointment_id
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
             WHERE a.id = ${attachmentId}
               AND ap.id = ${appointmentId}
               AND ap.client_id = ${clientId}
@@ -220,12 +198,10 @@ export const AttachmentsRepo = {
         const rows = await db`
             SELECT ${db.unsafe(ATTACHMENT_SELECT)},
                    ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                   ${db.unsafe(REACTION_JSON_EXPR)},
-                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+                   ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             JOIN appointments ap ON ap.id = a.appointment_id
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
             WHERE ap.id = ${appointmentId}
               AND (
                   a.type = 'impression'
@@ -250,12 +226,10 @@ export const AttachmentsRepo = {
         const rows = await db`
             SELECT ${db.unsafe(ATTACHMENT_SELECT)},
                    ${db.unsafe(APPOINTMENT_STATUS_EXPR)} AS "appointmentStatus",
-                   ${db.unsafe(REACTION_JSON_EXPR)},
-                   ${db.unsafe(COMPLETION_JSON_EXPR)}
+                   ${db.unsafe(REACTION_JSON_EXPR)}
             FROM attachments a
             JOIN appointments ap ON ap.id = a.appointment_id
             LEFT JOIN recommendation_reactions rr ON rr.attachment_id = a.id
-            LEFT JOIN impression_completions ic ON ic.attachment_id = a.id
             WHERE ap.id = ${appointmentId}
               AND ap.client_id = ${clientId}
               AND (
@@ -324,20 +298,5 @@ export const AttachmentsRepo = {
             RETURNING ${db.unsafe(REACTION_COLUMNS)}
         `
         return row as RecommendationReaction
-    },
-
-    async insertImpressionCompletion(
-        attachmentId: string,
-        clientResponse: string,
-    ): Promise<ImpressionCompletion> {
-        const [row] = await db`
-            INSERT INTO impression_completions (attachment_id, client_response)
-            VALUES (${attachmentId}, ${clientResponse})
-            RETURNING
-                attachment_id AS "attachmentId",
-                client_response AS "clientResponse",
-                created_at AS "createdAt"
-        `
-        return row as ImpressionCompletion
     },
 } as const

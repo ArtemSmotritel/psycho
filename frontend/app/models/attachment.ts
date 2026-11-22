@@ -78,23 +78,13 @@ export interface SetReplyDTO {
     reply: string
 }
 
-export interface ImpressionCompletion {
-    attachmentId: string
-    clientResponse: string
-    createdAt: string
-}
-
-export interface AttachmentWithCompletion extends Attachment {
-    completion: ImpressionCompletion | null
-}
-
 export interface PsychoAttachmentList {
     notes: Attachment[]
-    impressions: AttachmentWithCompletion[]
+    impressions: Attachment[]
     recommendations: AttachmentWithReaction[]
 }
 
 export interface ClientAttachmentList {
-    impressions: AttachmentWithCompletion[]
+    impressions: Attachment[]
     recommendations: AttachmentWithReaction[]
 }

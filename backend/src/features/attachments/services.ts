@@ -11,7 +11,6 @@ import type {
     Attachment,
     AttachmentType,
     ClientAttachmentList,
-    ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
 } from './models'
@@ -246,28 +245,6 @@ async function reactToRecommendationForClientView(input: {
     })
 }
 
-async function completeImpressionForClientView(input: {
-    user: User
-    appointmentId: string
-    attachmentId: string
-    response: string
-}): Promise<ImpressionCompletion> {
-    const { completion } = await AttachmentCheck.forClient({
-        user: input.user,
-        appointmentId: input.appointmentId,
-        attachmentId: input.attachmentId,
-    })
-        .setExpectedType('impression')
-        .setExpectedAuthor('self')
-        .run()
-
-    if (completion !== null) {
-        throw new BadRequestError('This impression has already been completed.', 'AlreadyCompleted')
-    }
-
-    return AttachmentsRepo.insertImpressionCompletion(input.attachmentId, input.response)
-}
-
 async function listForPsychoView(
     appointmentId: string,
     psychoId: string,
@@ -279,11 +256,11 @@ async function listForPsychoView(
     const chains = await AttachmentsRepo.listForPsychoView(appointmentId, psychoId, types)
 
     const result: PsychoAttachmentList = { notes: [], impressions: [], recommendations: [] }
-    for (const { attachment, reaction, completion } of chains) {
+    for (const { attachment, reaction } of chains) {
         if (attachment.type === 'note') {
             result.notes.push(attachment)
         } else if (attachment.type === 'impression') {
-            result.impressions.push({ ...attachment, completion })
+            result.impressions.push(attachment)
         } else {
             result.recommendations.push({ ...attachment, reaction })
         }
@@ -301,9 +278,9 @@ async function listForClientView(
     const chains = await AttachmentsRepo.listForClientView(appointmentId, clientId, types)
 
     const result: ClientAttachmentList = { impressions: [], recommendations: [] }
-    for (const { attachment, reaction, completion } of chains) {
+    for (const { attachment, reaction } of chains) {
         if (attachment.type === 'impression') {
-            result.impressions.push({ ...attachment, completion })
+            result.impressions.push(attachment)
         } else if (attachment.type === 'recommendation') {
             result.recommendations.push({ ...attachment, reaction })
         }
@@ -345,16 +322,9 @@ async function deleteForClientView(input: {
     appointmentId: string
     attachmentId: string
 }): Promise<void> {
-    const { attachment, completion } = await AttachmentCheck.forClient(input)
+    const { attachment } = await AttachmentCheck.forClient(input)
         .setTypeRules(CLIENT_DELETE_RULES)
         .run()
-
-    if (attachment.type === 'impression' && completion !== null) {
-        throw new ConflictError(
-            'Impression has a psychologist completion and cannot be deleted.',
-            'ImpressionHasCompletion',
-        )
-    }
 
     await deleteAttachmentAndOrphanFiles(attachment)
 }
@@ -371,9 +341,7 @@ async function deleteAttachmentAndOrphanFiles(attachment: Attachment): Promise<v
 }
 
 type PsychoGetResult =
-    | { attachment: Attachment }
-    | { attachment: Attachment; reaction: RecommendationReaction | null }
-    | { attachment: Attachment; completion: ImpressionCompletion | null }
+    { attachment: Attachment } | { attachment: Attachment; reaction: RecommendationReaction | null }
 
 async function getForPsychoView(input: {
     user: User
@@ -381,7 +349,7 @@ async function getForPsychoView(input: {
     appointmentId: string
     attachmentId: string
 }): Promise<PsychoGetResult> {
-    const { attachment, reaction, completion } = await AttachmentCheck.forPsycho(input).run()
+    const { attachment, reaction } = await AttachmentCheck.forPsycho(input).run()
     // psycho per-type rule:
     // - impression: any author
     // - note / recommendation: must be authored by this psycho
@@ -389,20 +357,18 @@ async function getForPsychoView(input: {
         throw new NotFoundError()
     }
     if (attachment.type === 'recommendation') return { attachment, reaction }
-    if (attachment.type === 'impression') return { attachment, completion }
     return { attachment }
 }
 
 type ClientGetResult =
-    | { attachment: Attachment; reaction: RecommendationReaction | null }
-    | { attachment: Attachment; completion: ImpressionCompletion | null }
+    { attachment: Attachment } | { attachment: Attachment; reaction: RecommendationReaction | null }
 
 async function getForClientView(input: {
     user: User
     appointmentId: string
     attachmentId: string
 }): Promise<ClientGetResult> {
-    const { attachment, reaction, completion } = await AttachmentCheck.forClient(input).run()
+    const { attachment, reaction } = await AttachmentCheck.forClient(input).run()
     // client per-type rule:
     // - impression: must be authored by this client
     // - recommendation: any psycho-authored is fine
@@ -410,13 +376,12 @@ async function getForClientView(input: {
         throw new NotFoundError()
     }
     if (attachment.type === 'recommendation') return { attachment, reaction }
-    return { attachment, completion }
+    return { attachment }
 }
 
 export const AttachmentsService = {
     create,
     upsertReaction: AttachmentsRepo.upsertReaction,
-    completeImpression: AttachmentsRepo.insertImpressionCompletion,
     listForPsycho: listForPsychoView,
     listForClient: listForClientView,
     createForPsycho: createForPsychoView,
@@ -428,5 +393,4 @@ export const AttachmentsService = {
     updateForPsycho: updateForPsychoView,
     replyToRecommendationForPsycho: replyToRecommendationForPsychoView,
     reactToRecommendationForClient: reactToRecommendationForClientView,
-    completeImpressionForClient: completeImpressionForClientView,
 } as const

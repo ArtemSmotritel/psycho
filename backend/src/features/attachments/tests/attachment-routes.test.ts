@@ -283,7 +283,6 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         expect(body.attachment.id).toBe(recommendation.id)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toBeNull()
-        expect(body).not.toHaveProperty('completion')
     })
 
     it('returns the reaction payload on a recommendation that has one', async () => {
@@ -327,7 +326,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         })
     })
 
-    it('returns completion=null on an impression that has not been completed', async () => {
+    it('returns an impression without a reaction', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -356,49 +355,10 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
         expect(body.attachment.id).toBe(impression.id)
-        expect(body).toHaveProperty('completion')
-        expect(body.completion).toBeNull()
         expect(body).not.toHaveProperty('reaction')
     })
 
-    it('returns the completion payload on an impression that has been completed', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
-        await ClientsService.linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: pastDate(7),
-            endTime: pastDate(7, 11),
-        })
-        await startAppointment(apt.id)
-        await endAppointment(apt.id)
-
-        const impression = await AttachmentsService.create({
-            appointmentId: apt.id,
-            authorId: client.id,
-            type: 'impression',
-            name: 'Test impression',
-            text: 'Impression text',
-        })
-
-        await AttachmentsService.completeImpression(impression.id, 'Reflected on it')
-
-        const res = await app.request(
-            `/api/clients/${client.id}/appointments/${apt.id}/attachments/${impression.id}`,
-            await asUser(psycho.id, { method: 'GET', headers: { ...PSYCHO_HEADER } }),
-        )
-
-        expect(res.status).toBe(200)
-        const body = await jsonBody(res)
-        expect(body.completion).toMatchObject({
-            attachmentId: impression.id,
-            clientResponse: 'Reflected on it',
-        })
-        expect(body.completion.createdAt).toBeTruthy()
-    })
-
-    it('omits both reaction and completion on a note', async () => {
+    it('omits the reaction on a note', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -428,12 +388,11 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments/:at
         const body = await jsonBody(res)
         expect(body.attachment.id).toBe(note.id)
         expect(body).not.toHaveProperty('reaction')
-        expect(body).not.toHaveProperty('completion')
     })
 })
 
 describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId', () => {
-    it('returns own impression with completion=null when not completed', async () => {
+    it('returns own impression without a reaction', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -462,45 +421,7 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         expect(res.status).toBe(200)
         const body = await jsonBody(res)
         expect(body.attachment.id).toBe(impression.id)
-        expect(body).toHaveProperty('completion')
-        expect(body.completion).toBeNull()
         expect(body).not.toHaveProperty('reaction')
-    })
-
-    it('returns own impression with populated completion when completed', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
-        await ClientsService.linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: pastDate(7),
-            endTime: pastDate(7, 11),
-        })
-        await startAppointment(apt.id)
-        await endAppointment(apt.id)
-
-        const impression = await AttachmentsService.create({
-            appointmentId: apt.id,
-            authorId: client.id,
-            type: 'impression',
-            name: 'Test impression',
-            text: 'My impression',
-        })
-
-        await AttachmentsService.completeImpression(impression.id, 'Reflected')
-
-        const res = await app.request(
-            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
-            await asUser(client.id, { method: 'GET', headers: { ...CLIENT_HEADER } }),
-        )
-
-        expect(res.status).toBe(200)
-        const body = await jsonBody(res)
-        expect(body.completion).toMatchObject({
-            attachmentId: impression.id,
-            clientResponse: 'Reflected',
-        })
     })
 
     it('returns a psycho-authored recommendation with reaction=null when none', async () => {
@@ -534,7 +455,6 @@ describe('GET /api/client/appointments/:appointmentId/attachments/:attachmentId'
         expect(body.attachment.id).toBe(recommendation.id)
         expect(body).toHaveProperty('reaction')
         expect(body.reaction).toBeNull()
-        expect(body).not.toHaveProperty('completion')
     })
 
     it('returns a recommendation with the populated reaction when one exists', async () => {
@@ -701,14 +621,12 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         expect(res.status).toBe(200)
         const body = (await jsonBody(res)) as {
             notes: Array<{ id: string }>
-            impressions: Array<{ id: string; completion: unknown }>
+            impressions: Array<{ id: string }>
             recommendations: Array<{ id: string; reaction: unknown }>
         }
         expect(body.notes.map((n) => n.id)).toEqual([note.id])
         expect(body.impressions.map((i) => i.id)).toEqual([impression.id])
         expect(body.recommendations.map((r) => r.id)).toEqual([recommendation.id])
-        expect(body.impressions[0]).toHaveProperty('completion')
-        expect(body.impressions[0].completion).toBeNull()
         expect(body.recommendations[0]).toHaveProperty('reaction')
         expect(body.recommendations[0].reaction).toBeNull()
     })
@@ -757,7 +675,7 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
         expect(body).toEqual({ notes: [], impressions: [], recommendations: [] })
     })
 
-    it('returns reaction and completion populated when present', async () => {
+    it('returns the reaction populated when present', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -777,7 +695,6 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
             name: 'Test impression',
             text: 'Impression text',
         })
-        await AttachmentsService.completeImpression(impression.id, 'Reflected')
 
         const recommendation = await AttachmentsService.create({
             appointmentId: apt.id,
@@ -798,12 +715,10 @@ describe('GET /api/clients/:clientId/appointments/:appointmentId/attachments', (
 
         expect(res.status).toBe(200)
         const body = (await jsonBody(res)) as {
-            impressions: Array<{ completion: { clientResponse: string } | null }>
             recommendations: Array<{
                 reaction: { done: boolean; clientComment: string | null } | null
             }>
         }
-        expect(body.impressions[0].completion).toMatchObject({ clientResponse: 'Reflected' })
         expect(body.recommendations[0].reaction).toMatchObject({
             done: true,
             clientComment: 'Got it',
@@ -2178,7 +2093,7 @@ describe('DELETE /api/clients/:clientId/appointments/:appointmentId/attachments/
 // ─── DELETE — client view ─────────────────────────────────────────────────────
 
 describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachmentId', () => {
-    it('returns 204 deleting own impression with no completion', async () => {
+    it('returns 204 deleting own impression', async () => {
         const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
         const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
         await ClientsService.linkClientToPsycho(client.id, psycho.id)
@@ -2316,39 +2231,6 @@ describe('DELETE /api/client/appointments/:appointmentId/attachments/:attachment
         )
 
         expect(res.status).toBe(404)
-        expect(await attachmentExists(impression.id)).toBe(true)
-    })
-
-    it('returns 409 ImpressionHasCompletion when the impression has a completion row', async () => {
-        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
-        const client = await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
-        await ClientsService.linkClientToPsycho(client.id, psycho.id)
-        const apt = await createAppointment({
-            psychoId: psycho.id,
-            clientId: client.id,
-            startTime: pastDate(7),
-            endTime: pastDate(7, 11),
-        })
-        await startAppointment(apt.id)
-        await endAppointment(apt.id)
-
-        const impression = await AttachmentsService.create({
-            appointmentId: apt.id,
-            authorId: client.id,
-            type: 'impression',
-            name: 'Reflection',
-            text: 'Reflection',
-        })
-        await AttachmentsService.completeImpression(impression.id, 'Done.')
-
-        const res = await app.request(
-            `/api/client/appointments/${apt.id}/attachments/${impression.id}`,
-            await asUser(client.id, { method: 'DELETE', headers: { ...CLIENT_HEADER } }),
-        )
-
-        expect(res.status).toBe(409)
-        const body = await jsonBody(res)
-        expect(body).toHaveProperty('error', 'ImpressionHasCompletion')
         expect(await attachmentExists(impression.id)).toBe(true)
     })
 

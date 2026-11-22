@@ -113,15 +113,6 @@ const IMPRESSION_TEXTS = [
     'Яка ваша основна знахідка цього тижня?',
 ]
 
-const CLIENT_RESPONSES = [
-    'Я помітив, що вранці спокійніше, ніж ввечері. Спробував дихати глибше перед сном.',
-    'Найчастіше відчуваю втому, але вже без тривоги.',
-    'На роботі була ситуація з керівником — зміг не реагувати імпульсивно.',
-    'Опора — це спорт і розмови з подругою.',
-    'Думаю про те, як довго я замовчував власні потреби.',
-    'Зрозумів, що я можу відмовляти без провини.',
-]
-
 const RECOMMENDATION_TEXTS = [
     'Щоденник емоцій: фіксуй три сильні емоції щодня протягом тижня.',
     'Практика заземлення 5-4-3-2-1 двічі на день.',
@@ -453,21 +444,15 @@ async function seed() {
             attachmentCounter++
         }
 
-        // 1 impression (author = psychologist); ~70% get a client completion
+        // 1 impression (author = psychologist)
         const imprText = pick(IMPRESSION_TEXTS, attachmentCounter)
-        const impr = await AttachmentsService.create({
+        await AttachmentsService.create({
             appointmentId,
             authorId: psychoId,
             type: 'impression',
             name: imprText.split(':')[0] ?? imprText,
             text: imprText,
         })
-        if (attachmentCounter % 10 !== 7 && attachmentCounter % 10 !== 3) {
-            await db`
-                INSERT INTO impression_completions (attachment_id, client_response)
-                VALUES (${impr.id}, ${pick(CLIENT_RESPONSES, attachmentCounter)})
-            `
-        }
         attachmentCounter++
 
         // 1 recommendation (author = psychologist); most get a reaction
@@ -511,7 +496,7 @@ async function seed() {
                 fileIds[(attachmentCounter + 1) % fileIds.length]!,
             ]
             const impr2Text = pick(IMPRESSION_TEXTS, attachmentCounter + 3)
-            const impr2 = await AttachmentsService.create({
+            await AttachmentsService.create({
                 appointmentId,
                 authorId: psychoId,
                 type: 'impression',
@@ -519,10 +504,6 @@ async function seed() {
                 text: impr2Text,
                 imageFileIds: imgIds,
             })
-            await db`
-                INSERT INTO impression_completions (attachment_id, client_response)
-                VALUES (${impr2.id}, ${pick(CLIENT_RESPONSES, attachmentCounter + 3)})
-            `
             attachmentCounter++
         }
 

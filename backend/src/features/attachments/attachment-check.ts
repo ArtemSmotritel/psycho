@@ -1,11 +1,6 @@
 import { BadRequestError, NotFoundError } from 'errors/index'
 import type { User } from 'utils/types'
-import type {
-    Attachment,
-    AttachmentType,
-    ImpressionCompletion,
-    RecommendationReaction,
-} from './models'
+import type { Attachment, AttachmentType, RecommendationReaction } from './models'
 import { AttachmentsRepo, type AppointmentStatus, type AttachmentChain } from './repo'
 
 type AuthorScope = 'self' | 'any'
@@ -87,7 +82,6 @@ export class AttachmentCheck {
         attachment: Attachment
         appointmentStatus: AppointmentStatus
         reaction: RecommendationReaction | null
-        completion: ImpressionCompletion | null
     }> {
         if (this.consumed) {
             throw new Error('AttachmentCheck.run() can only be called once per instance')
@@ -126,7 +120,6 @@ export class AttachmentCheck {
             attachment: chain.attachment,
             appointmentStatus: chain.appointmentStatus,
             reaction: chain.reaction,
-            completion: chain.completion,
         }
     }
 }

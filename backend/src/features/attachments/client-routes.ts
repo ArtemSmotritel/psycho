@@ -13,10 +13,6 @@ const reactionSchema = z.object({
     comment: z.string().min(1).max(65536).optional(),
 })
 
-const completeSchema = z.object({
-    response: z.string().min(1).max(65536),
-})
-
 const ATTACHMENT_BODY_LIMIT = 512 * 1024
 const attachmentBodyLimit = bodyLimit({
     maxSize: ATTACHMENT_BODY_LIMIT,
@@ -99,26 +95,6 @@ clientAttachmentRoutes.patch(
             comment,
         })
         return c.json({ reaction }, 200)
-    },
-)
-
-clientAttachmentRoutes.patch(
-    '/:attachmentId/complete',
-    attachmentBodyLimit,
-    zValidator('param', appointmentIdParamSchema),
-    zValidator('json', completeSchema),
-    async (c) => {
-        const user = c.get('user')
-        const { appointmentId } = c.req.valid('param')
-        const attachmentId = c.req.param('attachmentId')
-        const { response } = c.req.valid('json')
-        const completion = await AttachmentsService.completeImpressionForClient({
-            user,
-            appointmentId,
-            attachmentId,
-            response,
-        })
-        return c.json({ completion }, 200)
     },
 )
 

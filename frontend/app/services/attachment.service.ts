@@ -7,7 +7,6 @@ import type {
     ClientAttachmentList,
     CreateAttachmentClientDTO,
     CreateAttachmentPsychoDTO,
-    ImpressionCompletion,
     PsychoAttachmentList,
     RecommendationReaction,
     UpdateAttachmentDTO,
@@ -21,7 +20,6 @@ export interface AttachmentDetailResponse {
 export interface ClientAttachmentDetailResponse {
     attachment: Attachment
     reaction?: RecommendationReaction | null
-    completion?: ImpressionCompletion | null
 }
 
 export const attachmentService = {
@@ -70,9 +68,6 @@ export function getDeleteAttachmentErrorMessage(err: unknown): string {
         const code = err.response.data?.error
         if (code === 'RecommendationHasReaction') {
             return 'Cannot delete: the client has already reacted to this recommendation.'
-        }
-        if (code === 'ImpressionHasCompletion') {
-            return 'Cannot delete: the psychologist has already completed this impression.'
         }
     }
     return 'Failed to delete attachment. Please try again.'

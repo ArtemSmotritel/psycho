@@ -11,7 +11,6 @@ export const ALL_APP_TABLES = [
     'email_outbox',
     'associative_images',
     'invitations',
-    'impression_completions',
     'recommendation_reactions',
     'attachment_files',
     'attachments',
