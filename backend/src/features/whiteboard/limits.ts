@@ -22,9 +22,10 @@ export const MAX_MESSAGES_PER_WINDOW = 300
 // briefly holds two sockets.
 export const MAX_CONNECTIONS_PER_USER = 5
 
-// Save scheduling. The first change starts the timer. A failed save retries after the retry delay.
+// Save scheduling. The first change starts the timer. A failed save retries after the same delay plus
+// a random extra of up to the jitter, so rooms that failed together do not all retry at the same moment.
 export const SAVE_DELAY_MS = 5_000
-export const SAVE_RETRY_MS = 30_000
+export const SAVE_RETRY_JITTER_MS = 2_000
 
 // Bun closes a socket whose send queue grows past this size. The client then reconnects and syncs.
 export const BACKPRESSURE_LIMIT_BYTES = 128 * 1024 * 1024

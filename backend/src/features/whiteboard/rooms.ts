@@ -7,7 +7,7 @@ import {
     MAX_ROOM_ELEMENTS,
     RATE_WINDOW_MS,
     SAVE_DELAY_MS,
-    SAVE_RETRY_MS,
+    SAVE_RETRY_JITTER_MS,
 } from './limits'
 import { diffFiles, mergeElements, mergeFiles } from './merge'
 import type {
@@ -99,7 +99,7 @@ const persist = (room: Room): Promise<void> => {
         .catch((err) => {
             room.dirty = true
             for (const file of files) room.unsavedFiles.set(file.id, file)
-            scheduleSave(room, SAVE_RETRY_MS)
+            scheduleSave(room, SAVE_DELAY_MS + Math.random() * SAVE_RETRY_JITTER_MS)
             throw err
         })
         .finally(() => {
@@ -119,7 +119,9 @@ const flushRoom = async (room: Room): Promise<void> => {
 
 const evictIfIdle = (room: Room): void => {
     if (room.connections.size > 0 || room.dirty || room.saving) return
-    if (rooms.get(room.appointmentId) === room) rooms.delete(room.appointmentId)
+    if (rooms.get(room.appointmentId) !== room) return
+    rooms.delete(room.appointmentId)
+    log.info('[Whiteboard] Room evicted (idle, saved)', { appointmentId: room.appointmentId })
 }
 
 const settleEmptyRoom = async (room: Room): Promise<void> => {
@@ -157,6 +159,11 @@ const loadRoom = async (appointmentId: string): Promise<Room> => {
         room.elements.set(element.id, element)
     }
     rooms.set(appointmentId, room)
+    log.info('[Whiteboard] Room opened', {
+        appointmentId,
+        elements: room.elements.size,
+        files: room.files.size,
+    })
     return room
 }
 
@@ -221,6 +228,10 @@ const allowMessage = (conn: RoomConnection): boolean => {
     }
     conn.windowCount++
     if (conn.windowCount > MAX_MESSAGES_PER_WINDOW) {
+        log.warn('[Whiteboard] Connection rate limited', {
+            connectionId: conn.id,
+            userId: conn.userId,
+        })
         closeConnection(conn, 1013, 'RateLimited')
         return false
     }
@@ -320,10 +331,21 @@ export const WhiteboardRooms = {
         const room = await getRoom(appointmentId)
         if (room.ended) return null
         room.connections.add(conn)
+        log.info('[Whiteboard] Join', {
+            appointmentId,
+            connectionId: conn.id,
+            userId: conn.userId,
+            connections: room.connections.size,
+        })
 
         // A Set iterates in insertion order, so the first connections of the user are the oldest.
         const own = [...room.connections].filter((other) => other.userId === conn.userId)
         for (const old of own.slice(0, Math.max(0, own.length - MAX_CONNECTIONS_PER_USER))) {
+            log.info('[Whiteboard] Connection replaced', {
+                appointmentId,
+                connectionId: old.id,
+                userId: old.userId,
+            })
             closeConnection(old, 1008, 'Replaced')
             // Remove it now. The socket close event arrives later, and `leave` ignores a second call.
             WhiteboardRooms.leave(room, old)
@@ -337,6 +359,12 @@ export const WhiteboardRooms = {
 
     leave(room: Room, conn: RoomConnection): void {
         if (!room.connections.delete(conn)) return
+        log.info('[Whiteboard] Leave', {
+            appointmentId: room.appointmentId,
+            connectionId: conn.id,
+            userId: conn.userId,
+            connections: room.connections.size,
+        })
         broadcast(room, conn, { type: 'leave', connectionId: conn.id })
         if (room.connections.size === 0) void settleEmptyRoom(room)
     },
@@ -348,6 +376,10 @@ export const WhiteboardRooms = {
         const room = rooms.get(appointmentId)
         if (!room) return
 
+        log.info('[Whiteboard] Room closed (appointment ended)', {
+            appointmentId,
+            connections: room.connections.size,
+        })
         room.ended = true
         clearTimer(room)
         rooms.delete(appointmentId)
@@ -359,6 +391,7 @@ export const WhiteboardRooms = {
 
     /** Saves every room. Called on shutdown. */
     async flushAll(): Promise<void> {
+        log.info('[Whiteboard] Saving rooms on shutdown', { rooms: rooms.size })
         await Promise.all(
             [...rooms.values()].map((room) =>
                 flushRoom(room).catch((err) => {
