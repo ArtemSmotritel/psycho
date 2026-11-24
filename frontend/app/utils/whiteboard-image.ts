@@ -12,7 +12,7 @@ const PNG_TYPE = 'image/png'
 
 export class ImageTooLargeError extends Error {
     constructor() {
-        super('The image is too large for the whiteboard, also after shrinking it.')
+        super('The image is too large for the whiteboard.')
         this.name = 'ImageTooLargeError'
     }
 }
