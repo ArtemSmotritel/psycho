@@ -74,4 +74,49 @@ describe('SessionForm', () => {
             ).toBeInTheDocument()
         })
     })
+
+    describe('end time follows start time', () => {
+        const openPicker = async (label: RegExp) => {
+            const group = screen.getByText(label).closest('div')!
+            fireEvent.click(group.querySelector('button')!)
+        }
+
+        it('sets end time to start time + 1 hour in add mode', async () => {
+            const start = new Date(2099, 5, 1, 9, 0)
+            renderForm(vi.fn(), {
+                initialData: { startTime: start, endTime: new Date(2099, 5, 1, 9, 30) },
+            })
+            await openPicker(/start time/i)
+            const input = await waitFor(() => {
+                const el = document.querySelector('input[type="time"]')
+                expect(el).not.toBeNull()
+                return el as HTMLInputElement
+            })
+            fireEvent.change(input, { target: { value: '14:15' } })
+            fireEvent.keyDown(document.body, { key: 'Escape' })
+            await waitFor(() => {
+                expect(screen.getByText(/15:15/)).toBeInTheDocument()
+            })
+        })
+
+        it('does the same in edit mode, but not before the user edits', async () => {
+            const start = new Date(2099, 5, 1, 9, 0)
+            renderForm(vi.fn(), {
+                mode: 'edit',
+                initialData: { startTime: start, endTime: new Date(2099, 5, 1, 9, 30) },
+            })
+            expect(await screen.findByText(/09:30/)).toBeInTheDocument()
+            await openPicker(/start time/i)
+            const input = await waitFor(() => {
+                const el = document.querySelector('input[type="time"]')
+                expect(el).not.toBeNull()
+                return el as HTMLInputElement
+            })
+            fireEvent.change(input, { target: { value: '11:00' } })
+            fireEvent.keyDown(document.body, { key: 'Escape' })
+            await waitFor(() => {
+                expect(screen.getByText(/12:00/)).toBeInTheDocument()
+            })
+        })
+    })
 })

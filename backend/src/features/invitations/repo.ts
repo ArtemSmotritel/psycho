@@ -57,6 +57,20 @@ export const InvitationsRepo = {
         await executor`UPDATE invitations SET status = 'accepted' WHERE id = ${id}`
     },
 
+    async markAcceptedByPsychoAndEmail(
+        psychoId: string,
+        normalizedEmail: string,
+        executor: SQL = db,
+    ): Promise<void> {
+        await executor`
+            UPDATE invitations
+            SET status = 'accepted'
+            WHERE psychologist_id = ${psychoId}
+              AND LOWER(invited_email) = ${normalizedEmail}
+              AND status = 'pending'
+        `
+    },
+
     async deleteById(id: string): Promise<void> {
         await db`DELETE FROM invitations WHERE id = ${id}`
     },

@@ -12,9 +12,16 @@ interface SessionDateTimePickerProps {
     control: Control<SessionFormValues>
     name: Extract<FieldPath<SessionFormValues>, 'startTime' | 'endTime'>
     label: string
+    /** Runs after the user changes the value. It does not run on mount. */
+    onValueChange?: (date: Date) => void
 }
 
-export function SessionDateTimePicker({ control, name, label }: SessionDateTimePickerProps) {
+export function SessionDateTimePicker({
+    control,
+    name,
+    label,
+    onValueChange,
+}: SessionDateTimePickerProps) {
     return (
         <FormField
             control={control}
@@ -46,7 +53,10 @@ export function SessionDateTimePicker({ control, name, label }: SessionDateTimeP
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
-                                    onSelect={field.onChange}
+                                    onSelect={(date) => {
+                                        field.onChange(date)
+                                        if (date) onValueChange?.(date)
+                                    }}
                                     initialFocus
                                 />
                                 <div className="flex items-center space-x-2">
@@ -61,6 +71,7 @@ export function SessionDateTimePicker({ control, name, label }: SessionDateTimeP
                                                 newDate.setHours(parseInt(hours, 10))
                                                 newDate.setMinutes(parseInt(minutes, 10))
                                                 field.onChange(newDate)
+                                                onValueChange?.(newDate)
                                             }
                                         }}
                                     />

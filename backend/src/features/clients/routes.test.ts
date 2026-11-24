@@ -4,6 +4,7 @@ import { jsonBody } from '../../test-fixtures/responses'
 import { asUser, insertTestUser } from '../../test-fixtures/users'
 import { testDb } from '../../test-fixtures/db'
 import { ClientsService } from './services'
+import { InvitationsService } from '../invitations/services'
 import {
     createAppointment,
     startAppointment,
@@ -109,6 +110,47 @@ describe('POST /api/clients', () => {
         expect(body).toHaveProperty('client')
         expect(body.client).toHaveProperty('id', client.id)
         expect(body.client).toHaveProperty('email', 'client@test.com')
+    })
+
+    it('marks the pending invitation for that email as accepted', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        await InvitationsService.createForPsycho(psycho.id, 'client@test.com')
+        await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+
+        const res = await app.request(
+            '/api/clients',
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ email: 'client@test.com' }),
+            }),
+        )
+
+        expect(res.status).toBe(201)
+        const rows =
+            await testDb`SELECT status FROM invitations WHERE psychologist_id = ${psycho.id}`
+        expect(rows).toHaveLength(1)
+        expect(rows[0].status).toBe('accepted')
+    })
+
+    it('leaves invitations from other psychologists pending', async () => {
+        const psycho = await insertTestUser({ email: 'psycho@test.com', activeRole: 'psycho' })
+        const other = await insertTestUser({ email: 'other@test.com', activeRole: 'psycho' })
+        await InvitationsService.createForPsycho(other.id, 'client@test.com')
+        await insertTestUser({ email: 'client@test.com', activeRole: 'client' })
+
+        await app.request(
+            '/api/clients',
+            await asUser(psycho.id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...PSYCHO_HEADER },
+                body: JSON.stringify({ email: 'client@test.com' }),
+            }),
+        )
+
+        const rows =
+            await testDb`SELECT status FROM invitations WHERE psychologist_id = ${other.id}`
+        expect(rows[0].status).toBe('pending')
     })
 
     it('returns 401 for unauthenticated request', async () => {

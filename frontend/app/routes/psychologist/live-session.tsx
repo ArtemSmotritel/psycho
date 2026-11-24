@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from 'react'
+import { useState, lazy, Suspense, useCallback, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
     Video,
@@ -34,6 +34,7 @@ import { WhiteboardCursorOverlay } from '~/components/whiteboard/WhiteboardCurso
 import { AppointmentNotesPanel } from '~/components/attachments/notes/AppointmentNotesPanel'
 import { AppointmentRecommendationsPanel } from '~/components/attachments/recommendations/AppointmentRecommendationsPanel'
 import { WhiteboardImageInsert } from '~/components/whiteboard/WhiteboardImageInsert'
+import { SessionTimer } from '~/components/sessions/SessionTimer'
 import { PostSessionFollowUpDialog } from '~/components/PostSessionFollowUpDialog'
 import type { Appointment } from '~/models/appointment'
 import { useCurrentClient } from '~/hooks/useCurrentClient'
@@ -51,7 +52,6 @@ export default function LiveSession() {
     const navigate = useNavigate()
     const { appointment, isLoading } = useCurrentAppointment()
 
-    const [time, setTime] = useState<string>('00:00')
     const [isEnding, setIsEnding] = useState(false)
     const { setExcalidrawAPI, onWhiteboardChange, onPointerUpdate, remoteCursors } =
         useWhiteboardSync(appointmentId!)
@@ -59,7 +59,6 @@ export default function LiveSession() {
         useState<ExcalidrawImperativeAPI | null>(null)
     const [followUpAppointment, setFollowUpAppointment] = useState<Appointment | null>(null)
     const client = useCurrentClient()
-    const appointmentStatus = appointment?.status
 
     const handleExcalidrawAPI = useCallback(
         (api: ExcalidrawImperativeAPI) => {
@@ -81,22 +80,6 @@ export default function LiveSession() {
         }),
         [],
     )
-
-    useEffect(() => {
-        if (appointmentStatus !== 'active' || !appointment) return
-
-        const sessionStart = new Date(appointment.startedAt ?? appointment.startTime).getTime()
-        const tick = () => {
-            const elapsed = Date.now() - sessionStart
-            const hours = Math.floor(elapsed / (1000 * 60 * 60))
-            const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60))
-            setTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
-        }
-        tick()
-        const timer = setInterval(tick, 1000)
-
-        return () => clearInterval(timer)
-    }, [appointmentStatus, appointment])
 
     if (isLoading) {
         return <p>Loading appointment...</p>
@@ -188,7 +171,10 @@ export default function LiveSession() {
                     )}
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-lg font-mono tabular-nums">{time}</span>
+                    <SessionTimer
+                        startedAt={appointment.startedAt}
+                        startTime={appointment.startTime}
+                    />
                     <ConfirmAction
                         trigger={
                             <Button

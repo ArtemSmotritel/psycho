@@ -15,6 +15,7 @@ import {
 } from '~/components/ui/sheet'
 import { AppPageHeader } from '~/components/common/AppPageHeader'
 import { Loading } from '~/components/common/Loading'
+import { SessionTimer } from '~/components/sessions/SessionTimer'
 import { PageContainer } from '~/components/common/PageContainer'
 import { appointmentService } from '~/services/appointment.service'
 import { attachmentService, getCreateAttachmentErrorMessage } from '~/services/attachment.service'
@@ -227,71 +228,79 @@ export default function LiveAppointment() {
                         </Link>
                     )}
                 </div>
-                <Sheet>
-                    <SheetTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <PanelRightOpen className="h-4 w-4" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-                        <SheetHeader>
-                            <SheetTitle>
-                                <div className="flex items-center gap-1.5">
-                                    <MessageSquare className="h-4 w-4" />
-                                    My Impressions{' '}
-                                    <AttachmentCountBadge
-                                        count={impressions.length}
-                                        limit={ATTACHMENT_LIMITS.impression}
-                                    />
-                                </div>
-                            </SheetTitle>
-                            <SheetDescription>
-                                Share your thoughts and impressions during the session.
-                            </SheetDescription>
-                        </SheetHeader>
-                        <div className="px-4 space-y-4">
-                            <AttachmentForm
-                                type="impression"
-                                mode="create"
-                                trigger={
-                                    <LimitedAddButton
-                                        count={impressions.length}
-                                        limit={ATTACHMENT_LIMITS.impression}
-                                        label="Add Impression"
-                                        tooltipNoun="impressions"
-                                    />
-                                }
-                                onSubmit={handleCreateImpression}
-                            />
-                            <AttachmentList
-                                items={impressions}
-                                isLoading={isLoadingImpressions}
-                                loadingText="Loading impressions..."
-                                emptyMessage="No impressions yet."
-                                renderItem={(impression) => (
-                                    <AttachmentListItem
-                                        attachment={impression}
-                                        detailHref={routes.client.attachment(
-                                            impression.appointmentId,
-                                            impression.id,
-                                        )}
-                                        trailingActions={
-                                            <DeleteAttachmentButton
-                                                appointmentId={appointmentId!}
-                                                attachment={impression}
-                                                onSuccess={() =>
-                                                    setImpressions((prev) =>
-                                                        prev.filter((i) => i.id !== impression.id),
-                                                    )
-                                                }
-                                            />
-                                        }
-                                    />
-                                )}
-                            />
-                        </div>
-                    </SheetContent>
-                </Sheet>
+                <div className="flex items-center gap-3">
+                    <SessionTimer
+                        startedAt={appointment.startedAt}
+                        startTime={appointment.startTime}
+                    />
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <PanelRightOpen className="h-4 w-4" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+                            <SheetHeader>
+                                <SheetTitle>
+                                    <div className="flex items-center gap-1.5">
+                                        <MessageSquare className="h-4 w-4" />
+                                        My Impressions{' '}
+                                        <AttachmentCountBadge
+                                            count={impressions.length}
+                                            limit={ATTACHMENT_LIMITS.impression}
+                                        />
+                                    </div>
+                                </SheetTitle>
+                                <SheetDescription>
+                                    Share your thoughts and impressions during the session.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <div className="px-4 space-y-4">
+                                <AttachmentForm
+                                    type="impression"
+                                    mode="create"
+                                    trigger={
+                                        <LimitedAddButton
+                                            count={impressions.length}
+                                            limit={ATTACHMENT_LIMITS.impression}
+                                            label="Add Impression"
+                                            tooltipNoun="impressions"
+                                        />
+                                    }
+                                    onSubmit={handleCreateImpression}
+                                />
+                                <AttachmentList
+                                    items={impressions}
+                                    isLoading={isLoadingImpressions}
+                                    loadingText="Loading impressions..."
+                                    emptyMessage="No impressions yet."
+                                    renderItem={(impression) => (
+                                        <AttachmentListItem
+                                            attachment={impression}
+                                            detailHref={routes.client.attachment(
+                                                impression.appointmentId,
+                                                impression.id,
+                                            )}
+                                            trailingActions={
+                                                <DeleteAttachmentButton
+                                                    appointmentId={appointmentId!}
+                                                    attachment={impression}
+                                                    onSuccess={() =>
+                                                        setImpressions((prev) =>
+                                                            prev.filter(
+                                                                (i) => i.id !== impression.id,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                            }
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
 
             {/* Whiteboard — fills remaining space */}

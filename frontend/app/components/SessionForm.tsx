@@ -27,6 +27,8 @@ import { SessionGoogleMeetFields } from './session-form/SessionGoogleMeetFields'
 
 export type { SessionFormSubmit }
 
+const SESSION_DEFAULT_DURATION_MS = 60 * 60 * 1000
+
 export function SessionForm({
     mode,
     trigger,
@@ -61,7 +63,7 @@ export function SessionForm({
         d.setHours(d.getHours() + 1)
         return d
     })()
-    const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000)
+    const defaultEnd = new Date(defaultStart.getTime() + SESSION_DEFAULT_DURATION_MS)
 
     const form = useForm<SessionFormValues>({
         resolver: zodResolver(sessionFormSchema),
@@ -97,6 +99,13 @@ export function SessionForm({
                                 control={form.control}
                                 name="startTime"
                                 label="Start Time"
+                                onValueChange={(start) =>
+                                    form.setValue(
+                                        'endTime',
+                                        new Date(start.getTime() + SESSION_DEFAULT_DURATION_MS),
+                                        { shouldValidate: true },
+                                    )
+                                }
                             />
                             <SessionDateTimePicker
                                 control={form.control}

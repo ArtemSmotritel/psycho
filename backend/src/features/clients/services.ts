@@ -1,5 +1,7 @@
 import type { SQL } from 'bun'
+import { db } from 'config/db'
 import { BadRequestError, NotFoundError } from 'errors/index'
+import { InvitationsRepo } from '../invitations/repo'
 import type { Client, ClientListItem, ClientProfileUpdate, ClientSummary } from './models'
 import { ClientsRepo } from './repo'
 
@@ -47,7 +49,16 @@ export const ClientsService = {
             throw new BadRequestError('This client is already in your list.', 'AlreadyLinked')
         }
 
-        await ClientsRepo.linkClientToPsycho(client.id, psychoId)
+        // A pending invitation for this email is now redundant. Close it in the same
+        // transaction so it neither lingers in the psychologist's list nor gets emailed.
+        await db.begin(async (tx) => {
+            await ClientsRepo.linkClientToPsycho(client.id, psychoId, tx)
+            await InvitationsRepo.markAcceptedByPsychoAndEmail(
+                psychoId,
+                client.email.toLowerCase().trim(),
+                tx,
+            )
+        })
         return client
     },
 
