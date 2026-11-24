@@ -36,5 +36,8 @@ export default [
         ),
     ]),
     route('invite', 'routes/invite.tsx'),
-    route('.well-known/*', 'routes/well-known.tsx'),
+    // The loader is invalid in a production SPA build. Caddy answers 404 for this path there.
+    ...(process.env.NODE_ENV === 'production'
+        ? []
+        : [route('.well-known/*', 'routes/well-known.tsx')]),
 ] satisfies RouteConfig
