@@ -3,3 +3,6 @@
 /cv
 ANALYSIS.md
 example.pdf
+
+# deployment env (compose)
+/.env

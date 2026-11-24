@@ -1,0 +1,52 @@
+services:
+    postgres:
+        image: postgres:16-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${PGUSERNAME}
+            POSTGRES_PASSWORD: ${PGPASSWORD}
+            POSTGRES_DB: ${PGDATABASE}
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${PGUSERNAME} -d ${PGDATABASE}']
+            interval: 5s
+            retries: 10
+
+    backend:
+        build: ./backend
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            PGHOST: postgres
+            PGPORT: 5432
+            ENV: production
+        command: sh -c "bun run migrate && bun run src/index.ts"
+        volumes:
+            - uploads:/app/backend/uploads
+        depends_on:
+            postgres:
+                condition: service_healthy
+
+    web:
+        build:
+            context: ./frontend
+            args:
+                VITE_API_URL: ${FRONTEND_URL}
+                VITE_FRONTEND_URL: ${FRONTEND_URL}
+        restart: unless-stopped
+        depends_on:
+            - backend
+
+    cloudflared:
+        image: cloudflare/cloudflared:latest
+        restart: unless-stopped
+        command: tunnel --no-autoupdate run
+        environment:
+            TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+        depends_on:
+            - web
+
+volumes:
+    pgdata:
+    uploads:
