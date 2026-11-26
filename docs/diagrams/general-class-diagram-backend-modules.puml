@@ -1,0 +1,187 @@
+@startuml
+' Діаграма класів: серверна частина.
+' Клас = експортований модуль із backend/src (імена збігаються з іменами в коді).
+' Атрибути й методи не показано.
+' Пакет = домен із backend/src/features.
+' Стрілка = залежність (імпорт у коді). Напрям: від того, хто імпортує, до того, кого імпортують.
+' Показано лише стрілки всередині домену та стрілки від app до маршрутів.
+' Не показано: зв'язки між доменами, зв'язки зі спільними модулями та зовнішніми системами,
+' а також models, schemas, limits, upload-validation (типи й константи, не класи).
+' Клас utils/google-meet у коді є набором функцій (generateGoogleMeetLink тощо), не класом.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName "Times New Roman"
+skinparam nodesep 40
+skinparam ranksep 70
+hide circle
+hide members
+
+left to right direction
+
+' ======== Спільні модулі ========
+package "Спільні модулі" {
+    class "app" as app
+    class "auth" as auth
+    class "middlewares/auth" as mw
+    class "db" as db
+    class "google-meet" as gmeet
+}
+
+' ======== Домени ========
+package "users" {
+    class "userRoutes" as userRoutes
+    class "UsersService" as UsersService
+    class "UsersRepo" as UsersRepo
+}
+
+package "clients" {
+    class "clientSelfRoutes" as clientSelfRoutes
+    class "clientRoutes" as clientRoutes
+    class "ClientsService" as ClientsService
+    class "ClientsRepo" as ClientsRepo
+}
+
+package "invitations" {
+    class "invitationRoutes" as invitationRoutes
+    class "InvitationsService" as InvitationsService
+    class "InvitationsRepo" as InvitationsRepo
+}
+
+package "appointments" {
+    class "appointmentRoutes" as appointmentRoutes
+    class "psychoAppointmentRoutes" as psychoAppointmentRoutes
+    class "clientAppointmentRoutes" as clientAppointmentRoutes
+    class "AppointmentsService" as AppointmentsService
+    class "AppointmentsRepo" as AppointmentsRepo
+}
+
+package "whiteboard" {
+    class "whiteboardRoutes" as whiteboardRoutes
+    class "WhiteboardService" as WhiteboardService
+    class "WhiteboardRepo" as WhiteboardRepo
+}
+
+package "attachments" {
+    class "psychoAttachmentRoutes" as psychoAttachmentRoutes
+    class "clientAttachmentRoutes" as clientAttachmentRoutes
+    class "AttachmentsService" as AttachmentsService
+    class "AttachmentCheck" as AttachmentCheck
+    class "AttachmentsRepo" as AttachmentsRepo
+}
+
+package "files" {
+    class "fileRoutes" as fileRoutes
+    class "FilesService" as FilesService
+    class "FilesRepo" as FilesRepo
+}
+
+package "associative-images" {
+    class "associativeImageRoutes" as associativeImageRoutes
+    class "AssociativeImagesService" as AssociativeImagesService
+    class "AssociativeImagesRepo" as AssociativeImagesRepo
+}
+
+package "dashboard" {
+    class "psychoDashboardRoutes" as psychoDashboardRoutes
+    class "clientDashboardRoutes" as clientDashboardRoutes
+    class "DashboardService" as DashboardService
+    class "DashboardRepo" as DashboardRepo
+}
+
+package "progress" {
+    class "psychoProgressRoutes" as psychoProgressRoutes
+    class "clientProgressRoutes" as clientProgressRoutes
+    class "ProgressService" as ProgressService
+    class "ProgressRepo" as ProgressRepo
+}
+
+package "notifications" {
+    class "registerNotificationCrons" as NotificationsCron
+    class "NotificationsService" as NotificationsService
+    class "SCHEDULED" as SCHEDULED
+    class "DEFINITIONS" as DEFINITIONS
+    class "templates" as templates
+    class "emailService" as emailService
+    class "NotificationsRepo" as NotificationsRepo
+}
+
+
+' ---- app підключає маршрути ----
+app --> userRoutes
+app --> clientSelfRoutes
+app --> clientRoutes
+app --> invitationRoutes
+app --> appointmentRoutes
+app --> psychoAppointmentRoutes
+app --> clientAppointmentRoutes
+app -up-> whiteboardRoutes
+app -up-> psychoAttachmentRoutes
+app -up-> clientAttachmentRoutes
+app -up-> fileRoutes
+app -up-> associativeImageRoutes
+app -up-> psychoDashboardRoutes
+app -up-> clientDashboardRoutes
+app -up-> psychoProgressRoutes
+app -up-> clientProgressRoutes
+
+' ---- users ----
+userRoutes --> UsersService
+UsersService --> UsersRepo
+
+' ---- clients ----
+clientSelfRoutes --> ClientsService
+clientRoutes --> ClientsService
+ClientsService --> ClientsRepo
+
+' ---- invitations ----
+invitationRoutes --> InvitationsService
+InvitationsService --> InvitationsRepo
+
+' ---- appointments ----
+appointmentRoutes --> AppointmentsService
+psychoAppointmentRoutes --> AppointmentsService
+clientAppointmentRoutes --> AppointmentsService
+AppointmentsService --> AppointmentsRepo
+
+' ---- whiteboard ----
+whiteboardRoutes -up-> WhiteboardService
+WhiteboardService -up-> WhiteboardRepo
+
+' ---- attachments ----
+psychoAttachmentRoutes -up-> AttachmentsService
+clientAttachmentRoutes -up-> AttachmentsService
+AttachmentsService -up-> AttachmentsRepo
+AttachmentsService -up-> AttachmentCheck
+AttachmentCheck -up-> AttachmentsRepo
+
+' ---- files ----
+fileRoutes -up-> FilesService
+FilesService -up-> FilesRepo
+
+' ---- associative-images ----
+associativeImageRoutes -up-> AssociativeImagesService
+AssociativeImagesService -up-> AssociativeImagesRepo
+
+' ---- dashboard ----
+psychoDashboardRoutes -up-> DashboardService
+clientDashboardRoutes -up-> DashboardService
+DashboardService -up-> DashboardRepo
+
+' ---- progress ----
+psychoProgressRoutes -up-> ProgressService
+clientProgressRoutes -up-> ProgressService
+ProgressService -up-> ProgressRepo
+
+' ---- notifications ----
+NotificationsCron --> NotificationsService
+NotificationsService --> NotificationsRepo
+NotificationsService --> SCHEDULED
+NotificationsService --> DEFINITIONS
+NotificationsService --> emailService
+SCHEDULED --> NotificationsRepo
+DEFINITIONS --> NotificationsRepo
+DEFINITIONS --> templates
+
+@enduml

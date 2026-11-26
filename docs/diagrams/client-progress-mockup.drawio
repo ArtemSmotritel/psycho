@@ -1,0 +1,169 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="client-progress-mockup" name="Прогрес">
+    <mxGraphModel dx="1552" dy="759" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;" value="" vertex="1">
+          <mxGeometry height="620" width="1280" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#EEEEEE;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;" value="" vertex="1">
+          <mxGeometry height="620" width="200" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;" value="Дашборд" vertex="1">
+          <mxGeometry height="36" width="175" x="24" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;" value="Мій профіль" vertex="1">
+          <mxGeometry height="36" width="175" x="24" y="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;" value="Сесії" vertex="1">
+          <mxGeometry height="36" width="175" x="24" y="72" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CCCCCC;strokeColor=none;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;" value="" vertex="1">
+          <mxGeometry height="36" width="199" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;fontStyle=1;" value="Прогрес" vertex="1">
+          <mxGeometry height="36" width="175" x="24" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;" value="Режим психолога" vertex="1">
+          <mxGeometry height="36" width="175" x="24" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;" value="Вийти" vertex="1">
+          <mxGeometry height="36" width="175" x="24" y="576" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="231" y="17" as="geometry" />
+        </mxCell>
+        <mxCell id="c11" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontColor=#111111;fontStyle=1;" value="Прогрес" vertex="1">
+          <mxGeometry height="36" width="500" x="258" y="6" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontColor=#111111;fontStyle=1;" value="Психолог:" vertex="1">
+          <mxGeometry height="34" width="95" x="230" y="56" as="geometry" />
+        </mxCell>
+        <mxCell id="c13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=left;spacingLeft=10;verticalAlign=middle;" value="Мельниченко Ірина Олегівна ▾" vertex="1">
+          <mxGeometry height="34" width="290" x="330" y="56" as="geometry" />
+        </mxCell>
+        <mxCell id="c14" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="247" as="sourcePoint" />
+            <mxPoint x="1250" y="247" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c15" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="295" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c16" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="23 вер. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="247" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c17" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="440" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c18" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="30 вер. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="392" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c19" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="585" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c20" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="7 жовт. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="537" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c21" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Потрібна розмова" vertex="1">
+          <mxGeometry height="26" width="136" x="524" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="c22" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="592" y="294" as="sourcePoint" />
+            <mxPoint x="592" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c23" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає вражень" vertex="1">
+          <mxGeometry height="24" width="136" x="524" y="312" as="geometry" />
+        </mxCell>
+        <mxCell id="c24" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="730" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c25" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="14 жовт. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="682" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c26" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Лист собі" vertex="1">
+          <mxGeometry height="26" width="136" x="669" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="c27" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Потрібна розмова" vertex="1">
+          <mxGeometry height="26" width="136" x="669" y="162" as="geometry" />
+        </mxCell>
+        <mxCell id="c28" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Вечірня прогулянка" vertex="1">
+          <mxGeometry height="26" width="136" x="669" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c29" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="737" y="294" as="sourcePoint" />
+            <mxPoint x="737" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c30" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає вражень" vertex="1">
+          <mxGeometry height="24" width="136" x="669" y="312" as="geometry" />
+        </mxCell>
+        <mxCell id="c31" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="875" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c32" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="21 жовт. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="827" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c33" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає рекомендацій" vertex="1">
+          <mxGeometry height="24" width="136" x="814" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="c34" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="882" y="294" as="sourcePoint" />
+            <mxPoint x="882" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c35" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає вражень" vertex="1">
+          <mxGeometry height="24" width="136" x="814" y="312" as="geometry" />
+        </mxCell>
+        <mxCell id="c36" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="1020" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c37" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="28 жовт. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="972" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c38" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає рекомендацій" vertex="1">
+          <mxGeometry height="24" width="136" x="959" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="c39" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1027" y="294" as="sourcePoint" />
+            <mxPoint x="1027" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c40" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontColor=#666666;" value="Немає вражень" vertex="1">
+          <mxGeometry height="24" width="136" x="959" y="312" as="geometry" />
+        </mxCell>
+        <mxCell id="c41" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=14;fontColor=#111111;shape=ellipse;" value="" vertex="1">
+          <mxGeometry height="14" width="14" x="1165" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="c42" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=13;fontColor=#111111;align=center;verticalAlign=middle;" value="4 лист. 2026" vertex="1">
+          <mxGeometry height="32" width="110" x="1117" y="262" as="geometry" />
+        </mxCell>
+        <mxCell id="c43" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Завдання з читання" vertex="1">
+          <mxGeometry height="26" width="136" x="1104" y="194" as="geometry" />
+        </mxCell>
+        <mxCell id="c44" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Практика заземлення" vertex="1">
+          <mxGeometry height="26" width="136" x="1104" y="162" as="geometry" />
+        </mxCell>
+        <mxCell id="c45" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Обмеження соцмереж" vertex="1">
+          <mxGeometry height="26" width="136" x="1104" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c46" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#999999;strokeWidth=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1172" y="294" as="sourcePoint" />
+            <mxPoint x="1172" y="312" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c47" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1;shadow=0;fontSize=12;fontColor=#111111;align=center;verticalAlign=middle;" value="Щоденник" vertex="1">
+          <mxGeometry height="26" width="90" x="1127" y="312" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

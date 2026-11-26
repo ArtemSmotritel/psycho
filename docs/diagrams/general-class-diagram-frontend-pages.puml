@@ -1,0 +1,90 @@
+@startuml
+' Діаграма класів: сторінки клієнтської частини.
+' Клас = React-компонент, що утворює сторінку (frontend/app/routes та root.tsx).
+' Атрибути й методи не показано.
+' Стрілка з ромбом показує вкладення маршруту, як у frontend/app/routes.ts:
+' батьківський компонент відображає дочірній через Outlet.
+' Сторінку well-known не показано: вона не має інтерфейсу.
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName "Times New Roman"
+skinparam nodesep 40
+skinparam ranksep 60
+hide circle
+hide members
+
+left to right direction
+
+class "React App" as App
+
+'package "Спільні сторінки" {
+    class "Home" as Home
+    class "LoginChoice" as LoginChoice
+    class "AuthCallback" as AuthCallback
+    class "RoleSelect" as RoleSelect
+    class "InvitePage" as InvitePage
+'}
+
+'package "Сторінки психолога" {
+    class "PsychologistLayout" as PsychoLayout
+    class "DashboardOverview" as PsychoDashboard
+    class "Clients" as Clients
+    class "ClientLayout" as PsychoClientLayout
+    class "ClientProfile" as PsychoClientProfile
+    class "ClientProgress" as PsychoClientProgress
+    class "ClientSessions" as ClientSessions
+    class "Session" as Session
+    class "SessionAttachment" as SessionAttachment
+    class "LiveSession" as LiveSession
+    class "InvitationsPage" as InvitationsPage
+    class "AssociativeImages" as AssociativeImages
+    class "Sessions" as Sessions
+'}
+
+'package "Сторінки клієнта" {
+    class "ClientLayout" as ClientLayout
+    class "ClientProfile" as ClientProfile
+    class "ClientDashboard" as ClientDashboard
+    class "ClientAppointments" as ClientAppointments
+    class "ClientProgress" as ClientProgress
+    class "ClientAppointmentDetail" as ClientAppointmentDetail
+    class "LiveAppointment" as LiveAppointment
+    class "ClientAttachmentDetail" as ClientAttachmentDetail
+'}
+
+' ---- Кореневий компонент ----
+App <-- Home
+App <-- LoginChoice
+App <-- AuthCallback
+App <-- RoleSelect
+App <-- InvitePage
+App <-- PsychoLayout
+App <-- ClientLayout
+
+' ---- Сторінки психолога ----
+PsychoLayout <-- PsychoDashboard
+PsychoLayout <-- Clients
+PsychoLayout <-- PsychoClientLayout
+PsychoLayout <-- InvitationsPage
+PsychoLayout <-- AssociativeImages
+PsychoLayout <-- Sessions
+
+PsychoClientLayout <-- PsychoClientProfile
+PsychoClientLayout <-- PsychoClientProgress
+PsychoClientLayout <-- ClientSessions
+PsychoClientLayout <-- Session
+PsychoClientLayout <-- SessionAttachment
+PsychoClientLayout <-- LiveSession
+
+' ---- Сторінки клієнта ----
+ClientLayout <-- ClientProfile
+ClientLayout <-- ClientDashboard
+ClientLayout <-- ClientAppointments
+ClientLayout <-- ClientProgress
+ClientLayout <-- ClientAppointmentDetail
+ClientLayout <-- LiveAppointment
+ClientLayout <-- ClientAttachmentDetail
+
+@enduml

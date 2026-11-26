@@ -1,0 +1,966 @@
+<mxfile host="app.diagrams.net" pages="5">
+  <diagram id="wb1" name="1. Основний алгоритм">
+    <mxGraphModel dx="1232" dy="602" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wb1_region" parent="1" style="rounded=1;arcSize=2;dashed=1;fillColor=none;strokeColor=#000000;html=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontSize=12;fontFamily=Times New Roman;" value="Доки зустріч триває" vertex="1">
+          <mxGeometry height="285" width="1140" x="45" y="557.5" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_lc" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Клієнт" vertex="1">
+          <mxGeometry height="980" width="1150" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_ls" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Сервер" vertex="1">
+          <mxGeometry height="980" width="560" x="640" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_s5" parent="wb1_ls" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Закрити всі з&#39;єднання (код 1000), відкинути незбережений стан, видалити кімнату" vertex="1">
+          <mxGeometry height="70" width="300" x="110" y="840" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_end" parent="wb1_ls" style="shape=endState;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="28" width="28" x="246" y="941" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e23" edge="1" parent="wb1_ls" source="wb1_s5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_end" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_start" parent="1" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="328" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_m" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="328" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_c1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Відкрити WebSocket-з&#39;єднання до кімнати зустрічі" vertex="1">
+          <mxGeometry height="50" width="240" x="220" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_s1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Перевірити origin, сесію користувача та статус зустрічі" vertex="1">
+          <mxGeometry height="50" width="240" x="780" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_d1" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Перевірки пройдені?" vertex="1">
+          <mxGeometry height="64" width="180" x="810" y="198" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_s2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Закрити з&#39;єднання (код 1008)" vertex="1">
+          <mxGeometry height="64" width="130" x="1050" y="198" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_f1" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="1103" y="286" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_d2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Кімната є в пам&#39;яті?" vertex="1">
+          <mxGeometry height="64" width="200" x="800" y="333" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_s3" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Завантажити стан кімнати з бази даних" vertex="1">
+          <mxGeometry height="64" width="130" x="1050" y="333" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_s4" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Додати з&#39;єднання до кімнати" vertex="1">
+          <mxGeometry height="70" width="280" x="760" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_c2" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Скинути відомі ревізії; надіслати sync зі списком файлів клієнта" vertex="1">
+          <mxGeometry height="70" width="240" x="220" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_fk" parent="1" style="rounded=0;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="6" width="1120" x="60" y="547" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e1" edge="1" parent="1" source="wb1_start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_m" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e2" edge="1" parent="1" source="wb1_m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_c1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e3" edge="1" parent="1" source="wb1_c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_s1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e4" edge="1" parent="1" source="wb1_s1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_d1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e5" edge="1" parent="1" source="wb1_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_s2" value="Ні">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e6" edge="1" parent="1" source="wb1_s2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_f1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e7" edge="1" parent="1" source="wb1_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_d2" value="Так">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e8" edge="1" parent="1" source="wb1_d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_s4" value="Так">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e9" edge="1" parent="1" source="wb1_d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="wb1_s3" value="Ні">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e10" edge="1" parent="1" source="wb1_s3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb1_s4" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1115" y="465" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb1_e11" edge="1" parent="1" source="wb1_s4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb1_c2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e12" edge="1" parent="1" source="wb1_c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="wb1_fk" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_r1" parent="1" style="shape=process;size=0.06;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Обмін повідомленнями клієнта: надсилання змін і курсора, приймання (діаграма 2)" vertex="1">
+          <mxGeometry height="64" width="240" x="130" y="588" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_a1" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="З&#39;єднання закрито" vertex="1">
+          <mxGeometry height="44" width="150" x="460" y="588" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_d3" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Закриття остаточне (код 1000 або 1008)?" vertex="1">
+          <mxGeometry height="100" width="180" x="445" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_f2" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="368" y="688" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_a2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Зачекати: затримка зростає, з випадковим розкидом" vertex="1">
+          <mxGeometry height="64" width="170" x="450" y="773" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_r3" parent="1" style="shape=process;size=0.06;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Обробка повідомлень клієнта (діаграма 3)" vertex="1">
+          <mxGeometry height="64" width="200" x="680" y="588" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_r4" parent="1" style="shape=process;size=0.06;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Збереження стану кімнати (діаграма 5)" vertex="1">
+          <mxGeometry height="64" width="200" x="960" y="588" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e13" edge="1" parent="1" source="wb1_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.169643;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb1_r1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e14" edge="1" parent="1" source="wb1_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.424107;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb1_a1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e15" edge="1" parent="1" source="wb1_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.642857;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb1_r3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e16" edge="1" parent="1" source="wb1_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.892857;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb1_r4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e17" edge="1" parent="1" source="wb1_a1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_d3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e18" edge="1" parent="1" source="wb1_d3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb1_f2" value="Так">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e19" edge="1" parent="1" source="wb1_d3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_a2" value="Ні">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e20" edge="1" parent="1" source="wb1_a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb1_m" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="628" y="805" />
+              <mxPoint x="628" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb1_a3" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Зустріч завершена" vertex="1">
+          <mxGeometry height="44" width="220" x="790" y="773" as="geometry" />
+        </mxCell>
+        <mxCell id="wb1_e22" edge="1" parent="1" source="wb1_a3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb1_s5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="wb2c" name="2. Обмін повідомленнями клієнта">
+    <mxGraphModel dx="1724" dy="843" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wb2c_lc" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Клієнт" vertex="1">
+          <mxGeometry height="800" width="1530" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_start" parent="1" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="638" y="54" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_fk" parent="1" style="rounded=0;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="6" width="1100" x="100" y="97" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e1" edge="1" parent="1" source="wb2c_start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_fk" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_ml" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="208" y="138" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_al" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Спрацював таймер змін (50 мс)" vertex="1">
+          <mxGeometry height="44" width="240" x="100" y="178" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_dl" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Сцена змінилася і клієнт синхронізований?" vertex="1">
+          <mxGeometry height="80" width="260" x="90" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_al2" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Надіслати нові файли: кожен окремим повідомленням" vertex="1">
+          <mxGeometry height="50" width="240" x="100" y="355" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_al3" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Вибрати елементи, новіші за відомі клієнту" vertex="1">
+          <mxGeometry height="50" width="240" x="100" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_al4" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Надіслати вибрані елементи пакетами" vertex="1">
+          <mxGeometry height="50" width="240" x="100" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_al5" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Запам&#39;ятати надіслані ревізії як відомі" vertex="1">
+          <mxGeometry height="50" width="240" x="100" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e2" edge="1" parent="1" source="wb2c_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.1091;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_ml" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e3" edge="1" parent="1" source="wb2c_ml" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_al" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e4" edge="1" parent="1" source="wb2c_al" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_dl" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e5" edge="1" parent="1" source="wb2c_dl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_al2" value="Так">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e6" edge="1" parent="1" source="wb2c_al2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_al3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e7" edge="1" parent="1" source="wb2c_al3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_al4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e8" edge="1" parent="1" source="wb2c_al4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_al5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e9" edge="1" parent="1" source="wb2c_dl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_ml" value="Ні">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="45" y="285" />
+              <mxPoint x="45" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_e10" edge="1" parent="1" source="wb2c_al5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_ml" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="365" y="605" />
+              <mxPoint x="365" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_mr" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="528" y="138" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_ar" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Спрацював таймер курсора (50 мс)" vertex="1">
+          <mxGeometry height="44" width="240" x="420" y="178" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_dr" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Є нова позиція вказівника?" vertex="1">
+          <mxGeometry height="80" width="200" x="440" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_ar2" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Надіслати позицію вказівника" vertex="1">
+          <mxGeometry height="50" width="240" x="420" y="355" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e11" edge="1" parent="1" source="wb2c_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.4;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_mr" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e12" edge="1" parent="1" source="wb2c_mr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_ar" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e13" edge="1" parent="1" source="wb2c_ar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_dr" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e14" edge="1" parent="1" source="wb2c_dr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_ar2" value="Так">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e15" edge="1" parent="1" source="wb2c_dr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_mr" value="Ні">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="285" />
+              <mxPoint x="690" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_e16" edge="1" parent="1" source="wb2c_ar2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_mr" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="380" />
+              <mxPoint x="690" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_ain" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Отримано повідомлення від сервера" vertex="1">
+          <mxGeometry height="44" width="300" x="970" y="128" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_d" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Тип повідомлення?" vertex="1">
+          <mxGeometry height="80" width="240" x="1000" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e17" edge="1" parent="1" source="wb2c_fk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.9273;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_ain" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e18" edge="1" parent="1" source="wb2c_ain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_d" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_x1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Злити елементи із локальною сценою: перемагає вища ревізія" vertex="1">
+          <mxGeometry height="90" width="145" x="717.5" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_x2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити відомими лише ревізії, що перемогли" vertex="1">
+          <mxGeometry height="90" width="145" x="717.5" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_z1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Додати файли до сцени" vertex="1">
+          <mxGeometry height="64" width="145" x="882.5" y="358" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_z2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити файли як надіслані" vertex="1">
+          <mxGeometry height="64" width="145" x="882.5" y="448" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_w1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Злити всі елементи сервера із локальною сценою" vertex="1">
+          <mxGeometry height="90" width="145" x="1047.5" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_w2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Забути файли, яких бракує серверу" vertex="1">
+          <mxGeometry height="64" width="145" x="1047.5" y="468" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_w3" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити клієнта синхронізованим і сцену зміненою" vertex="1">
+          <mxGeometry height="90" width="145" x="1047.5" y="555" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_v1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Показати курсор співрозмовника в новій позиції" vertex="1">
+          <mxGeometry height="90" width="145" x="1212.5" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_u1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Прибрати курсор співрозмовника" vertex="1">
+          <mxGeometry height="64" width="145" x="1377.5" y="358" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e19" edge="1" parent="1" source="wb2c_d" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_x1" value="elements">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e20" edge="1" parent="1" source="wb2c_x1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_x2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e21" edge="1" parent="1" source="wb2c_d" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_z1" value="files">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e22" edge="1" parent="1" source="wb2c_z1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_z2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e23" edge="1" parent="1" source="wb2c_d" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_w1" value="sync_reply">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e24" edge="1" parent="1" source="wb2c_w1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_w2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e25" edge="1" parent="1" source="wb2c_w2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" target="wb2c_w3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e26" edge="1" parent="1" source="wb2c_d" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_v1" value="cursor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e27" edge="1" parent="1" source="wb2c_d" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_u1" value="leave">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_me" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry height="24" width="24" x="1108" y="748" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e28" edge="1" parent="1" source="wb2c_x2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_me" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_e29" edge="1" parent="1" source="wb2c_z2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_me" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="955" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_e30" edge="1" parent="1" source="wb2c_w3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="wb2c_me" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb2c_e31" edge="1" parent="1" source="wb2c_v1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_me" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1285" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_e32" edge="1" parent="1" source="wb2c_u1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="wb2c_me" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb2c_note" parent="1" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=12;fontFamily=Times New Roman;" value="Три гілки виконуються паралельно й повторюються, доки з&#39;єднання відкрите. Поки клієнт не синхронізований, зміни не надсилаються, а позначка зміни зберігається." vertex="1">
+          <mxGeometry height="50" width="560" x="100" y="705" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="wb3" name="3. Обробка повідомлення сервером">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wb3_lc" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Сервер" vertex="1">
+          <mxGeometry x="20" y="20" width="980" height="1260" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_start" parent="1" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="488" y="54" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_ain" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Отримано повідомлення від клієнта" vertex="1">
+          <mxGeometry x="350" y="93" width="300" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_d1" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Ліміт частоти повідомлень не перевищено?" vertex="1">
+          <mxGeometry x="370" y="165" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_sc" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Закрити з&#39;єднання (код 1013)" vertex="1">
+          <mxGeometry x="700" y="175" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_ff1" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="788" y="250" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_d2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Повідомлення коректне?" vertex="1">
+          <mxGeometry x="370" y="285" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_ff2" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="688" y="313" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_d3" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Тип повідомлення?" vertex="1">
+          <mxGeometry x="380" y="405" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_start" target="wb3_ain">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e2" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_ain" target="wb3_d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e3" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb3_d1" target="wb3_sc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e4" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_sc" target="wb3_ff1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e5" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb3_d1" target="wb3_d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e6" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb3_d2" target="wb3_ff2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e7" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb3_d2" target="wb3_d3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_y1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Порівняти файли клієнта з файлами кімнати" vertex="1">
+          <mxGeometry x="30" y="540" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_y2" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Надіслати клієнту файли, яких у нього немає" vertex="1">
+          <mxGeometry x="30" y="620" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_y3" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Надіслати sync_reply: усі елементи кімнати та id файлів, яких бракує серверу" vertex="1">
+          <mxGeometry x="30" y="700" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e8" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" value="sync" edge="1" source="wb3_d3" target="wb3_y1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_y1" target="wb3_y2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e10" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_y2" target="wb3_y3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e1" parent="1" style="shape=process;size=0.06;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Об&#39;єднати елементи зі станом кімнати (діаграма 4)" vertex="1">
+          <mxGeometry x="270" y="545" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Є прийняті елементи?" vertex="1">
+          <mxGeometry x="280" y="625" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e3" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити кімнату зміненою; запланувати збереження" vertex="1">
+          <mxGeometry x="270" y="720" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e4" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Розіслати прийняті елементи іншим з&#39;єднанням" vertex="1">
+          <mxGeometry x="270" y="790" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_me1" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="368" y="868" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e5" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Є застарілі копії?" vertex="1">
+          <mxGeometry x="280" y="910" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e6" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Повернути відправнику новіші копії сервера" vertex="1">
+          <mxGeometry x="270" y="1005" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_me2" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="368" y="1083" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e11" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" value="elements" edge="1" source="wb3_d3" target="wb3_e1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e12" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_e1" target="wb3_e2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e13" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb3_e2" target="wb3_e3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e14" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_e3" target="wb3_e4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_e4" target="wb3_me1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e16" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb3_e2" target="wb3_me1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="505" y="660" />
+              <mxPoint x="505" y="880" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_e17" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_me1" target="wb3_e5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e18" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb3_e5" target="wb3_e6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_e6" target="wb3_me2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e20" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb3_e5" target="wb3_me2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="505" y="945" />
+              <mxPoint x="505" y="1095" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_f1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Додати нові файли до кімнати; відкинути наявні id і файли понад ліміти" vertex="1">
+          <mxGeometry x="530" y="538" width="220" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_f2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Є додані файли?" vertex="1">
+          <mxGeometry x="540" y="635" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_f3" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити кімнату зміненою; запланувати збереження" vertex="1">
+          <mxGeometry x="530" y="730" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_f4" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Розіслати нові файли іншим з&#39;єднанням" vertex="1">
+          <mxGeometry x="530" y="800" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_mf" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="628" y="878" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e21" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" value="files" edge="1" source="wb3_d3" target="wb3_f1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e22" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_f1" target="wb3_f2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e23" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb3_f2" target="wb3_f3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e24" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_f3" target="wb3_f4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e25" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_f4" target="wb3_mf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e26" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb3_f2" target="wb3_mf">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="765" y="670" />
+              <mxPoint x="765" y="890" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_k1" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[0.9,0],[1,0.5],[0.9,1],[0,1]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Переслати позицію курсора й ім&#39;я користувача іншим з&#39;єднанням" vertex="1">
+          <mxGeometry x="790" y="535" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e27" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" value="cursor" edge="1" source="wb3_d3" target="wb3_k1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_mend" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="488" y="1158" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_end" parent="1" style="shape=endState;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="486" y="1221" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="wb3_e28" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb3_y3" target="wb3_mend">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_e29" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb3_me2" target="wb3_mend">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_e30" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb3_mf" target="wb3_mend">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_e31" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb3_k1" target="wb3_mend">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb3_e32" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb3_mend" target="wb3_end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="wb4" name="4. Об&#39;єднання елементів">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wb4_lc" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Сервер" vertex="1">
+          <mxGeometry x="20" y="20" width="880" height="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_start" parent="1" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="318" y="50" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_mn" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="318" y="93" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d0" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Є ще елементи?" vertex="1">
+          <mxGeometry x="215" y="145" width="230" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_res" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Повернути прийняті елементи та застарілі копії" vertex="1">
+          <mxGeometry x="540" y="155" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_end" parent="1" style="shape=endState;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="636" y="246" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_a1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Взяти наступний елемент повідомлення" vertex="1">
+          <mxGeometry x="200" y="253" width="260" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d1" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Елемент коректний?" vertex="1">
+          <mxGeometry x="210" y="320" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Елемент уже є в кімнаті?" vertex="1">
+          <mxGeometry x="210" y="430" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d3" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Кімната заповнена?" vertex="1">
+          <mxGeometry x="550" y="430" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_aadd" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Додати елемент; позначити прийнятим" vertex="1">
+          <mxGeometry x="550" y="530" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d4" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Версія вхідного елемента вища?" vertex="1">
+          <mxGeometry x="210" y="570" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_arep" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Замінити елемент; позначити прийнятим" vertex="1">
+          <mxGeometry x="550" y="615" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d5" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Версії рівні?" vertex="1">
+          <mxGeometry x="210" y="700" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_akeep" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Залишити серверну копію; позначити її застарілою для відправника" vertex="1">
+          <mxGeometry x="540" y="708" width="220" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d6" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Значення nonce однакові?" vertex="1">
+          <mxGeometry x="210" y="830" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_adup" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Ігнорувати дублікат" vertex="1">
+          <mxGeometry x="550" y="845" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_d7" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Nonce вхідного елемента менший?" vertex="1">
+          <mxGeometry x="210" y="960" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_arep2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Замінити елемент; позначити прийнятим" vertex="1">
+          <mxGeometry x="550" y="968" width="200" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_akeep2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Залишити серверну копію; позначити її застарілою для відправника" vertex="1">
+          <mxGeometry x="200" y="1078" width="260" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb4_start" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e2" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb4_mn" target="wb4_d0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e3" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb4_d0" target="wb4_res">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e4" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb4_res" target="wb4_end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e5" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb4_d0" target="wb4_a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e6" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb4_a1" target="wb4_d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e7" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb4_d1" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="360" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e8" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb4_d1" target="wb4_d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb4_d2" target="wb4_d3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e10" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Так" edge="1" source="wb4_d3" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="470" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e11" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb4_d3" target="wb4_aadd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e12" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_aadd" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="555" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e13" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb4_d2" target="wb4_d4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e14" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Так" edge="1" source="wb4_d4" target="wb4_arep">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_arep" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="640" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e16" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb4_d4" target="wb4_d5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e17" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb4_d5" target="wb4_akeep">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e18" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_akeep" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="740" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb4_d5" target="wb4_d6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e20" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Так" edge="1" source="wb4_d6" target="wb4_adup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e21" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_adup" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="870" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e22" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb4_d6" target="wb4_d7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e23" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Так" edge="1" source="wb4_d7" target="wb4_arep2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e24" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_arep2" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="1000" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_e25" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb4_d7" target="wb4_akeep2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb4_e26" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb4_akeep2" target="wb4_mn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="1110" />
+              <mxPoint x="840" y="105" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb4_note" parent="1" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=12;fontFamily=Times New Roman;" value="Правило перемоги: вища версія виграє; за рівних версій виграє менше значення nonce. Клієнт застосовує те саме правило." vertex="1">
+          <mxGeometry x="20" y="1120" width="260" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="wb5" name="5. Збереження стану кімнати">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wb5_ls" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Сервер" vertex="1">
+          <mxGeometry x="20" y="20" width="700" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ld" parent="1" style="swimlane;startSize=30;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="База даних" vertex="1">
+          <mxGeometry x="720" y="20" width="220" height="1400" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ac" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Кімната має нову незбережену зміну" vertex="1">
+          <mxGeometry x="25" y="75" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_dt" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Таймер уже запущено?" vertex="1">
+          <mxGeometry x="25" y="150" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_fft" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="233" y="178" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_st" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Запустити таймер збереження" vertex="1">
+          <mxGeometry x="25" y="265" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_atm" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Минув час затримки збереження" vertex="1">
+          <mxGeometry x="25" y="350" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_al" parent="1" style="shape=mxgraph.basic.polygon;polyCoords=[[0,0],[1,0],[1,1],[0,1],[0.1,0.5]];polyline=0;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Вийшло останнє з&#39;єднання або сервер зупиняється" vertex="1">
+          <mxGeometry x="300" y="350" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_m0" parent="1" style="rhombus;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="408" y="428" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_ac" target="wb5_dt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e2" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb5_dt" target="wb5_fft">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e3" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb5_dt" target="wb5_st">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e4" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_st" target="wb5_atm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e5" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb5_atm" target="wb5_m0">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb5_e6" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_al" target="wb5_m0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_d1" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Зустріч завершена або змін немає?" vertex="1">
+          <mxGeometry x="300" y="480" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ff1" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="583" y="508" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_d2" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Збереження вже виконується?" vertex="1">
+          <mxGeometry x="300" y="590" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_aj" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Дочекатися поточного збереження" vertex="1">
+          <mxGeometry x="580" y="598" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ff2" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="628" y="698" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_am" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити кімнату чистою; взяти незбережені файли та всі елементи" vertex="1">
+          <mxGeometry x="290" y="698" width="260" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e7" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_m0" target="wb5_d1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e8" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb5_d1" target="wb5_ff1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e9" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb5_d1" target="wb5_d2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e10" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb5_d2" target="wb5_aj">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e11" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_aj" target="wb5_ff2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e12" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb5_d2" target="wb5_am">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_tx" parent="1" style="rounded=1;arcSize=2;dashed=1;fillColor=none;strokeColor=#000000;html=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontSize=12;fontFamily=Times New Roman;" value="Одна транзакція" vertex="1">
+          <mxGeometry x="722" y="770" width="216" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_db1" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Додати нові файли (лише якщо зустріч не завершена)" vertex="1">
+          <mxGeometry x="730" y="788" width="200" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_db2" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Оновити елементи зустрічі (лише якщо зустріч не завершена)" vertex="1">
+          <mxGeometry x="730" y="878" width="200" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e13" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb5_am" target="wb5_db1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="820" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb5_e14" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_db1" target="wb5_db2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_d3" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Запис успішний?" vertex="1">
+          <mxGeometry x="300" y="960" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e15" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb5_db2" target="wb5_d3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="830" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wb5_afail" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Позначити кімнату зміненою; повернути файли в чергу; запланувати повтор із випадковою додатковою затримкою" vertex="1">
+          <mxGeometry x="40" y="955" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ff4" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="138" y="1063" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e16" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="Ні" edge="1" source="wb5_d3" target="wb5_afail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e17" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_afail" target="wb5_ff4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_d4" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="За час запису з&#39;явилися нові зміни?" vertex="1">
+          <mxGeometry x="290" y="1080" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_asch" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Запланувати наступне збереження" vertex="1">
+          <mxGeometry x="580" y="1088" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_ff3" parent="1" style="shape=sumEllipse;perimeter=ellipsePerimeter;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="628" y="1178" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e18" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb5_d3" target="wb5_d4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e19" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Так" edge="1" source="wb5_d4" target="wb5_asch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e20" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="" edge="1" source="wb5_asch" target="wb5_ff3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_d5" parent="1" style="rhombus;fontSize=12;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="У кімнаті немає з&#39;єднань?" vertex="1">
+          <mxGeometry x="290" y="1210" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_aev" parent="1" style="rounded=1;arcSize=25;fontSize=13;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Times New Roman;" value="Видалити кімнату з пам&#39;яті" vertex="1">
+          <mxGeometry x="580" y="1218" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_end" parent="1" style="shape=endState;html=1;fillColor=#ffffff;strokeColor=#000000;" value="" vertex="1">
+          <mxGeometry x="406" y="1356" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e21" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb5_d4" target="wb5_d5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e22" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" value="Так" edge="1" source="wb5_d5" target="wb5_aev">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e23" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;" value="Ні" edge="1" source="wb5_d5" target="wb5_end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wb5_e24" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#000000;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Times New Roman;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" value="" edge="1" source="wb5_aev" target="wb5_end">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="1370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

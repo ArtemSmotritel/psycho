@@ -16,20 +16,26 @@ skinparam monochrome true
 skinparam defaultFontName "Times New Roman"
 hide empty members
 
+left to right direction
+
 package "Спільні для психолога і клієнта" {
     class useWhiteboardSync <<hook>> {
         + remoteCursors: Map<string, Cursor>
         + connected: boolean
         + setExcalidrawAPI(api): void
-        + onWhiteboardChange(elements, appState, files): void
+        + onWhiteboardChange(): void
         + onPointerUpdate(payload): void
+        - flush(): void
+        - sendCursor(): void
+        - applyRemoteElements(elements): void
+        - applyRemoteFiles(files): void
     }
 
     class WhiteboardCursorOverlay <<component>> {
         + remoteCursors: Map<string, Cursor>
         + excalidrawAPI: ExcalidrawImperativeAPI
     }
-СИСТЕМИ
+
     class Excalidraw <<third-party>> {
         + excalidrawAPI: callback
         + onChange: callback
@@ -49,6 +55,12 @@ package "Інтерфейс психолога" {
     class WhiteboardImageInsert <<component>> {
         + excalidrawAPI: ExcalidrawImperativeAPI
         + insertImageOntoCanvas(image, api): void
+    }
+
+    class whiteboardImage <<util>> {
+        + MAX_IMAGE_DIMENSION = 1440
+        + MAX_IMAGE_BYTES = 4 MiB
+        + prepareImageForWhiteboard(blob): Promise<PreparedImage>
     }
 
     class AppointmentNotesPanel <<component>> {
@@ -94,30 +106,24 @@ package "Інтерфейс клієнта" {
     }
 }
 
-class "Whiteboard WebSocket-шлюз" as Gateway <<backend>>
+' Стрілка «хто --> що»: джерело використовує ціль.
+LiveSession --> useWhiteboardSync : setExcalidrawAPI()
+LiveAppointment --> useWhiteboardSync : setExcalidrawAPI()
+Excalidraw --> useWhiteboardSync : onWhiteboardChange(),\nonPointerUpdate()
 
-LiveSession ..> useWhiteboardSync
-LiveAppointment ..> useWhiteboardSync
-useWhiteboardSync ..> Gateway : WebSocket
+LiveSession --> Excalidraw
+LiveSession --> WhiteboardCursorOverlay
+LiveAppointment --> Excalidraw
+LiveAppointment --> WhiteboardCursorOverlay
 
-LiveSession *-- Excalidraw
-LiveSession *-- WhiteboardCursorOverlay
-LiveAppointment *-- Excalidraw
-LiveAppointment *-- WhiteboardCursorOverlay
+LiveSession --> WhiteboardImageInsert
+WhiteboardImageInsert -left-> whiteboardImage : prepareImageForWhiteboard()
+LiveSession --> AppointmentNotesPanel
+LiveSession --> AppointmentRecommendationsPanel
+LiveSession --> PostSessionFollowUpDialog
 
-LiveSession *-- WhiteboardImageInsert
-LiveSession *-- AppointmentNotesPanel
-LiveSession *-- AppointmentRecommendationsPanel
-LiveSession *-- PostSessionFollowUpDialog
+LiveAppointment --> AttachmentForm
+LiveAppointment --> AttachmentList
+LiveAppointment --> PostSessionImpressionDialog
 
-LiveAppointment *-- AttachmentForm
-LiveAppointment *-- AttachmentList
-LiveAppointment *-- PostSessionImpressionDialog
-
-note bottom of useWhiteboardSync
-  Хук зберігає WebSocket-з'єднання та передає зміни
-  сцени між Excalidraw і сервером. Зміни, отримані
-  від сервера, не надсилаються назад: їх відсікає
-  порівняння підпису елементів id@version.
-end note
 @enduml

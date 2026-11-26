@@ -1,0 +1,208 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="session-communication" name="Communication diagram: session">
+    <mxGraphModel dx="1552" dy="759" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="psycho" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=4;fontSize=14;fillColor=#ffffff;strokeColor=#000000;" value=":Користувач1" vertex="1">
+          <mxGeometry height="50" width="240" x="86" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="module" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=4;fontSize=14;fillColor=#ffffff;strokeColor=#000000;" value=":Серверний_модуль_дошки" vertex="1">
+          <mxGeometry height="50" width="300" x="560" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="client" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=4;fontSize=14;fillColor=#ffffff;strokeColor=#000000;" value=":Користувач2" vertex="1">
+          <mxGeometry height="50" width="240" x="1086" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" edge="1" parent="1" source="psycho" style="endArrow=none;html=1;strokeColor=#000000;fontSize=14;" target="module">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" edge="1" parent="1" source="module" style="endArrow=none;html=1;strokeColor=#000000;fontSize=14;" target="client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" edge="1" parent="1" source="module" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.05;exitY=0;entryX=0.95;entryY=0;strokeColor=#000000;fontSize=14;" target="module">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="575" y="225" />
+              <mxPoint x="845" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c6" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="590" y="210" as="sourcePoint" />
+            <mxPoint x="830" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c7" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.2: оновити_стан_сцени(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="310" x="555" y="186" as="geometry" />
+        </mxCell>
+        <mxCell id="c8" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="590" y="178" as="sourcePoint" />
+            <mxPoint x="830" y="178" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c9" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.3: позначити_стан_незбереженим()" vertex="1">
+          <mxGeometry height="22" width="310" x="555" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="590" y="146" as="sourcePoint" />
+            <mxPoint x="830" y="146" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c11" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.4: запланувати_збереження()" vertex="1">
+          <mxGeometry height="22" width="310" x="555" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="c12" edge="1" parent="1" source="module" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.05;exitY=1;entryX=0.95;entryY=1;strokeColor=#000000;fontSize=14;" target="module">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="575" y="345" />
+              <mxPoint x="845" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c13" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=none;endFill=0;startArrow=block;startFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="590" y="360" as="sourcePoint" />
+            <mxPoint x="830" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c14" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.2: оновити_стан_сцени(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="310" x="555" y="362" as="geometry" />
+        </mxCell>
+        <mxCell id="c15" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=none;endFill=0;startArrow=block;startFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="590" y="392" as="sourcePoint" />
+            <mxPoint x="830" y="392" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c16" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.3: позначити_стан_незбереженим()" vertex="1">
+          <mxGeometry height="22" width="310" x="555" y="394" as="geometry" />
+        </mxCell>
+        <mxCell id="c17" edge="1" parent="1" source="psycho" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.06;exitY=0;entryX=0.94;entryY=0;strokeColor=#000000;fontSize=14;" target="psycho">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="100" y="225" />
+              <mxPoint x="312" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c18" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="116" y="210" as="sourcePoint" />
+            <mxPoint x="296" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c19" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.1: позначити_надісланою(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="252" x="80" y="186" as="geometry" />
+        </mxCell>
+        <mxCell id="c20" edge="1" parent="1" source="psycho" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.06;exitY=1;entryX=0.94;entryY=1;strokeColor=#000000;fontSize=14;" target="psycho">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="100" y="345" />
+              <mxPoint x="312" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c21" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=none;endFill=0;startArrow=block;startFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="116" y="360" as="sourcePoint" />
+            <mxPoint x="296" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c22" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.4.1: застосувати_зміну(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="252" x="80" y="362" as="geometry" />
+        </mxCell>
+        <mxCell id="c23" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=none;endFill=0;startArrow=block;startFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="116" y="392" as="sourcePoint" />
+            <mxPoint x="296" y="392" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c24" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.4.2: позначити_відомою(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="252" x="80" y="394" as="geometry" />
+        </mxCell>
+        <mxCell id="c25" edge="1" parent="1" source="client" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.06;exitY=0;entryX=0.94;entryY=0;strokeColor=#000000;fontSize=14;" target="client">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="225" />
+              <mxPoint x="1312" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c26" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1116" y="210" as="sourcePoint" />
+            <mxPoint x="1296" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c27" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.5.1: застосувати_зміну(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="252" x="1080" y="186" as="geometry" />
+        </mxCell>
+        <mxCell id="c28" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=block;endFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1116" y="178" as="sourcePoint" />
+            <mxPoint x="1296" y="178" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c29" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.5.2: позначити_відомою(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="252" x="1080" y="154" as="geometry" />
+        </mxCell>
+        <mxCell id="c30" edge="1" parent="1" source="client" style="endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.06;exitY=1;entryX=0.94;entryY=1;strokeColor=#000000;fontSize=14;" target="client">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="345" />
+              <mxPoint x="1312" y="345" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c31" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=none;endFill=0;startArrow=block;startFill=1;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1116" y="360" as="sourcePoint" />
+            <mxPoint x="1296" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c32" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.1: позначити_надісланою(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="252" x="1080" y="362" as="geometry" />
+        </mxCell>
+        <mxCell id="c33" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=open;endFill=0;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="340" y="270" as="sourcePoint" />
+            <mxPoint x="550" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c34" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1: надіслати_зміни(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="210" x="340" y="244" as="geometry" />
+        </mxCell>
+        <mxCell id="c35" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=open;endFill=0;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="300" as="sourcePoint" />
+            <mxPoint x="340" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c36" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2.4: передати_зміни(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="210" x="340" y="304" as="geometry" />
+        </mxCell>
+        <mxCell id="c37" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=open;endFill=0;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="870" y="270" as="sourcePoint" />
+            <mxPoint x="1080" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c38" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="1.5: передати_зміни(зміна_1)" vertex="1">
+          <mxGeometry height="22" width="210" x="870" y="244" as="geometry" />
+        </mxCell>
+        <mxCell id="c39" edge="1" parent="1" style="html=1;strokeColor=#000000;endArrow=open;endFill=0;fontSize=14;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1080" y="300" as="sourcePoint" />
+            <mxPoint x="870" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c40" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;" value="2: надіслати_зміни(зміна_2)" vertex="1">
+          <mxGeometry height="22" width="210" x="870" y="304" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -15,9 +15,6 @@ skinparam defaultFontSize 14
 skinparam nodesep 14
 skinparam ranksep 45
 
-actor "Психолог" as psycho
-actor "Клієнт" as clientActor
-
 node "Браузер користувача — SPA\n(TypeScript, React 19, React Router v7)" <<device>> {
     component "Автентифікація та вибір ролі\n(Better Auth)" as cAuth
     component "Інтерфейс психолога\n(shadcn/ui, Tailwind)" as cPsyUI
@@ -26,7 +23,7 @@ node "Браузер користувача — SPA\n(TypeScript, React 19, Reac
     component "API-клієнт\n(Axios)" as cApi
 }
 
-node "Сервер застосунку — один процес Bun\n(HTTP API + WebSocket + cron)\nTypeScript, Bun, Hono" <<singleInstance>> as appServer {
+node "Сервер застосунку — Bun\n(HTTP API + WebSocket + cron)\nTypeScript, Bun, Hono" <<singleInstance>> as appServer {
     component "HTTP API\n(Hono, middleware сесії та ролей)" as sHttp
     component "Whiteboard WebSocket-шлюз\n(createBunWebSocket)" as sGateway
     component "Scheduler\n(Bun.cron)" as sCron
@@ -47,7 +44,7 @@ node "Сервер застосунку — один процес Bun\n(HTTP API
     component "Репозиторії\n(доступ до даних, SQL-запити)" as sRepo
 }
 
-database "PostgreSQL\n(зовнішній екземпляр)" <<subsystem>> {
+database "PostgreSQL" <<subsystem>> {
     component "Схема даних\n(користувачі, сесії, вкладення,\nзображення, файли, сповіщення)" <<data>> as dSchema
 }
 
@@ -68,12 +65,6 @@ cApi --( iRest
 iRest -- sHttp
 cBoard --( iWs
 iWs -- sGateway
-
-' ---- Актори ----
-psycho --> cAuth
-psycho --> cPsyUI
-clientActor --> cAuth
-clientActor --> cCliUI
 
 ' ---- Клієнтська частина ----
 cPsyUI ..> cBoard

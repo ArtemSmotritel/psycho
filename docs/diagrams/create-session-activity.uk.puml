@@ -3,6 +3,7 @@ skinparam linetype ortho
 start
 
 skinparam defaultFontSize 24
+skinparam conditionStyle InsideDiamond
 
 repeat :Психолог надсилає форму сесії;
 

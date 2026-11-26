@@ -1,12 +1,14 @@
 @startuml
 ' Локальна діаграма класів пакета «Інтерактивна дошка» (підрозділ 3.3.1).
 ' Платформозалежний рівень (PSM): відображає реалізацію з
-' backend/src/features/whiteboard/{routes,services,repo,models}.ts.
+' backend/src/features/whiteboard/{routes,rooms,merge,limits,services,repo,models}.ts.
 ' У коді модулі — заморожені const-обʼєкти та функції; на діаграмі вони
-' змодельовані класами (<<module>>), а модульний стан routes.ts
-' (rooms, saveTimers) винесено в клас RoomRegistry.
-' Розбір повідомлень (parseMessage) і автентифікація (better-auth) показані
-' як операції WhiteboardRoutes, щоб не перевантажувати діаграму звʼязками.
+' змодельовані класами (<<module>>). Модульний стан rooms.ts (rooms, loading)
+' належить модулю WhiteboardRooms.
+' Розбір повідомлень (parseMessage, схема zod), перевірка Origin і автентифікація
+' (better-auth) показані як операції WhiteboardRoutes, щоб не перевантажувати
+' діаграму звʼязками.
+' Типи вхідних і вихідних повідомлень показано одним інтерфейсом на напрям.
 ' Літеру додатка узгодити з фінальним порядком додатків.
 
 skinparam classAttributeIconSize 0
@@ -18,42 +20,85 @@ hide empty members
 
 class WhiteboardRoutes <<module>> {
     + upgradeWebSocket(appointmentId): WSEvents
-    - authenticate(headers): Session | null
-    - parseMessage(raw: string): IncomingMessage | null
+    - isAllowedOrigin(origin): boolean
+    - rejectUpgrade(reason): WSEvents
+    - parseMessage(raw: string): IncomingWhiteboardMessage | null
     - onOpen(): void
     - onMessage(event): void
     - onClose(): void
 }
 
-class RoomRegistry <<module>> {
+class WhiteboardRooms <<module>> {
     - rooms: Map<string, Room>
-    - saveTimers: Map<string, Timer>
-    - SAVE_DEBOUNCE_MS: number = 3000
-    + scheduleSave(appointmentId, room): void
-    + flushPendingSave(appointmentId, room): void
-    + broadcast(room, sender, message): void
+    - loading: Map<string, Promise<Room>>
+    + createConnection(ws, userId, userName): RoomConnection
+    + join(appointmentId, conn): Promise<Room | null>
+    + leave(room, conn): void
+    + allowMessage(conn): boolean
+    + handle(room, conn, message): void
+    + closeRoom(appointmentId): Promise<void>
+    + flushAll(): Promise<void>
+    + registerShutdownFlush(): void
+    - scheduleSave(room, delay): void
+    - persist(room): Promise<void>
+    - flushRoom(room): Promise<void>
+    - broadcast(room, sender, message): void
 }
 
 class Room {
+    + appointmentId: string
+    + elements: Map<string, WhiteboardElement>
+    + files: Map<string, WhiteboardFile>
     + connections: Set<RoomConnection>
-    + state: WhiteboardState
+    + dirty: boolean
+    + unsavedFiles: Map<string, WhiteboardFile>
+    + timer: Timer | null
+    + saving: Promise<void> | null
+    + ended: boolean
 }
 
 class RoomConnection {
-    + ws: ServerWebSocket
+    + id: string
+    + ws: Socket
     + userId: string
     + userName: string
+    + closed: boolean
+    + windowStart: number
+    + windowCount: number
+}
+
+class WhiteboardMerge <<module>> {
+    + decide(current, incoming): MergeDecision
+    + mergeElements(current, incoming): MergeResult
+    + mergeFiles(current, incoming): WhiteboardFiles
+    + diffFiles(files, clientFileIds): FileDiff
+    + parseElement(raw): WhiteboardElement | null
+    + parseFile(fileId, raw): WhiteboardFile | null
+}
+
+class WhiteboardLimits <<module>> {
+    + MAX_ELEMENTS_PER_MESSAGE = 500
+    + MAX_ROOM_ELEMENTS = 20000
+    + MAX_ROOM_FILES = 100
+    + MAX_FILE_BYTES = 8 MiB
+    + MAX_ROOM_FILE_BYTES = 64 MiB
+    + MAX_MESSAGES_PER_WINDOW = 300
+    + RATE_WINDOW_MS = 1000
+    + MAX_CONNECTIONS_PER_USER = 5
+    + SAVE_DELAY_MS = 5000
+    + SAVE_RETRY_JITTER_MS = 2000
 }
 
 class WhiteboardService <<module>> {
     + loadState(appointmentId): Promise<WhiteboardState>
-    + saveState(appointmentId, state): Promise<void>
-    + clearState(appointmentId): Promise<void>
+    + saveState(appointmentId, elements, newFiles): Promise<void>
+    + clearState(appointmentId, tx?): Promise<void>
 }
 
 class WhiteboardRepo <<module>> {
     + findStateByAppointmentId(appointmentId): Promise<WhiteboardState | null>
-    + updateState(appointmentId, state, executor): Promise<void>
+    + updateElements(appointmentId, elements, executor): Promise<void>
+    + insertFile(appointmentId, file, executor): Promise<void>
     + clearState(appointmentId, executor): Promise<void>
 }
 
@@ -62,17 +107,30 @@ class WhiteboardState <<interface>> {
     + files: WhiteboardFiles
 }
 
-class AppointmentsService <<module>> {
-    + getForParticipant(appointmentId, userId): Promise<Appointment | null>
+class IncomingWhiteboardMessage <<interface>> {
+    sync { fileIds }
+    elements { elements }
+    files { files }
+    cursor { x, y }
 }
 
-WhiteboardRoutes --> RoomRegistry
+class AppointmentsService <<module>> {
+    + getForParticipant(appointmentId, userId): Promise<Appointment | null>
+    + endForPsycho(appointmentId, ...): Promise<Appointment>
+}
+
+WhiteboardRoutes --> WhiteboardRooms
 WhiteboardRoutes ..> AppointmentsService : перевірка учасника\nта статусу «active»
-WhiteboardRoutes ..> WhiteboardService : loadState
-RoomRegistry "1" *-- "0..*" Room
+WhiteboardRoutes ..> IncomingWhiteboardMessage : parseMessage
+WhiteboardRooms "1" *-- "0..*" Room
 Room "1" o-- "1..*" RoomConnection
-Room --> WhiteboardState
-RoomRegistry ..> WhiteboardService : saveState\n(через 3 с після зміни)
+WhiteboardRooms ..> WhiteboardMerge : mergeElements,\nmergeFiles, diffFiles
+WhiteboardRooms ..> WhiteboardLimits
+WhiteboardMerge ..> WhiteboardLimits
+WhiteboardRooms ..> WhiteboardService : loadState;\nsaveState (через 5 с\nпісля першої зміни)
 WhiteboardService --> WhiteboardRepo
+WhiteboardService ..> WhiteboardState
+AppointmentsService ..> WhiteboardService : clearState\n(у транзакції завершення сесії)
+AppointmentsService ..> WhiteboardRooms : closeRoom\n(код 1000)
 
 @enduml
